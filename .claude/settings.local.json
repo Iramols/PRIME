@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "PowerShell(Start-Process \"C:\\\\Users\\\\iramo\\\\prime\\\\PRIME_v3.html\")",
-      "PowerShell(git init *)"
+      "PowerShell(git init *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git *)",
+      "PowerShell(git push *)"
     ]
   }
 }
