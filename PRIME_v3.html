@@ -1,0 +1,618 @@
+﻿<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRIME by Anneke</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">PRIME <span>by Anneke</span></div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="go('home')">Dashboard</button>
+    <button class="nav-btn" onclick="go('training')">Training</button>
+    <button class="nav-btn" onclick="go('voeding')">Voeding</button>
+    <button class="nav-btn" onclick="go('coach')">Coach</button>
+    <button class="nav-btn" onclick="go('history')">Voortgang</button>
+    <button class="nav-btn" onclick="go('beheer')" style="font-size:11px">📷 Foto beheer</button>
+  </nav>
+  <button class="btn-sm" onclick="openProfile()">⚙ Profiel</button>
+</header>
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+<div class="container">
+
+  <div class="hero">
+    <p class="hero-date" id="hero-date"></p>
+    <h1 id="hero-greeting">Goedemorgen! 👋</h1>
+    <p id="hero-sub">Doe je check-in om je dag te starten. De coach stelt je training en voeding automatisch op jou in.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="s-streak">0</div><div class="stat-lbl">🔥 Streak</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-checkins">0</div><div class="stat-lbl">Check-ins</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl">Gem. energie</div></div>
+  </div>
+
+  <!-- CHECK-IN -->
+  <div id="checkin-section">
+    <div class="card">
+      <div class="card-label">Ochtend check-in</div>
+      <div class="card-title">Hoe ben je vandaag?</div>
+      <div class="checkin-grid">
+        <div class="checkin-item">
+          <label>😴 Hoe heb je geslapen?</label>
+          <div class="emoji-scale">
+            <button class="emoji-btn" onclick="pick('sleep',1,this)" title="Slecht">😔</button>
+            <button class="emoji-btn" onclick="pick('sleep',2,this)" title="Matig">😐</button>
+            <button class="emoji-btn" onclick="pick('sleep',3,this)" title="Goed">😊</button>
+            <button class="emoji-btn" onclick="pick('sleep',4,this)" title="Uitstekend">🌟</button>
+          </div>
+        </div>
+        <div class="checkin-item">
+          <label>⚡ Hoe is je energie?</label>
+          <div class="emoji-scale">
+            <button class="emoji-btn" onclick="pick('energy',1,this)" title="Laag">🪫</button>
+            <button class="emoji-btn" onclick="pick('energy',2,this)" title="Gemiddeld">😑</button>
+            <button class="emoji-btn" onclick="pick('energy',3,this)" title="Hoog">⚡</button>
+            <button class="emoji-btn" onclick="pick('energy',4,this)" title="Zeer hoog">🔥</button>
+          </div>
+        </div>
+        <div class="checkin-item">
+          <label>🧘 Hoe is je stress?</label>
+          <div class="emoji-scale">
+            <button class="emoji-btn" onclick="pick('stress',1,this)" title="Veel stress">😤</button>
+            <button class="emoji-btn" onclick="pick('stress',2,this)" title="Redelijk wat stress">😬</button>
+            <button class="emoji-btn" onclick="pick('stress',3,this)" title="Weinig stress">😌</button>
+            <button class="emoji-btn" onclick="pick('stress',4,this)" title="Geen stress">🧘</button>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary" id="checkin-btn" onclick="doCheckin()" disabled>Start mijn dag →</button>
+    </div>
+  </div>
+
+  <!-- DAY OVERVIEW (after check-in) -->
+  <div id="day-section" style="display:none">
+    <div class="success-banner">
+      <h3 id="day-title">Je dag is klaar ✓</h3>
+      <p id="day-summary">Coach Ira heeft je dag afgestemd op jouw check-in.</p>
+    </div>
+
+    <div id="coach-message-home" class="card" style="margin-bottom:18px;display:none">
+      <div class="card-label">Coach Ira zegt</div>
+      <div id="coach-msg-text" style="font-size:14px;line-height:1.75;color:var(--charcoal)"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card" style="margin-bottom:0;cursor:pointer" onclick="go('training')">
+        <div class="card-label">Training vandaag</div>
+        <div id="home-training-badge"></div>
+        <div id="home-training-preview" style="font-size:13px;line-height:1.7;color:var(--muted)"></div>
+        <div style="margin-top:14px"><button class="btn-sm" style="width:100%">Bekijk schema →</button></div>
+      </div>
+      <div class="card" style="margin-bottom:0;cursor:pointer" onclick="go('voeding')">
+        <div class="card-label">Voeding vandaag</div>
+        <div id="home-nutrient-rows" style="margin-bottom:12px">
+          <!-- Gevuld door updateHomeMacros() -->
+          <div style="font-size:13px;color:var(--muted)" id="home-macro-preview">Doe je check-in om je voedingsdoelen te zien</div>
+        </div>
+        <button class="btn-sm" style="width:100%">Bekijk maaltijdplan →</button>
+      </div>
+    </div>
+
+    <!-- CHECKOUT -->
+    <div class="checkout-card" id="checkout-card">
+      <h3>Avond check-out 🌙</h3>
+
+      <!-- TRAINING SAMENVATTING -->
+      <div class="training-summary-block" id="training-summary-block">
+        <div class="training-summary-label">Training vandaag</div>
+        <div id="training-summary-content"></div>
+        <div id="training-confirm-question" style="display:none" class="coach-confirm-question"></div>
+        <div id="training-confirm-btns" style="display:none;display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"></div>
+      </div>
+
+      <div class="divider" style="margin:18px 0"></div>
+
+      <!-- VOEDING SAMENVATTING -->
+      <div class="training-summary-block" id="food-summary-block">
+        <div class="training-summary-label">Voeding vandaag</div>
+        <div id="food-summary-content"></div>
+        <div id="food-confirm-question" style="display:none" class="coach-confirm-question"></div>
+        <div id="food-confirm-btns" style="display:none;gap:8px;margin-top:10px;flex-wrap:wrap"></div>
+      </div>
+
+      <div class="divider" style="margin:18px 0"></div>
+
+      <!-- ENERGIE (als laatste) -->
+      <div class="checkin-item">
+        <label>⚡ Hoe was je energie vandaag?</label>
+        <div class="emoji-scale">
+          <button class="emoji-btn" onclick="pickOut('energy',1,this)" title="Laag">🪫</button>
+          <button class="emoji-btn" onclick="pickOut('energy',2,this)" title="Gemiddeld">😑</button>
+          <button class="emoji-btn" onclick="pickOut('energy',3,this)" title="Hoog">⚡</button>
+          <button class="emoji-btn" onclick="pickOut('energy',4,this)" title="Zeer hoog">🔥</button>
+        </div>
+      </div>
+
+      <div style="margin-top:20px">
+        <button class="btn-primary" id="checkout-btn" onclick="doCheckout()" disabled>Dag afronden →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- TRAINING SCREEN -->
+<div id="screen-training" class="screen">
+<div class="container">
+  <div style="margin-bottom:16px">
+    <div class="card-label" style="margin-bottom:4px">Training</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:6px" id="training-screen-title">Vandaag</h2>
+    <div id="training-screen-badge"></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="food-tabs" style="margin-bottom:18px">
+    <button class="food-tab active" id="ttab-schema"      onclick="switchTrainingTab('schema')">Aanbevolen schema</button>
+    <button class="food-tab"        id="ttab-schemas"     onclick="switchTrainingTab('schemas')">Schema's</button>
+    <button class="food-tab"        id="ttab-oefeningen"  onclick="switchTrainingTab('oefeningen')">Losse oefeningen</button>
+    <button class="food-tab"        id="ttab-dag"         onclick="switchTrainingTab('dag')">Mijn dag</button>
+  </div>
+
+  <!-- TAB: SCHEMA -->
+  <div id="ttab-content-schema">
+    <div id="no-checkin-msg" class="card" style="text-align:center;padding:40px">
+      <div style="font-size:40px;margin-bottom:12px">🌅</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px">Doe eerst je check-in</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:18px">Je training wordt automatisch afgestemd op hoe je je vandaag voelt.</div>
+      <button class="btn-sm" onclick="go('home')">Naar check-in →</button>
+    </div>
+    <div id="training-content" style="display:none">
+      <div class="progress-wrap">
+        <div class="progress-top"><span>Voortgang</span><span id="training-prog-txt">0 / 0 gedaan</span></div>
+        <div class="progress-bg"><div class="progress-fill" id="training-prog-bar" style="width:0%"></div></div>
+      </div>
+      <div id="exercise-list"></div>
+    </div>
+  </div>
+
+  <!-- TAB: SCHEMA'S -->
+  <div id="ttab-content-schemas" style="display:none">
+    <div style="font-size:14px;color:var(--muted);margin-bottom:16px">Kies een trainingsschema. De oefeningen worden toegevoegd aan <strong>Mijn dag</strong>.</div>
+    <div id="schemas-list"></div>
+  </div>
+
+  <!-- TAB: LOSSE OEFENINGEN -->
+  <div id="ttab-content-oefeningen" style="display:none">
+    <div class="card" style="margin-bottom:16px;padding:14px 16px;display:flex;align-items:center;gap:10px;background:var(--sage-light);border-color:var(--sage-mid)">
+      <div style="font-size:20px">💡</div>
+      <div style="font-size:13px;color:var(--charcoal)">Klik op een oefening om hem toe te voegen aan <strong>Mijn dag</strong>. Je kunt sets en reps aanpassen.</div>
+    </div>
+    <div id="extra-exercise-list"></div>
+  </div>
+
+  <!-- TAB: MIJN DAG -->
+  <div id="ttab-content-dag" style="display:none">
+    <div id="dag-debug" style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--sand);border-radius:6px"></div>
+    <div id="dag-progress-wrap" style="display:none;margin-bottom:16px">
+      <div class="progress-wrap">
+        <div class="progress-top"><span>Voortgang</span><span id="dag-progress-txt">0 / 0 gedaan</span></div>
+        <div class="progress-bg"><div class="progress-fill" id="dag-progress-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div id="training-dag-empty" class="card" style="text-align:center;padding:40px;display:none">
+      <div style="font-size:40px;margin-bottom:12px">🏋️</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px">Nog geen extra oefeningen</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:18px">Voeg losse oefeningen toe via het tabblad "Losse oefeningen".</div>
+      <button class="btn-sm" onclick="switchTrainingTab('oefeningen')">Voeg oefening toe →</button>
+    </div>
+    <div id="training-dag-list"></div>
+    <div id="training-dag-total" style="display:none;margin-top:16px"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- VOEDING SCREEN -->
+<div id="screen-voeding" class="screen">
+<div class="container">
+  <div style="margin-bottom:20px">
+    <div class="card-label" style="margin-bottom:4px">Voeding vandaag</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px">Maaltijdplanner</h2>
+    <div style="font-size:13px;color:var(--muted)" id="food-subtitle">Afgestemd op jouw check-in en doelen</div>
+  </div>
+
+  <div id="no-checkin-food" class="card" style="text-align:center;padding:40px">
+    <div style="font-size:40px;margin-bottom:12px">🥗</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px">Doe eerst je check-in</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:18px">Je maaltijdplan wordt afgestemd op jouw energie en doelen.</div>
+    <button class="btn-sm" onclick="go('home')">Naar check-in →</button>
+  </div>
+
+  <div id="food-content" style="display:none">
+
+
+    <!-- CALORIE EN NUTRIËNTEN INNAME -->
+    <div class="card" style="margin-bottom:18px;padding:24px">
+      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:20px">Calorie en nutriënten inname</h3>
+      <div id="nutrient-rows">
+        <!-- Calorieën -->
+        <div class="nutrient-row">
+          <div class="nutrient-left">
+            <div class="nutrient-name">Calorieën</div>
+            <div class="nutrient-doel" id="doel-kcal">Doel: —</div>
+          </div>
+          <div class="nutrient-mid">
+            <span class="nutrient-arrow">∧</span>
+            <span class="nutrient-val" id="f-kcal">0 kcal</span>
+          </div>
+          <div class="nutrient-bar-wrap">
+            <div class="nutrient-bar-bg">
+              <div class="nutrient-bar-fill" id="bar-kcal" style="width:0%;background:#4CAF50"></div>
+            </div>
+            <div class="nutrient-pct" id="pct-kcal">0%</div>
+          </div>
+        </div>
+        <!-- Koolhydraten -->
+        <div class="nutrient-row">
+          <div class="nutrient-left">
+            <div class="nutrient-name">Koolhydraten</div>
+            <div class="nutrient-doel" id="doel-carb">Doel: —</div>
+          </div>
+          <div class="nutrient-mid">
+            <span class="nutrient-arrow">∧</span>
+            <span class="nutrient-val" id="f-carb">0 g.</span>
+          </div>
+          <div class="nutrient-bar-wrap">
+            <div class="nutrient-bar-bg">
+              <div class="nutrient-bar-fill" id="bar-carb" style="width:0%;background:#E91E8C"></div>
+            </div>
+            <div class="nutrient-pct" id="pct-carb">0%</div>
+          </div>
+        </div>
+        <!-- Eiwitten -->
+        <div class="nutrient-row">
+          <div class="nutrient-left">
+            <div class="nutrient-name">Eiwitten</div>
+            <div class="nutrient-doel" id="doel-prot">Doel: —</div>
+          </div>
+          <div class="nutrient-mid">
+            <span class="nutrient-arrow">∧</span>
+            <span class="nutrient-val" id="f-prot">0 g.</span>
+          </div>
+          <div class="nutrient-bar-wrap">
+            <div class="nutrient-bar-bg">
+              <div class="nutrient-bar-fill" id="bar-prot" style="width:0%;background:#2196F3"></div>
+            </div>
+            <div class="nutrient-pct" id="pct-prot">0%</div>
+          </div>
+        </div>
+        <!-- Vetten -->
+        <div class="nutrient-row">
+          <div class="nutrient-left">
+            <div class="nutrient-name">Vetten</div>
+            <div class="nutrient-doel" id="doel-fat">Doel: —</div>
+          </div>
+          <div class="nutrient-mid">
+            <span class="nutrient-arrow">∧</span>
+            <span class="nutrient-val" id="f-fat">0 g.</span>
+          </div>
+          <div class="nutrient-bar-wrap">
+            <div class="nutrient-bar-bg">
+              <div class="nutrient-bar-fill" id="bar-fat" style="width:0%;background:#FF5722"></div>
+            </div>
+            <div class="nutrient-pct" id="pct-fat">0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS: MAALTIJDPLAN / BASISPRODUCTEN -->
+    <div class="food-tabs">
+      <button class="food-tab active" id="tab-plan" onclick="switchFoodTab('plan')">Maaltijdplan</button>
+      <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')">Basisproducten</button>
+      <button class="food-tab" id="tab-log" onclick="switchFoodTab('log')">Mijn dag <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
+    </div>
+
+    <!-- TAB: MAALTIJDPLAN -->
+    <div id="foodtab-plan">
+      <div id="meal-count" style="font-size:13px;color:var(--muted);margin-bottom:16px">Klik op een maaltijd om hem toe te voegen aan je dag</div>
+      <div id="meal-plan"></div>
+    </div>
+
+    <!-- TAB: BASISPRODUCTEN -->
+    <div id="foodtab-basis" style="display:none">
+      <div class="search-bar" style="margin-bottom:16px">
+        <span style="font-size:15px;color:var(--muted)">🔍</span>
+        <input type="text" id="product-search" placeholder="Zoek product..." oninput="renderProducts()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+      </div>
+      <div class="cat-tabs" id="cat-tabs">
+        <button class="cat-tab active" onclick="filterCat('alle',this)">Alle</button>
+        <button class="cat-tab" onclick="filterCat('fruit',this)">Fruit</button>
+        <button class="cat-tab" onclick="filterCat('groente',this)">Groente</button>
+        <button class="cat-tab" onclick="filterCat('vlees',this)">Vlees</button>
+        <button class="cat-tab" onclick="filterCat('vis',this)">Vis</button>
+        <button class="cat-tab" onclick="filterCat('zuivel',this)">Zuivel</button>
+        <button class="cat-tab" onclick="filterCat('granen',this)">Granen</button>
+        <button class="cat-tab" onclick="filterCat('noten',this)">Noten</button>
+        <button class="cat-tab" onclick="filterCat('overig',this)">Overig</button>
+      </div>
+      <div id="product-grid"></div>
+    </div>
+
+    <!-- TAB: MIJN DAG LOG -->
+    <div id="foodtab-log" style="display:none">
+      <div id="day-log-empty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px">
+        Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.
+      </div>
+      <div id="day-log-list"></div>
+      <div id="day-log-totals" style="display:none">
+        <div class="divider"></div>
+        <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px">Totaal overzicht</div>
+        <div id="log-summary"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- COACH SCREEN -->
+<div id="screen-coach" class="screen">
+<div class="container">
+  <div style="margin-bottom:20px">
+    <div class="card-label" style="margin-bottom:4px">AI Coach</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px">Coach Ira</h2>
+    <div style="font-size:13px;color:var(--muted)">Direct, nuchter, warm — altijd beschikbaar</div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="chat-wrap" id="chat-area"></div>
+    <div style="padding:16px;border-top:1px solid var(--sand-dark)">
+      <div class="chat-row">
+        <input class="chat-in" id="chat-input" type="text" placeholder="Stel een vraag aan coach Ira..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="send-btn" id="send-btn" onclick="sendMsg()">→</button>
+      </div>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="qMsg('Wat moet ik eten na een zware training?')">Na training eten 💪</button>
+        <button class="quick-btn" onclick="qMsg('Ik slaap slecht, wat kan ik doen?')">Beter slapen 😴</button>
+        <button class="quick-btn" onclick="qMsg('Ik heb weinig motivatie vandaag, wat nu?')">Motivatie 🔥</button>
+        <button class="quick-btn" onclick="qMsg('Geef me een snel gezond ontbijt idee.')">Snel ontbijt 🌅</button>
+        <button class="quick-btn" onclick="qMsg('Hoe bouw ik een gezonde routine op stap voor stap?')">Routine opbouwen 📅</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div id="screen-history" class="screen">
+<div class="container">
+  <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="card-label" style="margin-bottom:4px">Voortgang</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px" id="h-username">Statistieken</h2>
+      <div style="font-size:13px;color:var(--muted)" id="h-goal"></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);text-align:right;padding-top:4px" id="h-period"></div>
+  </div>
+
+  <!-- HOOFDCIJFERS -->
+  <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="stat-card">
+      <div class="stat-val" id="h-streak" style="font-size:28px">0</div>
+      <div class="stat-lbl">🔥 Huidige streak</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="h-total" style="font-size:28px">0</div>
+      <div class="stat-lbl">Totaal check-ins</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="h-trainings" style="font-size:28px">0</div>
+      <div class="stat-lbl">Trainingen voltooid</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="h-best-streak" style="font-size:28px">0</div>
+      <div class="stat-lbl">🏆 Beste streak ooit</div>
+    </div>
+  </div>
+
+  <!-- ENERGIE & SLAAP -->
+  <div class="two-col" style="margin-bottom:18px">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-label" style="margin-bottom:14px">Energie & Slaap (7 dagen gem.)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div style="text-align:center">
+          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-avg-energy">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Energie ochtend</div>
+          <div style="font-size:10px;color:var(--muted)" id="h-energy-trend"></div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-avg-sleep">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Slaap</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)" id="h-avg-stress">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Stress</div>
+        </div>
+      </div>
+      <div class="divider" style="margin:14px 0"></div>
+      <div style="font-size:12px;color:var(--muted)">Energie einde van de dag (gem. 7 dgn)</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--sage);margin-top:4px" id="h-avg-energy-out">—</div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-label" style="margin-bottom:14px">Training (totaal)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div style="text-align:center">
+          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-pct-training">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">% volledig</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-pct-partial">—</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">% gedeeltelijk</div>
+        </div>
+      </div>
+      <div class="card-label" style="margin-bottom:8px">Verdeling trainingstypes</div>
+      <div id="h-training-types" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+  </div>
+
+  <!-- VOEDING -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-label" style="margin-bottom:14px">Voeding</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div style="text-align:center;background:var(--sand);border-radius:10px;padding:14px">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-food-ondoel">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">% op doel</div>
+      </div>
+      <div style="text-align:center;background:var(--sand);border-radius:10px;padding:14px">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)" id="h-food-teveel">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">% teveel</div>
+      </div>
+      <div style="text-align:center;background:var(--sand);border-radius:10px;padding:14px">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-food-teweinig">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">% te weinig</div>
+      </div>
+    </div>
+    <div class="divider" style="margin:14px 0"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Voeding gelogd</div>
+    <div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">
+      <div id="h-food-log-bar" style="height:100%;background:var(--sage);border-radius:100px;width:0%;transition:width 0.5s"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:5px" id="h-food-log-pct">0% van dagen gelogd</div>
+  </div>
+
+  <!-- SIGNALEN VOOR COACH -->
+  <div class="card" style="margin-bottom:18px;border-color:var(--sage-mid)">
+    <div class="card-label" style="margin-bottom:14px;color:var(--sage)">⚑ Signalen voor coach</div>
+    <div id="h-signals">
+      <div style="font-size:14px;color:var(--muted)">Nog geen data beschikbaar.</div>
+    </div>
+  </div>
+
+  <!-- DAGELIJKSE GESCHIEDENIS -->
+  <div class="card">
+    <div class="card-label" style="margin-bottom:4px">Dag-voor-dag overzicht</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px">
+      <span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><span style="width:8px;height:8px;border-radius:50%;background:#2980b9;display:inline-block"></span>Herstel</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><span style="width:8px;height:8px;border-radius:50%;background:var(--sage);display:inline-block"></span>Normaal</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block"></span>Zwaar</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;margin-right:12px"><span style="width:8px;height:8px;border-radius:50%;background:var(--sage);display:inline-block"></span>Training ✓</span>
+      <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:50%;background:var(--sage);display:inline-block"></span>Voeding ✓</span>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+</div>
+
+  <!-- BEHEER SCHERM -->
+  <div id="screen-beheer" class="screen">
+  <div class="container">
+    <div style="margin-bottom:20px">
+      <div class="card-label">Coach beheer</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px">Foto beheer</h2>
+      <div style="font-size:13px;color:var(--muted)">Upload eigen foto's voor oefeningen en maaltijden. Foto's worden lokaal opgeslagen.</div>
+    </div>
+
+    <!-- TABS -->
+    <div class="food-tabs" style="margin-bottom:18px">
+      <button class="food-tab active" id="btab-training" onclick="switchBeheerTab('training')">Training</button>
+      <button class="food-tab" id="btab-schemas" onclick="switchBeheerTab('schemas')">Schema's</button>
+      <button class="food-tab" id="btab-maaltijden" onclick="switchBeheerTab('maaltijden')">Maaltijden</button>
+      <button class="food-tab" id="btab-producten" onclick="switchBeheerTab('producten')">Producten</button>
+    </div>
+
+    <div id="btab-content-training"></div>
+    <div id="btab-content-schemas" style="display:none"></div>
+    <div id="btab-content-maaltijden" style="display:none"></div>
+    <div id="btab-content-producten" style="display:none"></div>
+
+    <div class="card" style="margin-top:24px;background:var(--sand)">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚠️ Let op</div>
+      <div style="font-size:12px;color:var(--muted)">Foto's worden opgeslagen in de browser van dit apparaat. Ze zijn zichtbaar voor iedereen die de MVP op dit apparaat gebruikt. Gebruik foto's van max. 1MB voor snelle laadtijden.</div>
+    </div>
+  </div>
+  </div>
+
+<!-- PROFILE MODAL -->
+<div class="overlay" id="profile-modal">
+  <div class="modal">
+    <div class="modal-title">Jouw profiel <button class="modal-close" onclick="closeProfile()">×</button></div>
+    <div class="form-row"><label>Naam</label><input id="p-name" type="text" placeholder="Jouw naam"></div>
+    <div class="form-row"><label>Leeftijd</label><input id="p-age" type="number" placeholder="35"></div>
+    <div class="form-row"><label>Gewicht (kg)</label><input id="p-weight" type="number" placeholder="70"></div>
+    <div class="form-row"><label>Lengte (cm)</label><input id="p-height" type="number" placeholder="170"></div>
+    <div class="form-row"><label>Geslacht</label>
+      <select id="p-gender"><option value="v">Vrouw</option><option value="m">Man</option></select>
+    </div>
+    <div class="form-row"><label>Doel</label>
+      <select id="p-goal">
+        <option>Meer spiermassa opbouwen</option>
+        <option>Gezond gewicht bereiken</option>
+        <option>Meer energie hebben</option>
+        <option>Gezonder eten</option>
+        <option>Stressreductie</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Activiteitsniveau</label>
+      <select id="p-activity">
+        <option value="1.2">Weinig actief (1-2x/week)</option>
+        <option value="1.375">Matig actief (3-4x/week)</option>
+        <option value="1.55">Actief (5+x/week)</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveProfile()">Opslaan ✓</button>
+  </div>
+</div>
+
+<!-- PORTION MODAL -->
+<div class="portion-modal-wrap" id="portion-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <div class="portion-product-name" id="pm-name">Product</div>
+        <div class="portion-per100" id="pm-per100">per 100g: — kcal · — eiwit · — koolh · — vet</div>
+      </div>
+      <button onclick="closePortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <div class="portion-moment-label">Maaltijdmoment</div>
+    <div class="moment-btns">
+      <button class="moment-btn active" onclick="selectMoment('ontbijt',this)">🌅 Ontbijt</button>
+      <button class="moment-btn" onclick="selectMoment('lunch',this)">🥗 Lunch</button>
+      <button class="moment-btn" onclick="selectMoment('avond',this)">🍽️ Avond</button>
+      <button class="moment-btn" onclick="selectMoment('snack',this)">🍎 Snack</button>
+    </div>
+    <div class="portion-input-row">
+      <input type="number" id="pm-gram" value="100" min="1" max="2000" step="5" oninput="updatePortionPreview()">
+      <span class="portion-unit">gram</span>
+    </div>
+    <div class="portion-preview">
+      <div><div class="prev-val" id="pv-kcal">0</div><div class="prev-lbl">kcal</div></div>
+      <div><div class="prev-val" id="pv-prot" style="color:var(--accent)">0g</div><div class="prev-lbl">eiwit</div></div>
+      <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl">koolh</div></div>
+      <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl">vet</div></div>
+    </div>
+    <button class="btn-primary" onclick="addProductToLog()">Toevoegen aan mijn dag →</button>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/beheer.js"></script>
+<script src="js/checkin.js"></script>
+<script src="js/training.js"></script>
+<script src="js/food.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/history.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

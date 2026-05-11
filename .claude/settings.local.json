@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process \"C:\\\\Users\\\\iramo\\\\prime\\\\PRIME_v3.html\")",
+      "PowerShell(git init *)"
+    ]
+  }
+}
