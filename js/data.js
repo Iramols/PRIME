@@ -456,7 +456,7 @@ const PRODUCTS = [
   { id:'p2', name:'Banaan', icon:'🍌', cat:'fruit', kcal:89, prot:1.1, carb:23, fat:0.3, photo:'https://images.pexels.com/photos/1093038/pexels-photo-1093038.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'p3', name:'Aardbei', icon:'🍓', cat:'fruit', kcal:32, prot:0.7, carb:8, fat:0.3, photo:'https://images.pexels.com/photos/4397882/pexels-photo-4397882.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'p4', name:'Bosbes', icon:'🫐', cat:'fruit', kcal:57, prot:0.7, carb:14, fat:0.3, photo:'https://images.pexels.com/photos/892808/pexels-photo-892808.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-  { id:'p5', name:'Sinaasappel', icon:'🍊', cat:'fruit', kcal:47, prot:0.9, carb:12, fat:0.1, photo:'https://images.pexels.com/photos/327098/pexels-photo-327098.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'p5', name:'Sinaasappel', icon:'🍊', cat:'fruit', kcal:47, prot:0.9, carb:12, fat:0.1, photo:'https://images.pexels.com/photos/161559/background-bitter-breakfast-bright-161559.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'p6', name:'Mango', icon:'🥭', cat:'fruit', kcal:60, prot:0.8, carb:15, fat:0.4, photo:'https://images.pexels.com/photos/918643/pexels-photo-918643.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'p7', name:'Peer', icon:'🍐', cat:'fruit', kcal:57, prot:0.4, carb:15, fat:0.1, photo:'https://images.pexels.com/photos/568471/pexels-photo-568471.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'p8', name:'Watermeloen', icon:'🍉', cat:'fruit', kcal:30, prot:0.6, carb:8, fat:0.2, photo:'https://images.pexels.com/photos/1313267/pexels-photo-1313267.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
