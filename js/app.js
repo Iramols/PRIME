@@ -66,4 +66,4 @@ function init() {
   }
 }
 
-init();
+loadPhotosFromFile(init);

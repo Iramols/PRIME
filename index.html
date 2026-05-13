@@ -535,9 +535,19 @@
     <div id="btab-content-maaltijden" style="display:none"></div>
     <div id="btab-content-producten" style="display:none"></div>
 
-    <div class="card" style="margin-top:24px;background:var(--sand)">
+    <div class="card" style="margin-top:24px;background:var(--sage-light);border-color:var(--sage-mid)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--sage)">📤 Foto's online zetten</div>
+      <div style="font-size:12px;color:var(--charcoal);line-height:1.7;margin-bottom:14px">
+        Geüploade foto's worden lokaal opgeslagen. Om ze online zichtbaar te maken:<br>
+        <strong>1.</strong> Klik op "Exporteer foto's" hieronder<br>
+        <strong>2.</strong> Sla het bestand op als <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code> in de projectmap<br>
+        <strong>3.</strong> Zeg tegen Claude: <em>"push de foto's naar GitHub"</em>
+      </div>
+      <button onclick="exportCustomPhotosFile()" class="btn-primary" style="margin-bottom:0">📤 Exporteer foto's</button>
+    </div>
+    <div class="card" style="margin-top:12px;background:var(--sand)">
       <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚠️ Let op</div>
-      <div style="font-size:12px;color:var(--muted)">Foto's worden opgeslagen in de browser van dit apparaat. Ze zijn zichtbaar voor iedereen die de MVP op dit apparaat gebruikt. Gebruik foto's van max. 1MB voor snelle laadtijden.</div>
+      <div style="font-size:12px;color:var(--muted)">Gebruik foto's van max. 1MB voor snelle laadtijden.</div>
     </div>
   </div>
   </div>

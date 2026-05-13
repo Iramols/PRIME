@@ -7,6 +7,44 @@ function saveCustomPhotos(photos) {
   localStorage.setItem('prime_custom_photos', JSON.stringify(photos));
 }
 
+// Laad foto's uit custom-photos.json (voor online gebruik) en merge met localStorage
+function loadPhotosFromFile(callback) {
+  var done = function() { applyCustomPhotos(); if (callback) callback(); };
+  try {
+    fetch('./custom-photos.json')
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function(filePhotos) {
+        if (filePhotos && typeof filePhotos === 'object' && Object.keys(filePhotos).length > 0) {
+          var local = getCustomPhotos();
+          // Bestand is de basis, lokale uploads overschrijven (nieuwer)
+          var merged = Object.assign({}, filePhotos, local);
+          saveCustomPhotos(merged);
+        }
+        done();
+      })
+      .catch(done);
+  } catch(e) { done(); }
+}
+
+// Exporteer alle custom foto's als custom-photos.json (sla op in projectmap en push)
+function exportCustomPhotosFile() {
+  var photos = getCustomPhotos();
+  if (Object.keys(photos).length === 0) {
+    alert('Geen eigen foto\'s gevonden. Upload eerst foto\'s via het beheer paneel.');
+    return;
+  }
+  var json = JSON.stringify(photos, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'custom-photos.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function switchBeheerTab(tab) {
   ['training','schemas','maaltijden','producten'].forEach(t => {
     document.getElementById('btab-' + t).classList.toggle('active', t === tab);

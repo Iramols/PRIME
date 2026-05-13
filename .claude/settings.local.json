@@ -5,7 +5,8 @@
       "PowerShell(git init *)",
       "PowerShell(git commit *)",
       "PowerShell(git *)",
-      "PowerShell(git push *)"
+      "PowerShell(git push *)",
+      "WebFetch(domain:images.pexels.com)"
     ]
   }
 }
