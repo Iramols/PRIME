@@ -188,7 +188,7 @@ function handlePhotoUpload(event, key, tab) {
 
 function resetPhoto(key, tab) {
   const photos = getCustomPhotos();
-  delete photos[key];
+  photos[key] = null; // null overschrijft de bestandsversie ook na refresh
   saveCustomPhotos(photos);
   applyCustomPhotos();
   renderBeheerTab(tab);
