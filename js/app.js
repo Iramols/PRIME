@@ -7,6 +7,10 @@ function go(screen) {
   });
   if (screen === 'history') renderHistory();
   if (screen === 'beheer') { switchBeheerTab('training'); }
+  if (screen === 'voeding') {
+    var basisTab = document.getElementById('foodtab-basis');
+    if (basisTab && basisTab.style.display !== 'none') renderProducts();
+  }
 }
 
 

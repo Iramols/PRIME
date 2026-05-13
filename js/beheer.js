@@ -214,7 +214,7 @@ function applyCustomPhotos() {
   // Pas toe op TRAINING_SCHEMAS
   TRAINING_SCHEMAS.forEach(schema => {
     if (photos['schema-' + schema.id]) schema.foto = photos['schema-' + schema.id];
-    schema.oefeningen.forEach(ex => {
+    (schema.oefeningen || []).forEach(ex => {
       if (photos['ex-' + ex.name]) ex.photo = photos['ex-' + ex.name];
     });
   });
