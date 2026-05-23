@@ -111,6 +111,9 @@ function renderHistory() {
         </div>`).join('')
     : '<div style="font-size:13px;color:var(--muted)">Geen bijzondere signalen — alles loopt goed.</div>';
 
+  // ── Energie trend grafiek ──
+  renderEnergyChart();
+
   // ── Dag-voor-dag lijst ──
   const typeColor = { herstel:'#2980b9', normaal:'var(--sage)', zwaar:'var(--accent)' };
   document.getElementById('history-list').innerHTML = history.slice(0,30).map(h => {
@@ -134,6 +137,68 @@ function renderHistory() {
       </div>
     </div>`;
   }).join('');
+}
+
+function renderEnergyChart() {
+  const el = document.getElementById('energy-chart');
+  if (!el) return;
+
+  const data = history
+    .filter(h => h.checkout && h.checkout.energy > 0)
+    .slice(0, 30)
+    .reverse();
+
+  if (data.length < 2) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Minimaal 2 dagen met checkout nodig voor de grafiek.</div>';
+    return;
+  }
+
+  const W = 300, H = 110;
+  const padL = 28, padR = 10, padT = 10, padB = 22;
+  const cW = W - padL - padR;
+  const cH = H - padT - padB;
+  const n = data.length;
+
+  const xPos = i => padL + (n === 1 ? cW / 2 : i * cW / (n - 1));
+  const yPos = v => padT + cH - ((v - 1) / 3) * cH;
+
+  // Grid + y-labels
+  const levels = [
+    { v: 1, emoji: '🪫' },
+    { v: 2, emoji: '😑' },
+    { v: 3, emoji: '⚡' },
+    { v: 4, emoji: '🔥' },
+  ];
+  const grid = levels.map(({ v, emoji }) => `
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${emoji}</text>
+  `).join('');
+
+  // Polyline
+  const pts = data.map((h, i) => `${xPos(i)},${yPos(h.checkout.energy)}`).join(' ');
+
+  // Dots
+  const dotColor = v => v >= 3.5 ? '#4a7c59' : v >= 2.5 ? '#5a7cc8' : v >= 1.5 ? '#f39c12' : '#e74c3c';
+  const dots = data.map((h, i) => {
+    const e = h.checkout.energy;
+    return `<circle cx="${xPos(i)}" cy="${yPos(e)}" r="3.5" fill="${dotColor(e)}" stroke="white" stroke-width="1.2"/>`;
+  }).join('');
+
+  // X-labels: toon max 6 datums
+  const step = Math.max(1, Math.floor(n / 6));
+  const xLabels = data.map((h, i) => {
+    if (i % step !== 0 && i !== n - 1) return '';
+    const d = new Date(h.date);
+    return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${d.getDate()}/${d.getMonth() + 1}</text>`;
+  }).join('');
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      ${grid}
+      <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+      ${xLabels}
+    </svg>`;
 }
 
 function calcBestStreak() {
