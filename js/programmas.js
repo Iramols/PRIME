@@ -113,11 +113,24 @@ function progBouwDagEditor() {
   const dag    = (prog.dagen && prog.dagen[dagIdx]) || { naam: '', oefeningen: [] };
   const oefeningen = dag.oefeningen || [];
 
-  const oefRijen = oefeningen.map((oef, i) => {
-    return '<tr>' +
-      '<td style="padding:4px 6px 4px 0"><input type="text" value="' + (oef.naam || '').replace(/"/g,'&quot;') +
-      '" placeholder="Oefening..." onchange="progOefUpdate(' + i + ',\'naam\',this.value)"' +
-      ' style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
+  const oefRijen = oefeningen.map(function(oef, i) {
+    const isStappen = oef.naam === 'Wandelen' || (oef.stappen !== undefined && oef.stappen !== '');
+    const naamTd = '<td style="padding:4px 6px 4px 0"><input type="text" value="' + (oef.naam || '').replace(/"/g,'&quot;') +
+      '" placeholder="Oefening..." onchange="progOefNaamUpdate(' + i + ',this.value)"' +
+      ' style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>';
+    const deleteTd = '<td style="padding:4px 0 4px 4px;text-align:center">' +
+      '<button onclick="progOefVerwijder(' + i + ')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button>' +
+      '</td>';
+    if (isStappen) {
+      const stappenVal = (oef.stappen || '8000-10000').replace(/"/g,'&quot;');
+      return '<tr>' + naamTd +
+        '<td colspan="3" style="padding:4px 3px"><input type="text" value="' + stappenVal +
+        '" placeholder="bijv. 8000-10000" onchange="progOefUpdate(' + i + ',\'stappen\',this.value)"' +
+        ' style="width:100%;padding:6px 8px;border:1px solid var(--sage-mid);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sage-light);box-sizing:border-box">' +
+        '<div style="font-size:10px;color:var(--sage);margin-top:2px">stappen per dag</div></td>' +
+        deleteTd + '</tr>';
+    }
+    return '<tr>' + naamTd +
       '<td style="padding:4px 3px"><input type="text" value="' + (oef.sets || '').replace(/"/g,'&quot;') +
       '" placeholder="3" onchange="progOefUpdate(' + i + ',\'sets\',this.value)"' +
       ' style="width:44px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
@@ -127,9 +140,7 @@ function progBouwDagEditor() {
       '<td style="padding:4px 3px"><input type="text" value="' + (oef.rust || '').replace(/"/g,'&quot;') +
       '" placeholder="60s" onchange="progOefUpdate(' + i + ',\'rust\',this.value)"' +
       ' style="width:48px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-      '<td style="padding:4px 0 4px 4px;text-align:center">' +
-      '<button onclick="progOefVerwijder(' + i + ')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button>' +
-      '</td></tr>';
+      deleteTd + '</tr>';
   }).join('');
 
   return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">' +
@@ -265,6 +276,17 @@ function progOefUpdate(oefIdx, veld, val) {
   if (oef) { oef[veld] = val; progSlaOp(); }
 }
 
+function progOefNaamUpdate(oefIdx, val) {
+  const prog = progLijst.find(p => p.id === progActiefId);
+  if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
+  const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
+  if (!oef) return;
+  oef.naam = val;
+  if (val === 'Wandelen') { oef.stappen = oef.stappen || '8000-10000'; oef.sets = ''; oef.reps = ''; oef.rust = ''; }
+  progSlaOp();
+  renderProgrammas();
+}
+
 function progToggleBibliotheek() {
   progBibliotheekOpen = !progBibliotheekOpen;
   renderProgrammas();
@@ -280,7 +302,7 @@ function progBouwBibliotheek(huidig) {
         '<div style="font-size:18px;flex-shrink:0;width:26px;text-align:center">' + ex.icon + '</div>' +
         '<div style="flex:1;min-width:0">' +
         '<div style="font-size:13px;font-weight:500;color:var(--charcoal)">' + ex.name + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">' + ex.sets + ' sets \xB7 ' + ex.reps + ' \xB7 rust ' + ex.rest + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">' + (ex.stappen ? ex.stappen : (ex.sets ? ex.sets + ' sets \xB7 ' + ex.reps + (ex.rest ? ' \xB7 rust ' + ex.rest : '') : (ex.reps || ''))) + '</div>' +
         '</div>' +
         '<button onclick="progOefUitBibliotheek(\'' + ex.id + '\')" ' +
         'style="flex-shrink:0;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;' +
@@ -321,9 +343,10 @@ function progOefUitBibliotheek(exId) {
 
   prog.dagen[idx].oefeningen.push({
     naam: gevonden.name,
-    sets: String(gevonden.sets),
-    reps: String(gevonden.reps),
-    rust: gevonden.rest,
+    sets: String(gevonden.sets || ''),
+    reps: String(gevonden.reps || ''),
+    rust: gevonden.rest || '',
+    stappen: gevonden.stappen || '',
     notities: ''
   });
   progSlaOp();

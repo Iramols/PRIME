@@ -276,7 +276,7 @@ function renderTrainingDag() {
       + '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px">'
       + '<div style="flex:1">'
       + '<div style="font-weight:600;font-size:14px;margin-bottom:2px">' + (ex.name || ex.naam || '') + '</div>'
-      + '<div style="font-size:12px;color:var(--muted)">' + (ex.sets||'') + ' sets \xD7 ' + (ex.reps||'') + ' \xB7 Rust: ' + (ex.rest||ex.rust||'') + '</div>'
+      + '<div style="font-size:12px;color:var(--muted)">' + (function(){ var st = ex.stappen; if (!st) { for (var g of EXTRA_EXERCISES) { var f = g.exercises.find(function(e){ return (e.name||e.naam) === (ex.name||ex.naam); }); if (f && f.stappen) { st = f.stappen; break; } } } return st ? st : (ex.sets ? ex.sets + ' sets \xD7 ' + (ex.reps||'') + (ex.rest||ex.rust ? ' \xB7 Rust: ' + (ex.rest||ex.rust) : '') : (ex.reps||'')); })() + '</div>'
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'

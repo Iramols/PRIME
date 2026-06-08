@@ -65,17 +65,34 @@ function wpGetOefeningen(sid) {
   return s ? s.oefeningen : [];
 }
 
+function wpLookupStappen(naam) {
+  for (var gi = 0; gi < EXTRA_EXERCISES.length; gi++) {
+    var exs = EXTRA_EXERCISES[gi].exercises;
+    for (var ei = 0; ei < exs.length; ei++) {
+      if ((exs[ei].name || exs[ei].naam) === naam && exs[ei].stappen) return exs[ei].stappen;
+    }
+  }
+  return '';
+}
+
+function wpOefDetail(o) {
+  var naam = o.naam || o.name || '';
+  var st = o.stappen || wpLookupStappen(naam);
+  if (st) return st;
+  var sets = o.sets || '';
+  var reps = o.reps || '';
+  var rust = o.rust || o.rest || '';
+  return sets ? (sets + '\xD7' + reps + (rust ? ' \xB7 ' + rust : '')) : reps;
+}
+
 function wpBouwOefeningenLijst(oefeningen) {
   if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">Geen oefeningen beschikbaar.</div>';
-  return oefeningen.map(o => {
-    const naam = o.naam || o.name || '';
-    const sets = o.sets || '';
-    const reps = o.reps || '';
-    const rust = o.rust || o.rest || '';
+  return oefeningen.map(function(o) {
+    var naam = o.naam || o.name || '';
+    var detail = wpOefDetail(o);
     return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--sand-dark)">' +
       '<div style="flex:1;font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
-      '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + sets + '\xD7' + reps + '</div>' +
-      (rust ? '<div style="font-size:11px;color:var(--muted);width:52px;text-align:right;white-space:nowrap">' + rust + '</div>' : '') +
+      '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + detail + '</div>' +
       '</div>';
   }).join('');
 }
@@ -105,15 +122,12 @@ function wpBouwOefeningenAfvinken(oefeningen, dateStr) {
   if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">Geen oefeningen beschikbaar.</div>';
   const done = wpGetDone(dateStr);
   return oefeningen.map((o, i) => {
-    const naam   = o.naam || o.name || '';
-    const sets   = o.sets || '';
-    const reps   = o.reps || '';
-    const rust   = o.rust || o.rest || '';
-    const isDone = done.includes(i);
+    var naam   = o.naam || o.name || '';
+    var detail = wpOefDetail(o);
+    var isDone = done.includes(i);
     return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
       '<div style="flex:1;font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
-      '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + sets + '\xD7' + reps + '</div>' +
-      (rust ? '<div style="font-size:11px;color:var(--muted);width:52px;text-align:right;white-space:nowrap">' + rust + '</div>' : '') +
+      '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + detail + '</div>' +
       '<div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="Markeer als gedaan">✓</div>' +
       '</div>';
   }).join('');

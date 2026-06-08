@@ -77,7 +77,7 @@ const TRAINING_SCHEMAS = [
     beschrijving: 'Actief hersteldag. Gericht op mobiliteit, stretching en verbetering van bewegingsbereik.',
     kleur: '#4a7c59',
     oefeningen: [
-      { name:'Wandelen',          icon:'🚶',  sets:1, reps:'20 min', rest:'—',     youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+      { name:'Wandelen',          icon:'🚶',  sets:'', reps:'', rest:'', stappen:'8000-10000 stappen per dag', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
       { name:'Foam rollen',       icon:'🌀',  sets:1, reps:'10 min', rest:'—',     youtube:'https://www.youtube.com/watch?v=eTCo_3sAE2s', photo:'https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
       { name:'Heup openers',      icon:'🧘',  sets:3, reps:'60 sec', rest:'30 sec',youtube:'https://www.youtube.com/watch?v=42sCXjMTsKM', photo:'https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
       { name:'Nek & schouder stretch',icon:'🤸',sets:3,reps:'30 sec',rest:'15 sec',youtube:'https://www.youtube.com/watch?v=4pKly2JojMw', photo:'https://images.pexels.com/photos/3822906/pexels-photo-3822906.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -213,8 +213,7 @@ const EXTRA_EXERCISES = [
     { id:'ex-fpr',  name:'Farm Walk (trap focus)',  icon:'🧳', sets:3, reps:'30m', rest:'90 sec', youtube:'https://www.youtube.com/watch?v=rt17lmnaLSM', photo:'https://images.pexels.com/photos/1552106/pexels-photo-1552106.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   ]},
   { group:'Cardio', icon:'🏃', color:'#4a7c59', exercises:[
-    { id:'ex-wa',   name:'Wandelen',             icon:'🚶', sets:1, reps:'30 min', rest:'—', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    { id:'ex-lo',   name:'Lopen',               icon:'🏃', sets:1, reps:'20 min', rest:'—', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+    { id:'ex-wa',   name:'Wandelen',             icon:'\u{1F6B6}', sets:'', reps:'', rest:'', stappen:'8000-10000 stappen per dag', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/1108101/pexels-photo-1108101.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
     { id:'ex-fi',   name:'Fietsen',             icon:'🚴', sets:1, reps:'30 min', rest:'—', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/100582/pexels-photo-100582.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
     { id:'ex-ri',   name:'Roeien (machine)',     icon:'🚣', sets:1, reps:'20 min', rest:'—', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'https://images.pexels.com/photos/3289711/pexels-photo-3289711.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   ]},
