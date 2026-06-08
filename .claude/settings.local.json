@@ -6,7 +6,16 @@
       "PowerShell(git commit *)",
       "PowerShell(git *)",
       "PowerShell(git push *)",
-      "WebFetch(domain:images.pexels.com)"
+      "WebFetch(domain:images.pexels.com)",
+      "WebSearch",
+      "Bash(date /t)",
+      "Bash(time /t)",
+      "PowerShell(Get-Date *)",
+      "PowerShell([System.Globalization.CultureInfo]::GetCultureInfo\\('nl-NL'\\) | ForEach-Object { \\(Get-Date\\).ToString\\(\"dd MMMM yyyy · HH:mm\", $_\\) })",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }
