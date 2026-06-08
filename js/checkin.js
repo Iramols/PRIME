@@ -1,6 +1,28 @@
 ﻿// ========== CHECK-IN ==========
+function onWeightInput(input) {
+  const val = parseFloat(input.value);
+  checkin.weight = (val > 0) ? val : null;
+  const card = document.getElementById('cq-weight-card');
+  card.classList.remove('cq-weight-card-skipped');
+  const skipBtn = card.querySelector('.cq-skip-btn');
+  skipBtn.textContent = 'Sla over';
+  skipBtn.classList.remove('skipped');
+}
+
+function skipWeight() {
+  checkin.weight = null;
+  document.getElementById('weight-input').value = '';
+  const card = document.getElementById('cq-weight-card');
+  card.classList.add('cq-weight-card-skipped');
+  const skipBtn = card.querySelector('.cq-skip-btn');
+  skipBtn.textContent = 'Overgeslagen ✓';
+  skipBtn.classList.add('skipped');
+}
+
 function pick(key, val, btn) {
-  btn.closest('.emoji-scale').querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  const container = btn.closest('.cq-options') || btn.closest('.emoji-scale');
+  const btnSel = btn.classList.contains('cq-btn') ? '.cq-btn' : '.emoji-btn';
+  container.querySelectorAll(btnSel).forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   checkin[key] = val;
   const ready = checkin.sleep > 0 && checkin.energy > 0 && checkin.stress > 0;
@@ -8,7 +30,9 @@ function pick(key, val, btn) {
 }
 
 function pickOut(key, val, btn) {
-  btn.closest('.emoji-scale').querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  const container = btn.closest('.cq-options') || btn.closest('.emoji-scale');
+  const btnSel = btn.classList.contains('cq-btn') ? '.cq-btn' : '.emoji-btn';
+  container.querySelectorAll(btnSel).forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   checkout[key] = val;
   checkCheckoutReady();
@@ -41,26 +65,30 @@ function buildTrainingSummary() {
         .filter(function(ex) { return selectedSchemaItems[activeSchemaId + '-' + ex._idx] !== false; })
     : [];
 
-  const exs = (trainingType && EXERCISES[trainingType]) ? EXERCISES[trainingType] : [];
-  if (exs.length > 0 && Object.keys(selectedSchemaEx).length === 0) initSchemaEx();
-  const schemaItems = exs.map(function(ex, i) {
-    if (selectedSchemaEx[trainingType+'-'+i] === false) return null;
-    return Object.assign({}, getActiveEx(i), {id:'schema-'+i});
-  }).filter(Boolean);
+  // Weekplanning oefeningen voor vandaag
+  const _btsToday = new Date().toISOString().split('T')[0];
+  const _btsWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _btsToday) || null;
+  const _btsWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_btsToday] || [];
+  const _btsWpOef = _btsWpEntry ? wpGetOefeningen(_btsWpEntry.schemaId) : [];
+  const wpItems = _btsWpOef.map(function(ex, i) {
+    return { id: 'wp-' + i, name: ex.naam || ex.name || ('Oefening ' + (i+1)) };
+  });
 
-  const allItems = schemaTabItems.concat(schemaItems).concat(trainingDagLog);
+  const allItems = schemaTabItems.concat(wpItems).concat(trainingDagLog);
   const total = allItems.length;
 
-  // Tel afgevinkte: dagDone voor schema-tab en losse, exerciseDone voor aanbevolen
+  // Tel afgevinkte: dagDone voor schema-tab en losse, prime_wp_done voor weekplanning
   let done = 0;
   allItems.forEach(function(ex) {
-    const slotIdx = ex.id.startsWith('schema-') && !ex.id.startsWith('schema-tab') ? parseInt(ex.id.replace('schema-','')) : -1;
-    const isDone = dagDone[ex.id] || (slotIdx >= 0 && exerciseDone.includes(slotIdx));
+    let isDone = dagDone[ex.id];
+    if (!isDone && ex.id.startsWith('wp-')) {
+      isDone = _btsWpDoneArr.includes(parseInt(ex.id.replace('wp-', '')));
+    }
     if (isDone) done++;
   });
 
   const pct = total > 0 ? Math.round(done / total * 100) : 0;
-  const typeLabel = trainingType === 'herstel' ? 'Hersteldag' : trainingType === 'normaal' ? 'Normale training' : 'Zware training';
+  const typeLabel = _btsWpEntry ? wpGetDisplay(_btsWpEntry.schemaId).naam : 'Geen training';
 
   let status, statusIcon, coachQuestion, confirmOptions;
 
@@ -98,8 +126,10 @@ function buildTrainingSummary() {
   // Render tags
   let doneTags = '';
   allItems.forEach(function(ex) {
-    const slotIdx = ex.id.startsWith('schema-') && !ex.id.startsWith('schema-tab') ? parseInt(ex.id.replace('schema-','')) : -1;
-    const isDone = dagDone[ex.id] || (slotIdx >= 0 && exerciseDone.includes(slotIdx));
+    let isDone = dagDone[ex.id];
+    if (!isDone && ex.id.startsWith('wp-')) {
+      isDone = _btsWpDoneArr.includes(parseInt(ex.id.replace('wp-', '')));
+    }
     doneTags += isDone
       ? '<span class="done-tag">✓ ' + ex.name + '</span>'
       : '<span class="skipped-tag">' + ex.name + '</span>';
@@ -268,6 +298,12 @@ async function doCheckin() {
   const typeLabel = { herstel:'Hersteldag', normaal:'Normale training', zwaar:'Zware training' }[trainingType];
   const mealData = MEALS[trainingType];
 
+  // Gewicht opslaan in profiel als ingevuld
+  if (checkin.weight && checkin.weight > 0) {
+    profile.weight = checkin.weight;
+    localStorage.setItem('prime_profile', JSON.stringify(profile));
+  }
+
   // Save today
   const today = new Date().toISOString().split('T')[0];
   todayData = { date: today, checkin, trainingType, checkout: null };
@@ -291,10 +327,17 @@ async function doCheckin() {
   buildTrainingSummary();
   buildFoodSummary();
 
-  // Set training preview
-  const exercises = EXERCISES[trainingType];
-  document.getElementById('home-training-badge').innerHTML = badgeHTML(trainingType);
-  document.getElementById('home-training-preview').innerHTML = exercises.slice(0,3).map(e => `${e.icon} ${e.name}`).join(' &nbsp;·&nbsp; ') + (exercises.length > 3 ? ` &nbsp;+${exercises.length-3} meer` : '');
+  // Set training preview from weekplanning
+  const _wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
+  if (_wpEntry) {
+    const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
+    document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + _wpDisp.naam + '</div>';
+    const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
+    document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => o.naam || o.name).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + ' meer' : '');
+  } else {
+    document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">Geen training geselecteerd</div>';
+    document.getElementById('home-training-preview').innerHTML = 'Geen training ingepland voor vandaag.';
+  }
 
   // Render training & food screens
   renderTraining();
@@ -303,16 +346,17 @@ async function doCheckin() {
   const sl = ['','Slecht','Matig','Goed','Uitstekend'][checkin.sleep];
   const en = ['','Laag','Gemiddeld','Hoog','Zeer hoog'][checkin.energy];
   const st = ['','Veel','Redelijk','Weinig','Geen'][checkin.stress];
-  const prompt = `Cliënt check-in: Slaap=${sl}, Energie=${en}, Stress=${st}. Trainingstype vandaag: ${typeLabel}. Geef een persoonlijk, motiverend bericht van max 60 woorden in jouw directe stijl. Geen opsomming.`;
+  const _trainLabel = _wpEntry ? wpGetDisplay(_wpEntry.schemaId).naam : 'Geen training';
+  const prompt = `Cliënt check-in: Slaap=${sl}, Energie=${en}, Stress=${st}. Training vandaag: ${_trainLabel}. Geef een persoonlijk, motiverend bericht van max 60 woorden in jouw directe stijl. Geen opsomming.`;
 
   try {
     const r = await callClaude(prompt, []);
     document.getElementById('coach-msg-text').textContent = r;
     document.getElementById('coach-message-home').style.display = 'block';
-    document.getElementById('day-title').textContent = typeLabel + ' staat klaar ✓';
+    document.getElementById('day-title').textContent = _trainLabel + ' staat klaar ✓';
     document.getElementById('day-summary').textContent = 'Coach Ira heeft je dag afgestemd op jouw check-in.';
   } catch {
-    document.getElementById('day-title').textContent = typeLabel + ' staat klaar ✓';
+    document.getElementById('day-title').textContent = _trainLabel + ' staat klaar ✓';
     document.getElementById('day-summary').textContent = 'Je training en voeding zijn afgestemd op hoe je je vandaag voelt.';
   }
 }
@@ -331,43 +375,43 @@ async function doCheckout() {
     localStorage.removeItem('prime_today');
   }
 
-  const total = EXERCISES[trainingType].length;
-  const done = exerciseDone.length;
-  const doel = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
+  // Weekplanning context voor vandaag
+  const _coToday = new Date().toISOString().split('T')[0];
+  const _coWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coToday) || null;
+  const _coWpOef = _coWpEntry ? (wpGetOefeningen(_coWpEntry.schemaId) || []) : [];
+  const _coWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_coToday] || [];
+  const _coWpNaam = _coWpEntry ? wpGetDisplay(_coWpEntry.schemaId).naam : 'Geen training';
+  const total = _coWpOef.length;
+  const done = _coWpDoneArr.length;
+
+  const doel = { kcal:2000, prot:150, carb:200, fat:65 };
   const totFood = dayLog.reduce((a,i) => ({ kcal:a.kcal+i.kcal, prot:a.prot+i.prot, carb:a.carb+i.carb, fat:a.fat+i.fat }), { kcal:0, prot:0, carb:0, fat:0 });
 
   const energyLabel = ['','Laag','Gemiddeld','Hoog','Zeer hoog'][checkout.energy];
-  const trainingLabel = checkout.training === 3 ? `Volledig (${done}/${total} oefeningen)` :
-                        checkout.training === 2 ? `Gedeeltelijk (${done}/${total} oefeningen)` : 'Niet gedaan';
-  const foodLabel = checkout.food === 3 ? `Op doel (${Math.round(totFood.kcal)} kcal)` :
-                    checkout.food === 4 ? `Teveel gegeten (${Math.round(totFood.kcal)} kcal, doel ${doel.kcal})` :
-                    checkout.food === 2 ? `Iets onder doel (${Math.round(totFood.kcal)} kcal)` :
-                    `Te weinig / niet gevolgd (${Math.round(totFood.kcal)} kcal)`;
+  const trainingLabel = checkout.training === 3 ? 'Volledig (' + done + '/' + total + ' oefeningen)' :
+                        checkout.training === 2 ? 'Gedeeltelijk (' + done + '/' + total + ' oefeningen)' : 'Niet gedaan';
+  const foodLabel = checkout.food === 3 ? 'Op doel (' + Math.round(totFood.kcal) + ' kcal)' :
+                    checkout.food === 4 ? 'Teveel gegeten (' + Math.round(totFood.kcal) + ' kcal)' :
+                    checkout.food === 2 ? 'Iets onder doel (' + Math.round(totFood.kcal) + ' kcal)' :
+                    'Te weinig / niet gevolgd (' + Math.round(totFood.kcal) + ' kcal)';
 
-  const context = `
-Cliënt checkout data vandaag:
-- Trainingstype: ${trainingType} (${trainingLabel})
-- Voeding: ${foodLabel} — eiwit ${Math.round(totFood.prot)}g van doel ${doel.prot}g
-- Energie: ${energyLabel}
-- Calorie doel was: ${doel.kcal} kcal`;
+  // Weekplanning morgen
+  const _coMorgen = new Date(); _coMorgen.setDate(_coMorgen.getDate() + 1);
+  const _coMorgenStr = _coMorgen.toISOString().split('T')[0];
+  const _coMorgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coMorgenStr) || null;
+  const _coMorgenNaam = _coMorgenWpEntry ? wpGetDisplay(_coMorgenWpEntry.schemaId).naam : null;
+
+  const context = 'Cliënt checkout data vandaag:'
+    + '\n- Training: ' + _coWpNaam + ' — ' + trainingLabel
+    + '\n- Voeding: ' + foodLabel + ' — eiwit ' + Math.round(totFood.prot) + 'g'
+    + '\n- Energie einde dag: ' + energyLabel
+    + (_coMorgenNaam ? '\n- Morgen ingepland: ' + _coMorgenNaam : '\n- Morgen: geen training ingepland');
 
   // Prompt 1: afsluitend bericht
-  const promptAfsluiting = `${context}
-
-Geef een warm, direct afsluitend bericht van max 50 woorden in de stijl van coach Ira. Benoem concreet wat goed ging. Geen opsomming.`;
+  const promptAfsluiting = context + '\n\nGeef een warm, direct afsluitend bericht van max 50 woorden in de stijl van coach Ira. Benoem concreet wat goed ging. Geen opsomming.';
 
   // Prompt 2: advies voor morgen — gestructureerd
-  const promptMorgen = `${context}
-
-Geef een concreet advies voor morgen. Gebruik EXACT dit format, elke regel apart:
-
-TRAININGSTYPE: [herstel of normaal of zwaar] - [reden in max 6 woorden]
-TRAINING: [2-3 concrete oefeningen of activiteiten voor morgen]
-VOEDING: [voedingsrichting voor morgen in max 15 woorden]
-SLAAP: [één concrete slaapdoelstelling]
-TIP: [één motiverende tip in max 12 woorden]
-
-Gebruik geen extra tekst buiten dit format.`;
+  const promptMorgen = context + '\n\nGeef een concreet advies voor morgen. Gebruik EXACT dit format, elke regel apart:\n\nTRAINING: [concrete notities of aandachtspunten voor de geplande training morgen]\nVOEDING: [voedingsrichting voor morgen in max 15 woorden]\nSLAAP: [één concrete slaapdoelstelling]\nTIP: [één motiverende tip in max 12 woorden]\n\nGebruik geen extra tekst buiten dit format.';
 
   btn.textContent = '🌙 Dag afgerond!';
   btn.style.background = 'var(--sage)';
@@ -423,91 +467,92 @@ Gebruik geen extra tekst buiten dit format.`;
 }
 
 function renderTomorrowAdvice(text) {
-  const lines = text.split('\n').filter(l => l.trim());
+  const lines = text.split('\n').filter(function(l) { return l.trim(); });
   const parsed = {};
-  lines.forEach(line => {
-    const match = line.match(/^(TRAININGSTYPE|TRAINING|VOEDING|SLAAP|TIP):\s*(.+)$/);
+  lines.forEach(function(line) {
+    const match = line.match(/^(TRAINING|VOEDING|SLAAP|TIP):\s*(.+)$/);
     if (match) parsed[match[1]] = match[2].trim();
   });
 
-  const typeMap = {
-    'herstel': { label:'Hersteldag', cls:'badge-light', icon:'🌊' },
-    'normaal': { label:'Normale training', cls:'badge-normal', icon:'💪' },
-    'zwaar': { label:'Zware training', cls:'badge-heavy', icon:'🔥' },
-  };
-
-  // Bepaal trainingstype voor morgen uit tekst
-  let morgenType = 'normaal';
-  if (parsed.TRAININGSTYPE) {
-    const t = parsed.TRAININGSTYPE.toLowerCase();
-    if (t.startsWith('herstel')) morgenType = 'herstel';
-    else if (t.startsWith('zwaar')) morgenType = 'zwaar';
-  }
-  const typeInfo = typeMap[morgenType];
+  // Weekplanning voor morgen
+  const morgenDate = new Date(); morgenDate.setDate(morgenDate.getDate() + 1);
+  const morgenStr = morgenDate.toISOString().split('T')[0];
+  const morgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === morgenStr; }) || null;
+  const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
+  const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
 
   const sections = [
-    { key:'TRAINING', icon:'🏋️', label:'Training' },
-    { key:'VOEDING', icon:'🥗', label:'Voeding' },
-    { key:'SLAAP', icon:'😴', label:'Slaap' },
-    { key:'TIP', icon:'💡', label:'Tip van de coach' },
+    { key:'TRAINING', icon:'\u{1F3CB}', label:'Training notities' },
+    { key:'VOEDING',  icon:'\u{1F957}', label:'Voeding' },
+    { key:'SLAAP',    icon:'\u{1F634}', label:'Slaap' },
+    { key:'TIP',      icon:'\u{1F4A1}', label:'Tip van de coach' },
   ];
 
-  document.getElementById('tomorrow-content').innerHTML = `
-    <div style="margin-bottom:16px">
-      <div class="training-type-badge ${typeInfo.cls}" style="display:inline-flex">
-        ${typeInfo.icon} ${parsed.TRAININGSTYPE || typeInfo.label}
-      </div>
-    </div>
-    ${sections.map(s => parsed[s.key] ? `
-      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
-        <div style="width:32px;height:32px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${s.icon}</div>
-        <div>
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${s.label}</div>
-          <div style="font-size:14px;line-height:1.6;color:var(--charcoal)">${parsed[s.key]}</div>
-        </div>
-      </div>` : '').join('')}
-    <div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">
-      <div style="font-size:12px;font-weight:600;color:var(--sage);margin-bottom:4px">Vergeet niet</div>
-      <div style="font-size:13px;color:#3d6649">Check morgenochtend je check-in — de app stelt je dag opnieuw in op basis van hoe je je voelt.</div>
-    </div>`;
+  let badgeHtml = '';
+  if (morgenDisp) {
+    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-normal" style="display:inline-flex">'
+      + morgenDisp.icon + ' ' + morgenDisp.naam + '</div>'
+      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return o.naam||o.name||''; }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + ' meer' : '') + '</div>' : '')
+      + '</div>';
+  } else {
+    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">Geen training gepland voor morgen</div></div>';
+  }
+
+  let sectionsHtml = sections.map(function(s) {
+    if (!parsed[s.key]) return '';
+    return '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">'
+      + '<div style="width:32px;height:32px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">' + s.icon + '</div>'
+      + '<div>'
+      + '<div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">' + s.label + '</div>'
+      + '<div style="font-size:14px;line-height:1.6;color:var(--charcoal)">' + parsed[s.key] + '</div>'
+      + '</div></div>';
+  }).join('');
+
+  document.getElementById('tomorrow-content').innerHTML = badgeHtml + sectionsHtml
+    + '<div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">'
+    + '<div style="font-size:12px;font-weight:600;color:var(--sage);margin-bottom:4px">Vergeet niet</div>'
+    + '<div style="font-size:13px;color:#3d6649">Check morgenochtend je check-in om je dag te starten.</div>'
+    + '</div>';
 }
 
 function renderTomorrowFallback() {
-  // Bepaal morgen trainingstype op basis van vandaag
-  const morgenType = checkout.training === 3 && checkout.energy >= 3 ? 'normaal' :
-                     checkout.training <= 1 || checkout.energy <= 1 ? 'herstel' : 'normaal';
-  const typeMap = {
-    'herstel': { label:'Hersteldag', cls:'badge-light', icon:'🌊' },
-    'normaal': { label:'Normale training', cls:'badge-normal', icon:'💪' },
-    'zwaar':   { label:'Zware training', cls:'badge-heavy', icon:'🔥' },
-  };
-  const typeInfo = typeMap[morgenType];
-  const morgenOef = EXERCISES[morgenType].slice(0,3).map(e => e.name).join(', ');
-  const morgenKcal = MEALS[morgenType].doel.kcal;
-  const morgenProt = MEALS[morgenType].doel.prot;
+  const morgenDate = new Date(); morgenDate.setDate(morgenDate.getDate() + 1);
+  const morgenStr = morgenDate.toISOString().split('T')[0];
+  const morgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === morgenStr; }) || null;
+  const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
+  const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
 
-  document.getElementById('tomorrow-content').innerHTML = `
-    <div style="margin-bottom:16px">
-      <div class="training-type-badge ${typeInfo.cls}" style="display:inline-flex">
-        ${typeInfo.icon} ${typeInfo.label}
-      </div>
-    </div>
-    ${[
-      { icon:'🏋️', label:'Training', text: morgenOef },
-      { icon:'🥗', label:'Voeding', text: `Doel: ${morgenKcal} kcal · ${morgenProt}g eiwit` },
-      { icon:'😴', label:'Slaap', text: 'Op tijd naar bed — doel 7-8 uur slaap' },
-      { icon:'💡', label:'Tip van de coach', text: checkout.training < 3 ? 'Kleine stappen tellen ook. Morgen weer een kans.' : 'Consistentie boven intensiteit — blijf gaan.' },
-    ].map(s => `
-      <div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">
-        <div style="width:32px;height:32px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${s.icon}</div>
-        <div>
-          <div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${s.label}</div>
-          <div style="font-size:14px;line-height:1.6;color:var(--charcoal)">${s.text}</div>
-        </div>
-      </div>`).join('')}
-    <div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">
-      <div style="font-size:13px;color:#3d6649">Check morgenochtend je check-in — de app stelt je dag opnieuw in op basis van hoe je je voelt.</div>
-    </div>`;
+  const tip = checkout.training < 3 ? 'Kleine stappen tellen ook. Morgen weer een kans.' : 'Consistentie boven intensiteit — blijf gaan.';
+
+  let badgeHtml = '';
+  if (morgenDisp) {
+    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-normal" style="display:inline-flex">'
+      + morgenDisp.icon + ' ' + morgenDisp.naam + '</div>'
+      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return o.naam||o.name||''; }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + ' meer' : '') + '</div>' : '')
+      + '</div>';
+  } else {
+    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">Geen training gepland voor morgen</div></div>';
+  }
+
+  const items = [
+    { icon:'\u{1F957}', label:'Voeding', text:'Zorg voor voldoende eiwitten en blijf gehydrateerd' },
+    { icon:'\u{1F634}', label:'Slaap', text:'Op tijd naar bed — doel 7-8 uur slaap' },
+    { icon:'\u{1F4A1}', label:'Tip van de coach', text: tip },
+  ];
+
+  const sectionsHtml = items.map(function(s) {
+    return '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">'
+      + '<div style="width:32px;height:32px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">' + s.icon + '</div>'
+      + '<div>'
+      + '<div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">' + s.label + '</div>'
+      + '<div style="font-size:14px;line-height:1.6;color:var(--charcoal)">' + s.text + '</div>'
+      + '</div></div>';
+  }).join('');
+
+  document.getElementById('tomorrow-content').innerHTML = badgeHtml + sectionsHtml
+    + '<div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">'
+    + '<div style="font-size:13px;color:#3d6649">Check morgenochtend je check-in om je dag te starten.</div>'
+    + '</div>';
 }
 function badgeHTML(type) {
   const cfg = {

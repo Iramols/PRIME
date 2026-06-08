@@ -10,15 +10,17 @@
 
 function switchTrainingTab(tab) {
   activeTrainingTab = tab;
-  ['schema','schemas','oefeningen','dag'].forEach(t => {
+  ['schemas','programmas','weekplanning','oefeningen','dag'].forEach(t => {
     const btn = document.getElementById(`ttab-${t}`);
     const content = document.getElementById(`ttab-content-${t}`);
     if (btn) btn.classList.toggle('active', t === tab);
     if (content) content.style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'schemas') renderSchemas();
+  if (tab === 'programmas') renderProgrammas();
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'dag') renderTrainingDag();
+  if (tab === 'weekplanning') renderWeekplanning();
 }
 
 function renderSchemas() {
@@ -41,7 +43,6 @@ function renderSchemas() {
             <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📊 ${schema.level}</span>
             <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">🎯 ${schema.doel}</span>
             <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">⏱ ${schema.duur}</span>
-            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📅 ${schema.freq}</span>
           </div>
         </div>
       </div>
@@ -176,21 +177,30 @@ function toggleExtraDag(exId) {
 function updateTrainingDagBadge() {
   const tab = document.getElementById('ttab-dag');
   if (!tab) return;
-  const exs = trainingType ? EXERCISES[trainingType] : [];
-  const schemaCount = exs.filter((_, i) => selectedSchemaEx[`${trainingType}-${i}`] !== false).length;
   const activeSchema = activeSchemaId ? TRAINING_SCHEMAS.find(s => s.id === activeSchemaId) : null;
   const schemaTabCount = activeSchema ? activeSchema.oefeningen.length : 0;
-  const count = schemaTabCount + schemaCount + trainingDagLog.length;
-  tab.textContent = count > 0 ? `Mijn dag (${count})` : 'Mijn dag';
+  const today = new Date().toISOString().split('T')[0];
+  const wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
+  const wpCount = wpEntry ? (wpGetOefeningen(wpEntry.schemaId) || []).length : 0;
+  const count = schemaTabCount + wpCount + trainingDagLog.length;
+  tab.textContent = count > 0 ? 'Mijn dag (' + count + ')' : 'Mijn dag';
 }
 
 function toggleDagDone(id) {
   dagDone[id] = !dagDone[id];
-  const check = document.getElementById(`dag-check-${id}`);
-  if (check) {
-    check.classList.toggle('done', dagDone[id]);
-  }
-  // Update voortgangsteller
+  const check = document.getElementById('dag-check-' + id);
+  if (check) check.classList.toggle('done', dagDone[id]);
+  updateDagProgress();
+}
+
+function toggleWpMijnDag(dateStr, idx) {
+  // Update prime_wp_done (syncs met weekplanning overzicht)
+  wpToggleOefDone(dateStr, idx);
+  // Spiegel in dagDone zodat voortgangsbalk klopt
+  const done = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[dateStr] || [];
+  dagDone['wp-dag-' + idx] = done.includes(idx);
+  const check = document.getElementById('dag-check-wp-dag-' + idx);
+  if (check) check.classList.toggle('done', dagDone['wp-dag-' + idx]);
   updateDagProgress();
 }
 
@@ -218,6 +228,13 @@ function renderTrainingDag() {
   } catch(e) {}
   activeSchemaId = sessionStorage.getItem('prime_active_schema') || null;
 
+  // Weekplanning oefeningen voor vandaag
+  const _dagToday = new Date().toISOString().split('T')[0];
+  const _dagWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _dagToday) || null;
+  const _dagWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_dagToday] || [];
+  const _dagWpOef = _dagWpEntry ? (wpGetOefeningen(_dagWpEntry.schemaId) || []) : [];
+  const _dagWpDisp = _dagWpEntry ? wpGetDisplay(_dagWpEntry.schemaId) : null;
+
   // Bouw items op — filter op selectedSchemaItems
   const activeSchema = activeSchemaId ? TRAINING_SCHEMAS.find(s => s.id === activeSchemaId) : null;
   const schemaTabItems = activeSchema ? activeSchema.oefeningen.map(function(ex, i) {
@@ -226,15 +243,7 @@ function renderTrainingDag() {
     return selectedSchemaItems[activeSchemaId + '-' + ex._idx] !== false;
   }) : [];
 
-  const exs = (trainingType && EXERCISES[trainingType]) ? EXERCISES[trainingType] : [];
-  if (exs.length > 0 && Object.keys(selectedSchemaEx).length === 0) initSchemaEx();
-  const schemaItems = exs.map(function(ex, i) {
-    if (selectedSchemaEx[trainingType + '-' + i] === false) return null;
-    const active = getActiveEx(i);
-    return Object.assign({}, active, { id: 'schema-' + i, groep: 'Aanbevolen schema' });
-  }).filter(Boolean);
-
-  const totalItems = schemaTabItems.length + schemaItems.length + trainingDagLog.length;
+  const totalItems = schemaTabItems.length + _dagWpOef.length + trainingDagLog.length;
 
   if (totalItems === 0) {
     emptyEl.style.display = 'block';
@@ -248,26 +257,30 @@ function renderTrainingDag() {
   totalEl.style.display = 'block';
   if (progWrap) progWrap.style.display = 'block';
 
-  // Init dagDone
+  // Init dagDone voor schema-tab en losse oefeningen
   schemaTabItems.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
-  schemaItems.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
   trainingDagLog.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
+  // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done)
+  _dagWpOef.forEach(function(_, i) {
+    dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(i);
+  });
 
-  function exCard(ex, onRemove) {
+  function exCard(ex, onRemove, isDoneOverride, checkClickOverride) {
+    const isDone = isDoneOverride !== undefined ? isDoneOverride : dagDone[ex.id];
+    const checkClick = checkClickOverride || "toggleDagDone('" + ex.id + "')";
     const photoDiv = ex.photo
       ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(' + ex.photo + ');background-size:cover;background-position:center"></div>'
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
-    const isDone = dagDone[ex.id] ? 'done' : '';
     return '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
       + photoDiv
       + '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px">'
       + '<div style="flex:1">'
-      + '<div style="font-weight:600;font-size:14px;margin-bottom:2px">' + ex.name + '</div>'
-      + '<div style="font-size:12px;color:var(--muted)">' + ex.sets + ' sets × ' + ex.reps + ' · Rust: ' + ex.rest + '</div>'
+      + '<div style="font-weight:600;font-size:14px;margin-bottom:2px">' + (ex.name || ex.naam || '') + '</div>'
+      + '<div style="font-size:12px;color:var(--muted)">' + (ex.sets||'') + ' sets \xD7 ' + (ex.reps||'') + ' \xB7 Rust: ' + (ex.rest||ex.rust||'') + '</div>'
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-      + '<div id="dag-check-' + ex.id + '" class="exercise-check ' + isDone + '" onclick="toggleDagDone(\'' + ex.id + '\')" title="Markeer als gedaan">✓</div>'
+      + '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="Markeer als gedaan">✓</div>'
       + onRemove
       + '</div>'
       + '</div></div>';
@@ -275,22 +288,22 @@ function renderTrainingDag() {
 
   let html = '';
 
+  // Weekplanning oefeningen
+  if (_dagWpOef.length > 0) {
+    const wpLabel = _dagWpDisp ? (_dagWpDisp.icon + ' ' + _dagWpDisp.naam) : 'Weekplanning';
+    html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
+    _dagWpOef.forEach(function(oef, i) {
+      const norm = { id: 'wp-dag-' + i, name: oef.naam || oef.name || ('Oefening ' + (i+1)), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '' };
+      html += exCard(norm, '', _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")");
+    });
+    html += '</div>';
+  }
+
   // Schema's tab
   if (schemaTabItems.length > 0) {
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">📋 ' + activeSchema.name + '</div>';
     schemaTabItems.forEach(function(ex) {
       html += exCard(ex, '<button onclick="deselectSchema();renderTrainingDag();" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>');
-    });
-    html += '</div>';
-  }
-
-  // Aanbevolen schema
-  if (schemaItems.length > 0) {
-    const typeLabel = {herstel:'Hersteldag',normaal:'Krachttraining',zwaar:'Zware krachttraining'}[trainingType] || '';
-    html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">⭐ Aanbevolen — ' + typeLabel + '</div>';
-    schemaItems.forEach(function(ex, i) {
-      const slotIdx = parseInt(ex.id.replace('schema-',''));
-      html += exCard(ex, '<button onclick="toggleSchemaEx(' + slotIdx + ');renderTrainingDag();" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>');
     });
     html += '</div>';
   }
@@ -317,12 +330,12 @@ function renderTrainingDag() {
   listEl.innerHTML = html;
   updateDagProgress();
 
-  const totalSets = schemaTabItems.reduce(function(a,e){ return a + Number(e.sets); }, 0)
-    + schemaItems.reduce(function(a,e){ return a + Number(e.sets); }, 0)
-    + trainingDagLog.reduce(function(a,e){ return a + Number(e.sets); }, 0);
+  const totalSets = schemaTabItems.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
+    + _dagWpOef.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
+    + trainingDagLog.reduce(function(a,e){ return a + Number(e.sets||0); }, 0);
   totalEl.innerHTML = '<div class="card" style="background:var(--sage-light);border-color:var(--sage-mid);margin-top:4px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">📋 Totaaloverzicht</div>'
-    + '<div style="font-size:13px;color:var(--charcoal)">' + totalItems + ' oefeningen · ' + totalSets + ' sets totaal</div>'
+    + '<div style="font-size:13px;color:var(--charcoal)">' + totalItems + ' oefeningen \xB7 ' + totalSets + ' sets totaal</div>'
     + '</div>';
 }
 
@@ -368,8 +381,11 @@ function toggleSchemaEx(i) {
 }
 
 function renderTraining() {
-  document.getElementById('no-checkin-msg').style.display = 'none';
-  document.getElementById('training-content').style.display = 'block';
+  const noMsg = document.getElementById('no-checkin-msg');
+  const content = document.getElementById('training-content');
+  if (!noMsg || !content) return;
+  noMsg.style.display = 'none';
+  content.style.display = 'block';
   document.getElementById('training-screen-title').textContent = {
     herstel:'Hersteldag', normaal:'Krachttraining', zwaar:'Zware krachttraining'
   }[trainingType];

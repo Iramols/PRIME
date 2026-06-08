@@ -6,6 +6,7 @@ function go(screen) {
     b.classList.toggle('active', ['home','training','voeding','coach','history','beheer'][i] === screen);
   });
   if (screen === 'history') renderHistory();
+  if (screen === 'training') switchTrainingTab('dag');
   if (screen === 'beheer') { switchBeheerTab('training'); }
   if (screen === 'voeding') {
     var basisTab = document.getElementById('foodtab-basis');
@@ -36,10 +37,18 @@ function init() {
     checkin = todayData.checkin;
     document.getElementById('checkin-section').style.display = 'none';
     document.getElementById('day-section').style.display = 'block';
-    document.getElementById('day-title').textContent = { herstel:'Hersteldag', normaal:'Normale training', zwaar:'Zware training' }[trainingType] + ' staat klaar ✓';
-    document.getElementById('home-training-badge').innerHTML = badgeHTML(trainingType);
-    const exercises = EXERCISES[trainingType];
-    document.getElementById('home-training-preview').innerHTML = exercises.slice(0,3).map(e => `${e.icon} ${e.name}`).join(' &nbsp;·&nbsp; ');
+    const _wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
+    if (_wpEntry) {
+      const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
+      document.getElementById('day-title').textContent = _wpDisp.naam + ' staat klaar ✓';
+      document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + _wpDisp.naam + '</div>';
+      const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
+      document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => o.naam || o.name).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + ' meer' : '');
+    } else {
+      document.getElementById('day-title').textContent = 'Geen training geselecteerd';
+      document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">Geen training geselecteerd</div>';
+      document.getElementById('home-training-preview').innerHTML = 'Geen training ingepland voor vandaag.';
+    }
     renderTraining();
     renderFood();
     buildTrainingSummary();
