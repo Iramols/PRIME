@@ -571,3 +571,80 @@ const PRODUCTS = [
   { id:'o8', name:'Kokosolie', icon:'🥥', cat:'overig', kcal:862, prot:0, carb:0, fat:100, photo:'https://images.pexels.com/photos/725998/pexels-photo-725998.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
 ];
 
+// ========== INGEBOUWDE PROGRAMMA'S ==========
+const BUILTIN_PROGRAMMAS = [
+  {
+    id: 'builtin-ira',
+    naam: 'Basisprogramma Ira',
+    builtin: true,
+    dagen: {
+      0: { naam: 'Maandag', oefeningen: [
+        { naam: 'Squats', sets: '4', reps: '20', rust: '120s' },
+        { naam: 'Plank 1 min', sets: '1', reps: '1', rust: '120s' },
+        { naam: 'Optrekken Pull up', sets: '4', reps: '10', rust: '120s' },
+        { naam: 'Handtrainer', sets: '3', reps: '25', rust: '120s' },
+        { naam: 'Wandelen', sets: '', reps: '', rust: '' }
+      ]},
+      1: { naam: 'Dinsdag', oefeningen: [
+        { naam: 'Bench Press', sets: '2', reps: '8-12', rust: '120 sec' },
+        { naam: 'Dumbbell Shoulder Press', sets: '1', reps: '10-12', rust: '120 sec' },
+        { naam: 'Shoulder Bench Press', sets: '1', reps: '8-10', rust: '120 sec' },
+        { naam: 'Dumbbell Fly', sets: '1', reps: '12-15', rust: '120 sec' },
+        { naam: 'Concentration Curl', sets: '1', reps: '12/arm', rust: '120 sec' },
+        { naam: 'Cable Upright Row', sets: '1', reps: '12-15', rust: '120 sec' },
+        { naam: 'Dips 1 (bank)', sets: '1', reps: '25-30', rust: '120 sec' },
+        { naam: 'Dips 2 (parallel bars)', sets: '1', reps: '15-20', rust: '120 sec' },
+        { naam: 'Wandelen', sets: '1', reps: '30 min', rust: '—' },
+        { naam: 'Plank', sets: '1', reps: '1', rust: '120 sec' }
+      ]},
+      2: { naam: 'Woensdag', oefeningen: [
+        { naam: 'Ab Wheel', sets: '1', reps: '50', rust: '120 sec' },
+        { naam: 'Serie abs exercises', sets: '1', reps: 'circuit', rust: '120 sec' },
+        { naam: 'Dumbbell Squat', sets: '1', reps: '20', rust: '120 sec' },
+        { naam: 'Dumbbell Lunges', sets: '1', reps: '20', rust: '120 sec' },
+        { naam: 'Kettlebell Swing', sets: '1', reps: '30', rust: '120 sec' },
+        { naam: 'Chin-up', sets: '4', reps: '6-10', rust: '120 sec' },
+        { naam: 'Handtrainer', sets: '3', reps: '25/hand', rust: '120 sec' },
+        { naam: 'Plank', sets: '1', reps: '60 sec', rust: '120 sec' },
+        { naam: 'Wandelen', sets: '1', reps: '30 min', rust: '—' }
+      ]},
+      3: { naam: 'Donderdag', oefeningen: [
+        { naam: 'Dumbbell Press', sets: '1', reps: '10-15', rust: '120 sec' },
+        { naam: 'Push-ups', sets: '1', reps: '12-15', rust: '120 sec' },
+        { naam: 'Squats', sets: '3', reps: '20', rust: '120 sec' },
+        { naam: 'Plank', sets: '1', reps: '60 sec', rust: '120 sec' },
+        { naam: 'Back Extension', sets: '1', reps: '12-15', rust: '120 sec' },
+        { naam: 'Wandelen', sets: '1', reps: '30 min', rust: '—' }
+      ]},
+      4: { naam: 'Vrijdag', oefeningen: [
+        { naam: 'Squats', sets: '4', reps: '20', rust: '120 sec' },
+        { naam: 'Plank', sets: '1', reps: '60 sec', rust: '120 sec' },
+        { naam: 'Pull-ups', sets: '4', reps: '6-10', rust: '120 sec' },
+        { naam: 'Wandelen', sets: '1', reps: '30 min', rust: '—' },
+        { naam: 'Ab Wheel', sets: '1', reps: '50', rust: '120 sec' },
+        { naam: 'Serie abs exercises', sets: '1', reps: 'circuit', rust: '120 sec' }
+      ]},
+      5: { naam: 'Zaterdag', oefeningen: [
+        { naam: 'Bench Press', sets: '2', reps: '8-12', rust: '120 sec' },
+        { naam: 'Dumbbell Shoulder Press', sets: '1', reps: '10-12', rust: '120 sec' },
+        { naam: 'Shoulder Bench Press', sets: '1', reps: '8-10', rust: '120 sec' },
+        { naam: 'Dumbbell Fly', sets: '1', reps: '12-15', rust: '120 sec' },
+        { naam: 'Concentration Curl', sets: '1', reps: '12/arm', rust: '125 sec' },
+        { naam: 'Lat Pulldown', sets: '1', reps: '10-12', rust: '120 sec' },
+        { naam: 'Seated Cable Row', sets: '1', reps: '10-12', rust: '120 sec' },
+        { naam: 'Dips 1 (bank)', sets: '1', reps: '25-30', rust: '120 sec' },
+        { naam: 'Plank', sets: '1', reps: '60 sec', rust: '120 sec' },
+        { naam: 'Wandelen', sets: '1', reps: '30 min', rust: '—' }
+      ]},
+      6: { naam: 'Zondag', oefeningen: [
+        { naam: 'Ab Wheel', sets: '1', reps: '50', rust: '120sec' },
+        { naam: 'Serie abs exercises', sets: '1', reps: 'circuit', rust: '120sec' },
+        { naam: 'Dumbbell Squat', sets: '1', reps: '20', rust: '120 sec' },
+        { naam: 'Back Extension', sets: '1', reps: '20', rust: '120 sec' },
+        { naam: 'Plank', sets: '1', reps: '60 sec', rust: '120 sec' },
+        { naam: 'Wandelen', sets: '1', reps: '30 min', rust: '—' }
+      ]}
+    }
+  }
+];
+

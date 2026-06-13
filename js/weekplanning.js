@@ -40,7 +40,7 @@ function wpGetDisplay(sid) {
   if (String(sid).startsWith('prog:')) {
     const parts = String(sid).split(':');
     const progId = parts[1], dagIdx = parseInt(parts[2]);
-    const progs = (() => { try { return JSON.parse(localStorage.getItem('prime_programmas') || '[]'); } catch(e) { return []; } })();
+    const progs = (() => { try { const u = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); return [...BUILTIN_PROGRAMMAS, ...u]; } catch(e) { return [...BUILTIN_PROGRAMMAS]; } })();
     const p = progs.find(x => x.id === progId);
     const dag = p ? (p.dagen || {})[dagIdx] : null;
     return { icon: '\u{1F4AA}', naam: dag ? (dag.naam || 'Training') : 'Training', sub: p ? p.naam : '' };
@@ -56,7 +56,7 @@ function wpGetOefeningen(sid) {
   if (String(sid).startsWith('prog:')) {
     const parts = String(sid).split(':');
     const progId = parts[1], dagIdx = parseInt(parts[2]);
-    const progs = (() => { try { return JSON.parse(localStorage.getItem('prime_programmas') || '[]'); } catch(e) { return []; } })();
+    const progs = (() => { try { const u = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); return [...BUILTIN_PROGRAMMAS, ...u]; } catch(e) { return [...BUILTIN_PROGRAMMAS]; } })();
     const p = progs.find(x => x.id === progId);
     const dag = p ? (p.dagen || {})[dagIdx] : null;
     return dag ? (dag.oefeningen || []) : [];

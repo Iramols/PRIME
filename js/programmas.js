@@ -8,12 +8,15 @@ const PROG_DAGEN_KORT = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const PROG_DAGEN_LANG = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
 
 function progLaadData() {
-  try { progLijst = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); }
-  catch(e) { progLijst = []; }
+  let userProgs = [];
+  try { userProgs = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); }
+  catch(e) {}
+  const builtinIds = new Set(BUILTIN_PROGRAMMAS.map(p => p.id));
+  progLijst = [...BUILTIN_PROGRAMMAS, ...userProgs.filter(p => !builtinIds.has(p.id))];
 }
 
 function progSlaOp() {
-  localStorage.setItem('prime_programmas', JSON.stringify(progLijst));
+  localStorage.setItem('prime_programmas', JSON.stringify(progLijst.filter(p => !p.builtin)));
 }
 
 function renderProgrammas() {
@@ -44,17 +47,21 @@ function progBouwLijst() {
     const aantalDagen = Object.keys(prog.dagen || {}).length;
     const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
     const dagIcons    = Object.keys(prog.dagen || {}).sort((a,b) => Number(a)-Number(b)).map(i => PROG_DAGEN_KORT[Number(i)]).join(' \xB7 ');
-    return '<div class="card" style="margin-bottom:12px">' +
+    const knoppen = prog.builtin
+      ? '<button class="btn-primary" style="width:100%;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">\u{1F4C5} Laden in weekplanning</button>'
+      : '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">\u{1F4C5} Laden in weekplanning</button>' +
+        '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">Bewerken</button>' +
+        '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">Verwijder</button>';
+    return '<div class="card" style="margin-bottom:12px' + (prog.builtin ? ';border-color:var(--sage)' : '') + '">' +
       '<div style="margin-bottom:10px">' +
-      '<div style="font-family:\'DM Serif Display\',serif;font-size:18px;margin-bottom:3px">' + prog.naam + '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + prog.naam + '</div>' +
+      (prog.builtin ? '<span style="font-size:10px;font-weight:700;background:var(--sage);color:white;padding:2px 8px;border-radius:8px">📌 Vast</span>' : '') +
+      '</div>' +
       '<div style="font-size:12px;color:var(--muted)">' + aantalDagen + ' trainingsdagen \xB7 ' + aantalOef + ' oefeningen</div>' +
       (dagIcons ? '<div style="font-size:11px;color:var(--sage);margin-top:3px;font-weight:600">' + dagIcons + '</div>' : '') +
       '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">\u{1F4C5} Laden in weekplanning</button>' +
-      '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">Bewerken</button>' +
-      '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">Verwijder</button>' +
-      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' + knoppen + '</div>' +
       '</div>';
   }).join('');
 
@@ -190,6 +197,8 @@ function progNieuw() {
 }
 
 function progVerwijder(id) {
+  const prog = progLijst.find(p => p.id === id);
+  if (!prog || prog.builtin) return;
   if (!confirm('Programma verwijderen?')) return;
   progLijst = progLijst.filter(p => p.id !== id);
   progSlaOp();
@@ -197,6 +206,8 @@ function progVerwijder(id) {
 }
 
 function progOpenEditor(id) {
+  const prog = progLijst.find(p => p.id === id);
+  if (!prog || prog.builtin) return;
   progActiefId = id;
   progActiefDagIdx = null;
   renderProgrammas();
@@ -370,3 +381,4 @@ function progLadenInWeekplanning(id) {
   localStorage.setItem('prime_weekplan', JSON.stringify(weekplanData));
   switchTrainingTab('weekplanning');
 }
+
