@@ -147,7 +147,7 @@ function renderExtraExercises() {
               <div class="ex-option-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
               ${ex.photo ? `<div class="ex-option-photo" style="background-image:url('${ex.photo}')"></div>` : `<div style="font-size:28px;text-align:center;padding:14px 8px 8px">${ex.icon}</div>`}
               <div style="font-size:12px;font-weight:600;padding:0 8px;margin-bottom:3px;line-height:1.3">${ex.name}</div>
-              <div style="font-size:10px;color:var(--muted);padding:0 8px">${ex.sets}×${ex.reps}</div>
+              <div style="font-size:10px;color:var(--muted);padding:0 8px">${ex.stappen || (ex.sets + '×' + ex.reps)}</div>
               <a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" style="display:block;padding:4px 8px 0;font-size:10px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>
             </div>`;
         }).join('')}
@@ -268,8 +268,16 @@ function renderTrainingDag() {
   function exCard(ex, onRemove, isDoneOverride, checkClickOverride) {
     const isDone = isDoneOverride !== undefined ? isDoneOverride : dagDone[ex.id];
     const checkClick = checkClickOverride || "toggleDagDone('" + ex.id + "')";
-    const photoDiv = ex.photo
-      ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(' + ex.photo + ');background-size:cover;background-position:center"></div>'
+    let _photo = ex.photo;
+    if (!_photo) {
+      const _nm = ex.name || ex.naam || '';
+      for (const _g of EXTRA_EXERCISES) {
+        const _f = _g.exercises.find(function(e){ return (e.name||e.naam) === _nm; });
+        if (_f && _f.photo) { _photo = _f.photo; break; }
+      }
+    }
+    const photoDiv = _photo
+      ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(\'' + _photo + '\');background-size:cover;background-position:center"></div>'
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
     return '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
       + photoDiv
@@ -293,7 +301,7 @@ function renderTrainingDag() {
     const wpLabel = _dagWpDisp ? (_dagWpDisp.icon + ' ' + _dagWpDisp.naam) : 'Weekplanning';
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
     _dagWpOef.forEach(function(oef, i) {
-      const norm = { id: 'wp-dag-' + i, name: oef.naam || oef.name || ('Oefening ' + (i+1)), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '' };
+      const norm = { id: 'wp-dag-' + i, name: oef.naam || oef.name || ('Oefening ' + (i+1)), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '', photo: oef.photo || '' };
       html += exCard(norm, '', _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")");
     });
     html += '</div>';

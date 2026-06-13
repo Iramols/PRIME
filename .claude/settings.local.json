@@ -15,7 +15,11 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "WebFetch(domain:www.pexels.com)",
+      "Bash(Get-Item \"C:\\\\Users\\\\iramo\\\\prime\\\\index.html\", \"C:\\\\Users\\\\iramo\\\\prime\\\\PRIME_v3.html\")",
+      "Bash(Select-Object Name, LastWriteTime, Length)",
+      "PowerShell(Copy-Item *)"
     ]
   }
 }
