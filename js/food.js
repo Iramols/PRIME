@@ -141,12 +141,76 @@ function openPortionModal(productId) {
   const p = currentPortionProduct;
   document.getElementById('pm-name').textContent = p.icon + ' ' + p.name;
   document.getElementById('pm-per100').textContent = `per 100g: ${p.kcal} kcal · ${p.prot}g eiwit · ${p.carb}g koolh · ${p.fat}g vet`;
-  document.getElementById('pm-gram').value = 100;
-  // reset moment
+
+  const portieDiv = document.getElementById('pm-portie-btns');
+  if (p.portie) {
+    _portieAantal = 1;
+    portieDiv.innerHTML =
+      '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px;margin-top:4px">Keuze</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:10px">' +
+        '<button id="portie-btn-1" onclick="selectPortie(' + p.portie.gram + ')" ' +
+          'style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--sage);background:var(--sage);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">' +
+          p.portie.label + '</button>' +
+        '<button id="portie-btn-100" onclick="selectPortie(100)" ' +
+          'style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">' +
+          '100g</button>' +
+      '</div>' +
+      '<div id="portie-stepper" style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+        '<span style="font-size:12px;color:var(--muted);flex:1">Aantal ' + p.portie.label.toLowerCase() + ':</span>' +
+        '<button onclick="portieAantal(-1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--sand-dark);background:var(--white);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:\'DM Sans\',sans-serif">−</button>' +
+        '<span id="portie-aantal" style="font-size:18px;font-weight:700;min-width:24px;text-align:center">1</span>' +
+        '<button onclick="portieAantal(1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--sage);background:var(--sage);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:\'DM Sans\',sans-serif">+</button>' +
+      '</div>';
+    document.getElementById('pm-gram').value = p.portie.gram;
+  } else {
+    portieDiv.innerHTML = '';
+    document.getElementById('pm-gram').value = 100;
+  }
+
   currentMoment = 'ontbijt';
   document.querySelectorAll('.moment-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   updatePortionPreview();
   document.getElementById('portion-modal').classList.add('open');
+}
+
+let _portieAantal = 1;
+
+function selectPortie(gram) {
+  const p = currentPortionProduct;
+  if (!p || !p.portie) return;
+  const isPortie = gram === p.portie.gram;
+  if (isPortie) {
+    _portieAantal = 1;
+    document.getElementById('pm-gram').value = p.portie.gram;
+    const aantalEl = document.getElementById('portie-aantal');
+    if (aantalEl) aantalEl.textContent = '1';
+  } else {
+    document.getElementById('pm-gram').value = gram;
+  }
+  const stepper = document.getElementById('portie-stepper');
+  if (stepper) stepper.style.display = isPortie ? 'flex' : 'none';
+  const btn1   = document.getElementById('portie-btn-1');
+  const btn100 = document.getElementById('portie-btn-100');
+  if (btn1) {
+    btn1.style.background  = isPortie ? 'var(--sage)' : 'var(--white)';
+    btn1.style.color       = isPortie ? 'white' : 'var(--charcoal)';
+    btn1.style.borderColor = 'var(--sage)';
+  }
+  if (btn100) {
+    btn100.style.background  = !isPortie ? 'var(--sage)' : 'var(--white)';
+    btn100.style.color       = !isPortie ? 'white' : 'var(--charcoal)';
+    btn100.style.borderColor = !isPortie ? 'var(--sage)' : 'var(--sand-dark)';
+  }
+  updatePortionPreview();
+}
+
+function portieAantal(delta) {
+  const p = currentPortionProduct;
+  if (!p || !p.portie) return;
+  _portieAantal = Math.max(1, _portieAantal + delta);
+  document.getElementById('portie-aantal').textContent = _portieAantal;
+  document.getElementById('pm-gram').value = _portieAantal * p.portie.gram;
+  updatePortionPreview();
 }
 
 function closePortionModal() {
