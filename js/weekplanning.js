@@ -31,8 +31,8 @@ function wpLaadData() {
   } catch(e) {}
   if (!weekplan) weekplan = { dagen: [null,null,null,null,null,null,null] };
 }
-function wpSlaWeekOp()    { localStorage.setItem('prime_weekplan', JSON.stringify(weekplan)); }
-function wpSlaPlanningOp(){ localStorage.setItem('prime_planning',  JSON.stringify(geplanning)); }
+function wpSlaWeekOp()    { syncSet('prime_weekplan', weekplan); }
+function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 
 // ─── Helper: vertaal schemaId (ook prog:ID:DAG) naar display ─────────────────
 function wpGetDisplay(sid) {
@@ -110,7 +110,7 @@ function wpToggleOefDone(dateStr, oefIdx) {
   const pos  = done.indexOf(oefIdx);
   if (pos === -1) done.push(oefIdx); else done.splice(pos, 1);
   all[dateStr] = done;
-  localStorage.setItem('prime_wp_done', JSON.stringify(all));
+  syncSet('prime_wp_done', all);
   const isDone = done.includes(oefIdx);
   const chk = document.getElementById('wp-chk-' + dateStr + '-' + oefIdx);
   const row = document.getElementById('wp-oef-' + dateStr + '-' + oefIdx);

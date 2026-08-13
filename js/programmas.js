@@ -16,7 +16,7 @@ function progLaadData() {
 }
 
 function progSlaOp() {
-  localStorage.setItem('prime_programmas', JSON.stringify(progLijst.filter(p => !p.builtin)));
+  syncSet('prime_programmas', progLijst.filter(p => !p.builtin));
 }
 
 function renderProgrammas() {
@@ -378,7 +378,7 @@ function progLadenInWeekplanning(id) {
     weekplanData.dagen[i] = (prog.dagen && prog.dagen[i]) ? 'prog:' + id + ':' + i : null;
   }
 
-  localStorage.setItem('prime_weekplan', JSON.stringify(weekplanData));
+  syncSet('prime_weekplan', weekplanData);
   switchTrainingTab('weekplanning');
 }
 

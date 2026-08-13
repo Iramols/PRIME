@@ -535,7 +535,7 @@ function markDone(i) {
   const idx = exerciseDone.indexOf(i);
   if (idx === -1) exerciseDone.push(i);
   else exerciseDone.splice(idx, 1);
-  localStorage.setItem('prime_exdone', JSON.stringify(exerciseDone));
+  syncSet('prime_exdone', exerciseDone);
   const c = document.getElementById('excheck-' + i);
   c.classList.toggle('done', exerciseDone.includes(i));
   updateTrainingProgress();

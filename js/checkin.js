@@ -301,15 +301,15 @@ async function doCheckin() {
   // Gewicht opslaan in profiel als ingevuld
   if (checkin.weight && checkin.weight > 0) {
     profile.weight = checkin.weight;
-    localStorage.setItem('prime_profile', JSON.stringify(profile));
+    syncSet('prime_profile', profile);
   }
 
   // Save today
   const today = new Date().toISOString().split('T')[0];
   todayData = { date: today, checkin, trainingType, checkout: null };
-  localStorage.setItem('prime_today', JSON.stringify(todayData));
+  syncSet('prime_today', todayData);
   exerciseDone = [];
-  localStorage.setItem('prime_exdone', JSON.stringify(exerciseDone));
+  syncSet('prime_exdone', exerciseDone);
   trainingDagLog = [];
   activeSchemaId = null;
   selectedSchemaEx = {};
@@ -371,8 +371,8 @@ async function doCheckout() {
     todayData.checkout = checkout;
     history.unshift(todayData);
     if (history.length > 60) history.pop();
-    localStorage.setItem('prime_history', JSON.stringify(history));
-    localStorage.removeItem('prime_today');
+    syncSet('prime_history', history);
+    syncRemove('prime_today');
   }
 
   // Weekplanning context voor vandaag

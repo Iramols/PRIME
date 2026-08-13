@@ -6,7 +6,7 @@ function resetVoortgang() {
   exerciseDone = [];
   dagDone = {};
   ['prime_history','prime_today','prime_exdone','prime_wp_done'].forEach(function(k) {
-    localStorage.removeItem(k);
+    syncRemove(k);
   });
   renderHistory();
   document.getElementById('checkin-section').style.display = 'block';

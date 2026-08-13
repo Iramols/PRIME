@@ -6,8 +6,33 @@
 <title>PRIME by Anneke</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="js/cloud.js"></script>
 </head>
 <body>
+
+<!-- LOGIN -->
+<div class="overlay open" id="login-overlay">
+  <div class="modal">
+    <div class="modal-title">Inloggen bij PRIME</div>
+    <form id="login-form">
+      <div class="form-row"><label>E-mail of gebruikersnaam</label><input id="login-email" type="text" autocomplete="username" required></div>
+      <div class="form-row"><label>Wachtwoord</label><input id="login-password" type="password" autocomplete="current-password" required></div>
+      <div id="login-error" style="color:#c0392b;font-size:12px;margin-bottom:12px"></div>
+      <button type="submit" class="btn-primary" id="login-submit">Inloggen →</button>
+    </form>
+  </div>
+</div>
+
+<!-- KLANTKIEZER (alleen coach) -->
+<div class="overlay" id="client-picker-overlay">
+  <div class="modal">
+    <div class="modal-title">Kies een klant</div>
+    <div id="client-picker-list"></div>
+  </div>
+</div>
+
+<div id="app-shell" style="display:none">
 
 <header class="header">
   <div class="logo">PRIME <span>by Anneke Lifestyle coaching</span></div>
@@ -20,6 +45,8 @@
     <button class="nav-btn" onclick="go('beheer')" style="font-size:11px">📷 Foto beheer</button>
   </nav>
   <button class="btn-sm" onclick="openProfile()">⚙ Profiel</button>
+  <button class="btn-sm" id="switch-client-btn" style="display:none">🔁 Wissel klant</button>
+  <button class="btn-sm" id="logout-btn">🚪 Uit</button>
 </header>
 
 <!-- HOME -->
@@ -654,17 +681,8 @@
   </div>
 </div>
 
-<script src="js/data.js"></script>
-<script src="js/state.js"></script>
-<script src="js/beheer.js"></script>
-<script src="js/checkin.js"></script>
-<script src="js/training.js"></script>
-<script src="js/food.js"></script>
-<script src="js/coach.js"></script>
-<script src="js/programmas.js"></script>
-<script src="js/weekplanning.js"></script>
-<script src="js/history.js"></script>
-<script src="js/profile.js"></script>
-<script src="js/app.js"></script>
+</div><!-- /app-shell -->
+
+<script src="js/auth.js"></script>
 </body>
 </html>

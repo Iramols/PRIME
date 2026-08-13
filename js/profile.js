@@ -20,7 +20,7 @@ function saveProfile() {
     goal: document.getElementById('p-goal').value,
     activity: +document.getElementById('p-activity').value
   };
-  localStorage.setItem('prime_profile', JSON.stringify(profile));
+  syncSet('prime_profile', profile);
   closeProfile();
 }
 
