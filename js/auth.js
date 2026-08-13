@@ -32,7 +32,7 @@ function showClientPicker(clients) {
   const list = document.getElementById('client-picker-list');
   list.innerHTML = '';
   if (!clients.length) {
-    list.innerHTML = '<div style="color:var(--muted);font-size:13px">Nog geen klanten aangemaakt. Voeg een login toe via het Supabase dashboard (zie supabase/schema.sql).</div>';
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px">' + t('picker.empty') + '</div>';
   }
   clients.forEach(function(c) {
     const row = document.createElement('div');
@@ -46,7 +46,7 @@ function showClientPicker(clients) {
 
     const renameBtn = document.createElement('button');
     renameBtn.className = 'btn-sm';
-    renameBtn.title = 'Naam aanpassen';
+    renameBtn.title = t('picker.renameTitle');
     renameBtn.textContent = '✏️';
     renameBtn.onclick = function() { renameClient(c.id, c.display_name); };
 
@@ -59,11 +59,11 @@ function showClientPicker(clients) {
 }
 
 async function renameClient(clientId, currentName) {
-  const newName = prompt('Naam voor deze klant:', currentName || '');
+  const newName = prompt(t('picker.renamePrompt'), currentName || '');
   if (newName === null || !newName.trim()) return;
   const sb = getSupabase();
   const { error } = await sb.from('profiles').update({ display_name: newName.trim() }).eq('id', clientId);
-  if (error) { alert('Aanpassen mislukt: ' + error.message); return; }
+  if (error) { alert(t('auth.renameFailed', { msg: error.message })); return; }
   const clients = await fetchClientList();
   showClientPicker(clients);
 }
@@ -89,8 +89,8 @@ async function doLogin() {
     await resolveSession();
   } catch (err) {
     showLogin(err.message === 'Invalid login credentials'
-      ? 'Onjuiste inloggegevens.'
-      : 'Inloggen mislukt: ' + err.message);
+      ? t('auth.invalidCredentials')
+      : t('auth.loginFailed', { msg: err.message }));
   } finally {
     btn.disabled = false;
   }
@@ -138,7 +138,7 @@ async function resolveSession() {
     .select('id, role, display_name')
     .eq('id', session.user.id)
     .single();
-  if (error || !profileRow) { showLogin('Kon profiel niet laden: ' + (error ? error.message : 'onbekende gebruiker')); return; }
+  if (error || !profileRow) { showLogin(t('auth.profileLoadFailed', { msg: error ? error.message : t('auth.unknownUser') })); return; }
 
   if (profileRow.role === 'coach') {
     const remembered = sessionStorage.getItem('prime_active_client');
@@ -158,6 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('logout-btn').addEventListener('click', doLogout);
   document.getElementById('switch-client-btn').addEventListener('click', switchClient);
   resolveSession().catch(function(err) {
-    showLogin('Er ging iets mis: ' + err.message);
+    showLogin(t('auth.somethingWrong', { msg: err.message }));
   });
 });

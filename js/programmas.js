@@ -6,6 +6,11 @@ let progBibliotheekOpen = false;
 
 const PROG_DAGEN_KORT = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const PROG_DAGEN_LANG = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
+const PROG_DAGEN_KORT_EN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const PROG_DAGEN_LANG_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function progDagKort(i) { return (currentLang === 'en' ? PROG_DAGEN_KORT_EN : PROG_DAGEN_KORT)[i]; }
+function progDagLang(i) { return (currentLang === 'en' ? PROG_DAGEN_LANG_EN : PROG_DAGEN_LANG)[i]; }
 
 function progLaadData() {
   let userProgs = [];
@@ -37,28 +42,28 @@ function progBouwLijst() {
   if (!progLijst.length) {
     return '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
-      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">Nog geen programma\'s</div>' +
-      '<div style="font-size:13px;color:var(--muted);margin-bottom:24px">Maak een weekschema met trainingsdagen en oefeningen.</div>' +
-      '<button class="btn-primary" onclick="progNieuw()">+ Nieuw programma</button>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:24px">' + t('programmas.empty.hint') + '</div>' +
+      '<button class="btn-primary" onclick="progNieuw()">' + t('programmas.new') + '</button>' +
       '</div>';
   }
 
   const kaarten = progLijst.map(prog => {
     const aantalDagen = Object.keys(prog.dagen || {}).length;
     const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
-    const dagIcons    = Object.keys(prog.dagen || {}).sort((a,b) => Number(a)-Number(b)).map(i => PROG_DAGEN_KORT[Number(i)]).join(' \xB7 ');
+    const dagIcons    = Object.keys(prog.dagen || {}).sort((a,b) => Number(a)-Number(b)).map(i => progDagKort(Number(i))).join(' \xB7 ');
     const knoppen = prog.builtin
-      ? '<button class="btn-primary" style="width:100%;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">\u{1F4C5} Laden in weekplanning</button>'
-      : '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">\u{1F4C5} Laden in weekplanning</button>' +
-        '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">Bewerken</button>' +
-        '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">Verwijder</button>';
+      ? '<button class="btn-primary" style="width:100%;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>'
+      : '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>' +
+        '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
+        '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">' + t('common.delete') + '</button>';
     return '<div class="card" style="margin-bottom:12px' + (prog.builtin ? ';border-color:var(--sage)' : '') + '">' +
       '<div style="margin-bottom:10px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
-      '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + prog.naam + '</div>' +
-      (prog.builtin ? '<span style="font-size:10px;font-weight:700;background:var(--sage);color:white;padding:2px 8px;border-radius:8px">📌 Vast</span>' : '') +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + dispName(prog) + '</div>' +
+      (prog.builtin ? '<span style="font-size:10px;font-weight:700;background:var(--sage);color:white;padding:2px 8px;border-radius:8px">' + t('programmas.builtinBadge') + '</span>' : '') +
       '</div>' +
-      '<div style="font-size:12px;color:var(--muted)">' + aantalDagen + ' trainingsdagen \xB7 ' + aantalOef + ' oefeningen</div>' +
+      '<div style="font-size:12px;color:var(--muted)">' + t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef }) + '</div>' +
       (dagIcons ? '<div style="font-size:11px;color:var(--sage);margin-top:3px;font-weight:600">' + dagIcons + '</div>' : '') +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' + knoppen + '</div>' +
@@ -66,7 +71,7 @@ function progBouwLijst() {
   }).join('');
 
   return '<div style="margin-bottom:4px">' + kaarten + '</div>' +
-    '<button class="btn-primary" style="width:100%" onclick="progNieuw()">+ Nieuw programma</button>';
+    '<button class="btn-primary" style="width:100%" onclick="progNieuw()">' + t('programmas.new') + '</button>';
 }
 
 // ─── Programma editor ────────────────────────────────────────────────────────
@@ -74,9 +79,10 @@ function progBouwProgEditor() {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) { progActiefId = null; return progBouwLijst(); }
 
-  const dagGrid = PROG_DAGEN_KORT.map((dag, i) => {
+  const dagGrid = PROG_DAGEN_KORT.map((_, i) => {
+    const dag = progDagKort(i);
     const heeftDag = prog.dagen && prog.dagen[i];
-    const naam     = heeftDag ? (prog.dagen[i].naam || '') : '';
+    const naam     = heeftDag ? (prog.dagen[i].naam_en && currentLang === 'en' ? prog.dagen[i].naam_en : (prog.dagen[i].naam || '')) : '';
     const aantalOef = heeftDag ? (prog.dagen[i].oefeningen || []).length : 0;
     return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:10px;border:1.5px solid ' +
       (heeftDag ? 'var(--sage)' : 'var(--sand-dark)') + ';background:' +
@@ -84,31 +90,31 @@ function progBouwProgEditor() {
       '<div style="width:28px;font-size:12px;font-weight:700;color:' + (heeftDag ? 'var(--sage)' : 'var(--muted)') + ';flex-shrink:0">' + dag + '</div>' +
       '<div style="flex:1;min-width:0">' +
       (heeftDag
-        ? '<div style="font-size:13px;font-weight:600;color:var(--charcoal)">' + (naam || 'Training ' + dag) + '</div>' +
-          '<div style="font-size:11px;color:var(--muted)">' + aantalOef + ' oefening' + (aantalOef !== 1 ? 'en' : '') + '</div>'
-        : '<div style="font-size:12px;color:var(--muted)">Rustdag</div>') +
+        ? '<div style="font-size:13px;font-weight:600;color:var(--charcoal)">' + (naam || t('programmas.trainingDayFallback', { day: dag })) + '</div>' +
+          '<div style="font-size:11px;color:var(--muted)">' + aantalOef + ' ' + (aantalOef !== 1 ? t('programmas.exercisesPlural') : t('programmas.exerciseSingular')) + '</div>'
+        : '<div style="font-size:12px;color:var(--muted)">' + t('programmas.restDay') + '</div>') +
       '</div>' +
       '<div style="display:flex;gap:6px;flex-shrink:0">' +
       (heeftDag
-        ? '<button class="btn-sm" onclick="progDagBewerken(' + i + ')">Bewerken</button>' +
+        ? '<button class="btn-sm" onclick="progDagBewerken(' + i + ')">' + t('common.edit') + '</button>' +
           '<button class="btn-sm" style="color:var(--accent)" onclick="progDagVerwijder(' + i + ')">&#x2715;</button>'
-        : '<button class="btn-sm" onclick="progDagToevoegen(' + i + ')">+ Training</button>') +
+        : '<button class="btn-sm" onclick="progDagToevoegen(' + i + ')">' + t('programmas.addTraining') + '</button>') +
       '</div>' +
       '</div>';
   }).join('');
 
   return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">' +
-    '<button onclick="progTerugNaarLijst()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);cursor:pointer;font-size:13px;font-family:\'DM Sans\',sans-serif">← Terug</button>' +
-    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">Programma bewerken</div>' +
+    '<button onclick="progTerugNaarLijst()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);cursor:pointer;font-size:13px;font-family:\'DM Sans\',sans-serif">' + t('common.back') + '</button>' +
+    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + t('programmas.editTitle') + '</div>' +
     '</div>' +
     '<div class="card" style="margin-bottom:14px">' +
-    '<label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">Naam</label>' +
+    '<label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">' + t('programmas.nameLabel') + '</label>' +
     '<input type="text" id="prog-naam-input" value="' + prog.naam.replace(/"/g,'&quot;') + '"' +
     ' style="width:100%;padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;' +
     'font-family:\'DM Sans\',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;box-sizing:border-box"' +
     ' oninput="progNaamBijwerken(this.value)">' +
     '</div>' +
-    '<div class="card-label" style="margin-bottom:10px">Trainingsdagen</div>' +
+    '<div class="card-label" style="margin-bottom:10px">' + t('programmas.trainingDays') + '</div>' +
     dagGrid;
 }
 
@@ -121,9 +127,9 @@ function progBouwDagEditor() {
   const oefeningen = dag.oefeningen || [];
 
   const oefRijen = oefeningen.map(function(oef, i) {
-    const isStappen = oef.naam === 'Wandelen' || (oef.stappen !== undefined && oef.stappen !== '');
+    const isStappen = oef.naam === 'Wandelen' || oef.naam === 'Walking' || (oef.stappen !== undefined && oef.stappen !== '');
     const naamTd = '<td style="padding:4px 6px 4px 0"><input type="text" value="' + (oef.naam || '').replace(/"/g,'&quot;') +
-      '" placeholder="Oefening..." onchange="progOefNaamUpdate(' + i + ',this.value)"' +
+      '" placeholder="' + t('programmas.exercisePlaceholder') + '" onchange="progOefNaamUpdate(' + i + ',this.value)"' +
       ' style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>';
     const deleteTd = '<td style="padding:4px 0 4px 4px;text-align:center">' +
       '<button onclick="progOefVerwijder(' + i + ')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button>' +
@@ -132,9 +138,9 @@ function progBouwDagEditor() {
       const stappenVal = (oef.stappen || '8000-10000').replace(/"/g,'&quot;');
       return '<tr>' + naamTd +
         '<td colspan="3" style="padding:4px 3px"><input type="text" value="' + stappenVal +
-        '" placeholder="bijv. 8000-10000" onchange="progOefUpdate(' + i + ',\'stappen\',this.value)"' +
+        '" placeholder="' + t('programmas.stepsPlaceholder') + '" onchange="progOefUpdate(' + i + ',\'stappen\',this.value)"' +
         ' style="width:100%;padding:6px 8px;border:1px solid var(--sage-mid);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sage-light);box-sizing:border-box">' +
-        '<div style="font-size:10px;color:var(--sage);margin-top:2px">stappen per dag</div></td>' +
+        '<div style="font-size:10px;color:var(--sage);margin-top:2px">' + t('programmas.stepsPerDay') + '</div></td>' +
         deleteTd + '</tr>';
     }
     return '<tr>' + naamTd +
@@ -151,37 +157,37 @@ function progBouwDagEditor() {
   }).join('');
 
   return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">' +
-    '<button onclick="progTerugNaarProg()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);cursor:pointer;font-size:13px;font-family:\'DM Sans\',sans-serif">← Terug</button>' +
-    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + PROG_DAGEN_LANG[dagIdx] + '</div>' +
+    '<button onclick="progTerugNaarProg()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);cursor:pointer;font-size:13px;font-family:\'DM Sans\',sans-serif">' + t('common.back') + '</button>' +
+    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + progDagLang(dagIdx) + '</div>' +
     '</div>' +
     '<div class="card" style="margin-bottom:14px">' +
-    '<label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">Naam van de dag</label>' +
+    '<label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">' + t('programmas.dayNameLabel') + '</label>' +
     '<input type="text" id="prog-dag-naam" value="' + (dag.naam || '').replace(/"/g,'&quot;') +
-    '" placeholder="bijv. Push dag, Benen, Volledig lichaam"' +
+    '" placeholder="' + t('programmas.dayNamePlaceholder') + '"' +
     ' style="width:100%;padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;' +
     'font-family:\'DM Sans\',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;box-sizing:border-box"' +
     ' oninput="progDagNaamBijwerken(this.value)">' +
     '</div>' +
     '<div class="card" style="margin-bottom:14px">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
-    '<div class="card-label">Oefeningen</div>' +
+    '<div class="card-label">' + t('programmas.exercisesLabel') + '</div>' +
     '<div style="display:flex;gap:6px">' +
-    '<button class="btn-sm" onclick="progOefToevoegen()">+ Leeg veld</button>' +
-    '<button class="btn-sm" style="' + (progBibliotheekOpen ? 'background:var(--sage);color:white;border-color:var(--sage)' : '') + '" onclick="progToggleBibliotheek()">\u{1F4DA} Bibliotheek</button>' +
+    '<button class="btn-sm" onclick="progOefToevoegen()">' + t('programmas.addEmptyField') + '</button>' +
+    '<button class="btn-sm" style="' + (progBibliotheekOpen ? 'background:var(--sage);color:white;border-color:var(--sage)' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button>' +
     '</div>' +
     '</div>' +
     (oefeningen.length > 0
       ? '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
         '<thead><tr>' +
-        '<th style="text-align:left;padding:0 6px 8px 0;font-size:11px;color:var(--muted);font-weight:600">Oefening</th>' +
-        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">Sets</th>' +
-        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">Reps</th>' +
-        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">Rust</th>' +
+        '<th style="text-align:left;padding:0 6px 8px 0;font-size:11px;color:var(--muted);font-weight:600">' + t('programmas.col.exercise') + '</th>' +
+        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">' + t('programmas.col.sets') + '</th>' +
+        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">' + t('programmas.col.reps') + '</th>' +
+        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">' + t('programmas.col.rest') + '</th>' +
         '<th style="width:32px"></th>' +
         '</tr></thead>' +
         '<tbody>' + oefRijen + '</tbody>' +
         '</table></div>'
-      : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px 0">Nog geen oefeningen. Kies uit de bibliotheek of voeg een leeg veld toe.</div>') +
+      : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px 0">' + t('programmas.noExercisesHint') + '</div>') +
     '</div>' +
     (progBibliotheekOpen ? progBouwBibliotheek(oefeningen) : '');
 }
@@ -189,7 +195,7 @@ function progBouwDagEditor() {
 // ─── Acties ───────────────────────────────────────────────────────────────────
 function progNieuw() {
   const id = 'p' + Date.now() + Math.floor(Math.random() * 1000);
-  progLijst.push({ id, naam: 'Nieuw programma', dagen: {} });
+  progLijst.push({ id, naam: t('programmas.newProgramName'), dagen: {} });
   progSlaOp();
   progActiefId = id;
   progActiefDagIdx = null;
@@ -199,7 +205,7 @@ function progNieuw() {
 function progVerwijder(id) {
   const prog = progLijst.find(p => p.id === id);
   if (!prog || prog.builtin) return;
-  if (!confirm('Programma verwijderen?')) return;
+  if (!confirm(t('programmas.confirmDelete'))) return;
   progLijst = progLijst.filter(p => p.id !== id);
   progSlaOp();
   renderProgrammas();
@@ -243,7 +249,7 @@ function progDagToevoegen(dagIdx) {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) return;
   if (!prog.dagen) prog.dagen = {};
-  prog.dagen[dagIdx] = { naam: PROG_DAGEN_LANG[dagIdx], oefeningen: [] };
+  prog.dagen[dagIdx] = { naam: progDagLang(dagIdx), oefeningen: [] };
   progSlaOp();
   progActiefDagIdx = dagIdx;
   renderProgrammas();
@@ -293,7 +299,7 @@ function progOefNaamUpdate(oefIdx, val) {
   const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
   if (!oef) return;
   oef.naam = val;
-  if (val === 'Wandelen') { oef.stappen = oef.stappen || '8000-10000'; oef.sets = ''; oef.reps = ''; oef.rust = ''; }
+  if (val === 'Wandelen' || val === 'Walking') { oef.stappen = oef.stappen || '8000-10000'; oef.sets = ''; oef.reps = ''; oef.rust = ''; }
   progSlaOp();
   renderProgrammas();
 }
@@ -304,37 +310,39 @@ function progToggleBibliotheek() {
 }
 
 function progBouwBibliotheek(huidig) {
-  const toegevoegdeNamen = new Set((huidig || []).map(o => o.naam.toLowerCase()));
+  const toegevoegdeNamen = new Set((huidig || []).map(o => (o.naam || '').toLowerCase()));
 
   const groepen = EXTRA_EXERCISES.map(groep => {
+    const groepNaam = (currentLang === 'en' && groep.group_en) ? groep.group_en : groep.group;
     const rijen = groep.exercises.map(ex => {
-      const alIn = toegevoegdeNamen.has(ex.name.toLowerCase());
+      const naam = dispName(ex);
+      const alIn = toegevoegdeNamen.has(naam.toLowerCase());
       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark)">' +
         '<div style="font-size:18px;flex-shrink:0;width:26px;text-align:center">' + ex.icon + '</div>' +
         '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:13px;font-weight:500;color:var(--charcoal)">' + ex.name + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">' + (ex.stappen ? ex.stappen : (ex.sets ? ex.sets + ' sets \xB7 ' + ex.reps + (ex.rest ? ' \xB7 rust ' + ex.rest : '') : (ex.reps || ''))) + '</div>' +
+        '<div style="font-size:13px;font-weight:500;color:var(--charcoal)">' + naam + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">' + (ex.stappen ? ex.stappen : (ex.sets ? ex.sets + ' ' + t('programmas.setsAbbr') + ' \xB7 ' + ex.reps + (ex.rest ? ' \xB7 ' + t('programmas.restAbbr') + ' ' + ex.rest : '') : (ex.reps || ''))) + '</div>' +
         '</div>' +
         '<button onclick="progOefUitBibliotheek(\'' + ex.id + '\')" ' +
         'style="flex-shrink:0;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;' +
         (alIn
           ? 'border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage)'
           : 'border:1.5px solid var(--sage);background:var(--sage);color:white') + '">' +
-        (alIn ? '✓ In lijst' : '+ Voeg toe') +
+        (alIn ? t('programmas.inList') : t('programmas.addToList')) +
         '</button>' +
         '</div>';
     }).join('');
 
     return '<div style="margin-bottom:16px">' +
       '<div style="font-size:14px;font-weight:700;color:var(--charcoal);margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--sage)">' +
-      groep.icon + ' ' + groep.group +
+      groep.icon + ' ' + groepNaam +
       '</div>' +
       rijen +
       '</div>';
   }).join('');
 
   return '<div class="card" style="border-color:var(--sage)">' +
-    '<div style="font-size:13px;font-weight:600;color:var(--charcoal);margin-bottom:14px">Kies uit bibliotheek</div>' +
+    '<div style="font-size:13px;font-weight:600;color:var(--charcoal);margin-bottom:14px">' + t('programmas.chooseFromLibrary') + '</div>' +
     groepen +
     '</div>';
 }
@@ -353,7 +361,7 @@ function progOefUitBibliotheek(exId) {
   if (!gevonden) return;
 
   prog.dagen[idx].oefeningen.push({
-    naam: gevonden.name,
+    naam: dispName(gevonden),
     sets: String(gevonden.sets || ''),
     reps: String(gevonden.reps || ''),
     rust: gevonden.rest || '',
@@ -381,4 +389,3 @@ function progLadenInWeekplanning(id) {
   syncSet('prime_weekplan', weekplanData);
   switchTrainingTab('weekplanning');
 }
-

@@ -1,4 +1,4 @@
-﻿// ========== FOOD TAB SWITCHING ==========
+// ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
   ['plan','basis','log'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
@@ -16,9 +16,9 @@ function renderFood() {
   dayLog = dayLog.filter(i => i.type !== 'meal'); // reset meal entries, keep product logs
   const data = MEALS[trainingType];
   document.getElementById('food-subtitle').textContent = {
-    herstel:'Hersteldag — licht & eiwitrijk',
-    normaal:'Normale dag — gebalanceerd',
-    zwaar:'Zware trainingsdag — energie geladen'
+    herstel:t('food.subtitle.recovery'),
+    normaal:t('food.subtitle.normal'),
+    zwaar:t('food.subtitle.heavy')
   }[trainingType];
 
   for (const key of ['ontbijt','lunch','avond','snack']) {
@@ -27,7 +27,7 @@ function renderFood() {
       selectedMeals[rec.id] = rec;
       dayLog.push({
         logId: 'meal-' + rec.id,
-        name: rec.name,
+        name: dispName(rec),
         icon: rec.icon,
         photo: rec.photo || null,
         moment: key,
@@ -46,7 +46,7 @@ function renderFood() {
 
 function renderMealPlan() {
   const data = MEALS[trainingType];
-  const mealNames = { ontbijt:'Ontbijt', lunch:'Lunch', avond:'Avondeten', snack:'Snack' };
+  const mealNames = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('food.mealName.avond'), snack:t('moment.snack') };
   const mealIcons = { ontbijt:'🌅', lunch:'🥗', avond:'🍽️', snack:'🍎' };
   let html = '';
   for (const key of ['ontbijt','lunch','avond','snack']) {
@@ -59,11 +59,11 @@ function renderMealPlan() {
                id="mcard-${m.id}" onclick="toggleMeal('${m.id}','${key}')">
             <div class="meal-sel-indicator" id="msel-${m.id}">${selectedMeals[m.id]?'✓':'+'}</div>
             ${m.photo ? `<div class="meal-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="meal-emoji">${m.icon}</div>`}
-            <div class="meal-name">${m.name}</div>
+            <div class="meal-name">${dispName(m)}</div>
             <div class="meal-macros">
-              <span class="macro-pill">E: ${m.prot}g</span>
-              <span class="macro-pill">K: ${m.carb}g</span>
-              <span class="macro-pill">V: ${m.fat}g</span>
+              <span class="macro-pill">${t('food.macroAbbr.protein')}: ${m.prot}g</span>
+              <span class="macro-pill">${t('food.macroAbbr.carbs')}: ${m.carb}g</span>
+              <span class="macro-pill">${t('food.macroAbbr.fat')}: ${m.fat}g</span>
             </div>
             <div class="meal-kcal">${m.kcal} kcal</div>
           </div>`).join('')}
@@ -87,7 +87,7 @@ function toggleMeal(id, category) {
     selectedMeals[id] = item;
     dayLog.push({
       logId: 'meal-' + id,
-      name: item.name,
+      name: dispName(item),
       icon: item.icon,
       photo: item.photo || null,
       moment: category,
@@ -120,16 +120,16 @@ function renderProducts() {
   const q = (document.getElementById('product-search')?.value || '').toLowerCase();
   let list = PRODUCTS;
   if (currentCat !== 'alle') list = list.filter(p => p.cat === currentCat);
-  if (q) list = list.filter(p => p.name.toLowerCase().includes(q));
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q));
   document.getElementById('product-grid').innerHTML = `<div class="product-grid">` +
     list.map(p => `
       <div class="product-card" onclick="openPortionModal('${p.id}')">
         ${p.photo ? `<div class="product-photo" style="background-image:url('${p.photo}')"></div>` : `<div class="product-icon">${p.icon}</div>`}
-        <div class="product-name">${p.name}</div>
-        <div class="product-per">per 100g</div>
+        <div class="product-name">${dispName(p)}</div>
+        <div class="product-per">${t('food.per100')}</div>
         <div class="product-macros">
           <span class="product-pill">${p.kcal} kcal</span>
-          <span class="product-pill">E${p.prot}g</span>
+          <span class="product-pill">${t('food.macroAbbr.protein')}${p.prot}g</span>
         </div>
       </div>`).join('') + `</div>`;
 }
@@ -139,24 +139,25 @@ function openPortionModal(productId) {
   currentPortionProduct = PRODUCTS.find(p => p.id === productId);
   if (!currentPortionProduct) return;
   const p = currentPortionProduct;
-  document.getElementById('pm-name').textContent = p.icon + ' ' + p.name;
-  document.getElementById('pm-per100').textContent = `per 100g: ${p.kcal} kcal · ${p.prot}g eiwit · ${p.carb}g koolh · ${p.fat}g vet`;
+  document.getElementById('pm-name').textContent = p.icon + ' ' + dispName(p);
+  document.getElementById('pm-per100').textContent = `per 100g: ${p.kcal} kcal · ${p.prot}g ${t('portion.protein')} · ${p.carb}g ${t('portion.carbs')} · ${p.fat}g ${t('portion.fat')}`;
 
   const portieDiv = document.getElementById('pm-portie-btns');
   if (p.portie) {
     _portieAantal = 1;
+    const portieLabel = dispField(p.portie, 'label');
     portieDiv.innerHTML =
-      '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px;margin-top:4px">Keuze</div>' +
+      '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px;margin-top:4px">' + t('portion.choiceLabel') + '</div>' +
       '<div style="display:flex;gap:8px;margin-bottom:10px">' +
         '<button id="portie-btn-1" onclick="selectPortie(' + p.portie.gram + ')" ' +
           'style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--sage);background:var(--sage);color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">' +
-          p.portie.label + '</button>' +
+          portieLabel + '</button>' +
         '<button id="portie-btn-100" onclick="selectPortie(100)" ' +
           'style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif">' +
           '100g</button>' +
       '</div>' +
       '<div id="portie-stepper" style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
-        '<span style="font-size:12px;color:var(--muted);flex:1">Aantal ' + p.portie.label.toLowerCase() + ':</span>' +
+        '<span style="font-size:12px;color:var(--muted);flex:1">' + t('portion.amountOf', { label: portieLabel.toLowerCase() }) + '</span>' +
         '<button onclick="portieAantal(-1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--sand-dark);background:var(--white);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:\'DM Sans\',sans-serif">−</button>' +
         '<span id="portie-aantal" style="font-size:18px;font-weight:700;min-width:24px;text-align:center">1</span>' +
         '<button onclick="portieAantal(1)" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--sage);background:var(--sage);color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:\'DM Sans\',sans-serif">+</button>' +
@@ -241,7 +242,7 @@ function addProductToLog() {
   const f = gram / 100;
   dayLog.push({
     logId: ++logIdCounter,
-    name: p.name,
+    name: dispName(p),
     icon: p.icon,
     photo: p.photo || null,
     moment: currentMoment,
@@ -272,7 +273,7 @@ function updateLogBadge() {
 }
 
 function renderDayLog() {
-  const momentLabels = { ontbijt:'Ontbijt', lunch:'Lunch', avond:'Avond', snack:'Snack' };
+  const momentLabels = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('moment.avond'), snack:t('moment.snack') };
   const momentOrder = { ontbijt:0, lunch:1, avond:2, snack:3 };
   const empty = document.getElementById('day-log-empty');
   const list = document.getElementById('day-log-list');
@@ -311,9 +312,9 @@ function renderDayLog() {
               <div style="flex:1">
                 <div style="font-weight:600;font-size:13px;margin-bottom:2px">${item.name}</div>
                 <div style="font-size:11px;color:var(--muted)">
-                  ${item.type === 'meal' ? '★ maaltijd' : item.gram + 'g'} · ${item.kcal} kcal
+                  ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
                 </div>
-                <div style="font-size:11px;color:var(--muted)">E:${Math.round(item.prot)}g K:${Math.round(item.carb)}g V:${Math.round(item.fat)}g</div>
+                <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
               </div>
               <button onclick="${item.type==='meal' ? `toggleMeal('${item.logId.replace('meal-','')}','${item.moment}')` : `removeFromLog(${item.logId})`}"
                 style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
@@ -326,19 +327,19 @@ function renderDayLog() {
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
       <div style="background:var(--sand);border-radius:10px;padding:12px">
         <div style="font-family:'DM Serif Display',serif;font-size:20px">${Math.round(tot.kcal)}</div>
-        <div style="font-size:11px;color:var(--muted)">kcal</div>
+        <div style="font-size:11px;color:var(--muted)">${t('portion.kcal')}</div>
       </div>
       <div style="background:var(--sand);border-radius:10px;padding:12px">
         <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent)">${Math.round(tot.prot*10)/10}g</div>
-        <div style="font-size:11px;color:var(--muted)">eiwit</div>
+        <div style="font-size:11px;color:var(--muted)">${t('portion.protein')}</div>
       </div>
       <div style="background:var(--sand);border-radius:10px;padding:12px">
         <div style="font-family:'DM Serif Display',serif;font-size:20px;color:#5a7cc8">${Math.round(tot.carb*10)/10}g</div>
-        <div style="font-size:11px;color:var(--muted)">koolh</div>
+        <div style="font-size:11px;color:var(--muted)">${t('portion.carbs')}</div>
       </div>
       <div style="background:var(--sand);border-radius:10px;padding:12px">
         <div style="font-family:'DM Serif Display',serif;font-size:20px;color:#c8a85a">${Math.round(tot.fat*10)/10}g</div>
-        <div style="font-size:11px;color:var(--muted)">vet</div>
+        <div style="font-size:11px;color:var(--muted)">${t('portion.fat')}</div>
       </div>
     </div>`;
 }
@@ -353,10 +354,10 @@ function updateHomeMacros() {
   }), { kcal:0, prot:0, carb:0, fat:0 });
 
   const macros = [
-    { label:'Calorieën', val:Math.round(tot.kcal), doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
-    { label:'Koolhydraten', val:Math.round(tot.carb), doel:doel.carb, unit:'g.', color:'#E91E8C' },
-    { label:'Eiwitten', val:Math.round(tot.prot), doel:doel.prot, unit:'g.', color:'#2196F3' },
-    { label:'Vetten', val:Math.round(tot.fat), doel:doel.fat, unit:'g.', color:'#FF5722' },
+    { label:t('food.nutrient.calories'), val:Math.round(tot.kcal), doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
+    { label:t('food.nutrient.carbs'), val:Math.round(tot.carb), doel:doel.carb, unit:'g.', color:'#E91E8C' },
+    { label:t('food.nutrient.protein'), val:Math.round(tot.prot), doel:doel.prot, unit:'g.', color:'#2196F3' },
+    { label:t('food.nutrient.fat'), val:Math.round(tot.fat), doel:doel.fat, unit:'g.', color:'#FF5722' },
   ];
 
   el.innerHTML = macros.map(m => {
@@ -369,7 +370,7 @@ function updateHomeMacros() {
       <div style="display:grid;grid-template-columns:100px 80px 1fr;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--sand-dark)">
         <div>
           <div style="font-size:12px;font-weight:600;color:var(--charcoal)">${m.label}</div>
-          <div style="font-size:10px;color:var(--muted)">Doel: ${rmin}–${rmax} ${m.unit}</div>
+          <div style="font-size:10px;color:var(--muted)">${t('food.goalRange', { min: rmin, max: rmax, unit: m.unit })}</div>
         </div>
         <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${m.val} ${m.unit}</div>
         <div style="display:flex;align-items:center;gap:6px">
@@ -426,15 +427,15 @@ function updateMacroTotals() {
     document.getElementById(m.barId).style.width = pct + '%';
     document.getElementById(m.barId).style.background = fillColor;
     document.getElementById(m.pctId).textContent = pct + '%';
-    document.getElementById(m.doelId).textContent = `Doel: ${r.min} – ${r.max} ${m.unit}`;
+    document.getElementById(m.doelId).textContent = t('food.goalRange', { min: r.min, max: r.max, unit: m.unit });
   });
 
   // Count label onder tabs
   const totalItems = dayLog.length;
   const el = document.getElementById('meal-count');
   if (el) el.textContent = totalItems > 0
-    ? `${totalItems} item${totalItems>1?'s':''} gelogd · totaal ${tot.kcal} kcal`
-    : 'Klik op een maaltijd om hem toe te voegen';
+    ? t('food.itemsLoggedTotal', { n: totalItems, item: t('checkin.item') + (totalItems>1?'s':''), kcal: tot.kcal })
+    : t('food.plan.hintShort');
 
   // Herbereken voedingssamenvatting in checkout live
   if (document.getElementById('day-section') && document.getElementById('day-section').style.display !== 'none') {
@@ -444,4 +445,3 @@ function updateMacroTotals() {
   // Update dashboard preview
   updateHomeMacros();
 }
-

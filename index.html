@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
@@ -8,18 +8,26 @@
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="js/cloud.js"></script>
+<script src="js/translations.js"></script>
+<script src="js/i18n.js"></script>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div class="overlay open" id="login-overlay">
   <div class="modal">
-    <div class="modal-title">Inloggen bij PRIME</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <div class="lang-toggle">
+        <button class="lang-btn" data-lang="nl" onclick="setLang('nl')">NL</button>
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      </div>
+    </div>
+    <div class="modal-title" data-i18n="login.title">Inloggen bij PRIME</div>
     <form id="login-form">
-      <div class="form-row"><label>E-mail of gebruikersnaam</label><input id="login-email" type="text" autocomplete="username" required></div>
-      <div class="form-row"><label>Wachtwoord</label><input id="login-password" type="password" autocomplete="current-password" required></div>
+      <div class="form-row"><label data-i18n="login.emailLabel">E-mail of gebruikersnaam</label><input id="login-email" type="text" autocomplete="username" required></div>
+      <div class="form-row"><label data-i18n="login.passwordLabel">Wachtwoord</label><input id="login-password" type="password" autocomplete="current-password" required></div>
       <div id="login-error" style="color:#c0392b;font-size:12px;margin-bottom:12px"></div>
-      <button type="submit" class="btn-primary" id="login-submit">Inloggen →</button>
+      <button type="submit" class="btn-primary" id="login-submit" data-i18n="login.submit">Inloggen →</button>
     </form>
   </div>
 </div>
@@ -27,7 +35,7 @@
 <!-- KLANTKIEZER (alleen coach) -->
 <div class="overlay" id="client-picker-overlay">
   <div class="modal">
-    <div class="modal-title">Kies een klant</div>
+    <div class="modal-title" data-i18n="picker.title">Kies een klant</div>
     <div id="client-picker-list"></div>
   </div>
 </div>
@@ -37,16 +45,20 @@
 <header class="header">
   <div class="logo">PRIME <span>by Anneke Lifestyle coaching</span></div>
   <nav class="nav">
-    <button class="nav-btn active" onclick="go('home')">Dashboard</button>
-    <button class="nav-btn" onclick="go('training')">Training</button>
-    <button class="nav-btn" onclick="go('voeding')">Voeding</button>
-    <button class="nav-btn" onclick="go('coach')">Coach</button>
-    <button class="nav-btn" onclick="go('history')">Voortgang</button>
-    <button class="nav-btn" onclick="go('beheer')" style="font-size:11px">📷 Foto beheer</button>
+    <button class="nav-btn active" onclick="go('home')" data-i18n="nav.dashboard">Dashboard</button>
+    <button class="nav-btn" onclick="go('training')" data-i18n="nav.training">Training</button>
+    <button class="nav-btn" onclick="go('voeding')" data-i18n="nav.voeding">Voeding</button>
+    <button class="nav-btn" onclick="go('coach')" data-i18n="nav.coach">Coach</button>
+    <button class="nav-btn" onclick="go('history')" data-i18n="nav.voortgang">Voortgang</button>
+    <button class="nav-btn" onclick="go('beheer')" style="font-size:11px" data-i18n="nav.photoManage">📷 Foto beheer</button>
   </nav>
-  <button class="btn-sm" onclick="openProfile()">⚙ Profiel</button>
-  <button class="btn-sm" id="switch-client-btn" style="display:none">🔁 Wissel klant</button>
-  <button class="btn-sm" id="logout-btn">🚪 Uit</button>
+  <div class="lang-toggle">
+    <button class="lang-btn" data-lang="nl" onclick="setLang('nl')">NL</button>
+    <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+  </div>
+  <button class="btn-sm" onclick="openProfile()" data-i18n="header.profile">⚙ Profiel</button>
+  <button class="btn-sm" id="switch-client-btn" style="display:none" data-i18n="header.switchClient">🔁 Wissel klant</button>
+  <button class="btn-sm" id="logout-btn" data-i18n="header.logout">🚪 Uit</button>
 </header>
 
 <!-- HOME -->
@@ -56,14 +68,14 @@
   <div class="checkin-hero" id="checkin-hero">
     <p class="checkin-hero-date" id="hero-date"></p>
     <h1 id="hero-greeting">Goedemorgen! 👋</h1>
-    <p id="hero-sub">Doe je check-in om je dag te starten.</p>
+    <p id="hero-sub" data-i18n="home.sub">Doe je check-in om je dag te starten.</p>
   </div>
 
   <!-- STATS -->
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-val" id="s-streak">0</div><div class="stat-lbl">🔥 Streak</div></div>
-    <div class="stat-card"><div class="stat-val" id="s-checkins">0</div><div class="stat-lbl">Check-ins</div></div>
-    <div class="stat-card"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl">Gem. energie</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-streak">0</div><div class="stat-lbl" data-i18n="home.stat.streak">🔥 Streak</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-checkins">0</div><div class="stat-lbl" data-i18n="home.stat.checkins">Check-ins</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl" data-i18n="home.stat.avgEnergy">Gem. energie</div></div>
   </div>
 
   <!-- CHECK-IN -->
@@ -71,11 +83,11 @@
     <div class="cq-card" id="cq-weight-card">
       <div class="cq-header">
         <span class="cq-icon">⚖️</span>
-        <span class="cq-label">Wat weeg je vandaag?</span>
-        <button class="cq-skip-btn" onclick="skipWeight()">Sla over</button>
+        <span class="cq-label" data-i18n="checkin.weight.label">Wat weeg je vandaag?</span>
+        <button class="cq-skip-btn" onclick="skipWeight()" data-i18n="checkin.skip">Sla over</button>
       </div>
       <div class="cq-weight-row">
-        <input type="number" id="weight-input" class="cq-weight-input" placeholder="bijv. 68.5" min="30" max="250" step="0.1" oninput="onWeightInput(this)">
+        <input type="number" id="weight-input" class="cq-weight-input" data-i18n-placeholder="checkin.weight.placeholder" placeholder="bijv. 68.5" min="30" max="250" step="0.1" oninput="onWeightInput(this)">
         <span class="cq-weight-unit">kg</span>
       </div>
     </div>
@@ -83,81 +95,81 @@
     <div class="cq-card">
       <div class="cq-header">
         <span class="cq-icon">😴</span>
-        <span class="cq-label">Hoe heb je geslapen?</span>
+        <span class="cq-label" data-i18n="checkin.sleep.label">Hoe heb je geslapen?</span>
       </div>
       <div class="cq-options">
-        <button class="cq-btn" onclick="pick('sleep',1,this)"><span class="cq-emoji">😔</span><span class="cq-text">Slecht</span></button>
-        <button class="cq-btn" onclick="pick('sleep',2,this)"><span class="cq-emoji">😐</span><span class="cq-text">Matig</span></button>
-        <button class="cq-btn" onclick="pick('sleep',3,this)"><span class="cq-emoji">😊</span><span class="cq-text">Goed</span></button>
-        <button class="cq-btn" onclick="pick('sleep',4,this)"><span class="cq-emoji">🌟</span><span class="cq-text">Uitstekend</span></button>
+        <button class="cq-btn" onclick="pick('sleep',1,this)"><span class="cq-emoji">😔</span><span class="cq-text" data-i18n="checkin.sleep.bad">Slecht</span></button>
+        <button class="cq-btn" onclick="pick('sleep',2,this)"><span class="cq-emoji">😐</span><span class="cq-text" data-i18n="checkin.sleep.ok">Matig</span></button>
+        <button class="cq-btn" onclick="pick('sleep',3,this)"><span class="cq-emoji">😊</span><span class="cq-text" data-i18n="checkin.sleep.good">Goed</span></button>
+        <button class="cq-btn" onclick="pick('sleep',4,this)"><span class="cq-emoji">🌟</span><span class="cq-text" data-i18n="checkin.sleep.great">Uitstekend</span></button>
       </div>
     </div>
 
     <div class="cq-card">
       <div class="cq-header">
         <span class="cq-icon">⚡</span>
-        <span class="cq-label">Hoe is je energie?</span>
+        <span class="cq-label" data-i18n="checkin.energy.label">Hoe is je energie?</span>
       </div>
       <div class="cq-options">
-        <button class="cq-btn" onclick="pick('energy',1,this)"><span class="cq-emoji">🪫</span><span class="cq-text">Laag</span></button>
-        <button class="cq-btn" onclick="pick('energy',2,this)"><span class="cq-emoji">😑</span><span class="cq-text">Gemiddeld</span></button>
-        <button class="cq-btn" onclick="pick('energy',3,this)"><span class="cq-emoji">⚡</span><span class="cq-text">Hoog</span></button>
-        <button class="cq-btn" onclick="pick('energy',4,this)"><span class="cq-emoji">🔥</span><span class="cq-text">Zeer hoog</span></button>
+        <button class="cq-btn" onclick="pick('energy',1,this)"><span class="cq-emoji">🪫</span><span class="cq-text" data-i18n="checkin.energy.low">Laag</span></button>
+        <button class="cq-btn" onclick="pick('energy',2,this)"><span class="cq-emoji">😑</span><span class="cq-text" data-i18n="checkin.energy.mid">Gemiddeld</span></button>
+        <button class="cq-btn" onclick="pick('energy',3,this)"><span class="cq-emoji">⚡</span><span class="cq-text" data-i18n="checkin.energy.high">Hoog</span></button>
+        <button class="cq-btn" onclick="pick('energy',4,this)"><span class="cq-emoji">🔥</span><span class="cq-text" data-i18n="checkin.energy.veryhigh">Zeer hoog</span></button>
       </div>
     </div>
 
     <div class="cq-card">
       <div class="cq-header">
         <span class="cq-icon">🧘</span>
-        <span class="cq-label">Hoe is je stress?</span>
+        <span class="cq-label" data-i18n="checkin.stress.label">Hoe is je stress?</span>
       </div>
       <div class="cq-options">
-        <button class="cq-btn" onclick="pick('stress',1,this)"><span class="cq-emoji">😤</span><span class="cq-text">Veel stress</span></button>
-        <button class="cq-btn" onclick="pick('stress',2,this)"><span class="cq-emoji">😬</span><span class="cq-text">Redelijk wat</span></button>
-        <button class="cq-btn" onclick="pick('stress',3,this)"><span class="cq-emoji">😌</span><span class="cq-text">Weinig stress</span></button>
-        <button class="cq-btn" onclick="pick('stress',4,this)"><span class="cq-emoji">🧘</span><span class="cq-text">Geen stress</span></button>
+        <button class="cq-btn" onclick="pick('stress',1,this)"><span class="cq-emoji">😤</span><span class="cq-text" data-i18n="checkin.stress.high">Veel stress</span></button>
+        <button class="cq-btn" onclick="pick('stress',2,this)"><span class="cq-emoji">😬</span><span class="cq-text" data-i18n="checkin.stress.mid">Redelijk wat</span></button>
+        <button class="cq-btn" onclick="pick('stress',3,this)"><span class="cq-emoji">😌</span><span class="cq-text" data-i18n="checkin.stress.low">Weinig stress</span></button>
+        <button class="cq-btn" onclick="pick('stress',4,this)"><span class="cq-emoji">🧘</span><span class="cq-text" data-i18n="checkin.stress.none">Geen stress</span></button>
       </div>
     </div>
 
-    <button class="btn-primary" id="checkin-btn" onclick="doCheckin()" disabled style="margin-top:4px">Start mijn dag →</button>
+    <button class="btn-primary" id="checkin-btn" onclick="doCheckin()" disabled style="margin-top:4px" data-i18n="checkin.start">Start mijn dag →</button>
   </div>
 
   <!-- DAY OVERVIEW (after check-in) -->
   <div id="day-section" style="display:none">
     <div class="success-banner">
-      <h3 id="day-title">Je dag is klaar ✓</h3>
-      <p id="day-summary">Coach Ira heeft je dag afgestemd op jouw check-in.</p>
+      <h3 id="day-title" data-i18n="day.title.default">Je dag is klaar ✓</h3>
+      <p id="day-summary" data-i18n="day.summary.default">Coach Ira heeft je dag afgestemd op jouw check-in.</p>
     </div>
 
     <div id="coach-message-home" class="card" style="margin-bottom:18px;display:none">
-      <div class="card-label">Coach Ira zegt</div>
+      <div class="card-label" data-i18n="coach.saysLabel">Coach Ira zegt</div>
       <div id="coach-msg-text" style="font-size:14px;line-height:1.75;color:var(--charcoal)"></div>
     </div>
 
     <div class="two-col">
       <div class="card" style="margin-bottom:0;cursor:pointer" onclick="go('training')">
-        <div class="card-label">Training vandaag</div>
+        <div class="card-label" data-i18n="home.trainingToday">Training vandaag</div>
         <div id="home-training-badge"></div>
         <div id="home-training-preview" style="font-size:13px;line-height:1.7;color:var(--muted)"></div>
-        <div style="margin-top:14px"><button class="btn-sm" style="width:100%">Bekijk schema →</button></div>
+        <div style="margin-top:14px"><button class="btn-sm" style="width:100%" data-i18n="home.viewSchema">Bekijk schema →</button></div>
       </div>
       <div class="card" style="margin-bottom:0;cursor:pointer" onclick="go('voeding')">
-        <div class="card-label">Voeding vandaag</div>
+        <div class="card-label" data-i18n="food.cardLabel">Voeding vandaag</div>
         <div id="home-nutrient-rows" style="margin-bottom:12px">
           <!-- Gevuld door updateHomeMacros() -->
-          <div style="font-size:13px;color:var(--muted)" id="home-macro-preview">Doe je check-in om je voedingsdoelen te zien</div>
+          <div style="font-size:13px;color:var(--muted)" id="home-macro-preview" data-i18n="home.macroPreview">Doe je check-in om je voedingsdoelen te zien</div>
         </div>
-        <button class="btn-sm" style="width:100%">Bekijk maaltijdplan →</button>
+        <button class="btn-sm" style="width:100%" data-i18n="home.viewMealplan">Bekijk maaltijdplan →</button>
       </div>
     </div>
 
     <!-- CHECKOUT -->
     <div class="checkout-card" id="checkout-card">
-      <h3>Avond check-out 🌙</h3>
+      <h3 data-i18n="checkout.title">Avond check-out 🌙</h3>
 
       <!-- TRAINING SAMENVATTING -->
       <div class="training-summary-block" id="training-summary-block">
-        <div class="training-summary-label">Training vandaag</div>
+        <div class="training-summary-label" data-i18n="home.trainingToday">Training vandaag</div>
         <div id="training-summary-content"></div>
         <div id="training-confirm-question" style="display:none" class="coach-confirm-question"></div>
         <div id="training-confirm-btns" style="display:none;display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"></div>
@@ -167,7 +179,7 @@
 
       <!-- VOEDING SAMENVATTING -->
       <div class="training-summary-block" id="food-summary-block">
-        <div class="training-summary-label">Voeding vandaag</div>
+        <div class="training-summary-label" data-i18n="food.cardLabel">Voeding vandaag</div>
         <div id="food-summary-content"></div>
         <div id="food-confirm-question" style="display:none" class="coach-confirm-question"></div>
         <div id="food-confirm-btns" style="display:none;gap:8px;margin-top:10px;flex-wrap:wrap"></div>
@@ -178,17 +190,17 @@
       <!-- ENERGIE (als laatste) -->
       <div class="cq-header">
         <span class="cq-icon">⚡</span>
-        <span class="cq-label">Hoe was je energie vandaag?</span>
+        <span class="cq-label" data-i18n="checkin.energy.eod.label">Hoe was je energie vandaag?</span>
       </div>
       <div class="cq-options">
-        <button class="cq-btn" onclick="pickOut('energy',1,this)"><span class="cq-emoji">🪫</span><span class="cq-text">Laag</span></button>
-        <button class="cq-btn" onclick="pickOut('energy',2,this)"><span class="cq-emoji">😑</span><span class="cq-text">Gemiddeld</span></button>
-        <button class="cq-btn" onclick="pickOut('energy',3,this)"><span class="cq-emoji">⚡</span><span class="cq-text">Hoog</span></button>
-        <button class="cq-btn" onclick="pickOut('energy',4,this)"><span class="cq-emoji">🔥</span><span class="cq-text">Zeer hoog</span></button>
+        <button class="cq-btn" onclick="pickOut('energy',1,this)"><span class="cq-emoji">🪫</span><span class="cq-text" data-i18n="checkin.energy.low">Laag</span></button>
+        <button class="cq-btn" onclick="pickOut('energy',2,this)"><span class="cq-emoji">😑</span><span class="cq-text" data-i18n="checkin.energy.mid">Gemiddeld</span></button>
+        <button class="cq-btn" onclick="pickOut('energy',3,this)"><span class="cq-emoji">⚡</span><span class="cq-text" data-i18n="checkin.energy.high">Hoog</span></button>
+        <button class="cq-btn" onclick="pickOut('energy',4,this)"><span class="cq-emoji">🔥</span><span class="cq-text" data-i18n="checkin.energy.veryhigh">Zeer hoog</span></button>
       </div>
 
       <div style="margin-top:20px">
-        <button class="btn-primary" id="checkout-btn" onclick="doCheckout()" disabled>Dag afronden →</button>
+        <button class="btn-primary" id="checkout-btn" onclick="doCheckout()" disabled data-i18n="checkout.finish">Dag afronden →</button>
       </div>
     </div>
   </div>
@@ -200,18 +212,18 @@
 <div id="screen-training" class="screen">
 <div class="container">
   <div style="margin-bottom:16px">
-    <div class="card-label" style="margin-bottom:4px">Training</div>
-    <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:6px" id="training-screen-title">Vandaag</h2>
+    <div class="card-label" style="margin-bottom:4px" data-i18n="training.cardLabel">Training</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:6px" id="training-screen-title" data-i18n="training.today">Vandaag</h2>
     <div id="training-screen-badge"></div>
   </div>
 
   <!-- TABS -->
   <div class="food-tabs" style="margin-bottom:18px">
-    <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')">Mijn dag</button>
-    <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')">Losse oefeningen</button>
-    <button class="food-tab"        id="ttab-schemas"      onclick="switchTrainingTab('schemas')">Dagschema's</button>
-    <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')">Weekprogramma's</button>
-    <button class="food-tab"        id="ttab-weekplanning" onclick="switchTrainingTab('weekplanning')">Weekplanning</button>
+    <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')" data-i18n="training.tab.day">Mijn dag</button>
+    <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')" data-i18n="training.tab.exercises">Losse oefeningen</button>
+    <button class="food-tab"        id="ttab-schemas"      onclick="switchTrainingTab('schemas')" data-i18n="training.tab.schemas">Dagschema's</button>
+    <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Weekprogramma's</button>
+    <button class="food-tab"        id="ttab-weekplanning" onclick="switchTrainingTab('weekplanning')" data-i18n="training.tab.weekplanning">Weekplanning</button>
   </div>
 
   <!-- TAB: PROGRAMMA'S -->
@@ -226,7 +238,7 @@
 
   <!-- TAB: DAGSCHEMA'S -->
   <div id="ttab-content-schemas" style="display:none">
-    <div style="font-size:14px;color:var(--muted);margin-bottom:16px">Kies een dagschema voor vandaag. De oefeningen worden direct toegevoegd aan <strong>Mijn dag</strong>.</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:16px" data-i18n-html="training.schemas.hint">Kies een dagschema voor vandaag. De oefeningen worden direct toegevoegd aan <strong>Mijn dag</strong>.</div>
     <div id="schemas-list"></div>
   </div>
 
@@ -234,7 +246,7 @@
   <div id="ttab-content-oefeningen" style="display:none">
     <div class="card" style="margin-bottom:16px;padding:14px 16px;display:flex;align-items:center;gap:10px;background:var(--sage-light);border-color:var(--sage-mid)">
       <div style="font-size:20px">💡</div>
-      <div style="font-size:13px;color:var(--charcoal)">Klik op een oefening om hem toe te voegen aan <strong>Mijn dag</strong>. Je kunt sets en reps aanpassen.</div>
+      <div style="font-size:13px;color:var(--charcoal)" data-i18n-html="training.exercises.hint">Klik op een oefening om hem toe te voegen aan <strong>Mijn dag</strong>. Je kunt sets en reps aanpassen.</div>
     </div>
     <div id="extra-exercise-list"></div>
   </div>
@@ -244,15 +256,15 @@
     <div id="dag-debug" style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--sand);border-radius:6px"></div>
     <div id="dag-progress-wrap" style="display:none;margin-bottom:16px">
       <div class="progress-wrap">
-        <div class="progress-top"><span>Voortgang</span><span id="dag-progress-txt">0 / 0 gedaan</span></div>
+        <div class="progress-top"><span data-i18n="training.progress">Voortgang</span><span id="dag-progress-txt">0 / 0 gedaan</span></div>
         <div class="progress-bg"><div class="progress-fill" id="dag-progress-bar" style="width:0%"></div></div>
       </div>
     </div>
     <div id="training-dag-empty" class="card" style="text-align:center;padding:40px;display:none">
       <div style="font-size:40px;margin-bottom:12px">🏋️</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px">Nog geen extra oefeningen</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:18px">Voeg losse oefeningen toe via het tabblad "Losse oefeningen".</div>
-      <button class="btn-sm" onclick="switchTrainingTab('oefeningen')">Voeg oefening toe →</button>
+      <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px" data-i18n="training.dag.empty.title">Nog geen extra oefeningen</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:18px" data-i18n="training.dag.empty.hint">Voeg losse oefeningen toe via het tabblad "Losse oefeningen".</div>
+      <button class="btn-sm" onclick="switchTrainingTab('oefeningen')" data-i18n="training.dag.empty.cta">Voeg oefening toe →</button>
     </div>
     <div id="training-dag-list"></div>
     <div id="training-dag-total" style="display:none;margin-top:16px"></div>
@@ -265,16 +277,16 @@
 <div id="screen-voeding" class="screen">
 <div class="container">
   <div style="margin-bottom:20px">
-    <div class="card-label" style="margin-bottom:4px">Voeding vandaag</div>
-    <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px">Maaltijdplanner</h2>
-    <div style="font-size:13px;color:var(--muted)" id="food-subtitle">Afgestemd op jouw check-in en doelen</div>
+    <div class="card-label" style="margin-bottom:4px" data-i18n="food.cardLabel">Voeding vandaag</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px" data-i18n="food.title">Maaltijdplanner</h2>
+    <div style="font-size:13px;color:var(--muted)" id="food-subtitle" data-i18n="food.subtitle">Afgestemd op jouw check-in en doelen</div>
   </div>
 
   <div id="no-checkin-food" class="card" style="text-align:center;padding:40px">
     <div style="font-size:40px;margin-bottom:12px">🥗</div>
-    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px">Doe eerst je check-in</div>
-    <div style="font-size:14px;color:var(--muted);margin-bottom:18px">Je maaltijdplan wordt afgestemd op jouw energie en doelen.</div>
-    <button class="btn-sm" onclick="go('home')">Naar check-in →</button>
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px" data-i18n="food.noCheckin.title">Doe eerst je check-in</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:18px" data-i18n="food.noCheckin.hint">Je maaltijdplan wordt afgestemd op jouw energie en doelen.</div>
+    <button class="btn-sm" onclick="go('home')" data-i18n="food.noCheckin.cta">Naar check-in →</button>
   </div>
 
   <div id="food-content" style="display:none">
@@ -282,13 +294,13 @@
 
     <!-- CALORIE EN NUTRIËNTEN INNAME -->
     <div class="card" style="margin-bottom:18px;padding:24px">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:20px">Calorie en nutriënten inname</h3>
+      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:20px" data-i18n="food.nutrients.title">Calorie en nutriënten inname</h3>
       <div id="nutrient-rows">
         <!-- Calorieën -->
         <div class="nutrient-row">
           <div class="nutrient-left">
-            <div class="nutrient-name">Calorieën</div>
-            <div class="nutrient-doel" id="doel-kcal">Doel: —</div>
+            <div class="nutrient-name" data-i18n="food.nutrient.calories">Calorieën</div>
+            <div class="nutrient-doel" id="doel-kcal" data-i18n="food.goal.default">Doel: —</div>
           </div>
           <div class="nutrient-mid">
             <span class="nutrient-arrow">∧</span>
@@ -304,8 +316,8 @@
         <!-- Koolhydraten -->
         <div class="nutrient-row">
           <div class="nutrient-left">
-            <div class="nutrient-name">Koolhydraten</div>
-            <div class="nutrient-doel" id="doel-carb">Doel: —</div>
+            <div class="nutrient-name" data-i18n="food.nutrient.carbs">Koolhydraten</div>
+            <div class="nutrient-doel" id="doel-carb" data-i18n="food.goal.default">Doel: —</div>
           </div>
           <div class="nutrient-mid">
             <span class="nutrient-arrow">∧</span>
@@ -321,8 +333,8 @@
         <!-- Eiwitten -->
         <div class="nutrient-row">
           <div class="nutrient-left">
-            <div class="nutrient-name">Eiwitten</div>
-            <div class="nutrient-doel" id="doel-prot">Doel: —</div>
+            <div class="nutrient-name" data-i18n="food.nutrient.protein">Eiwitten</div>
+            <div class="nutrient-doel" id="doel-prot" data-i18n="food.goal.default">Doel: —</div>
           </div>
           <div class="nutrient-mid">
             <span class="nutrient-arrow">∧</span>
@@ -338,8 +350,8 @@
         <!-- Vetten -->
         <div class="nutrient-row">
           <div class="nutrient-left">
-            <div class="nutrient-name">Vetten</div>
-            <div class="nutrient-doel" id="doel-fat">Doel: —</div>
+            <div class="nutrient-name" data-i18n="food.nutrient.fat">Vetten</div>
+            <div class="nutrient-doel" id="doel-fat" data-i18n="food.goal.default">Doel: —</div>
           </div>
           <div class="nutrient-mid">
             <span class="nutrient-arrow">∧</span>
@@ -357,14 +369,14 @@
 
     <!-- TABS: MAALTIJDPLAN / BASISPRODUCTEN -->
     <div class="food-tabs">
-      <button class="food-tab active" id="tab-plan" onclick="switchFoodTab('plan')">Maaltijdplan</button>
-      <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')">Basisproducten</button>
-      <button class="food-tab" id="tab-log" onclick="switchFoodTab('log')">Mijn dag <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
+      <button class="food-tab active" id="tab-plan" onclick="switchFoodTab('plan')" data-i18n="food.tab.plan">Maaltijdplan</button>
+      <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
+      <button class="food-tab" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
     </div>
 
     <!-- TAB: MAALTIJDPLAN -->
     <div id="foodtab-plan">
-      <div id="meal-count" style="font-size:13px;color:var(--muted);margin-bottom:16px">Klik op een maaltijd om hem toe te voegen aan je dag</div>
+      <div id="meal-count" style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
       <div id="meal-plan"></div>
     </div>
 
@@ -372,31 +384,31 @@
     <div id="foodtab-basis" style="display:none">
       <div class="search-bar" style="margin-bottom:16px">
         <span style="font-size:15px;color:var(--muted)">🔍</span>
-        <input type="text" id="product-search" placeholder="Zoek product..." oninput="renderProducts()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+        <input type="text" id="product-search" data-i18n-placeholder="food.search.placeholder" placeholder="Zoek product..." oninput="renderProducts()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
       </div>
       <div class="cat-tabs" id="cat-tabs">
-        <button class="cat-tab active" onclick="filterCat('alle',this)">Alle</button>
-        <button class="cat-tab" onclick="filterCat('fruit',this)">Fruit</button>
-        <button class="cat-tab" onclick="filterCat('groente',this)">Groente</button>
-        <button class="cat-tab" onclick="filterCat('vlees',this)">Vlees</button>
-        <button class="cat-tab" onclick="filterCat('vis',this)">Vis</button>
-        <button class="cat-tab" onclick="filterCat('zuivel',this)">Zuivel</button>
-        <button class="cat-tab" onclick="filterCat('granen',this)">Granen</button>
-        <button class="cat-tab" onclick="filterCat('noten',this)">Noten</button>
-        <button class="cat-tab" onclick="filterCat('overig',this)">Overig</button>
+        <button class="cat-tab active" onclick="filterCat('alle',this)" data-i18n="cat.alle">Alle</button>
+        <button class="cat-tab" onclick="filterCat('fruit',this)" data-i18n="cat.fruit">Fruit</button>
+        <button class="cat-tab" onclick="filterCat('groente',this)" data-i18n="cat.groente">Groente</button>
+        <button class="cat-tab" onclick="filterCat('vlees',this)" data-i18n="cat.vlees">Vlees</button>
+        <button class="cat-tab" onclick="filterCat('vis',this)" data-i18n="cat.vis">Vis</button>
+        <button class="cat-tab" onclick="filterCat('zuivel',this)" data-i18n="cat.zuivel">Zuivel</button>
+        <button class="cat-tab" onclick="filterCat('granen',this)" data-i18n="cat.granen">Granen</button>
+        <button class="cat-tab" onclick="filterCat('noten',this)" data-i18n="cat.noten">Noten</button>
+        <button class="cat-tab" onclick="filterCat('overig',this)" data-i18n="cat.overig">Overig</button>
       </div>
       <div id="product-grid"></div>
     </div>
 
     <!-- TAB: MIJN DAG LOG -->
     <div id="foodtab-log" style="display:none">
-      <div id="day-log-empty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px">
+      <div id="day-log-empty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px" data-i18n="food.log.empty">
         Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.
       </div>
       <div id="day-log-list"></div>
       <div id="day-log-totals" style="display:none">
         <div class="divider"></div>
-        <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px">Totaal overzicht</div>
+        <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px" data-i18n="food.log.totalsTitle">Totaal overzicht</div>
         <div id="log-summary"></div>
       </div>
     </div>
@@ -409,23 +421,23 @@
 <div id="screen-coach" class="screen">
 <div class="container">
   <div style="margin-bottom:20px">
-    <div class="card-label" style="margin-bottom:4px">AI Coach</div>
-    <h2 style="font-family:'DM Serif Display',serif;font-size:26px">Coach Ira</h2>
-    <div style="font-size:13px;color:var(--muted)">Direct, nuchter, warm — altijd beschikbaar</div>
+    <div class="card-label" style="margin-bottom:4px" data-i18n="coach.cardLabel">AI Coach</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px" data-i18n="coach.title">Coach Ira</h2>
+    <div style="font-size:13px;color:var(--muted)" data-i18n="coach.tagline">Direct, nuchter, warm — altijd beschikbaar</div>
   </div>
   <div class="card" style="padding:0;overflow:hidden">
     <div class="chat-wrap" id="chat-area"></div>
     <div style="padding:16px;border-top:1px solid var(--sand-dark)">
       <div class="chat-row">
-        <input class="chat-in" id="chat-input" type="text" placeholder="Stel een vraag aan coach Ira..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <input class="chat-in" id="chat-input" type="text" data-i18n-placeholder="coach.inputPlaceholder" placeholder="Stel een vraag aan coach Ira..." onkeydown="if(event.key==='Enter')sendMsg()">
         <button class="send-btn" id="send-btn" onclick="sendMsg()">→</button>
       </div>
       <div class="quick-btns">
-        <button class="quick-btn" onclick="qMsg('Wat moet ik eten na een zware training?')">Na training eten 💪</button>
-        <button class="quick-btn" onclick="qMsg('Ik slaap slecht, wat kan ik doen?')">Beter slapen 😴</button>
-        <button class="quick-btn" onclick="qMsg('Ik heb weinig motivatie vandaag, wat nu?')">Motivatie 🔥</button>
-        <button class="quick-btn" onclick="qMsg('Geef me een snel gezond ontbijt idee.')">Snel ontbijt 🌅</button>
-        <button class="quick-btn" onclick="qMsg('Hoe bouw ik een gezonde routine op stap voor stap?')">Routine opbouwen 📅</button>
+        <button class="quick-btn" onclick="qMsg(t('coach.quick.afterTraining.prompt'))" data-i18n="coach.quick.afterTraining">Na training eten 💪</button>
+        <button class="quick-btn" onclick="qMsg(t('coach.quick.sleep.prompt'))" data-i18n="coach.quick.sleep">Beter slapen 😴</button>
+        <button class="quick-btn" onclick="qMsg(t('coach.quick.motivation.prompt'))" data-i18n="coach.quick.motivation">Motivatie 🔥</button>
+        <button class="quick-btn" onclick="qMsg(t('coach.quick.breakfast.prompt'))" data-i18n="coach.quick.breakfast">Snel ontbijt 🌅</button>
+        <button class="quick-btn" onclick="qMsg(t('coach.quick.routine.prompt'))" data-i18n="coach.quick.routine">Routine opbouwen 📅</button>
       </div>
     </div>
   </div>
@@ -437,20 +449,20 @@
 <div class="container">
   <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start">
     <div>
-      <div class="card-label" style="margin-bottom:4px">Voortgang</div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px" id="h-username">Statistieken</h2>
+      <div class="card-label" style="margin-bottom:4px" data-i18n="history.cardLabel">Voortgang</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px" id="h-username" data-i18n="history.defaultTitle">Statistieken</h2>
       <div style="font-size:13px;color:var(--muted)" id="h-goal"></div>
     </div>
     <div style="text-align:right;padding-top:4px">
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="h-period"></div>
-      <button onclick="resetVoortgang()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid #e74c3c;background:transparent;color:#e74c3c;cursor:pointer">Wis voortgang</button>
+      <button onclick="resetVoortgang()" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid #e74c3c;background:transparent;color:#e74c3c;cursor:pointer" data-i18n="history.clearBtn">Wis voortgang</button>
     </div>
   </div>
 
   <!-- HISTORY TABS -->
   <div class="food-tabs" style="margin-bottom:18px">
-    <button class="food-tab active" id="htab-stats"     onclick="switchHistoryTab('stats')">Statistieken</button>
-    <button class="food-tab"        id="htab-programma" onclick="switchHistoryTab('programma')">Programma voortgang</button>
+    <button class="food-tab active" id="htab-stats"     onclick="switchHistoryTab('stats')" data-i18n="history.tab.stats">Statistieken</button>
+    <button class="food-tab"        id="htab-programma" onclick="switchHistoryTab('programma')" data-i18n="history.tab.program">Programma voortgang</button>
   </div>
 
   <!-- TAB: STATISTIEKEN -->
@@ -460,56 +472,56 @@
   <div class="stats-row" style="grid-template-columns:repeat(4,1fr)">
     <div class="stat-card">
       <div class="stat-val" id="h-streak" style="font-size:28px">0</div>
-      <div class="stat-lbl">🔥 Huidige streak</div>
+      <div class="stat-lbl" data-i18n="history.streak">🔥 Huidige streak</div>
     </div>
     <div class="stat-card">
       <div class="stat-val" id="h-total" style="font-size:28px">0</div>
-      <div class="stat-lbl">Totaal check-ins</div>
+      <div class="stat-lbl" data-i18n="history.totalCheckins">Totaal check-ins</div>
     </div>
     <div class="stat-card">
       <div class="stat-val" id="h-trainings" style="font-size:28px">0</div>
-      <div class="stat-lbl">Trainingen voltooid</div>
+      <div class="stat-lbl" data-i18n="history.trainingsDone">Trainingen voltooid</div>
     </div>
     <div class="stat-card">
       <div class="stat-val" id="h-best-streak" style="font-size:28px">0</div>
-      <div class="stat-lbl">🏆 Beste streak ooit</div>
+      <div class="stat-lbl" data-i18n="history.bestStreak">🏆 Beste streak ooit</div>
     </div>
   </div>
 
   <!-- ENERGIE & SLAAP -->
   <div class="two-col" style="margin-bottom:18px">
     <div class="card" style="margin-bottom:0">
-      <div class="card-label" style="margin-bottom:14px">Energie & Slaap (7 dagen gem.)</div>
+      <div class="card-label" style="margin-bottom:14px" data-i18n="history.energySleep">Energie & Slaap (7 dagen gem.)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
         <div style="text-align:center">
           <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-avg-energy">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Energie ochtend</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.energyMorning">Energie ochtend</div>
           <div style="font-size:10px;color:var(--muted)" id="h-energy-trend"></div>
         </div>
         <div style="text-align:center">
           <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-avg-sleep">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Slaap</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.sleep">Slaap</div>
         </div>
         <div style="text-align:center">
           <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)" id="h-avg-stress">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">Stress</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.stress">Stress</div>
         </div>
       </div>
       <div class="divider" style="margin:14px 0"></div>
-      <div style="font-size:12px;color:var(--muted)">Energie einde van de dag (gem. 7 dgn)</div>
+      <div style="font-size:12px;color:var(--muted)" data-i18n="history.energyEod">Energie einde van de dag (gem. 7 dgn)</div>
       <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--sage);margin-top:4px" id="h-avg-energy-out">—</div>
     </div>
 
     <div class="card" style="margin-bottom:0">
-      <div class="card-label" style="margin-bottom:14px">Training (totaal)</div>
+      <div class="card-label" style="margin-bottom:14px" data-i18n="history.trainingTotal">Training (totaal)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
         <div style="text-align:center">
           <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-pct-training">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">% volledig</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctComplete">% volledig</div>
         </div>
         <div style="text-align:center">
           <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-pct-partial">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px">% gedeeltelijk</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctPartial">% gedeeltelijk</div>
         </div>
       </div>
     </div>
@@ -517,54 +529,54 @@
 
   <!-- ENERGIE TREND GRAFIEK -->
   <div class="card" style="margin-bottom:18px">
-    <div class="card-label" style="margin-bottom:2px">Energie einde van de dag</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Trend over tijd (max. 30 dagen)</div>
+    <div class="card-label" style="margin-bottom:2px" data-i18n="history.energyTrendTitle">Energie einde van de dag</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px" data-i18n="history.energyTrendSub">Trend over tijd (max. 30 dagen)</div>
     <div id="energy-chart"></div>
   </div>
 
   <!-- GEWICHT GRAFIEK -->
   <div class="card" style="margin-bottom:18px">
-    <div class="card-label" style="margin-bottom:2px">⚖️ Gewicht</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Trend over tijd (max. 30 metingen)</div>
+    <div class="card-label" style="margin-bottom:2px" data-i18n="history.weightTitle">⚖️ Gewicht</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px" data-i18n="history.weightSub">Trend over tijd (max. 30 metingen)</div>
     <div id="weight-chart"></div>
   </div>
 
   <!-- VOEDING -->
   <div class="card" style="margin-bottom:18px">
-    <div class="card-label" style="margin-bottom:14px">Voeding</div>
+    <div class="card-label" style="margin-bottom:14px" data-i18n="history.nutritionTitle">Voeding</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
       <div style="text-align:center;background:var(--sand);border-radius:10px;padding:14px">
         <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-food-ondoel">—</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">% op doel</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctOnTarget">% op doel</div>
       </div>
       <div style="text-align:center;background:var(--sand);border-radius:10px;padding:14px">
         <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)" id="h-food-teveel">—</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">% teveel</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctTooMuch">% teveel</div>
       </div>
       <div style="text-align:center;background:var(--sand);border-radius:10px;padding:14px">
         <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-food-teweinig">—</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">% te weinig</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctTooLittle">% te weinig</div>
       </div>
     </div>
     <div class="divider" style="margin:14px 0"></div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Voeding gelogd</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px" data-i18n="history.foodLogged">Voeding gelogd</div>
     <div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">
       <div id="h-food-log-bar" style="height:100%;background:var(--sage);border-radius:100px;width:0%;transition:width 0.5s"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:5px" id="h-food-log-pct">0% van dagen gelogd</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:5px" id="h-food-log-pct" data-i18n="history.foodLogPct.default">0% van dagen gelogd</div>
   </div>
 
   <!-- SIGNALEN VOOR COACH -->
   <div class="card" style="margin-bottom:18px;border-color:var(--sage-mid)">
-    <div class="card-label" style="margin-bottom:14px;color:var(--sage)">⚑ Signalen voor coach</div>
+    <div class="card-label" style="margin-bottom:14px;color:var(--sage)" data-i18n="history.signals">⚑ Signalen voor coach</div>
     <div id="h-signals">
-      <div style="font-size:14px;color:var(--muted)">Nog geen data beschikbaar.</div>
+      <div style="font-size:14px;color:var(--muted)" data-i18n="history.noData">Nog geen data beschikbaar.</div>
     </div>
   </div>
 
   <!-- DAGELIJKSE GESCHIEDENIS -->
   <div class="card">
-    <div class="card-label" style="margin-bottom:14px">Dag-voor-dag overzicht</div>
+    <div class="card-label" style="margin-bottom:14px" data-i18n="history.dayByDay">Dag-voor-dag overzicht</div>
     <div id="history-list"></div>
   </div>
 
@@ -582,17 +594,17 @@
   <div id="screen-beheer" class="screen">
   <div class="container">
     <div style="margin-bottom:20px">
-      <div class="card-label">Coach beheer</div>
-      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px">Foto beheer</h2>
-      <div style="font-size:13px;color:var(--muted)">Upload eigen foto's voor oefeningen en maaltijden. Foto's worden lokaal opgeslagen.</div>
+      <div class="card-label" data-i18n="beheer.cardLabel">Coach beheer</div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px" data-i18n="beheer.title">Foto beheer</h2>
+      <div style="font-size:13px;color:var(--muted)" data-i18n="beheer.subtitle">Upload eigen foto's voor oefeningen en maaltijden. Foto's worden lokaal opgeslagen.</div>
     </div>
 
     <!-- TABS -->
     <div class="food-tabs" style="margin-bottom:18px">
-      <button class="food-tab active" id="btab-training" onclick="switchBeheerTab('training')">Training</button>
-      <button class="food-tab" id="btab-schemas" onclick="switchBeheerTab('schemas')">Schema's</button>
-      <button class="food-tab" id="btab-maaltijden" onclick="switchBeheerTab('maaltijden')">Maaltijden</button>
-      <button class="food-tab" id="btab-producten" onclick="switchBeheerTab('producten')">Producten</button>
+      <button class="food-tab active" id="btab-training" onclick="switchBeheerTab('training')" data-i18n="beheer.tab.training">Training</button>
+      <button class="food-tab" id="btab-schemas" onclick="switchBeheerTab('schemas')" data-i18n="beheer.tab.schemas">Schema's</button>
+      <button class="food-tab" id="btab-maaltijden" onclick="switchBeheerTab('maaltijden')" data-i18n="beheer.tab.meals">Maaltijden</button>
+      <button class="food-tab" id="btab-producten" onclick="switchBeheerTab('producten')" data-i18n="beheer.tab.products">Producten</button>
     </div>
 
     <div id="btab-content-training"></div>
@@ -601,18 +613,18 @@
     <div id="btab-content-producten" style="display:none"></div>
 
     <div class="card" style="margin-top:24px;background:var(--sage-light);border-color:var(--sage-mid)">
-      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--sage)">📤 Foto's online zetten</div>
-      <div style="font-size:12px;color:var(--charcoal);line-height:1.7;margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--sage)" data-i18n="beheer.export.title">📤 Foto's online zetten</div>
+      <div style="font-size:12px;color:var(--charcoal);line-height:1.7;margin-bottom:14px" data-i18n-html="beheer.export.instructions">
         Geüploade foto's worden lokaal opgeslagen. Om ze online zichtbaar te maken:<br>
         <strong>1.</strong> Klik op "Exporteer foto's" hieronder<br>
         <strong>2.</strong> Sla het bestand op als <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code> in de projectmap<br>
         <strong>3.</strong> Zeg tegen Claude: <em>"push de foto's naar GitHub"</em>
       </div>
-      <button onclick="exportCustomPhotosFile()" class="btn-primary" style="margin-bottom:0">📤 Exporteer foto's</button>
+      <button onclick="exportCustomPhotosFile()" class="btn-primary" style="margin-bottom:0" data-i18n="beheer.export.btn">📤 Exporteer foto's</button>
     </div>
     <div class="card" style="margin-top:12px;background:var(--sand)">
-      <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚠️ Let op</div>
-      <div style="font-size:12px;color:var(--muted)">Gebruik foto's van max. 1MB voor snelle laadtijden.</div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px" data-i18n="beheer.warning.title">⚠️ Let op</div>
+      <div style="font-size:12px;color:var(--muted)" data-i18n="beheer.warning.text">Gebruik foto's van max. 1MB voor snelle laadtijden.</div>
     </div>
   </div>
   </div>
@@ -620,32 +632,32 @@
 <!-- PROFILE MODAL -->
 <div class="overlay" id="profile-modal">
   <div class="modal">
-    <div class="modal-title">Jouw profiel <button class="modal-close" onclick="closeProfile()">×</button></div>
-    <div style="font-size:11px;color:#999;margin-bottom:16px">Laatste update: 13 juni 2026 · 14:00</div>
-    <div class="form-row"><label>Naam</label><input id="p-name" type="text" placeholder="Jouw naam"></div>
-    <div class="form-row"><label>Leeftijd</label><input id="p-age" type="number" placeholder="35"></div>
-    <div class="form-row"><label>Gewicht (kg)</label><input id="p-weight" type="number" placeholder="70"></div>
-    <div class="form-row"><label>Lengte (cm)</label><input id="p-height" type="number" placeholder="170"></div>
-    <div class="form-row"><label>Geslacht</label>
-      <select id="p-gender"><option value="v">Vrouw</option><option value="m">Man</option></select>
+    <div class="modal-title"><span data-i18n="profile.title">Jouw profiel</span> <button class="modal-close" onclick="closeProfile()">×</button></div>
+    <div style="font-size:11px;color:#999;margin-bottom:16px" data-i18n="profile.lastUpdate">Laatste update: 13 juni 2026 · 14:00</div>
+    <div class="form-row"><label data-i18n="profile.name">Naam</label><input id="p-name" type="text" data-i18n-placeholder="profile.namePlaceholder" placeholder="Jouw naam"></div>
+    <div class="form-row"><label data-i18n="profile.age">Leeftijd</label><input id="p-age" type="number" placeholder="35"></div>
+    <div class="form-row"><label data-i18n="profile.weight">Gewicht (kg)</label><input id="p-weight" type="number" placeholder="70"></div>
+    <div class="form-row"><label data-i18n="profile.height">Lengte (cm)</label><input id="p-height" type="number" placeholder="170"></div>
+    <div class="form-row"><label data-i18n="profile.gender">Geslacht</label>
+      <select id="p-gender"><option value="v" data-i18n="profile.gender.female">Vrouw</option><option value="m" data-i18n="profile.gender.male">Man</option></select>
     </div>
-    <div class="form-row"><label>Doel</label>
+    <div class="form-row"><label data-i18n="profile.goal">Doel</label>
       <select id="p-goal">
-        <option>Meer spiermassa opbouwen</option>
-        <option>Gezond gewicht bereiken</option>
-        <option>Meer energie hebben</option>
-        <option>Gezonder eten</option>
-        <option>Stressreductie</option>
+        <option data-i18n="profile.goal.muscle">Meer spiermassa opbouwen</option>
+        <option data-i18n="profile.goal.weight">Gezond gewicht bereiken</option>
+        <option data-i18n="profile.goal.energy">Meer energie hebben</option>
+        <option data-i18n="profile.goal.eating">Gezonder eten</option>
+        <option data-i18n="profile.goal.stress">Stressreductie</option>
       </select>
     </div>
-    <div class="form-row"><label>Activiteitsniveau</label>
+    <div class="form-row"><label data-i18n="profile.activity">Activiteitsniveau</label>
       <select id="p-activity">
-        <option value="1.2">Weinig actief (1-2x/week)</option>
-        <option value="1.375">Matig actief (3-4x/week)</option>
-        <option value="1.55">Actief (5+x/week)</option>
+        <option value="1.2" data-i18n="profile.activity.low">Weinig actief (1-2x/week)</option>
+        <option value="1.375" data-i18n="profile.activity.mid">Matig actief (3-4x/week)</option>
+        <option value="1.55" data-i18n="profile.activity.high">Actief (5+x/week)</option>
       </select>
     </div>
-    <button class="btn-primary" onclick="saveProfile()">Opslaan ✓</button>
+    <button class="btn-primary" onclick="saveProfile()" data-i18n="profile.save">Opslaan ✓</button>
   </div>
 </div>
 
@@ -654,30 +666,30 @@
   <div class="portion-modal">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
       <div>
-        <div class="portion-product-name" id="pm-name">Product</div>
-        <div class="portion-per100" id="pm-per100">per 100g: — kcal · — eiwit · — koolh · — vet</div>
+        <div class="portion-product-name" id="pm-name" data-i18n="portion.defaultName">Product</div>
+        <div class="portion-per100" id="pm-per100" data-i18n="portion.per100.default">per 100g: — kcal · — eiwit · — koolh · — vet</div>
       </div>
       <button onclick="closePortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
     </div>
-    <div class="portion-moment-label">Maaltijdmoment</div>
+    <div class="portion-moment-label" data-i18n="portion.momentLabel">Maaltijdmoment</div>
     <div class="moment-btns">
-      <button class="moment-btn active" onclick="selectMoment('ontbijt',this)">🌅 Ontbijt</button>
-      <button class="moment-btn" onclick="selectMoment('lunch',this)">🥗 Lunch</button>
-      <button class="moment-btn" onclick="selectMoment('avond',this)">🍽️ Avond</button>
-      <button class="moment-btn" onclick="selectMoment('snack',this)">🍎 Snack</button>
+      <button class="moment-btn active" onclick="selectMoment('ontbijt',this)">🌅 <span data-i18n="moment.ontbijt">Ontbijt</span></button>
+      <button class="moment-btn" onclick="selectMoment('lunch',this)">🥗 <span data-i18n="moment.lunch">Lunch</span></button>
+      <button class="moment-btn" onclick="selectMoment('avond',this)">🍽️ <span data-i18n="moment.avond">Avond</span></button>
+      <button class="moment-btn" onclick="selectMoment('snack',this)">🍎 <span data-i18n="moment.snack">Snack</span></button>
     </div>
     <div id="pm-portie-btns"></div>
     <div class="portion-input-row">
       <input type="number" id="pm-gram" value="100" min="1" max="2000" step="5" oninput="updatePortionPreview()">
-      <span class="portion-unit">gram</span>
+      <span class="portion-unit" data-i18n="portion.gram">gram</span>
     </div>
     <div class="portion-preview">
-      <div><div class="prev-val" id="pv-kcal">0</div><div class="prev-lbl">kcal</div></div>
-      <div><div class="prev-val" id="pv-prot" style="color:var(--accent)">0g</div><div class="prev-lbl">eiwit</div></div>
-      <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl">koolh</div></div>
-      <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl">vet</div></div>
+      <div><div class="prev-val" id="pv-kcal">0</div><div class="prev-lbl" data-i18n="portion.kcal">kcal</div></div>
+      <div><div class="prev-val" id="pv-prot" style="color:var(--accent)">0g</div><div class="prev-lbl" data-i18n="portion.protein">eiwit</div></div>
+      <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
+      <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <button class="btn-primary" onclick="addProductToLog()">Toevoegen aan mijn dag →</button>
+    <button class="btn-primary" onclick="addProductToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
   </div>
 </div>
 

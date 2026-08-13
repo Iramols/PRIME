@@ -1,6 +1,6 @@
-﻿// ========== HISTORY ==========
+// ========== HISTORY ==========
 function resetVoortgang() {
-  if (!confirm('Alle voortgang wissen en opnieuw beginnen?')) return;
+  if (!confirm(t('history.confirmReset'))) return;
   history = [];
   todayData = null;
   exerciseDone = [];
@@ -16,7 +16,7 @@ function resetVoortgang() {
 function renderHistory() {
   const total = history.length;
   if (total === 0) {
-    document.getElementById('h-username').textContent = 'Statistieken';
+    document.getElementById('h-username').textContent = t('history.defaultTitle');
     document.getElementById('h-goal').textContent = '';
     document.getElementById('h-period').textContent = '';
     ['h-streak','h-best-streak','h-total','h-trainings'].forEach(function(id) {
@@ -27,22 +27,22 @@ function renderHistory() {
     });
     const trend = document.getElementById('h-energy-trend'); if (trend) trend.textContent = '';
     const bar = document.getElementById('h-food-log-bar'); if (bar) bar.style.width = '0%';
-    const pct = document.getElementById('h-food-log-pct'); if (pct) pct.textContent = '0% van dagen gelogd';
-    const sig = document.getElementById('h-signals'); if (sig) sig.innerHTML = '<div style="font-size:13px;color:var(--muted)">Nog geen data beschikbaar.</div>';
+    const pct = document.getElementById('h-food-log-pct'); if (pct) pct.textContent = t('history.foodLogPct.default');
+    const sig = document.getElementById('h-signals'); if (sig) sig.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('history.noData') + '</div>';
     const ec = document.getElementById('energy-chart'); if (ec) ec.innerHTML = '';
     const wc = document.getElementById('weight-chart'); if (wc) wc.innerHTML = '';
-    document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:14px">Nog geen data. Doe je eerste check-in!</div>';
+    document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:14px">' + t('history.noDataYet') + '</div>';
     return;
   }
 
   // ── Naam & doel ──
-  document.getElementById('h-username').textContent = (profile.name || 'Gebruiker') + ' — Statistieken';
+  document.getElementById('h-username').textContent = t('history.usernameStats', { name: profile.name || t('history.defaultUserName') });
   document.getElementById('h-goal').textContent = profile.goal || '';
   const eerste = new Date(history[history.length-1].date);
   const laatste = new Date(history[0].date);
   document.getElementById('h-period').textContent =
-    eerste.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}) + ' → ' +
-    laatste.toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'});
+    eerste.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' → ' +
+    laatste.toLocaleDateString(dateLocale(),{day:'numeric',month:'short',year:'numeric'});
 
   // ── Streak ──
   const streak = calcStreak();
@@ -69,7 +69,6 @@ function renderHistory() {
     const vals = arr.map(h => h.checkout?.[key]).filter(v => v > 0);
     return vals.length > 0 ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '—';
   };
-  const energyLabels = { '—':'—', '1.0':'🪫 Laag', '1':'🪫 Laag' };
   const fmtScore = v => {
     if (v === '—') return '—';
     const n = parseFloat(v);
@@ -88,7 +87,7 @@ function renderHistory() {
     const e2 = parseFloat(avg(recent7.slice(3,7), 'energy'));
     if (!isNaN(e1) && !isNaN(e2)) {
       document.getElementById('h-energy-trend').textContent =
-        e1 > e2 + 0.3 ? '↑ Stijgend' : e1 < e2 - 0.3 ? '↓ Dalend' : '→ Stabiel';
+        e1 > e2 + 0.3 ? t('history.trend.up') : e1 < e2 - 0.3 ? t('history.trend.down') : t('history.trend.stable');
     }
   }
 
@@ -102,20 +101,20 @@ function renderHistory() {
   document.getElementById('h-food-teveel').textContent  = foodDays.length > 0 ? Math.round(teveel/foodDays.length*100)   + '%' : '—';
   document.getElementById('h-food-teweinig').textContent = foodDays.length > 0 ? Math.round(teweinig/foodDays.length*100) + '%' : '—';
   document.getElementById('h-food-log-bar').style.width = pctLog + '%';
-  document.getElementById('h-food-log-pct').textContent = pctLog + '% van dagen voeding gelogd';
+  document.getElementById('h-food-log-pct').textContent = pctLog + t('history.pctFoodLoggedSuffix');
 
   // ── Signalen voor coach ──
   const signals = [];
-  if (streak === 0 && total > 0) signals.push({ kleur:'#E24B4A', tekst:'⚠️ Streak gebroken — geen check-in vandaag' });
+  if (streak === 0 && total > 0) signals.push({ kleur:'#E24B4A', tekst:t('history.signal.streakBroken') });
   const dagenWeg = calcDagenZonderCheckin();
-  if (dagenWeg >= 2) signals.push({ kleur:'#E24B4A', tekst:`⚠️ ${dagenWeg} dagen geen check-in — risico op afhaken` });
-  if (parseFloat(avg(recent7, 'energy')) < 2.0) signals.push({ kleur:'#f39c12', tekst:'🟡 Energie structureel laag (7 dgn gem. onder 2.0) — bespreek slaap en herstel' });
-  if (parseFloat(avg(recent7, 'stress')) < 2.0) signals.push({ kleur:'#f39c12', tekst:'🟡 Stress structureel hoog (7 dgn gem. onder 2.0) — bespreek stressreductie' });
-  if (metCheckout.length >= 3 && volledig / metCheckout.length < 0.4) signals.push({ kleur:'#f39c12', tekst:'🟡 Minder dan 40% trainingen volledig gedaan — schema aanpassen?' });
-  if (pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:'🟡 Voeding wordt zelden gelogd — bespreek drempel' });
-  if (bestStreak >= 7) signals.push({ kleur:'var(--sage)', tekst:`✅ Beste streak: ${bestStreak} dagen — benoem deze prestatie` });
-  if (volledig >= 5) signals.push({ kleur:'var(--sage)', tekst:`✅ ${volledig} trainingen volledig voltooid — identiteitsshift bevestigen` });
-  if (streak >= 7) signals.push({ kleur:'var(--sage)', tekst:`✅ ${streak} dagen op rij actief — mijlpaal, stuur een persoonlijk bericht` });
+  if (dagenWeg >= 2) signals.push({ kleur:'#E24B4A', tekst:t('history.signal.daysNoCheckin', { n: dagenWeg }) });
+  if (parseFloat(avg(recent7, 'energy')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowEnergy') });
+  if (parseFloat(avg(recent7, 'stress')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.highStress') });
+  if (metCheckout.length >= 3 && volledig / metCheckout.length < 0.4) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowTrainingCompletion') });
+  if (pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodRarelyLogged') });
+  if (bestStreak >= 7) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.bestStreak', { n: bestStreak }) });
+  if (volledig >= 5) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.trainingsCompleted', { n: volledig }) });
+  if (streak >= 7) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.activeStreak', { n: streak }) });
 
   document.getElementById('h-signals').innerHTML = signals.length > 0
     ? signals.map(s => `
@@ -123,7 +122,7 @@ function renderHistory() {
           <div style="width:3px;min-height:20px;border-radius:2px;background:${s.kleur};flex-shrink:0;margin-top:2px"></div>
           <div style="font-size:13px;line-height:1.6">${s.tekst}</div>
         </div>`).join('')
-    : '<div style="font-size:13px;color:var(--muted)">Geen bijzondere signalen — alles loopt goed.</div>';
+    : '<div style="font-size:13px;color:var(--muted)">' + t('history.noSignals') + '</div>';
 
   // ── Energie trend grafiek ──
   renderEnergyChart();
@@ -134,20 +133,20 @@ function renderHistory() {
   // ── Dag-voor-dag lijst ──
   document.getElementById('history-list').innerHTML = history.slice(0,30).map(function(h) {
     const d = new Date(h.date);
-    const dateStr = d.toLocaleDateString('nl-NL', { weekday:'short', day:'numeric', month:'short' });
+    const dateStr = d.toLocaleDateString(dateLocale(), { weekday:'short', day:'numeric', month:'short' });
     const co = h.checkout;
     const ci = h.checkin;
     return '<div class="history-item" style="padding:12px 0;border-bottom:0.5px solid var(--sand-dark);display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:start">'
       + '<div style="font-size:12px;font-weight:500">' + dateStr + '</div>'
       + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
-      + (co ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;background:' + (co.training===3?'var(--sage)':co.training===2?'#f39c12':'#e74c3c') + ';color:white" title="Training voltooid">' + (co.training===3?'✓ Training':co.training===2?'\xBD Training':'✗ Training') + '</span>' : '')
-      + (co ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;background:' + (co.food===3?'var(--sage)':co.food===4?'#e74c3c':co.food===2?'#f39c12':'#e74c3c') + ';color:white" title="Voeding">' + (co.food===3?'✓ Voeding':co.food===4?'↑ Voeding':co.food===2?'\xBD Voeding':'✗ Voeding') + '</span>' : '')
+      + (co ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;background:' + (co.training===3?'var(--sage)':co.training===2?'#f39c12':'#e74c3c') + ';color:white" title="' + t('history.title.training') + '">' + (co.training===3?t('history.trainingBadge.full'):co.training===2?t('history.trainingBadge.partial'):t('history.trainingBadge.none')) + '</span>' : '')
+      + (co ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;background:' + (co.food===3?'var(--sage)':co.food===4?'#e74c3c':co.food===2?'#f39c12':'#e74c3c') + ';color:white" title="' + t('history.title.food') + '">' + (co.food===3?t('history.foodBadge.onTarget'):co.food===4?t('history.foodBadge.over'):co.food===2?t('history.foodBadge.under'):t('history.foodBadge.none')) + '</span>' : '')
       + '</div>'
       + '<div style="font-size:12px;color:var(--muted)">'
-      + (ci ? '<span title="Slaap">😴' + ci.sleep + '</span> <span title="Energie">⚡' + ci.energy + '</span> <span title="Stress">🧘' + ci.stress + '</span>' + (ci.weight ? ' <span style="color:var(--sage)">⚖️ ' + ci.weight + 'kg</span>' : '') : '')
+      + (ci ? '<span title="' + t('history.title.sleep') + '">😴' + ci.sleep + '</span> <span title="' + t('history.title.energy') + '">⚡' + ci.energy + '</span> <span title="' + t('history.title.stress') + '">🧘' + ci.stress + '</span>' + (ci.weight ? ' <span style="color:var(--sage)">⚖️ ' + ci.weight + 'kg</span>' : '') : '')
       + '</div>'
       + '<div style="font-size:11px;color:var(--muted);text-align:right">'
-      + (co ? '<span>' + (['🪴','😑','⚡','🔥'][co.energy-1]||'') + ' energie einde dag</span>' : '<span style="color:var(--sand-dark)">geen checkout</span>')
+      + (co ? '<span>' + (['🪴','😑','⚡','🔥'][co.energy-1]||'') + ' ' + t('history.energyEodSuffix') + '</span>' : '<span style="color:var(--sand-dark)">' + t('history.noCheckout') + '</span>')
       + '</div>'
       + '</div>';
   }).join('');
@@ -163,7 +162,7 @@ function renderEnergyChart() {
     .reverse();
 
   if (data.length < 2) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Minimaal 2 dagen met checkout nodig voor de grafiek.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.energyChartHint') + '</div>';
     return;
   }
 
@@ -225,7 +224,7 @@ function renderWeightChart() {
     .reverse();
 
   if (data.length < 2) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Minimaal 2 weegmomenten nodig voor de grafiek.</div>';
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.weightChartHint') + '</div>';
     return;
   }
 
@@ -277,8 +276,8 @@ function renderWeightChart() {
 
   el.innerHTML = `
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
-      Laatste meting: <strong style="color:var(--charcoal)">${latest} kg</strong>
-      ${diffStr ? `&nbsp;<span style="color:${diffColor};font-weight:600">${diffStr} kg</span> t.o.v. eerste meting` : ''}
+      ${t('history.latestMeasurement')} <strong style="color:var(--charcoal)">${latest} kg</strong>
+      ${diffStr ? `&nbsp;<span style="color:${diffColor};font-weight:600">${diffStr} kg</span> ${t('history.vsFirstMeasurement')}` : ''}
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
       ${grid}
@@ -338,14 +337,13 @@ function renderProgrammaVoortgang() {
   if (!geplanning.length) {
     el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F4C5}</div>' +
-      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">Geen weekplanning</div>' +
-      '<div style="font-size:13px;color:var(--muted)">Plan eerst trainingen in via Training → Weekplanning.</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('history.noWeekplanTitle') + '</div>' +
+      '<div style="font-size:13px;color:var(--muted)">' + t('history.noWeekplanHint') + '</div>' +
       '</div>';
     return;
   }
 
   const vandaag = new Date().toISOString().split('T')[0];
-  const DAGKORT  = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
 
   // ── Stats ──
   const verleden = geplanning.filter(p => p.date < vandaag);
@@ -362,13 +360,13 @@ function renderProgrammaVoortgang() {
 
   const statsHtml =
     '<div class="card" style="margin-bottom:14px">' +
-    '<div class="card-label" style="margin-bottom:14px">Overzicht</div>' +
+    '<div class="card-label" style="margin-bottom:14px">' + t('history.programOverview') + '</div>' +
     '<div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + verleden.length + '</div><div class="stat-lbl">Geweest</div></div>' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + volledigDagen + '</div><div class="stat-lbl">Volledig</div></div>' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + toekomst + '</div><div class="stat-lbl">Nog gepland</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + verleden.length + '</div><div class="stat-lbl">' + t('history.stat.past') + '</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + volledigDagen + '</div><div class="stat-lbl">' + t('history.stat.complete') + '</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + toekomst + '</div><div class="stat-lbl">' + t('history.stat.upcoming') + '</div></div>' +
     '</div>' +
-    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + gedaanOef + ' van ' + totaalOef + ' oefeningen afgerond (' + pct + '%)</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.exercisesCompletedSummary', { done: gedaanOef, total: totaalOef, pct }) + '</div>' +
     '<div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">' +
       '<div style="height:100%;background:var(--sage);border-radius:100px;width:' + pct + '%;transition:width 0.5s"></div>' +
     '</div>' +
@@ -389,8 +387,8 @@ function renderProgrammaVoortgang() {
   const wekenHtml = [...weken.entries()].map(([monStr, items]) => {
     const mon = new Date(monStr + 'T00:00:00');
     const zo  = new Date(mon); zo.setDate(mon.getDate() + 6);
-    const label = mon.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}) + ' – ' +
-                  zo.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+    const label = mon.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' – ' +
+                  zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
 
     const rijen = items.map(item => {
       const d         = new Date(item.date + 'T00:00:00');
@@ -410,18 +408,18 @@ function renderProgrammaVoortgang() {
           badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:' + fg + ';flex-shrink:0">' +
             (allDone ? '✓ ' : '') + done.length + '/' + oefs.length + '</span>';
         } else {
-          badge = '<span style="font-size:11px;color:var(--muted);flex-shrink:0">' + oefs.length + ' oef.</span>';
+          badge = '<span style="font-size:11px;color:var(--muted);flex-shrink:0">' + t('history.exercisesShort', { n: oefs.length }) + '</span>';
         }
       }
 
       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isVerleden && !isVandaag ? '0.55' : '1') + '">' +
-        '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + DAGKORT[d.getDay()] + '</div>' +
-        '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}) + '</div>' +
+        '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + wpGetDayKort(d.getDay()) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + d.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + '</div>' +
         '<span style="font-size:16px;flex-shrink:0">' + disp.icon + '</span>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:13px;font-weight:' + (isVandaag ? '600' : '400') + ';color:' + (isVandaag ? 'var(--sage)' : 'var(--charcoal)') + '">' +
             disp.naam +
-            (isVandaag ? ' <span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;vertical-align:middle">vandaag</span>' : '') +
+            (isVandaag ? ' <span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;vertical-align:middle">' + t('weekplan.today') + '</span>' : '') +
           '</div>' +
           (disp.sub ? '<div style="font-size:11px;color:var(--muted)">' + disp.sub + '</div>' : '') +
         '</div>' +
@@ -467,4 +465,3 @@ function updateStats() {
   document.getElementById('s-streak').textContent = streak;
   document.getElementById('s-checkins').textContent = history.length;
 }
-

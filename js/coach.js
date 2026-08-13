@@ -1,10 +1,10 @@
-﻿// ========== COACH CHAT ==========
+// ========== COACH CHAT ==========
 async function callClaude(userMsg, history, maxTokens = 300) {
   const msgs = [...history, { role:'user', content: userMsg }];
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens: maxTokens, system:SYSTEM, messages:msgs })
+    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens: maxTokens, system: currentLang === 'en' ? SYSTEM_EN : SYSTEM, messages:msgs })
   });
   if (!r.ok) throw new Error(`API error: ${r.status}`);
   const d = await r.json();
@@ -16,7 +16,7 @@ function addMsg(role, text) {
   const chat = document.getElementById('chat-area');
   const div = document.createElement('div');
   div.className = `msg ${role==='user' ? 'user-msg' : ''}`;
-  div.innerHTML = `<div class="msg-av ${role}">${role==='coach'?'IRA':'JIJ'}</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  div.innerHTML = `<div class="msg-av ${role}">${role==='coach'?t('coach.avatarCoach'):t('coach.avatarUser')}</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
   chat.appendChild(div);
   chat.scrollTop = chat.scrollHeight;
   return div;
@@ -26,7 +26,7 @@ function addTyping() {
   const chat = document.getElementById('chat-area');
   const div = document.createElement('div');
   div.className = 'msg'; div.id = 'typing-msg';
-  div.innerHTML = `<div class="msg-av coach">IRA</div><div class="msg-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  div.innerHTML = `<div class="msg-av coach">${t('coach.avatarCoach')}</div><div class="msg-bubble"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
   chat.appendChild(div); chat.scrollTop = chat.scrollHeight;
 }
 
@@ -45,10 +45,9 @@ async function sendMsg() {
     chatHistory.push({ role:'assistant', content:reply });
   } catch {
     document.getElementById('typing-msg')?.remove();
-    addMsg('coach', 'Even geen verbinding. Probeer het opnieuw.');
+    addMsg('coach', t('coach.connectionError'));
   }
   document.getElementById('send-btn').disabled = false;
 }
 
 function qMsg(q) { document.getElementById('chat-input').value = q; sendMsg(); }
-

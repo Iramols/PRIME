@@ -1,4 +1,4 @@
-﻿function getActiveEx(i) {
+function getActiveEx(i) {
   const exs = EXERCISES[trainingType];
   const ex = exs[i];
   const altIdx = selectedAlts[i];
@@ -35,20 +35,20 @@ function renderSchemas() {
         ${schema.foto ? `<div style="width:80px;height:80px;border-radius:10px;background-image:url('${schema.foto}');background-size:cover;background-position:center;flex-shrink:0"></div>` : `<div style="font-size:36px;flex-shrink:0">${schema.icon}</div>`}
         <div style="flex:1">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <div style="font-family:'DM Serif Display',serif;font-size:18px">${schema.name}</div>
-            ${isActive ? `<span style="background:${schema.kleur};color:white;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px">✓ Geselecteerd</span>` : ''}
+            <div style="font-family:'DM Serif Display',serif;font-size:18px">${dispName(schema)}</div>
+            ${isActive ? `<span style="background:${schema.kleur};color:white;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px">${t('training.selected')}</span>` : ''}
           </div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${schema.beschrijving}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${dispField(schema,'beschrijving')}</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📊 ${schema.level}</span>
-            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">🎯 ${schema.doel}</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📊 ${dispField(schema,'level')}</span>
+            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">🎯 ${dispField(schema,'doel')}</span>
             <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">⏱ ${schema.duur}</span>
           </div>
         </div>
       </div>
       <div style="border-top:1px solid var(--sand-dark);padding-top:12px">
         <div style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">
-          ${schema.oefeningen.length} oefeningen
+          ${t('training.exerciseCount', { n: schema.oefeningen.length })}
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
           ${schema.oefeningen.map((ex, ei) => {
@@ -67,22 +67,22 @@ function renderSchemas() {
               ${ex.photo ? `<div style="height:60px;background-image:url('${ex.photo}');background-size:cover;background-position:center"></div>`
                          : `<div style="height:60px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--sand)">${ex.icon}</div>`}
               <div style="padding:6px 8px">
-                <div style="font-size:11px;font-weight:600;line-height:1.3">${ex.name}</div>
+                <div style="font-size:11px;font-weight:600;line-height:1.3">${dispName(ex)}</div>
                 <div style="font-size:10px;color:var(--muted)">${ex.sets}×${ex.reps}</div>
               </div>
             </div>`;
           }).join('')}
         </div>
         ${isActive ? `
-          <button onclick="event.stopPropagation();deselectSchema()" 
+          <button onclick="event.stopPropagation();deselectSchema()"
             style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--sand-dark);
             background:var(--white);color:var(--muted);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif">
-            ✕ Schema verwijderen uit Mijn dag
+            ${t('training.removeSchemaFromDay')}
           </button>` : `
           <button onclick="event.stopPropagation();selectSchema('${schema.id}')"
             style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:none;
             background:${schema.kleur};color:white;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif">
-            + Voeg toe aan Mijn dag
+            ${t('training.addSchemaToDay')}
           </button>`}
       </div>
     </div>`;
@@ -136,7 +136,7 @@ function renderExtraExercises() {
     <div style="margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div style="font-size:20px">${group.icon}</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--charcoal)">${group.group}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--charcoal)">${dispField(group,'group')}</div>
         <div style="flex:1;height:1px;background:var(--sand-dark);margin-left:8px"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
@@ -146,8 +146,8 @@ function renderExtraExercises() {
             <div class="ex-option-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" style="cursor:pointer;padding:0 0 10px 0">
               <div class="ex-option-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
               ${ex.photo ? `<div class="ex-option-photo" style="background-image:url('${ex.photo}')"></div>` : `<div style="font-size:28px;text-align:center;padding:14px 8px 8px">${ex.icon}</div>`}
-              <div style="font-size:12px;font-weight:600;padding:0 8px;margin-bottom:3px;line-height:1.3">${ex.name}</div>
-              <div style="font-size:10px;color:var(--muted);padding:0 8px">${ex.stappen || (ex.sets + '×' + ex.reps)}</div>
+              <div style="font-size:12px;font-weight:600;padding:0 8px;margin-bottom:3px;line-height:1.3">${dispName(ex)}</div>
+              <div style="font-size:10px;color:var(--muted);padding:0 8px">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
               <a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" style="display:block;padding:4px 8px 0;font-size:10px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>
             </div>`;
         }).join('')}
@@ -183,7 +183,7 @@ function updateTrainingDagBadge() {
   const wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
   const wpCount = wpEntry ? (wpGetOefeningen(wpEntry.schemaId) || []).length : 0;
   const count = schemaTabCount + wpCount + trainingDagLog.length;
-  tab.textContent = count > 0 ? 'Mijn dag (' + count + ')' : 'Mijn dag';
+  tab.textContent = count > 0 ? t('training.dayTabWithCount', { n: count }) : t('training.tab.day');
 }
 
 function toggleDagDone(id) {
@@ -209,7 +209,7 @@ function updateDagProgress() {
   const done = Object.values(dagDone).filter(Boolean).length;
   const el = document.getElementById('dag-progress-txt');
   const bar = document.getElementById('dag-progress-bar');
-  if (el) el.textContent = `${done} / ${total} gedaan`;
+  if (el) el.textContent = t('training.progressText', { done, total });
   if (bar) bar.style.width = total > 0 ? `${Math.round(done/total*100)}%` : '0%';
 }
 
@@ -270,11 +270,8 @@ function renderTrainingDag() {
     const checkClick = checkClickOverride || "toggleDagDone('" + ex.id + "')";
     let _photo = ex.photo;
     if (!_photo) {
-      const _nm = ex.name || ex.naam || '';
-      for (const _g of EXTRA_EXERCISES) {
-        const _f = _g.exercises.find(function(e){ return (e.name||e.naam) === _nm; });
-        if (_f && _f.photo) { _photo = _f.photo; break; }
-      }
+      const _f = findCanonicalExercise(ex.name || ex.naam);
+      if (_f && _f.photo) _photo = _f.photo;
     }
     const photoDiv = _photo
       ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(\'' + _photo + '\');background-size:cover;background-position:center"></div>'
@@ -283,12 +280,16 @@ function renderTrainingDag() {
       + photoDiv
       + '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px">'
       + '<div style="flex:1">'
-      + '<div style="font-weight:600;font-size:14px;margin-bottom:2px">' + (ex.name || ex.naam || '') + '</div>'
-      + '<div style="font-size:12px;color:var(--muted)">' + (function(){ var st = ex.stappen; if (!st) { for (var g of EXTRA_EXERCISES) { var f = g.exercises.find(function(e){ return (e.name||e.naam) === (ex.name||ex.naam); }); if (f && f.stappen) { st = f.stappen; break; } } } return st ? st : (ex.sets ? ex.sets + ' sets \xD7 ' + (ex.reps||'') + (ex.rest||ex.rust ? ' \xB7 Rust: ' + (ex.rest||ex.rust) : '') : (ex.reps||'')); })() + '</div>'
+      + '<div style="font-weight:600;font-size:14px;margin-bottom:2px">' + dispName(ex) + '</div>'
+      + '<div style="font-size:12px;color:var(--muted)">' + (function(){
+          var st = ex.stappen ? dispField(ex,'stappen') : null;
+          if (!st) { var f = findCanonicalExercise(ex.name || ex.naam); if (f && f.stappen) st = dispField(f,'stappen'); }
+          return st ? st : (ex.sets ? ex.sets + ' ' + t('programmas.setsAbbr') + ' \xD7 ' + (ex.reps||'') + (ex.rest||ex.rust ? ' \xB7 ' + t('training.restLabel') + ' ' + (ex.rest||ex.rust) : '') : (ex.reps||''));
+        })() + '</div>'
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-      + '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="Markeer als gedaan">✓</div>'
+      + '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div>'
       + onRemove
       + '</div>'
       + '</div></div>';
@@ -298,10 +299,10 @@ function renderTrainingDag() {
 
   // Weekplanning oefeningen
   if (_dagWpOef.length > 0) {
-    const wpLabel = _dagWpDisp ? (_dagWpDisp.icon + ' ' + _dagWpDisp.naam) : 'Weekplanning';
+    const wpLabel = _dagWpDisp ? (_dagWpDisp.icon + ' ' + _dagWpDisp.naam) : t('training.weekplanFallback');
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
     _dagWpOef.forEach(function(oef, i) {
-      const norm = { id: 'wp-dag-' + i, name: oef.naam || oef.name || ('Oefening ' + (i+1)), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '', photo: oef.photo || '' };
+      const norm = { id: 'wp-dag-' + i, name: dispName(oef) || t('training.exerciseFallback', { n: i+1 }), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '', photo: oef.photo || '' };
       html += exCard(norm, '', _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")");
     });
     html += '</div>';
@@ -309,7 +310,7 @@ function renderTrainingDag() {
 
   // Schema's tab
   if (schemaTabItems.length > 0) {
-    html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">📋 ' + activeSchema.name + '</div>';
+    html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">📋 ' + dispName(activeSchema) + '</div>';
     schemaTabItems.forEach(function(ex) {
       html += exCard(ex, '<button onclick="deselectSchema();renderTrainingDag();" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>');
     });
@@ -324,7 +325,9 @@ function renderTrainingDag() {
       groups[ex.group].push(ex);
     });
     Object.keys(groups).forEach(function(group) {
-      html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">💪 ' + group + '</div>';
+      const groupMeta = EXTRA_EXERCISES.find(g => g.group === group);
+      const groupLabel = groupMeta ? dispField(groupMeta, 'group') : group;
+      html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">💪 ' + groupLabel + '</div>';
       groups[group].forEach(function(ex) {
         html += exCard(ex,
           '<button onclick="editExtraSets(\'' + ex.id + '\')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);cursor:pointer">✏️</button>'
@@ -342,8 +345,8 @@ function renderTrainingDag() {
     + _dagWpOef.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
     + trainingDagLog.reduce(function(a,e){ return a + Number(e.sets||0); }, 0);
   totalEl.innerHTML = '<div class="card" style="background:var(--sage-light);border-color:var(--sage-mid);margin-top:4px">'
-    + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">📋 Totaaloverzicht</div>'
-    + '<div style="font-size:13px;color:var(--charcoal)">' + totalItems + ' oefeningen \xB7 ' + totalSets + ' sets totaal</div>'
+    + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('training.totalOverview') + '</div>'
+    + '<div style="font-size:13px;color:var(--charcoal)">' + t('training.totalSummary', { items: totalItems, sets: totalSets }) + '</div>'
     + '</div>';
 }
 
@@ -358,8 +361,8 @@ function removeExtraDag(exId) {
 function editExtraSets(exId) {
   const ex = trainingDagLog.find(e => e.id === exId);
   if (!ex) return;
-  const newSets = prompt(`Sets voor ${ex.name}:`, ex.sets);
-  const newReps = prompt(`Reps voor ${ex.name}:`, ex.reps);
+  const newSets = prompt(t('training.promptSets', { name: dispName(ex) }), ex.sets);
+  const newReps = prompt(t('training.promptReps', { name: dispName(ex) }), ex.reps);
   if (newSets !== null) ex.sets = newSets;
   if (newReps !== null) ex.reps = newReps;
   // niet opslaan — reset elke sessie
@@ -395,7 +398,7 @@ function renderTraining() {
   noMsg.style.display = 'none';
   content.style.display = 'block';
   document.getElementById('training-screen-title').textContent = {
-    herstel:'Hersteldag', normaal:'Krachttraining', zwaar:'Zware krachttraining'
+    herstel:t('training.screenTitle.recovery'), normaal:t('training.screenTitle.normal'), zwaar:t('training.screenTitle.heavy')
   }[trainingType];
   document.getElementById('training-screen-badge').innerHTML = badgeHTML(trainingType);
 
@@ -417,13 +420,13 @@ function renderTraining() {
       <div class="ex-slot-header" onclick="toggleSchemaEx(${i})" style="cursor:pointer">
         <div class="ex-sel-indicator" id="schema-toggle-${i}">${isOn ? '✓' : '+'}</div>
         <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${active.name}
-            ${isAltSelected ? '<span class="alt-badge">alternatief</span>' : ''}
+          <div style="font-weight:600;font-size:14px">${dispName(active)}
+            ${isAltSelected ? `<span class="alt-badge">${t('training.altBadge')}</span>` : ''}
           </div>
-          <div style="font-size:12px;color:var(--muted)">${active.sets} sets × ${active.reps} · Rust: ${active.rest}</div>
+          <div style="font-size:12px;color:var(--muted)">${t('training.setsRestLine', { sets: active.sets, reps: active.reps, rest: active.rest })}</div>
         </div>
         <div class="exercise-check ${exerciseDone.includes(i) ? 'done' : ''}" id="excheck-${i}"
-             onclick="event.stopPropagation();markDone(${i})" title="Markeer als gedaan">✓</div>
+             onclick="event.stopPropagation();markDone(${i})" title="${t('weekplan.markDone')}">✓</div>
       </div>
 
       <div class="ex-options-scroll">
@@ -434,9 +437,9 @@ function renderTraining() {
           <div class="ex-option-card ${isSelected ? 'selected' : ''} ${isDefault && !isAltSelected ? 'is-default' : ''}"
                id="exopt-${i}-${oi}" onclick="selectAlt(${i}, ${oi === 0 ? -1 : oi - 1})">
             <div class="ex-option-sel" id="exoptsel-${i}-${oi}">✓</div>
-            ${isDefault ? '<div class="ex-default-tag">★ Standaard</div>' : ''}
+            ${isDefault ? `<div class="ex-default-tag">${t('training.defaultTag')}</div>` : ''}
             ${opt.photo ? `<div class="ex-option-photo" style="background-image:url('${opt.photo}')"></div>` : `<div class="ex-option-emoji">${opt.icon}</div>`}
-            <div class="ex-option-name">${opt.name}</div>
+            <div class="ex-option-name">${dispName(opt)}</div>
             <div class="ex-option-meta">${opt.sets}×${opt.reps} · ${opt.rest}</div>
             <a href="${opt.youtube}" target="_blank" class="ex-option-yt" onclick="event.stopPropagation()">▶ Video</a>
           </div>`;
@@ -444,11 +447,11 @@ function renderTraining() {
       </div>
 
       <div class="ex-detail-bar" id="exdetail-${i}">
-        <div class="ex-tip">💡 ${active.tip}</div>
+        <div class="ex-tip">💡 ${dispField(active,'tip')}</div>
         <div class="sets-grid" style="margin-top:12px">
-          <div class="set-item"><div class="set-value">${active.sets}</div><div class="set-label">Sets</div></div>
-          <div class="set-item"><div class="set-value">${active.reps}</div><div class="set-label">Reps</div></div>
-          <div class="set-item"><div class="set-value">${active.rest}</div><div class="set-label">Rust</div></div>
+          <div class="set-item"><div class="set-value">${active.sets}</div><div class="set-label">${t('programmas.col.sets')}</div></div>
+          <div class="set-item"><div class="set-value">${active.reps}</div><div class="set-label">${t('programmas.col.reps')}</div></div>
+          <div class="set-item"><div class="set-value">${active.rest}</div><div class="set-label">${t('programmas.col.rest')}</div></div>
         </div>
       </div>
     </div>`;
@@ -507,16 +510,16 @@ function selectAlt(slotIdx, altIdx) {
   // Update header
   const nameEl = slot.querySelector('.ex-slot-header div div');
   if (nameEl) {
-    nameEl.innerHTML = active.name + (isAltSelected ? ' <span class="alt-badge">alternatief</span>' : '');
+    nameEl.innerHTML = dispName(active) + (isAltSelected ? ` <span class="alt-badge">${t('training.altBadge')}</span>` : '');
     const metaEl = slot.querySelector('.ex-slot-header div div + div');
-    if (metaEl) metaEl.textContent = `${active.sets} sets × ${active.reps} · Rust: ${active.rest}`;
+    if (metaEl) metaEl.textContent = t('training.setsRestLine', { sets: active.sets, reps: active.reps, rest: active.rest });
   }
 
   // Update detail bar
   const detail = document.getElementById(`exdetail-${slotIdx}`);
   if (detail) {
     const tipEl = detail.querySelector('.ex-tip');
-    if (tipEl) tipEl.textContent = '💡 ' + active.tip;
+    if (tipEl) tipEl.textContent = '💡 ' + dispField(active,'tip');
     const setVals = detail.querySelectorAll('.set-value');
     if (setVals[0]) setVals[0].textContent = active.sets;
     if (setVals[1]) setVals[1].textContent = active.reps;
@@ -550,6 +553,5 @@ function updateTrainingProgress() {
   const done = exerciseDone.length;
   const pct = total > 0 ? Math.round(done / total * 100) : 0;
   document.getElementById('training-prog-bar').style.width = pct + '%';
-  document.getElementById('training-prog-txt').textContent = `${done} / ${total} gedaan`;
+  document.getElementById('training-prog-txt').textContent = t('training.progressText', { done, total });
 }
-

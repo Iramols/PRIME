@@ -7,7 +7,14 @@ let wpOpenDagen = new Set();
 
 const WP_KORT  = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const WP_LANG  = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
+const WP_KORT_EN = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const WP_LANG_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 const DAG_KORT = ['Zo','Ma','Di','Wo','Do','Vr','Za']; // getDay() index
+const DAG_KORT_EN = ['Su','Mo','Tu','We','Th','Fr','Sa']; // getDay() index
+
+function wpDagKort(i) { return (currentLang === 'en' ? WP_KORT_EN : WP_KORT)[i]; }
+function wpDagLang(i) { return (currentLang === 'en' ? WP_LANG_EN : WP_LANG)[i]; }
+function wpGetDayKort(getDayIdx) { return (currentLang === 'en' ? DAG_KORT_EN : DAG_KORT)[getDayIdx]; }
 
 function wpStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -36,17 +43,17 @@ function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 
 // ─── Helper: vertaal schemaId (ook prog:ID:DAG) naar display ─────────────────
 function wpGetDisplay(sid) {
-  if (!sid) return { icon: '\u{1F4A4}', naam: 'Rust', sub: '' };
+  if (!sid) return { icon: '\u{1F4A4}', naam: t('weekplan.rest'), sub: '' };
   if (String(sid).startsWith('prog:')) {
     const parts = String(sid).split(':');
     const progId = parts[1], dagIdx = parseInt(parts[2]);
     const progs = (() => { try { const u = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); return [...BUILTIN_PROGRAMMAS, ...u]; } catch(e) { return [...BUILTIN_PROGRAMMAS]; } })();
     const p = progs.find(x => x.id === progId);
     const dag = p ? (p.dagen || {})[dagIdx] : null;
-    return { icon: '\u{1F4AA}', naam: dag ? (dag.naam || 'Training') : 'Training', sub: p ? p.naam : '' };
+    return { icon: '\u{1F4AA}', naam: dag ? (dispName(dag) || t('weekplan.trainingFallback')) : t('weekplan.trainingFallback'), sub: p ? dispName(p) : '' };
   }
   const s = TRAINING_SCHEMAS.find(x => x.id === sid);
-  return s ? { icon: s.icon, naam: s.name, sub: s.duur + ' · ' + s.freq }
+  return s ? { icon: s.icon, naam: dispName(s), sub: s.duur + ' · ' + s.freq }
            : { icon: '\u{1F4AA}', naam: String(sid), sub: '' };
 }
 
@@ -69,7 +76,8 @@ function wpLookupStappen(naam) {
   for (var gi = 0; gi < EXTRA_EXERCISES.length; gi++) {
     var exs = EXTRA_EXERCISES[gi].exercises;
     for (var ei = 0; ei < exs.length; ei++) {
-      if ((exs[ei].name || exs[ei].naam) === naam && exs[ei].stappen) return exs[ei].stappen;
+      var e = exs[ei];
+      if ((e.name === naam || e.naam === naam || e.name_en === naam || e.naam_en === naam) && e.stappen) return e.stappen;
     }
   }
   return '';
@@ -86,9 +94,9 @@ function wpOefDetail(o) {
 }
 
 function wpBouwOefeningenLijst(oefeningen) {
-  if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">Geen oefeningen beschikbaar.</div>';
+  if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   return oefeningen.map(function(o) {
-    var naam = o.naam || o.name || '';
+    var naam = dispName(o);
     var detail = wpOefDetail(o);
     return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--sand-dark)">' +
       '<div style="flex:1;font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
@@ -119,16 +127,16 @@ function wpToggleOefDone(dateStr, oefIdx) {
 }
 
 function wpBouwOefeningenAfvinken(oefeningen, dateStr) {
-  if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">Geen oefeningen beschikbaar.</div>';
+  if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   const done = wpGetDone(dateStr);
   return oefeningen.map((o, i) => {
-    var naam   = o.naam || o.name || '';
+    var naam   = dispName(o);
     var detail = wpOefDetail(o);
     var isDone = done.includes(i);
     return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
       '<div style="flex:1;font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
       '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + detail + '</div>' +
-      '<div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="Markeer als gedaan">✓</div>' +
+      '<div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="' + t('weekplan.markDone') + '">✓</div>' +
       '</div>';
   }).join('');
 }
@@ -152,14 +160,14 @@ function wpBouwGrid() {
   const dagen = weekplan.dagen.map((sid, i) => {
     const disp = wpGetDisplay(sid);
     return '<div class="wp-dag" id="wp-dag-' + i + '" onclick="wpTogglePicker(' + i + ')">' +
-      '<div class="wp-dag-nm">' + WP_KORT[i] + '</div>' +
+      '<div class="wp-dag-nm">' + wpDagKort(i) + '</div>' +
       '<div class="wp-dag-ic">' + disp.icon + '</div>' +
       '<div class="wp-dag-lb">' + disp.naam.split(' ').slice(0,2).join(' ') + '</div>' +
       '</div>';
   }).join('');
   return '<div class="card" style="margin-bottom:14px">' +
-    '<div class="card-label" style="margin-bottom:6px">Weekschema</div>' +
-    '<div style="font-size:13px;color:var(--muted);margin-bottom:14px">Klik op een dag om een training te kiezen</div>' +
+    '<div class="card-label" style="margin-bottom:6px">' + t('weekplan.title') + '</div>' +
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:14px">' + t('weekplan.hint') + '</div>' +
     '<div class="wp-dag-grid">' + dagen + '</div>' +
     '</div>';
 }
@@ -180,19 +188,19 @@ function wpTogglePicker(i) {
 
 function wpBouwPicker(i) {
   const opties = [
-    { id: null, icon: '\u{1F4A4}', naam: 'Rustdag', sub: 'Geen training' },
-    ...TRAINING_SCHEMAS.map(s => ({ id: s.id, icon: s.icon, naam: s.name, sub: s.duur + ' · ' + s.freq }))
+    { id: null, icon: '\u{1F4A4}', naam: t('programmas.restDay'), sub: t('weekplan.noTrainingSub') },
+    ...TRAINING_SCHEMAS.map(s => ({ id: s.id, icon: s.icon, naam: dispName(s), sub: s.duur + ' · ' + s.freq }))
   ];
   const huidig = weekplan.dagen[i];
   const oefeningen = wpGetOefeningen(huidig);
   const oefHtml = huidig && oefeningen.length
     ? '<div style="margin-top:12px;padding-top:12px;border-top:1.5px solid var(--sand-dark)">' +
-      '<div style="font-size:11px;font-weight:700;color:var(--sage);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px">Oefeningen</div>' +
+      '<div style="font-size:11px;font-weight:700;color:var(--sage);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px">' + t('programmas.exercisesLabel') + '</div>' +
       wpBouwOefeningenLijst(oefeningen) +
       '</div>'
     : '';
   return `<div class="card" style="margin-bottom:14px;border-color:var(--sage)">
-    <div class="card-label" style="margin-bottom:10px">${WP_LANG[i]} — kies training</div>
+    <div class="card-label" style="margin-bottom:10px">${t('weekplan.pickTrainingFor', { day: wpDagLang(i) })}</div>
     ${opties.map(o => {
       const sel = huidig === o.id;
       return `<div onclick="wpKiesSchema(${i},${o.id ? "'" + o.id + "'" : 'null'})"
@@ -222,26 +230,26 @@ function wpKiesSchema(dagIdx, schemaId) {
 function wpBouwInplannen() {
   const actief = weekplan.dagen.filter(Boolean).length;
   if (actief === 0) return '<div class="card" style="margin-bottom:14px">' +
-    '<div class="card-label" style="margin-bottom:8px">Inplannen</div>' +
-    '<div style="font-size:13px;color:var(--muted)">Wijs eerst trainingen toe aan de dagen hierboven.</div>' +
+    '<div class="card-label" style="margin-bottom:8px">' + t('weekplan.planningTitle') + '</div>' +
+    '<div style="font-size:13px;color:var(--muted)">' + t('weekplan.assignFirst') + '</div>' +
     '</div>';
 
   const defaultMon = wpStr(new Date());
 
   return `<div class="card" style="margin-bottom:14px">
-    <div class="card-label" style="margin-bottom:14px">Inplannen</div>
+    <div class="card-label" style="margin-bottom:14px">${t('weekplan.planningTitle')}</div>
 
     <div style="margin-bottom:16px">
-      <label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">Startdatum</label>
+      <label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">${t('weekplan.startDate')}</label>
       <input type="date" id="wp-start" value="${defaultMon}"
         style="padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;
                font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);
                background:var(--sand);outline:none;width:100%;max-width:200px">
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">Trainingen v\xF3\xF3r deze datum worden overgeslagen</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">${t('weekplan.startDateHint')}</div>
     </div>
 
     <div style="margin-bottom:20px">
-      <label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:8px">Aantal weken</label>
+      <label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:8px">${t('weekplan.weekCount')}</label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${[1,2,4,6,8,12].map(n =>
           '<button class="wp-w-btn' + (n === geselecteerdeWeken ? ' wp-w-act' : '') +
@@ -251,7 +259,7 @@ function wpBouwInplannen() {
     </div>
 
     <button class="btn-primary" id="wp-plan-btn" onclick="wpInplannen()">
-      ${geplanning.length > 0 ? 'Planning bijwerken →' : (actief * geselecteerdeWeken) + ' trainingen inplannen →'}
+      ${geplanning.length > 0 ? t('weekplan.updatePlanning') : t('weekplan.scheduleTrainings', { n: actief * geselecteerdeWeken })}
     </button>
   </div>`;
 }
@@ -263,13 +271,13 @@ function wpKiesWeken(n, btn) {
   const planBtn = document.getElementById('wp-plan-btn');
   if (planBtn && geplanning.length === 0) {
     const actief = weekplan.dagen.filter(Boolean).length;
-    planBtn.textContent = (actief * n) + ' trainingen inplannen →';
+    planBtn.textContent = t('weekplan.scheduleTrainings', { n: actief * n });
   }
 }
 
 function wpInplannen() {
   const inp = document.getElementById('wp-start');
-  if (!inp || !inp.value) { alert('Kies een startdatum'); return; }
+  if (!inp || !inp.value) { alert(t('weekplan.chooseStartDate')); return; }
 
   const startGekozen = wpDate(inp.value);
 
@@ -316,8 +324,8 @@ function wpBouwOverzicht() {
   const wekenHtml = [...weken.entries()].map(([monStr, items]) => {
     const mon = wpDate(monStr);
     const zo  = new Date(mon); zo.setDate(mon.getDate() + 6);
-    const label = mon.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}) + ' – ' +
-                  zo.toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+    const label = mon.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' – ' +
+                  zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
 
     const rijen = items.map(item => {
       const d    = wpDate(item.date);
@@ -333,13 +341,13 @@ function wpBouwOverzicht() {
         : '';
       return '<div style="border-bottom:0.5px solid var(--sand-dark);opacity:' + (isVerleden ? '0.4' : '1') + '">' +
         '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer" onclick="wpToggleDagDetail(\'' + item.date + '\')">' +
-        '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + DAG_KORT[d.getDay()] + '</div>' +
-        '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + d.toLocaleDateString('nl-NL',{day:'numeric',month:'short'}) + '</div>' +
+        '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + wpGetDayKort(d.getDay()) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + d.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + '</div>' +
         '<span style="font-size:16px;flex-shrink:0">' + disp.icon + '</span>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="font-size:13px;font-weight:' + (isVandaag ? '600' : '400') + ';color:' + (isVandaag ? 'var(--sage)' : 'var(--charcoal)') + '">' +
             disp.naam +
-            (isVandaag ? ' <span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;vertical-align:middle">vandaag</span>' : '') +
+            (isVandaag ? ' <span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;vertical-align:middle">' + t('weekplan.today') + '</span>' : '') +
           '</div>' +
           (disp.sub ? '<div style="font-size:11px;color:var(--muted)">' + disp.sub + '</div>' : '') +
         '</div>' +
@@ -357,11 +365,11 @@ function wpBouwOverzicht() {
   return `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div>
-        <div class="card-label" style="margin-bottom:2px">Ingepland</div>
-        <div style="font-size:12px;color:var(--muted)">${geplanning.length} trainingen · ${weken.size} weken</div>
+        <div class="card-label" style="margin-bottom:2px">${t('weekplan.plannedTitle')}</div>
+        <div style="font-size:12px;color:var(--muted)">${t('weekplan.plannedSummary', { count: geplanning.length, weeks: weken.size })}</div>
       </div>
       <button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
-              onclick="wpVerwijder()">Verwijderen</button>
+              onclick="wpVerwijder()">${t('weekplan.removePlanning')}</button>
     </div>
     ${wekenHtml}
   </div>`;
@@ -377,7 +385,7 @@ function wpToggleDagDetail(dateStr) {
 }
 
 function wpVerwijder() {
-  if (!confirm('Planning verwijderen?')) return;
+  if (!confirm(t('weekplan.confirmRemovePlanning'))) return;
   geplanning = [];
   wpSlaPlanningOp();
   renderWeekplanning();

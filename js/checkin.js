@@ -1,11 +1,11 @@
-﻿// ========== CHECK-IN ==========
+// ========== CHECK-IN ==========
 function onWeightInput(input) {
   const val = parseFloat(input.value);
   checkin.weight = (val > 0) ? val : null;
   const card = document.getElementById('cq-weight-card');
   card.classList.remove('cq-weight-card-skipped');
   const skipBtn = card.querySelector('.cq-skip-btn');
-  skipBtn.textContent = 'Sla over';
+  skipBtn.textContent = t('checkin.skip');
   skipBtn.classList.remove('skipped');
 }
 
@@ -15,7 +15,7 @@ function skipWeight() {
   const card = document.getElementById('cq-weight-card');
   card.classList.add('cq-weight-card-skipped');
   const skipBtn = card.querySelector('.cq-skip-btn');
-  skipBtn.textContent = 'Overgeslagen ✓';
+  skipBtn.textContent = t('checkin.weightSkipped');
   skipBtn.classList.add('skipped');
 }
 
@@ -71,7 +71,7 @@ function buildTrainingSummary() {
   const _btsWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_btsToday] || [];
   const _btsWpOef = _btsWpEntry ? wpGetOefeningen(_btsWpEntry.schemaId) : [];
   const wpItems = _btsWpOef.map(function(ex, i) {
-    return { id: 'wp-' + i, name: ex.naam || ex.name || ('Oefening ' + (i+1)) };
+    return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)) };
   });
 
   const allItems = schemaTabItems.concat(wpItems).concat(trainingDagLog);
@@ -88,38 +88,38 @@ function buildTrainingSummary() {
   });
 
   const pct = total > 0 ? Math.round(done / total * 100) : 0;
-  const typeLabel = _btsWpEntry ? wpGetDisplay(_btsWpEntry.schemaId).naam : 'Geen training';
+  const typeLabel = _btsWpEntry ? wpGetDisplay(_btsWpEntry.schemaId).naam : t('checkin.noTraining');
 
   let status, statusIcon, coachQuestion, confirmOptions;
 
   if (total === 0 || done === 0) {
-    status = total === 0 ? 'Geen oefeningen gepland' : 'Nog geen oefeningen afgevinkt';
+    status = total === 0 ? t('checkin.noExercisesPlanned') : t('checkin.noExercisesChecked');
     statusIcon = '⭕';
     checkout.training = 1;
-    coachQuestion = 'Ik zie dat je nog geen oefeningen hebt afgevinkt vandaag. Heb je toch getraind?';
+    coachQuestion = t('checkin.coachQ.noneChecked');
     confirmOptions = [
-      {label:'Ja, ik heb getraind ✅', val:3},
-      {label:'Gedeeltelijk gedaan ⚡', val:2},
-      {label:'Niet getraind vandaag ❌', val:1},
+      {label:t('checkin.confirm.trainedYes'), val:3},
+      {label:t('checkin.confirm.partiallyDone'), val:2},
+      {label:t('checkin.confirm.notTrained'), val:1},
     ];
   } else if (done >= total) {
-    status = 'Alle ' + total + ' oefeningen voltooid 🎉';
+    status = t('checkin.allExercisesDone', { n: total });
     statusIcon = '✅';
     checkout.training = 3;
-    coachQuestion = 'Je hebt alle ' + total + ' oefeningen afgevinkt. Goed gedaan! Klopt dat?';
+    coachQuestion = t('checkin.coachQ.allDone', { n: total });
     confirmOptions = [
-      {label:'Ja, volledig gedaan ✅', val:3},
-      {label:'Eigenlijk maar deels 😅', val:2},
+      {label:t('checkin.confirm.fullyDone'), val:3},
+      {label:t('checkin.confirm.actuallyPartial'), val:2},
     ];
   } else {
-    status = done + ' van ' + total + ' oefeningen gedaan (' + pct + '%)';
+    status = t('checkin.exercisesDoneStatus', { done, total, pct });
     statusIcon = '⚡';
     checkout.training = 2;
-    coachQuestion = 'Je hebt ' + done + ' van ' + total + ' oefeningen afgevinkt (' + pct + '%). Klopt dat?';
+    coachQuestion = t('checkin.coachQ.partialDone', { done, total, pct });
     confirmOptions = [
-      {label:'Ja, klopt zo ✅', val:2},
-      {label:'Ik heb alles gedaan 💪', val:3},
-      {label:'Nog minder gedaan ❌', val:1},
+      {label:t('checkin.confirm.correctAsIs'), val:2},
+      {label:t('checkin.confirm.didEverything'), val:3},
+      {label:t('checkin.confirm.evenLess'), val:1},
     ];
   }
 
@@ -177,48 +177,48 @@ function buildFoodSummary() {
   if (logged === 0) {
     // Niets gelogd
     statusIcon = '⭕';
-    statusText = 'Nog niets gelogd vandaag';
+    statusText = t('checkin.food.nothingLogged');
     checkout.food = 2;
-    coachQuestion = `Ik zie dat je vandaag niets hebt gelogd in de app. Heb je toch iets gegeten maar vergeten bij te houden?`;
+    coachQuestion = t('checkin.food.coachQ.nothingLogged');
     confirmOptions = [
-      { label: 'Ja, ik heb goed gegeten ✅', val: 3 },
-      { label: 'Grotendeels gevolgd ⚡', val: 2 },
-      { label: 'Niet goed gegeten vandaag ❌', val: 1 },
+      { label: t('checkin.confirm.ateWellYes'), val: 3 },
+      { label: t('checkin.confirm.mostlyFollowed'), val: 2 },
+      { label: t('checkin.confirm.notWellToday'), val: 1 },
     ];
   } else if (kcalPct >= 90 && kcalPct <= 115) {
     // Op doel
     statusIcon = '✅';
-    statusText = `Op doel — ${Math.round(tot.kcal)} van ${doel.kcal} kcal (${kcalPct}%)`;
+    statusText = t('checkin.food.onTarget', { kcal: Math.round(tot.kcal), doel: doel.kcal, pct: kcalPct });
     checkout.food = 3;
-    coachQuestion = `Ik zie dat je ${Math.round(tot.kcal)} kcal hebt gegeten — precies op je doel van ${doel.kcal} kcal. Goed gedaan! Klopt dat?`;
+    coachQuestion = t('checkin.food.coachQ.onTarget', { kcal: Math.round(tot.kcal), doel: doel.kcal });
     confirmOptions = [
-      { label: 'Ja, klopt precies ✅', val: 3 },
-      { label: 'Ik heb eigenlijk meer gegeten ⬆️', val: 4 },
-      { label: 'Ik heb eigenlijk minder gegeten ⬇️', val: 2 },
+      { label: t('checkin.confirm.exactlyRight'), val: 3 },
+      { label: t('checkin.confirm.ateMore'), val: 4 },
+      { label: t('checkin.confirm.ateLess'), val: 2 },
     ];
   } else if (kcalPct > 115) {
     // Teveel gegeten
     const over = Math.round(tot.kcal - doel.kcal);
     statusIcon = '⬆️';
-    statusText = `${Math.round(tot.kcal)} kcal — ${over} kcal boven doel (${kcalPct}%)`;
+    statusText = t('checkin.food.over', { kcal: Math.round(tot.kcal), over, pct: kcalPct });
     checkout.food = 4;
-    coachQuestion = `Ik zie dat je ${over} kcal boven je doel van ${doel.kcal} zit. Dat is meer dan gepland. Klopt dat, of heb je minder gegeten dan gelogd?`;
+    coachQuestion = t('checkin.food.coachQ.over', { over, doel: doel.kcal });
     confirmOptions = [
-      { label: 'Ja, ik heb teveel gegeten ⬆️', val: 4 },
-      { label: 'Ik heb minder gegeten dan gelogd ✅', val: 3 },
-      { label: 'Ik heb nog meer gegeten 😬', val: 4 },
+      { label: t('checkin.confirm.ateTooMuch'), val: 4 },
+      { label: t('checkin.confirm.ateLessThanLogged'), val: 3 },
+      { label: t('checkin.confirm.ateEvenMore'), val: 4 },
     ];
   } else {
     // Te weinig gegeten
     const tekort = Math.round(doel.kcal - tot.kcal);
     statusIcon = '⬇️';
-    statusText = `${Math.round(tot.kcal)} kcal — ${tekort} kcal onder doel (${kcalPct}%)`;
+    statusText = t('checkin.food.under', { kcal: Math.round(tot.kcal), tekort, pct: kcalPct });
     checkout.food = 2;
-    coachQuestion = `Ik zie dat je ${tekort} kcal onder je doel van ${doel.kcal} zit. Heb je bewust minder gegeten, of heb je niet alles gelogd?`;
+    coachQuestion = t('checkin.food.coachQ.under', { tekort, doel: doel.kcal });
     confirmOptions = [
-      { label: 'Ik heb inderdaad te weinig gegeten ⬇️', val: 1 },
-      { label: 'Ik heb meer gegeten maar niet gelogd ✅', val: 3 },
-      { label: 'Bewuste keuze — voelde goed 👍', val: 2 },
+      { label: t('checkin.confirm.tooLittleIndeed'), val: 1 },
+      { label: t('checkin.confirm.ateMoreNotLogged'), val: 3 },
+      { label: t('checkin.confirm.consciousChoice'), val: 2 },
     ];
   }
 
@@ -229,14 +229,14 @@ function buildFoodSummary() {
   const macroHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px">
       ${[
-        { lbl:'Kcal', val:Math.round(tot.kcal), doel:doel.kcal, unit:'', pct:kcalPct },
-        { lbl:'Eiwit', val:Math.round(tot.prot), doel:doel.prot, unit:'g', pct:protPct },
-        { lbl:'Koolh', val:Math.round(tot.carb), doel:doel.carb, unit:'g', pct:Math.round(tot.carb/doel.carb*100) },
-        { lbl:'Vet', val:Math.round(tot.fat), doel:doel.fat, unit:'g', pct:Math.round(tot.fat/doel.fat*100) },
+        { lbl:t('checkin.macro.kcal'), val:Math.round(tot.kcal), doel:doel.kcal, unit:'', pct:kcalPct },
+        { lbl:t('checkin.macro.protein'), val:Math.round(tot.prot), doel:doel.prot, unit:'g', pct:protPct },
+        { lbl:t('checkin.macro.carbs'), val:Math.round(tot.carb), doel:doel.carb, unit:'g', pct:Math.round(tot.carb/doel.carb*100) },
+        { lbl:t('checkin.macro.fat'), val:Math.round(tot.fat), doel:doel.fat, unit:'g', pct:Math.round(tot.fat/doel.fat*100) },
       ].map(m => `
         <div style="text-align:center;background:var(--white);border-radius:8px;padding:10px 6px">
           <div style="font-family:'DM Serif Display',serif;font-size:17px">${m.val}${m.unit}</div>
-          <div style="font-size:9px;color:var(--muted);margin:3px 0">${m.lbl} · doel ${m.doel}${m.unit}</div>
+          <div style="font-size:9px;color:var(--muted);margin:3px 0">${m.lbl} · ${t('checkin.macro.goalSuffix', { doel:m.doel, unit:m.unit })}</div>
           <div style="height:4px;background:var(--sand-dark);border-radius:100px;overflow:hidden">
             <div style="height:100%;width:${barWidth(m.pct)};background:${barColor(m.pct)};border-radius:100px;transition:width 0.4s"></div>
           </div>
@@ -248,7 +248,7 @@ function buildFoodSummary() {
       <span class="training-status-icon">${statusIcon}</span>
       <div>
         <div class="training-status-text">${statusText}</div>
-        <div class="training-status-sub">${logged} item${logged !== 1 ? 's' : ''} gelogd · doel ${doel.kcal} kcal</div>
+        <div class="training-status-sub">${t('checkin.itemsLoggedSummary', { n: logged, item: t('checkin.item') + (logged !== 1 ? 's' : ''), kcal: doel.kcal })}</div>
       </div>
     </div>
     ${macroHTML}`;
@@ -292,10 +292,9 @@ function calcTrainingType() {
 
 async function doCheckin() {
   const btn = document.getElementById('checkin-btn');
-  btn.disabled = true; btn.textContent = 'Analyseren...';
+  btn.disabled = true; btn.textContent = t('checkin.analyzing');
 
   trainingType = calcTrainingType();
-  const typeLabel = { herstel:'Hersteldag', normaal:'Normale training', zwaar:'Zware training' }[trainingType];
   const mealData = MEALS[trainingType];
 
   // Gewicht opslaan in profiel als ingevuld
@@ -333,38 +332,38 @@ async function doCheckin() {
     const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
     document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + _wpDisp.naam + '</div>';
     const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
-    document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => o.naam || o.name).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + ' meer' : '');
+    document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');
   } else {
-    document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">Geen training geselecteerd</div>';
-    document.getElementById('home-training-preview').innerHTML = 'Geen training ingepland voor vandaag.';
+    document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
+    document.getElementById('home-training-preview').innerHTML = t('home.noTrainingToday');
   }
 
   // Render training & food screens
   renderTraining();
   renderFood();
   updateHomeMacros();
-  const sl = ['','Slecht','Matig','Goed','Uitstekend'][checkin.sleep];
-  const en = ['','Laag','Gemiddeld','Hoog','Zeer hoog'][checkin.energy];
-  const st = ['','Veel','Redelijk','Weinig','Geen'][checkin.stress];
-  const _trainLabel = _wpEntry ? wpGetDisplay(_wpEntry.schemaId).naam : 'Geen training';
-  const prompt = `Cliënt check-in: Slaap=${sl}, Energie=${en}, Stress=${st}. Training vandaag: ${_trainLabel}. Geef een persoonlijk, motiverend bericht van max 60 woorden in jouw directe stijl. Geen opsomming.`;
+  const sl = ['', t('checkin.sleep.bad'), t('checkin.sleep.ok'), t('checkin.sleep.good'), t('checkin.sleep.great')][checkin.sleep];
+  const en = ['', t('checkin.energy.low'), t('checkin.energy.mid'), t('checkin.energy.high'), t('checkin.energy.veryhigh')][checkin.energy];
+  const st = ['', t('checkin.stressShort.high'), t('checkin.stressShort.mid'), t('checkin.stressShort.low'), t('checkin.stressShort.none')][checkin.stress];
+  const _trainLabel = _wpEntry ? wpGetDisplay(_wpEntry.schemaId).naam : t('checkin.noTraining');
+  const prompt = t('checkin.aiPrompt', { sl, en, st, training: _trainLabel });
 
   try {
     const r = await callClaude(prompt, []);
     document.getElementById('coach-msg-text').textContent = r;
     document.getElementById('coach-message-home').style.display = 'block';
-    document.getElementById('day-title').textContent = _trainLabel + ' staat klaar ✓';
-    document.getElementById('day-summary').textContent = 'Coach Ira heeft je dag afgestemd op jouw check-in.';
+    document.getElementById('day-title').textContent = _trainLabel + t('home.readySuffix');
+    document.getElementById('day-summary').textContent = t('day.summary.default');
   } catch {
-    document.getElementById('day-title').textContent = _trainLabel + ' staat klaar ✓';
-    document.getElementById('day-summary').textContent = 'Je training en voeding zijn afgestemd op hoe je je vandaag voelt.';
+    document.getElementById('day-title').textContent = _trainLabel + t('home.readySuffix');
+    document.getElementById('day-summary').textContent = t('checkin.daySummaryFallback');
   }
 }
 
 async function doCheckout() {
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
-  btn.textContent = 'Advies voor morgen voorbereiden...';
+  btn.textContent = t('checkin.preparingAdvice');
 
   // Save to history
   if (todayData) {
@@ -380,20 +379,20 @@ async function doCheckout() {
   const _coWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coToday) || null;
   const _coWpOef = _coWpEntry ? (wpGetOefeningen(_coWpEntry.schemaId) || []) : [];
   const _coWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_coToday] || [];
-  const _coWpNaam = _coWpEntry ? wpGetDisplay(_coWpEntry.schemaId).naam : 'Geen training';
+  const _coWpNaam = _coWpEntry ? wpGetDisplay(_coWpEntry.schemaId).naam : t('checkin.noTraining');
   const total = _coWpOef.length;
   const done = _coWpDoneArr.length;
 
   const doel = { kcal:2000, prot:150, carb:200, fat:65 };
   const totFood = dayLog.reduce((a,i) => ({ kcal:a.kcal+i.kcal, prot:a.prot+i.prot, carb:a.carb+i.carb, fat:a.fat+i.fat }), { kcal:0, prot:0, carb:0, fat:0 });
 
-  const energyLabel = ['','Laag','Gemiddeld','Hoog','Zeer hoog'][checkout.energy];
-  const trainingLabel = checkout.training === 3 ? 'Volledig (' + done + '/' + total + ' oefeningen)' :
-                        checkout.training === 2 ? 'Gedeeltelijk (' + done + '/' + total + ' oefeningen)' : 'Niet gedaan';
-  const foodLabel = checkout.food === 3 ? 'Op doel (' + Math.round(totFood.kcal) + ' kcal)' :
-                    checkout.food === 4 ? 'Teveel gegeten (' + Math.round(totFood.kcal) + ' kcal)' :
-                    checkout.food === 2 ? 'Iets onder doel (' + Math.round(totFood.kcal) + ' kcal)' :
-                    'Te weinig / niet gevolgd (' + Math.round(totFood.kcal) + ' kcal)';
+  const energyLabel = ['', t('checkin.energy.low'), t('checkin.energy.mid'), t('checkin.energy.high'), t('checkin.energy.veryhigh')][checkout.energy];
+  const trainingLabel = checkout.training === 3 ? t('checkin.trainingLabel.full', { done, total }) :
+                        checkout.training === 2 ? t('checkin.trainingLabel.partial', { done, total }) : t('checkin.trainingLabel.notDone');
+  const foodLabel = checkout.food === 3 ? t('checkin.foodLabel.onTarget', { kcal: Math.round(totFood.kcal) }) :
+                    checkout.food === 4 ? t('checkin.foodLabel.over', { kcal: Math.round(totFood.kcal) }) :
+                    checkout.food === 2 ? t('checkin.foodLabel.under', { kcal: Math.round(totFood.kcal) }) :
+                    t('checkin.foodLabel.notFollowed', { kcal: Math.round(totFood.kcal) });
 
   // Weekplanning morgen
   const _coMorgen = new Date(); _coMorgen.setDate(_coMorgen.getDate() + 1);
@@ -401,19 +400,18 @@ async function doCheckout() {
   const _coMorgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coMorgenStr) || null;
   const _coMorgenNaam = _coMorgenWpEntry ? wpGetDisplay(_coMorgenWpEntry.schemaId).naam : null;
 
-  const context = 'Cliënt checkout data vandaag:'
-    + '\n- Training: ' + _coWpNaam + ' — ' + trainingLabel
-    + '\n- Voeding: ' + foodLabel + ' — eiwit ' + Math.round(totFood.prot) + 'g'
-    + '\n- Energie einde dag: ' + energyLabel
-    + (_coMorgenNaam ? '\n- Morgen ingepland: ' + _coMorgenNaam : '\n- Morgen: geen training ingepland');
+  const tomorrowLine = _coMorgenNaam ? t('checkin.tomorrowPlanned', { naam: _coMorgenNaam }) : t('checkin.tomorrowNotPlanned');
+  const context = t('checkin.contextTemplate', {
+    trainingNaam: _coWpNaam, trainingLabel, foodLabel, prot: Math.round(totFood.prot), energyLabel, tomorrowLine
+  });
 
   // Prompt 1: afsluitend bericht
-  const promptAfsluiting = context + '\n\nGeef een warm, direct afsluitend bericht van max 50 woorden in de stijl van coach Ira. Benoem concreet wat goed ging. Geen opsomming.';
+  const promptAfsluiting = context + t('checkin.promptAfsluiting');
 
   // Prompt 2: advies voor morgen — gestructureerd
-  const promptMorgen = context + '\n\nGeef een concreet advies voor morgen. Gebruik EXACT dit format, elke regel apart:\n\nTRAINING: [concrete notities of aandachtspunten voor de geplande training morgen]\nVOEDING: [voedingsrichting voor morgen in max 15 woorden]\nSLAAP: [één concrete slaapdoelstelling]\nTIP: [één motiverende tip in max 12 woorden]\n\nGebruik geen extra tekst buiten dit format.';
+  const promptMorgen = context + t('checkin.promptMorgen');
 
-  btn.textContent = '🌙 Dag afgerond!';
+  btn.textContent = t('checkin.dayDoneBtn');
   btn.style.background = 'var(--sage)';
 
   // Render lege tomorrow card meteen zodat gebruiker feedback ziet
@@ -422,26 +420,26 @@ async function doCheckout() {
   tomorrowDiv.id = 'tomorrow-card';
   tomorrowDiv.innerHTML = `
     <div class="success-banner" style="margin-top:16px">
-      <h3>Dag afgerond ✓</h3>
-      <p id="afsluiting-text" style="color:#3d6649;font-size:14px;line-height:1.7">Even laden...</p>
+      <h3>${t('checkin.dayDone')}</h3>
+      <p id="afsluiting-text" style="color:#3d6649;font-size:14px;line-height:1.7">${t('checkin.loading')}</p>
     </div>
     <div class="card" style="margin-top:16px;padding:0;overflow:hidden">
       <div style="background:var(--charcoal);padding:16px 20px;display:flex;align-items:center;gap:10px">
         <span style="font-size:20px">🌙</span>
         <div>
-          <div style="font-family:'DM Serif Display',serif;font-size:17px;color:white">Morgen staat klaar</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:17px;color:white">${t('checkin.tomorrowReady')}</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px" id="tomorrow-date"></div>
         </div>
       </div>
       <div id="tomorrow-content" style="padding:20px">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">Advies wordt samengesteld...</div>
+        <div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">${t('checkin.compilingAdvice')}</div>
       </div>
     </div>`;
   container.appendChild(tomorrowDiv);
 
   // Zet morgen datum
   const morgen = new Date(); morgen.setDate(morgen.getDate() + 1);
-  document.getElementById('tomorrow-date').textContent = morgen.toLocaleDateString('nl-NL', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('tomorrow-date').textContent = morgen.toLocaleDateString(dateLocale(), { weekday:'long', day:'numeric', month:'long' });
 
   // Call 1: afsluitend bericht (kort)
   try {
@@ -449,7 +447,7 @@ async function doCheckout() {
     document.getElementById('afsluiting-text').textContent = afsluiting;
   } catch(e) {
     console.error('Afsluiting fout:', e);
-    document.getElementById('afsluiting-text').textContent = 'Goed gedaan vandaag. Rust goed uit en bereid je voor op morgen.';
+    document.getElementById('afsluiting-text').textContent = t('checkin.closingFallback');
   }
 
   // Call 2: advies voor morgen (meer tokens nodig voor gestructureerde output)
@@ -470,8 +468,11 @@ function renderTomorrowAdvice(text) {
   const lines = text.split('\n').filter(function(l) { return l.trim(); });
   const parsed = {};
   lines.forEach(function(line) {
-    const match = line.match(/^(TRAINING|VOEDING|SLAAP|TIP):\s*(.+)$/);
-    if (match) parsed[match[1]] = match[2].trim();
+    const match = line.match(/^(TRAINING|VOEDING|SLAAP|TIP|NUTRITION|SLEEP):\s*(.+)$/);
+    if (match) {
+      const key = { NUTRITION:'VOEDING', SLEEP:'SLAAP' }[match[1]] || match[1];
+      parsed[key] = match[2].trim();
+    }
   });
 
   // Weekplanning voor morgen
@@ -482,20 +483,20 @@ function renderTomorrowAdvice(text) {
   const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
 
   const sections = [
-    { key:'TRAINING', icon:'\u{1F3CB}', label:'Training notities' },
-    { key:'VOEDING',  icon:'\u{1F957}', label:'Voeding' },
-    { key:'SLAAP',    icon:'\u{1F634}', label:'Slaap' },
-    { key:'TIP',      icon:'\u{1F4A1}', label:'Tip van de coach' },
+    { key:'TRAINING', icon:'\u{1F3CB}', label:t('checkin.section.trainingNotes') },
+    { key:'VOEDING',  icon:'\u{1F957}', label:t('checkin.section.food') },
+    { key:'SLAAP',    icon:'\u{1F634}', label:t('checkin.section.sleep') },
+    { key:'TIP',      icon:'\u{1F4A1}', label:t('checkin.section.coachTip') },
   ];
 
   let badgeHtml = '';
   if (morgenDisp) {
     badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-normal" style="display:inline-flex">'
       + morgenDisp.icon + ' ' + morgenDisp.naam + '</div>'
-      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return o.naam||o.name||''; }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + ' meer' : '') + '</div>' : '')
+      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return dispName(o); }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + t('home.more') : '') + '</div>' : '')
       + '</div>';
   } else {
-    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">Geen training gepland voor morgen</div></div>';
+    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">' + t('checkin.noTrainingTomorrow') + '</div></div>';
   }
 
   let sectionsHtml = sections.map(function(s) {
@@ -510,8 +511,8 @@ function renderTomorrowAdvice(text) {
 
   document.getElementById('tomorrow-content').innerHTML = badgeHtml + sectionsHtml
     + '<div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">'
-    + '<div style="font-size:12px;font-weight:600;color:var(--sage);margin-bottom:4px">Vergeet niet</div>'
-    + '<div style="font-size:13px;color:#3d6649">Check morgenochtend je check-in om je dag te starten.</div>'
+    + '<div style="font-size:12px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('checkin.dontForget') + '</div>'
+    + '<div style="font-size:13px;color:#3d6649">' + t('checkin.checkTomorrow') + '</div>'
     + '</div>';
 }
 
@@ -522,22 +523,22 @@ function renderTomorrowFallback() {
   const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
   const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
 
-  const tip = checkout.training < 3 ? 'Kleine stappen tellen ook. Morgen weer een kans.' : 'Consistentie boven intensiteit — blijf gaan.';
+  const tip = checkout.training < 3 ? t('checkin.tip.smallSteps') : t('checkin.tip.consistency');
 
   let badgeHtml = '';
   if (morgenDisp) {
     badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-normal" style="display:inline-flex">'
       + morgenDisp.icon + ' ' + morgenDisp.naam + '</div>'
-      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return o.naam||o.name||''; }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + ' meer' : '') + '</div>' : '')
+      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return dispName(o); }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + t('home.more') : '') + '</div>' : '')
       + '</div>';
   } else {
-    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">Geen training gepland voor morgen</div></div>';
+    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">' + t('checkin.noTrainingTomorrow') + '</div></div>';
   }
 
   const items = [
-    { icon:'\u{1F957}', label:'Voeding', text:'Zorg voor voldoende eiwitten en blijf gehydrateerd' },
-    { icon:'\u{1F634}', label:'Slaap', text:'Op tijd naar bed — doel 7-8 uur slaap' },
-    { icon:'\u{1F4A1}', label:'Tip van de coach', text: tip },
+    { icon:'\u{1F957}', label:t('checkin.section.food'), text:t('checkin.fallback.foodText') },
+    { icon:'\u{1F634}', label:t('checkin.section.sleep'), text:t('checkin.fallback.sleepText') },
+    { icon:'\u{1F4A1}', label:t('checkin.section.coachTip'), text: tip },
   ];
 
   const sectionsHtml = items.map(function(s) {
@@ -551,15 +552,14 @@ function renderTomorrowFallback() {
 
   document.getElementById('tomorrow-content').innerHTML = badgeHtml + sectionsHtml
     + '<div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">'
-    + '<div style="font-size:13px;color:#3d6649">Check morgenochtend je check-in om je dag te starten.</div>'
+    + '<div style="font-size:13px;color:#3d6649">' + t('checkin.checkTomorrow') + '</div>'
     + '</div>';
 }
 function badgeHTML(type) {
   const cfg = {
-    herstel: ['badge-light', '🌊 Hersteldag'],
-    normaal: ['badge-normal', '💪 Normale training'],
-    zwaar: ['badge-heavy', '🔥 Zware training']
+    herstel: ['badge-light', t('checkin.badge.recovery')],
+    normaal: ['badge-normal', t('checkin.badge.normal')],
+    zwaar: ['badge-heavy', t('checkin.badge.heavy')]
   }[type];
   return `<div class="training-type-badge ${cfg[0]}">${cfg[1]}</div>`;
 }
-

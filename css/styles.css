@@ -95,6 +95,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
 }
 .btn-sm:hover { background: var(--sage-mid); }
+.lang-toggle { display: flex; border: 1px solid var(--sage-mid); border-radius: 8px; overflow: hidden; }
+.lang-btn {
+  background: var(--white); color: var(--muted); border: none; padding: 8px 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.lang-btn.active { background: var(--sage); color: var(--white); }
 
 /* HERO */
 .hero {
