@@ -4,7 +4,7 @@
 // staat, worden de eigenlijke app-scripts geladen — zo lezen de
 // top-level `let`-variabelen in state.js altijd de juiste klant-data.
 
-const CLIENT_EMAIL_DOMAIN = '@client.prime-app';
+const CLIENT_EMAIL_DOMAIN = '@client.local';
 
 const APP_SCRIPTS = [
   'js/data.js', 'js/state.js', 'js/beheer.js', 'js/checkin.js',
