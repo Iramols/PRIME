@@ -310,20 +310,37 @@ function handleAddMealPhoto(event) {
   reader.readAsDataURL(file);
 }
 
+function showMealFormError(msg) {
+  const errorEl = document.getElementById('am-error');
+  errorEl.textContent = msg;
+  errorEl.style.cssText = msg
+    ? 'color:#c0392b;font-size:13px;font-weight:600;margin:10px 0 0;padding:10px 12px;background:#fdecea;border:1px solid #f5c2be;border-radius:8px'
+    : 'color:#c0392b;font-size:12px;margin:10px 0 0';
+  if (msg) errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function addCustomMeal() {
   const nameInput = document.getElementById('am-name');
   const name = nameInput.value.trim();
-  const errorEl = document.getElementById('am-error');
   if (!name) {
-    errorEl.textContent = t('food.addMeal.nameRequired');
+    showMealFormError(t('food.addMeal.nameRequired'));
+    nameInput.style.borderColor = '#c0392b';
     return;
   }
+  nameInput.style.borderColor = '';
 
   const rows = document.querySelectorAll('#am-ingredients-body tr');
   const ingredients = [];
+  let hasEmptyName = false;
   rows.forEach(row => {
-    const ingName = row.querySelector('.am-ing-name')?.value.trim();
-    if (!ingName) return;
+    const nameField = row.querySelector('.am-ing-name');
+    const ingName = nameField?.value.trim();
+    if (!ingName) {
+      if (nameField) nameField.style.borderColor = '#c0392b';
+      hasEmptyName = true;
+      return;
+    }
+    if (nameField) nameField.style.borderColor = '';
     ingredients.push({
       name: ingName,
       gram: parseFloat(row.querySelector('.am-ing-gram')?.value) || 0,
@@ -333,10 +350,10 @@ function addCustomMeal() {
     });
   });
   if (!ingredients.length) {
-    errorEl.textContent = t('food.addMeal.ingredientRequired');
+    showMealFormError(t('food.addMeal.ingredientRequired'));
     return;
   }
-  errorEl.textContent = '';
+  showMealFormError('');
 
   if (_amEditingId) {
     const dish = customMeals.find(m => m.id === _amEditingId);
@@ -389,7 +406,7 @@ function editCustomMeal(id) {
   document.getElementById('am-form-title').textContent = t('food.addMeal.editTitle');
   document.getElementById('am-submit-btn').textContent = t('food.addMeal.update');
   document.getElementById('am-cancel-btn').style.display = 'inline-block';
-  document.getElementById('am-error').textContent = '';
+  showMealFormError('');
 
   document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -399,14 +416,16 @@ function editCustomMeal(id) {
 function resetMealForm() {
   _amEditingId = null;
   _amPhotoData = null;
-  document.getElementById('am-name').value = '';
+  const nameInput = document.getElementById('am-name');
+  nameInput.value = '';
+  nameInput.style.borderColor = '';
   document.getElementById('am-photo-preview').innerHTML = '🍽️';
   document.getElementById('am-ingredients-body').innerHTML = '';
   addIngredientRow();
   document.getElementById('am-form-title').textContent = t('food.addMeal.formTitle');
   document.getElementById('am-submit-btn').textContent = t('food.addMeal.submit');
   document.getElementById('am-cancel-btn').style.display = 'none';
-  document.getElementById('am-error').textContent = '';
+  showMealFormError('');
 }
 
 function removeCustomMeal(id) {
