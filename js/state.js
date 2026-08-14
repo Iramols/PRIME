@@ -27,4 +27,5 @@ let currentMoment = 'ontbijt';
 let dayLog = []; // { id, name, icon, moment, gram, kcal, prot, carb, fat }
 let logIdCounter = 0;
 let customProducts = JSON.parse(localStorage.getItem('prime_custom_products') || '[]');
+let customMeals = JSON.parse(localStorage.getItem('prime_custom_meals') || '[]');
 

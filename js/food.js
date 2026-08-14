@@ -1,12 +1,13 @@
 // ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
-  ['plan','basis','log','add'].forEach(t => {
+  ['plan','basis','log','add','addmeal'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'basis') renderProducts();
   if (tab === 'log') renderDayLog();
   if (tab === 'add') renderAddProductTab();
+  if (tab === 'addmeal') renderAddMealTab();
 }
 
 // Combineert de vaste productcatalogus met de eigen producten van deze klant.
@@ -51,28 +52,32 @@ function renderFood() {
 }
 
 function renderMealPlan() {
-  const data = MEALS[trainingType];
   const mealNames = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('food.mealName.avond'), snack:t('moment.snack') };
   const mealIcons = { ontbijt:'🌅', lunch:'🥗', avond:'🍽️', snack:'🍎' };
   let html = '';
   for (const key of ['ontbijt','lunch','avond','snack']) {
-    const items = data[key];
+    const items = customMeals.filter(m => m.moment === key);
     html += `<div class="meal-block">
       <div class="meal-label">${mealIcons[key]} ${mealNames[key]}</div>
       <div class="meal-cards">
-        ${items.map(m => `
-          <div class="meal-card ${m.rec?'recommended':''} ${selectedMeals[m.id]?'selected':''}"
-               id="mcard-${m.id}" onclick="toggleMeal('${m.id}','${key}')">
-            <div class="meal-sel-indicator" id="msel-${m.id}">${selectedMeals[m.id]?'✓':'+'}</div>
-            ${m.photo ? `<div class="meal-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="meal-emoji">${m.icon}</div>`}
+        ${items.length ? items.map(m => {
+          const tot = mealTotals(m);
+          const logId = 'dish-' + m.id + '-' + key;
+          const isLogged = dayLog.some(i => i.logId === logId);
+          return `
+          <div class="meal-card ${isLogged?'selected':''}"
+               id="mcard-${m.id}" onclick="openMealPortionModal('${m.id}','${key}')">
+            <div class="meal-sel-indicator" id="msel-${m.id}">${isLogged?'✓':'+'}</div>
+            ${m.photo ? `<div class="meal-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="meal-emoji">🍽️</div>`}
             <div class="meal-name">${dispName(m)}</div>
             <div class="meal-macros">
-              <span class="macro-pill">${t('food.macroAbbr.protein')}: ${m.prot}g</span>
-              <span class="macro-pill">${t('food.macroAbbr.carbs')}: ${m.carb}g</span>
-              <span class="macro-pill">${t('food.macroAbbr.fat')}: ${m.fat}g</span>
+              <span class="macro-pill">${t('food.macroAbbr.protein')}: ${Math.round(tot.prot)}g</span>
+              <span class="macro-pill">${t('food.macroAbbr.carbs')}: ${Math.round(tot.carb)}g</span>
+              <span class="macro-pill">${t('food.macroAbbr.fat')}: ${Math.round(tot.fat)}g</span>
             </div>
-            <div class="meal-kcal">${m.kcal} kcal</div>
-          </div>`).join('')}
+            <div class="meal-kcal">${tot.kcal} kcal · ${tot.gram}g</div>
+          </div>`;
+        }).join('') : `<div style="font-size:12px;color:var(--muted);padding:8px 0">${t('food.addMeal.noneForMoment')}</div>`}
       </div>
     </div>`;
   }
@@ -237,6 +242,254 @@ function renderAddProductTab() {
     </div>`).join('');
 }
 
+// ========== EIGEN GERECHTEN (opgebouwd uit ingrediënten) ==========
+// Totalen worden altijd live berekend uit de ingrediëntenlijst — nooit
+// los opgeslagen, dus nooit verouderd na een bewerking.
+function mealTotals(dish) {
+  const tot = (dish.ingredients || []).reduce((a, i) => ({
+    gram: a.gram + (Number(i.gram) || 0),
+    prot: a.prot + (Number(i.prot) || 0),
+    carb: a.carb + (Number(i.carb) || 0),
+    fat:  a.fat  + (Number(i.fat)  || 0)
+  }), { gram:0, prot:0, carb:0, fat:0 });
+  tot.kcal = Math.round(tot.prot * 4 + tot.carb * 4 + tot.fat * 9);
+  return tot;
+}
+
+let _amPhotoData = null;
+let _amRowCounter = 0;
+
+function addIngredientRow() {
+  const tbody = document.getElementById('am-ingredients-body');
+  if (!tbody) return;
+  const rowId = 'amrow-' + (_amRowCounter++);
+  const tr = document.createElement('tr');
+  tr.id = rowId;
+  tr.innerHTML =
+    '<td style="padding:4px 6px 4px 0"><input type="text" class="am-ing-name" placeholder="' + t('food.addMeal.ingredientNamePlaceholder') + '" style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-gram" min="0" step="1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-prot" min="0" step="0.1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-carb" min="0" step="0.1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-fat" min="0" step="0.1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px;text-align:center;font-size:12px;color:var(--muted)" class="am-ing-kcal">0</td>' +
+    '<td style="padding:4px 0 4px 4px;text-align:center"><button onclick="removeIngredientRow(\'' + rowId + '\')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button></td>';
+  tbody.appendChild(tr);
+  updateMealFormTotals();
+}
+
+function removeIngredientRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (row) row.remove();
+  updateMealFormTotals();
+}
+
+function updateMealFormTotals() {
+  const rows = document.querySelectorAll('#am-ingredients-body tr');
+  let totGram = 0, totProt = 0, totCarb = 0, totFat = 0;
+  rows.forEach(row => {
+    const gram = parseFloat(row.querySelector('.am-ing-gram')?.value) || 0;
+    const prot = parseFloat(row.querySelector('.am-ing-prot')?.value) || 0;
+    const carb = parseFloat(row.querySelector('.am-ing-carb')?.value) || 0;
+    const fat  = parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0;
+    const kcalCell = row.querySelector('.am-ing-kcal');
+    if (kcalCell) kcalCell.textContent = Math.round(prot * 4 + carb * 4 + fat * 9);
+    totGram += gram; totProt += prot; totCarb += carb; totFat += fat;
+  });
+  const totKcal = Math.round(totProt * 4 + totCarb * 4 + totFat * 9);
+  const weightEl = document.getElementById('am-total-weight');
+  const macrosEl = document.getElementById('am-total-macros');
+  if (weightEl) weightEl.textContent = totGram + 'g';
+  if (macrosEl) macrosEl.textContent = t('mealPortion.totals', { kcal: totKcal, prot: Math.round(totProt*10)/10, carb: Math.round(totCarb*10)/10, fat: Math.round(totFat*10)/10 });
+}
+
+function handleAddMealPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 1.5 * 1024 * 1024) {
+    document.getElementById('am-error').textContent = t('food.add.photoTooBig');
+    return;
+  }
+  document.getElementById('am-error').textContent = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _amPhotoData = e.target.result;
+    document.getElementById('am-photo-preview').innerHTML = '<img src="' + _amPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addCustomMeal() {
+  const nameInput = document.getElementById('am-name');
+  const name = nameInput.value.trim();
+  const errorEl = document.getElementById('am-error');
+  if (!name) {
+    errorEl.textContent = t('food.addMeal.nameRequired');
+    return;
+  }
+
+  const rows = document.querySelectorAll('#am-ingredients-body tr');
+  const ingredients = [];
+  rows.forEach(row => {
+    const ingName = row.querySelector('.am-ing-name')?.value.trim();
+    if (!ingName) return;
+    ingredients.push({
+      name: ingName,
+      gram: parseFloat(row.querySelector('.am-ing-gram')?.value) || 0,
+      prot: parseFloat(row.querySelector('.am-ing-prot')?.value) || 0,
+      carb: parseFloat(row.querySelector('.am-ing-carb')?.value) || 0,
+      fat:  parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0
+    });
+  });
+  if (!ingredients.length) {
+    errorEl.textContent = t('food.addMeal.ingredientRequired');
+    return;
+  }
+  errorEl.textContent = '';
+
+  const dish = {
+    id: 'custom-meal-' + Date.now() + Math.floor(Math.random() * 1000),
+    name: name,
+    moment: document.getElementById('am-moment').value,
+    photo: _amPhotoData || null,
+    ingredients: ingredients,
+    custom: true
+  };
+  customMeals.push(dish);
+  syncSet('prime_custom_meals', customMeals);
+
+  // Formulier resetten
+  nameInput.value = '';
+  document.getElementById('am-moment').value = 'avond';
+  document.getElementById('am-photo-preview').innerHTML = '🍽️';
+  _amPhotoData = null;
+  document.getElementById('am-ingredients-body').innerHTML = '';
+  addIngredientRow();
+
+  renderOwnMealsList();
+  renderMealPlan();
+}
+
+function removeCustomMeal(id) {
+  if (!confirm(t('food.addMeal.confirmDelete'))) return;
+  customMeals = customMeals.filter(m => m.id !== id);
+  syncSet('prime_custom_meals', customMeals);
+  // Verwijder eventueel al gelogde porties van dit gerecht uit vandaag
+  dayLog = dayLog.filter(i => !(i.logId && String(i.logId).startsWith('dish-' + id + '-')));
+  renderOwnMealsList();
+  renderMealPlan();
+  updateMacroTotals();
+  updateLogBadge();
+}
+
+function renderOwnMealsList() {
+  const el = document.getElementById('own-meals-list');
+  if (!el) return;
+  if (!customMeals.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('food.addMeal.noOwnMeals') + '</div>';
+    return;
+  }
+  el.innerHTML = customMeals.map(dish => {
+    const tot = mealTotals(dish);
+    return `
+    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
+      ${dish.photo
+        ? `<div style="width:64px;min-height:60px;background-image:url('${dish.photo}');background-size:cover;background-position:center;flex-shrink:0"></div>`
+        : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">🍽️</div>`}
+      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(dish)} <span style="font-size:10px;color:var(--muted);font-weight:400">(${t('moment.' + dish.moment)})</span></div>
+          <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.totalWeightLine', { gram: tot.gram })} · ${tot.kcal} kcal</div>
+        </div>
+        <button onclick="removeCustomMeal('${dish.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAddMealTab() {
+  const tbody = document.getElementById('am-ingredients-body');
+  if (tbody && tbody.children.length === 0) addIngredientRow();
+  renderOwnMealsList();
+}
+
+// ─── Portie-percentage bij loggen ─────────────────────────────────────────
+let _mpDish = null;
+let _mpMoment = null;
+
+function openMealPortionModal(dishId, moment) {
+  _mpDish = customMeals.find(m => m.id === dishId);
+  if (!_mpDish) return;
+  _mpMoment = moment;
+  const tot = mealTotals(_mpDish);
+  document.getElementById('mpm-name').textContent = dispName(_mpDish);
+  document.getElementById('mpm-reference').textContent = t('mealPortion.reference', { gram: tot.gram });
+
+  // Al gelogd voor dit gerecht+moment? Dan het gekozen percentage vooraf invullen
+  const logId = 'dish-' + _mpDish.id + '-' + moment;
+  const existing = dayLog.find(i => i.logId === logId);
+  const pct = existing && existing._pct ? existing._pct : 100;
+  document.getElementById('mpm-pct').value = pct;
+  document.querySelectorAll('#meal-portion-modal .moment-btn').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.replace('%','') == pct);
+  });
+
+  updateMealPortionPreview();
+  document.getElementById('meal-portion-modal').classList.add('open');
+}
+
+function selectMealPct(pct) {
+  document.getElementById('mpm-pct').value = pct;
+  document.querySelectorAll('#meal-portion-modal .moment-btn').forEach(function(b) {
+    b.classList.toggle('active', b.textContent.replace('%','') == pct);
+  });
+  updateMealPortionPreview();
+}
+
+function updateMealPortionPreview() {
+  if (!_mpDish) return;
+  const pct = parseFloat(document.getElementById('mpm-pct').value) || 0;
+  const tot = mealTotals(_mpDish);
+  const f = pct / 100;
+  document.getElementById('mpv-kcal').textContent = Math.round(tot.kcal * f);
+  document.getElementById('mpv-prot').textContent = Math.round(tot.prot * f * 10) / 10 + 'g';
+  document.getElementById('mpv-carb').textContent = Math.round(tot.carb * f * 10) / 10 + 'g';
+  document.getElementById('mpv-fat').textContent  = Math.round(tot.fat  * f * 10) / 10 + 'g';
+}
+
+function closeMealPortionModal() {
+  document.getElementById('meal-portion-modal').classList.remove('open');
+}
+
+function addMealToLog() {
+  if (!_mpDish) return;
+  const pct = parseFloat(document.getElementById('mpm-pct').value) || 0;
+  if (pct <= 0) return;
+  const tot = mealTotals(_mpDish);
+  const f = pct / 100;
+  const logId = 'dish-' + _mpDish.id + '-' + _mpMoment;
+
+  dayLog = dayLog.filter(i => i.logId !== logId); // vervangt i.p.v. dupliceert
+  dayLog.push({
+    logId: logId,
+    name: dispName(_mpDish),
+    icon: '🍽️',
+    photo: _mpDish.photo || null,
+    moment: _mpMoment,
+    gram: Math.round(tot.gram * f),
+    kcal: Math.round(tot.kcal * f),
+    prot: Math.round(tot.prot * f * 10) / 10,
+    carb: Math.round(tot.carb * f * 10) / 10,
+    fat:  Math.round(tot.fat  * f * 10) / 10,
+    type: 'meal',
+    _pct: pct
+  });
+
+  closeMealPortionModal();
+  renderMealPlan();
+  updateMacroTotals();
+  updateLogBadge();
+}
+
 // ========== PORTION MODAL ==========
 function openPortionModal(productId) {
   currentPortionProduct = getAllProducts().find(p => p.id === productId);
@@ -366,6 +619,7 @@ function removeFromLog(logId) {
   renderDayLog();
   updateMacroTotals();
   updateLogBadge();
+  if (document.getElementById('meal-plan')) renderMealPlan();
 }
 
 function updateLogBadge() {
@@ -419,7 +673,11 @@ function renderDayLog() {
                 </div>
                 <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
               </div>
-              <button onclick="${item.type==='meal' ? `toggleMeal('${item.logId.replace('meal-','')}','${item.moment}')` : `removeFromLog(${item.logId})`}"
+              <button onclick="${
+                  item.type === 'meal' && String(item.logId).startsWith('dish-') ? `removeFromLog('${item.logId}')`
+                  : item.type === 'meal' ? `toggleMeal('${item.logId.replace('meal-','')}','${item.moment}')`
+                  : `removeFromLog(${item.logId})`
+                }"
                 style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
             </div>
           </div>`).join('')}

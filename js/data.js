@@ -419,107 +419,23 @@ const EXERCISES = {
 
 
 // ========== MAALTIJDPLAN ==========
+// Vaste dagdoelen per energieniveau (kcal/eiwit/koolh/vet) - deze worden
+// overal in de app gebruikt voor voedingsdoelen, ONGEACHT welke gerechten
+// er in de ontbijt/lunch/avond/snack-lijsten staan. De testmaaltijden die
+// hier eerder stonden zijn verwijderd; de coach voegt nu eigen gerechten
+// toe via de "+ Gerecht toevoegen"-tab (zie customMeals in state.js).
 const MEALS = {
   herstel: {
     doel: { kcal:1800, prot:130, carb:170, fat:60 },
-    ontbijt: [
-      { id:'h-o1', name:'Kwark met bessen & noten', name_en:'Quark with berries & nuts', icon:'🥛', kcal:280, prot:22, carb:25, fat:8, rec:true, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-o2', name:'Havermout met banaan', name_en:'Oatmeal with banana', icon:'🥣', kcal:320, prot:12, carb:55, fat:6, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-o3', name:'Griekse yoghurt + granola', name_en:'Greek yogurt + granola', icon:'🍶', kcal:300, prot:18, carb:38, fat:7, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-o4', name:'Scrambled eggs + volkoren toast', name_en:'Scrambled eggs + wholegrain toast', icon:'🍳', kcal:340, prot:24, carb:28, fat:14, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-o5', name:'Smoothie: spinazie + banaan + eiwit', name_en:'Smoothie: spinach + banana + protein', icon:'🥤', kcal:260, prot:20, carb:32, fat:4, rec:false, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    lunch: [
-      { id:'h-l1', name:'Kipfilet salade + volkoren', name_en:'Chicken breast salad + wholegrain', icon:'🥗', kcal:380, prot:34, carb:30, fat:10, rec:true, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-l2', name:'Groentesoep met ei', name_en:'Vegetable soup with egg', icon:'🍜', kcal:290, prot:18, carb:28, fat:9, rec:false, photo:'https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-l3', name:'Tonijnsalade + ryebread', name_en:'Tuna salad + rye bread', icon:'🥪', kcal:360, prot:32, carb:26, fat:10, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-l4', name:'Omelet met groenten + toast', name_en:'Omelette with vegetables + toast', icon:'🍳', kcal:340, prot:26, carb:22, fat:14, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-l5', name:'Linzensoep + brood', name_en:'Lentil soup + bread', icon:'🥣', kcal:380, prot:20, carb:52, fat:8, rec:false, photo:'https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    avond: [
-      { id:'h-a1', name:'Zalm + gestoomde groenten + quinoa', name_en:'Salmon + steamed vegetables + quinoa', icon:'🐟', kcal:520, prot:38, carb:42, fat:16, rec:true, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-a2', name:'Kipfilet + zoete aardappel + broccoli', name_en:'Chicken breast + sweet potato + broccoli', icon:'🍗', kcal:480, prot:40, carb:45, fat:10, rec:false, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-a3', name:'Kabeljauw + rijst + courgette', name_en:'Cod + rice + zucchini', icon:'🐠', kcal:440, prot:36, carb:48, fat:8, rec:false, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-a4', name:'Kipsoep met groenten + noedels', name_en:'Chicken soup with vegetables + noodles', icon:'🍲', kcal:400, prot:32, carb:42, fat:10, rec:false, photo:'https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-a5', name:'Omelet + geroosterde groenten', name_en:'Omelette + roasted vegetables', icon:'🥚', kcal:380, prot:28, carb:20, fat:18, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    snack: [
-      { id:'h-s1', name:'Appel + handvol amandelen', name_en:'Apple + a handful of almonds', icon:'🍎', kcal:160, prot:4, carb:22, fat:8, rec:true, photo:'https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-s2', name:'Rijstwafels met pindakaas', name_en:'Rice cakes with peanut butter', icon:'🫙', kcal:190, prot:7, carb:24, fat:9, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-s3', name:'Kwark 200g + honing', name_en:'Quark 200g + honey', icon:'🍯', kcal:180, prot:16, carb:18, fat:4, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-s4', name:'Edamame 150g', name_en:'Edamame 150g', icon:'🫘', kcal:130, prot:12, carb:10, fat:5, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'h-s5', name:'Komkommer + hummus', name_en:'Cucumber + hummus', icon:'🥒', kcal:120, prot:5, carb:14, fat:5, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ]
+    ontbijt: [], lunch: [], avond: [], snack: []
   },
   normaal: {
     doel: { kcal:2200, prot:160, carb:240, fat:70 },
-    ontbijt: [
-      { id:'n-o1', name:'Havermout + eiwitpoeder + bessen', name_en:'Oatmeal + protein powder + berries', icon:'🥣', kcal:420, prot:28, carb:55, fat:8, rec:true, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-o2', name:'Eieren op toast + avocado', name_en:'Eggs on toast + avocado', icon:'🍳', kcal:480, prot:26, carb:38, fat:22, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-o3', name:'Kwark + muesli + banaan', name_en:'Quark + muesli + banana', icon:'🥛', kcal:440, prot:24, carb:60, fat:8, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-o4', name:'Pannenkoeken (havermout) + honing', name_en:'Pancakes (oatmeal) + honey', icon:'🥞', kcal:460, prot:22, carb:65, fat:10, rec:false, photo:'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-o5', name:'Yoghurt bowl + noten + fruit', name_en:'Yogurt bowl + nuts + fruit', icon:'🍶', kcal:400, prot:20, carb:48, fat:14, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-o6', name:'Smoothie + 2 hardgekookte eieren', name_en:'Smoothie + 2 hard-boiled eggs', icon:'🥤', kcal:380, prot:26, carb:40, fat:10, rec:false, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    lunch: [
-      { id:'n-l1', name:'Wrap met kip, hummus & groenten', name_en:'Wrap with chicken, hummus & vegetables', icon:'🌯', kcal:520, prot:38, carb:52, fat:14, rec:true, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-l2', name:'Tonijnsalade + volkoren brood', name_en:'Tuna salad + wholegrain bread', icon:'🥪', kcal:440, prot:34, carb:42, fat:12, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-l3', name:'Kipsalade + quinoa bowl', name_en:'Chicken salad + quinoa bowl', icon:'🥗', kcal:500, prot:40, carb:46, fat:12, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-l4', name:'Volkoren brood + kipfilet + avocado', name_en:'Wholegrain bread + chicken breast + avocado', icon:'🥑', kcal:480, prot:34, carb:44, fat:16, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-l5', name:'Pasta met tonijn + tomaat', name_en:'Pasta with tuna + tomato', icon:'🍝', kcal:520, prot:32, carb:62, fat:10, rec:false, photo:'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-l6', name:'Groentesoep + ei + brood', name_en:'Vegetable soup + egg + bread', icon:'🍜', kcal:400, prot:26, carb:48, fat:10, rec:false, photo:'https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    avond: [
-      { id:'n-a1', name:'Kipfilet + rijst + groenten', name_en:'Chicken breast + rice + vegetables', icon:'🍗', kcal:620, prot:48, carb:68, fat:12, rec:true, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-a2', name:'Pasta bolognese (mager rund)', name_en:'Pasta bolognese (lean beef)', icon:'🍝', kcal:580, prot:40, carb:72, fat:14, rec:false, photo:'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-a3', name:'Zalm + zoete aardappel + spinazie', name_en:'Salmon + sweet potato + spinach', icon:'🐟', kcal:600, prot:44, carb:55, fat:18, rec:false, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-a4', name:'Kipgehakt + rijst + wokgroenten', name_en:'Ground chicken + rice + stir-fried vegetables', icon:'🥢', kcal:560, prot:42, carb:60, fat:12, rec:false, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-a5', name:'Omelet (3 eieren) + aardappelen', name_en:'Omelette (3 eggs) + potatoes', icon:'🥚', kcal:520, prot:34, carb:48, fat:20, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-a6', name:'Kabeljauw + couscous + groenten', name_en:'Cod + couscous + vegetables', icon:'🐠', kcal:540, prot:40, carb:58, fat:10, rec:false, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    snack: [
-      { id:'n-s1', name:'Proteïneshake + banaan', name_en:'Protein shake + banana', icon:'🥛', kcal:260, prot:28, carb:30, fat:3, rec:true, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-s2', name:'Edamame + rijstwafels', name_en:'Edamame + rice cakes', icon:'🫘', kcal:220, prot:14, carb:28, fat:6, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-s3', name:'Kwark 250g + bessen', name_en:'Quark 250g + berries', icon:'🍓', kcal:200, prot:20, carb:18, fat:4, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-s4', name:'Appel + 30g amandelen', name_en:'Apple + 30g almonds', icon:'🍎', kcal:230, prot:6, carb:28, fat:12, rec:false, photo:'https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-s5', name:'Rijstwafels + pindakaas + banaan', name_en:'Rice cakes + peanut butter + banana', icon:'🫙', kcal:280, prot:8, carb:40, fat:10, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'n-s6', name:'Hardgekookt ei + volkoren toast', name_en:'Hard-boiled egg + wholegrain toast', icon:'🥚', kcal:200, prot:14, carb:18, fat:8, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ]
+    ontbijt: [], lunch: [], avond: [], snack: []
   },
   zwaar: {
     doel: { kcal:2800, prot:200, carb:320, fat:80 },
-    ontbijt: [
-      { id:'z-o1', name:'Havermout + 3 eieren + honing', name_en:'Oatmeal + 3 eggs + honey', icon:'🥣', kcal:580, prot:36, carb:72, fat:14, rec:true, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-o2', name:'Smoothie bowl met eiwit & granola', name_en:'Smoothie bowl with protein & granola', icon:'🥤', kcal:520, prot:30, carb:68, fat:12, rec:false, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-o3', name:'Pannenkoeken + Griekse yoghurt + fruit', name_en:'Pancakes + Greek yogurt + fruit', icon:'🥞', kcal:600, prot:32, carb:80, fat:14, rec:false, photo:'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-o4', name:'Havermout + kwark + noten + banaan', name_en:'Oatmeal + quark + nuts + banana', icon:'🥛', kcal:560, prot:34, carb:68, fat:16, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-o5', name:'4 eieren + avocado + volkoren toast', name_en:'4 eggs + avocado + wholegrain toast', icon:'🍳', kcal:580, prot:34, carb:36, fat:28, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-o6', name:'Proteïneshake + havermout + PB', name_en:'Protein shake + oatmeal + PB', icon:'🧈', kcal:620, prot:40, carb:70, fat:16, rec:false, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    lunch: [
-      { id:'z-l1', name:'Grote kipwrap + extra rijst', name_en:'Large chicken wrap + extra rice', icon:'🌯', kcal:720, prot:52, carb:80, fat:16, rec:true, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-l2', name:'Broodje pulled chicken + salade', name_en:'Pulled chicken sandwich + salad', icon:'🥪', kcal:660, prot:46, carb:72, fat:14, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-l3', name:'Kip + rijst + avocado bowl', name_en:'Chicken + rice + avocado bowl', icon:'🥗', kcal:700, prot:50, carb:72, fat:18, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-l4', name:'Pasta met gehakt + tomatensaus', name_en:'Pasta with ground meat + tomato sauce', icon:'🍝', kcal:740, prot:46, carb:88, fat:16, rec:false, photo:'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-l5', name:'2 broodjes kip + salade', name_en:'2 chicken sandwiches + salad', icon:'🥪', kcal:680, prot:48, carb:76, fat:14, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-l6', name:'Rijst + zalm + edamame bowl', name_en:'Rice + salmon + edamame bowl', icon:'🍱', kcal:700, prot:52, carb:74, fat:18, rec:false, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    avond: [
-      { id:'z-a1', name:'Steak + zoete aardappel + spinazie', name_en:'Steak + sweet potato + spinach', icon:'🥩', kcal:780, prot:60, carb:65, fat:24, rec:true, photo:'https://images.pexels.com/photos/769289/pexels-photo-769289.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-a2', name:'Kip + pasta + tomatensaus', name_en:'Chicken + pasta + tomato sauce', icon:'🍝', kcal:740, prot:54, carb:82, fat:16, rec:false, photo:'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-a3', name:'Gehakt + rijst + wokgroenten', name_en:'Ground meat + rice + stir-fried vegetables', icon:'🥢', kcal:720, prot:52, carb:76, fat:18, rec:false, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-a4', name:'Zalm + couscous + gegrilde groenten', name_en:'Salmon + couscous + grilled vegetables', icon:'🐟', kcal:700, prot:50, carb:70, fat:20, rec:false, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-a5', name:'Kip tikka masala + rijst', name_en:'Chicken tikka masala + rice', icon:'🍛', kcal:760, prot:54, carb:80, fat:18, rec:false, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-a6', name:'Burger (mager) + zoete aardappel frites', name_en:'Burger (lean) + sweet potato fries', icon:'🍔', kcal:800, prot:52, carb:82, fat:24, rec:false, photo:'https://images.pexels.com/photos/769289/pexels-photo-769289.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ],
-    snack: [
-      { id:'z-s1', name:'Proteïneshake + 2 rijstwafels + PB', name_en:'Protein shake + 2 rice cakes + PB', icon:'🥛', kcal:380, prot:36, carb:38, fat:10, rec:true, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-s2', name:'Kwark 500g + honing + noten', name_en:'Quark 500g + honey + nuts', icon:'🍯', kcal:360, prot:38, carb:32, fat:12, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-s3', name:'Banaan + proteïnebar', name_en:'Banana + protein bar', icon:'🍌', kcal:340, prot:24, carb:46, fat:8, rec:false, photo:'https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-s4', name:'Havermout koekjes (zelfgemaakt)', name_en:'Oatmeal cookies (homemade)', icon:'🍪', kcal:320, prot:14, carb:44, fat:10, rec:false, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-s5', name:'2 hardgekookte eieren + rijstwafel', name_en:'2 hard-boiled eggs + rice cake', icon:'🥚', kcal:240, prot:18, carb:20, fat:10, rec:false, photo:'https://images.pexels.com/photos/824635/pexels-photo-824635.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-      { id:'z-s6', name:'Cottage cheese + ananas', name_en:'Cottage cheese + pineapple', icon:'🧀', kcal:280, prot:26, carb:28, fat:6, rec:false, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    ]
+    ontbijt: [], lunch: [], avond: [], snack: []
   }
 };
 

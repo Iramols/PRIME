@@ -20,7 +20,8 @@ const CLOUD_KEYS = [
   'prime_wp_done',
   'prime_weekplan',
   'prime_programmas',
-  'prime_custom_products'
+  'prime_custom_products',
+  'prime_custom_meals'
 ];
 
 let _sb = null;

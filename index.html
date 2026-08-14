@@ -373,6 +373,7 @@
       <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
       <button class="food-tab" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
       <button class="food-tab" id="tab-add" onclick="switchFoodTab('add')" data-i18n="food.tab.add">+ Product toevoegen</button>
+      <button class="food-tab" id="tab-addmeal" onclick="switchFoodTab('addmeal')" data-i18n="food.tab.addMeal">+ Gerecht toevoegen</button>
     </div>
 
     <!-- TAB: MAALTIJDPLAN -->
@@ -454,6 +455,64 @@
 
       <div class="card-label" style="margin-bottom:10px" data-i18n="food.add.myProducts">Mijn eigen producten</div>
       <div id="own-products-list"></div>
+    </div>
+
+    <!-- TAB: EIGEN GERECHT TOEVOEGEN -->
+    <div id="foodtab-addmeal" style="display:none">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-label" style="margin-bottom:14px" data-i18n="food.addMeal.formTitle">Nieuw gerecht</div>
+        <div class="form-row"><label data-i18n="food.addMeal.name">Naam</label><input type="text" id="am-name" data-i18n-placeholder="food.addMeal.namePlaceholder" placeholder="bijv. Kipcurry met rijst"></div>
+        <div class="form-row"><label data-i18n="portion.momentLabel">Maaltijdmoment</label>
+          <select id="am-moment">
+            <option value="ontbijt" data-i18n="moment.ontbijt">Ontbijt</option>
+            <option value="lunch" data-i18n="moment.lunch">Lunch</option>
+            <option value="avond" selected data-i18n="moment.avond">Avond</option>
+            <option value="snack" data-i18n="moment.snack">Snack</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label data-i18n="food.add.photo">Foto</label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="am-photo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--sand);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">🍽️</div>
+            <label style="cursor:pointer">
+              <input type="file" accept="image/*" style="display:none" onchange="handleAddMealPhoto(event)">
+              <span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600" data-i18n="beheer.upload">📷 Upload</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="divider" style="margin:16px 0"></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="card-label" style="margin-bottom:0" data-i18n="food.addMeal.ingredientsTitle">Ingrediënten</div>
+          <button class="btn-sm" onclick="addIngredientRow()" data-i18n="food.addMeal.addIngredient">+ Ingrediënt toevoegen</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr>
+              <th style="text-align:left;padding:0 6px 8px 0;font-size:11px;color:var(--muted);font-weight:600" data-i18n="food.addMeal.col.name">Ingrediënt</th>
+              <th style="padding:0 4px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center" data-i18n="food.addMeal.col.gram">Gram</th>
+              <th style="padding:0 4px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center" data-i18n="food.addMeal.col.protein">Eiwit (g)</th>
+              <th style="padding:0 4px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center" data-i18n="food.addMeal.col.carbs">Koolh (g)</th>
+              <th style="padding:0 4px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center" data-i18n="food.addMeal.col.fat">Vet (g)</th>
+              <th style="padding:0 4px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center" data-i18n="food.addMeal.col.kcal">Kcal</th>
+              <th style="width:28px"></th>
+            </tr></thead>
+            <tbody id="am-ingredients-body"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:14px;padding:12px 14px;background:var(--sage-light);border-radius:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <div style="font-size:12px;font-weight:600;color:var(--sage)"><span data-i18n="food.addMeal.totalLabel">Totaal</span>: <span id="am-total-weight">0g</span></div>
+          <div style="font-size:13px;color:var(--charcoal)" id="am-total-macros">0 kcal</div>
+        </div>
+
+        <div id="am-error" style="color:#c0392b;font-size:12px;margin:10px 0 0"></div>
+        <button class="btn-primary" style="margin-top:12px" onclick="addCustomMeal()" data-i18n="food.addMeal.submit">Gerecht toevoegen</button>
+      </div>
+
+      <div class="card-label" style="margin-bottom:10px" data-i18n="food.addMeal.myMeals">Mijn eigen gerechten</div>
+      <div id="own-meals-list"></div>
     </div>
 
   </div>
@@ -739,6 +798,37 @@
       <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
     <button class="btn-primary" onclick="addProductToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
+  </div>
+</div>
+
+<!-- MEAL PORTION MODAL (eigen gerechten) -->
+<div class="portion-modal-wrap" id="meal-portion-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <div class="portion-product-name" id="mpm-name">Gerecht</div>
+        <div class="portion-per100" id="mpm-reference">100%</div>
+      </div>
+      <button onclick="closeMealPortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <div class="portion-moment-label" data-i18n="mealPortion.quickLabel">Portie</div>
+    <div class="moment-btns">
+      <button class="moment-btn" onclick="selectMealPct(25)">25%</button>
+      <button class="moment-btn" onclick="selectMealPct(50)">50%</button>
+      <button class="moment-btn" onclick="selectMealPct(75)">75%</button>
+      <button class="moment-btn active" onclick="selectMealPct(100)">100%</button>
+    </div>
+    <div class="portion-input-row">
+      <input type="number" id="mpm-pct" value="100" min="1" max="500" step="5" oninput="updateMealPortionPreview()">
+      <span class="portion-unit">%</span>
+    </div>
+    <div class="portion-preview">
+      <div><div class="prev-val" id="mpv-kcal">0</div><div class="prev-lbl" data-i18n="portion.kcal">kcal</div></div>
+      <div><div class="prev-val" id="mpv-prot" style="color:var(--accent)">0g</div><div class="prev-lbl" data-i18n="portion.protein">eiwit</div></div>
+      <div><div class="prev-val" id="mpv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
+      <div><div class="prev-val" id="mpv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
+    </div>
+    <button class="btn-primary" onclick="addMealToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
   </div>
 </div>
 
