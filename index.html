@@ -462,14 +462,6 @@
       <div class="card" style="margin-bottom:18px">
         <div class="card-label" style="margin-bottom:14px" id="am-form-title" data-i18n="food.addMeal.formTitle">Nieuw gerecht</div>
         <div class="form-row"><label data-i18n="food.addMeal.name">Naam</label><input type="text" id="am-name" data-i18n-placeholder="food.addMeal.namePlaceholder" placeholder="bijv. Kipcurry met rijst"></div>
-        <div class="form-row"><label data-i18n="portion.momentLabel">Maaltijdmoment</label>
-          <select id="am-moment">
-            <option value="ontbijt" data-i18n="moment.ontbijt">Ontbijt</option>
-            <option value="lunch" data-i18n="moment.lunch">Lunch</option>
-            <option value="avond" selected data-i18n="moment.avond">Avond</option>
-            <option value="snack" data-i18n="moment.snack">Snack</option>
-          </select>
-        </div>
         <div class="form-row">
           <label data-i18n="food.add.photo">Foto</label>
           <div style="display:flex;align-items:center;gap:12px">
@@ -810,20 +802,20 @@
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
       <div>
         <div class="portion-product-name" id="mpm-name">Gerecht</div>
-        <div class="portion-per100" id="mpm-reference">100%</div>
+        <div class="portion-per100" id="mpm-reference">totaal: 0g</div>
       </div>
       <button onclick="closeMealPortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
     </div>
-    <div class="portion-moment-label" data-i18n="mealPortion.quickLabel">Portie</div>
+    <div class="portion-moment-label" data-i18n="portion.momentLabel">Maaltijdmoment</div>
     <div class="moment-btns">
-      <button class="moment-btn" onclick="selectMealPct(25)">25%</button>
-      <button class="moment-btn" onclick="selectMealPct(50)">50%</button>
-      <button class="moment-btn" onclick="selectMealPct(75)">75%</button>
-      <button class="moment-btn active" onclick="selectMealPct(100)">100%</button>
+      <button class="moment-btn active" onclick="selectMealMoment('ontbijt',this)">🌅 <span data-i18n="moment.ontbijt">Ontbijt</span></button>
+      <button class="moment-btn" onclick="selectMealMoment('lunch',this)">🥗 <span data-i18n="moment.lunch">Lunch</span></button>
+      <button class="moment-btn" onclick="selectMealMoment('avond',this)">🍽️ <span data-i18n="moment.avond">Avond</span></button>
+      <button class="moment-btn" onclick="selectMealMoment('snack',this)">🍎 <span data-i18n="moment.snack">Snack</span></button>
     </div>
     <div class="portion-input-row">
-      <input type="number" id="mpm-pct" value="100" min="1" max="500" step="5" oninput="updateMealPortionPreview()">
-      <span class="portion-unit">%</span>
+      <input type="number" id="mpm-gram" value="100" min="1" max="5000" step="5" oninput="updateMealPortionPreview()">
+      <span class="portion-unit" data-i18n="portion.gram">gram</span>
     </div>
     <div class="portion-preview">
       <div><div class="prev-val" id="mpv-kcal">0</div><div class="prev-lbl" data-i18n="portion.kcal">kcal</div></div>

@@ -51,37 +51,28 @@ function renderFood() {
   updateMacroTotals();
 }
 
+// Zelfde opzet als de productengrid in Basisproducten: één platte lijst,
+// klikken opent de portiemodal waarin je gewicht én maaltijdmoment kiest.
 function renderMealPlan() {
-  const mealNames = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('food.mealName.avond'), snack:t('moment.snack') };
-  const mealIcons = { ontbijt:'🌅', lunch:'🥗', avond:'🍽️', snack:'🍎' };
-  let html = '';
-  for (const key of ['ontbijt','lunch','avond','snack']) {
-    const items = customMeals.filter(m => m.moment === key);
-    html += `<div class="meal-block">
-      <div class="meal-label">${mealIcons[key]} ${mealNames[key]}</div>
-      <div class="meal-cards">
-        ${items.length ? items.map(m => {
-          const tot = mealTotals(m);
-          const logId = 'dish-' + m.id + '-' + key;
-          const isLogged = dayLog.some(i => i.logId === logId);
-          return `
-          <div class="meal-card ${isLogged?'selected':''}"
-               id="mcard-${m.id}" onclick="openMealPortionModal('${m.id}','${key}')">
-            <div class="meal-sel-indicator" id="msel-${m.id}">${isLogged?'✓':'+'}</div>
-            ${m.photo ? `<div class="meal-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="meal-emoji">🍽️</div>`}
-            <div class="meal-name">${dispName(m)}</div>
-            <div class="meal-macros">
-              <span class="macro-pill">${t('food.macroAbbr.protein')}: ${Math.round(tot.prot)}g</span>
-              <span class="macro-pill">${t('food.macroAbbr.carbs')}: ${Math.round(tot.carb)}g</span>
-              <span class="macro-pill">${t('food.macroAbbr.fat')}: ${Math.round(tot.fat)}g</span>
-            </div>
-            <div class="meal-kcal">${tot.kcal} kcal · ${tot.gram}g</div>
-          </div>`;
-        }).join('') : `<div style="font-size:12px;color:var(--muted);padding:8px 0">${t('food.addMeal.noneForMoment')}</div>`}
-      </div>
-    </div>`;
+  if (!customMeals.length) {
+    document.getElementById('meal-plan').innerHTML =
+      `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.addMeal.noneYet')}</div>`;
+    return;
   }
-  document.getElementById('meal-plan').innerHTML = html;
+  document.getElementById('meal-plan').innerHTML = `<div class="product-grid">` +
+    customMeals.map(m => {
+      const tot = mealTotals(m);
+      return `
+      <div class="product-card" onclick="openMealPortionModal('${m.id}')">
+        ${m.photo ? `<div class="product-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="product-icon">🍽️</div>`}
+        <div class="product-name">${dispName(m)}</div>
+        <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
+        <div class="product-macros">
+          <span class="product-pill">${tot.kcal} kcal</span>
+          <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
+        </div>
+      </div>`;
+    }).join('') + `</div>`;
 }
 
 function toggleMeal(id, category) {
@@ -347,13 +338,10 @@ function addCustomMeal() {
   }
   errorEl.textContent = '';
 
-  const moment = document.getElementById('am-moment').value;
-
   if (_amEditingId) {
     const dish = customMeals.find(m => m.id === _amEditingId);
     if (dish) {
       dish.name = name;
-      dish.moment = moment;
       dish.photo = _amPhotoData || null;
       dish.ingredients = ingredients;
     }
@@ -361,7 +349,6 @@ function addCustomMeal() {
     customMeals.push({
       id: 'custom-meal-' + Date.now() + Math.floor(Math.random() * 1000),
       name: name,
-      moment: moment,
       photo: _amPhotoData || null,
       ingredients: ingredients,
       custom: true
@@ -380,7 +367,6 @@ function editCustomMeal(id) {
   _amEditingId = id;
 
   document.getElementById('am-name').value = dish.name;
-  document.getElementById('am-moment').value = dish.moment;
   _amPhotoData = dish.photo || null;
   document.getElementById('am-photo-preview').innerHTML = dish.photo
     ? '<img src="' + dish.photo + '" style="width:100%;height:100%;object-fit:cover">'
@@ -414,7 +400,6 @@ function resetMealForm() {
   _amEditingId = null;
   _amPhotoData = null;
   document.getElementById('am-name').value = '';
-  document.getElementById('am-moment').value = 'avond';
   document.getElementById('am-photo-preview').innerHTML = '🍽️';
   document.getElementById('am-ingredients-body').innerHTML = '';
   addIngredientRow();
@@ -430,7 +415,7 @@ function removeCustomMeal(id) {
   customMeals = customMeals.filter(m => m.id !== id);
   syncSet('prime_custom_meals', customMeals);
   // Verwijder eventueel al gelogde porties van dit gerecht uit vandaag
-  dayLog = dayLog.filter(i => !(i.logId && String(i.logId).startsWith('dish-' + id + '-')));
+  dayLog = dayLog.filter(i => i.dishId !== id);
   renderOwnMealsList();
   renderMealPlan();
   updateMacroTotals();
@@ -453,7 +438,7 @@ function renderOwnMealsList() {
         : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">🍽️</div>`}
       <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
         <div style="flex:1">
-          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(dish)} <span style="font-size:10px;color:var(--muted);font-weight:400">(${t('moment.' + dish.moment)})</span></div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(dish)}</div>
           <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.totalWeightLine', { gram: tot.gram })} · ${tot.kcal} kcal</div>
         </div>
         <button onclick="editCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
@@ -469,44 +454,43 @@ function renderAddMealTab() {
   renderOwnMealsList();
 }
 
-// ─── Portie-percentage bij loggen ─────────────────────────────────────────
+// ─── Portie (in gram) + maaltijdmoment kiezen bij loggen ──────────────────
+// Zelfde opzet als de portiemodal voor producten: moment kiezen via
+// knoppen, hoeveelheid in gram i.p.v. percentage.
 let _mpDish = null;
-let _mpMoment = null;
+let _mpMoment = 'ontbijt';
 
-function openMealPortionModal(dishId, moment) {
+function openMealPortionModal(dishId) {
   _mpDish = customMeals.find(m => m.id === dishId);
   if (!_mpDish) return;
-  _mpMoment = moment;
   const tot = mealTotals(_mpDish);
   document.getElementById('mpm-name').textContent = dispName(_mpDish);
-  document.getElementById('mpm-reference').textContent = t('mealPortion.reference', { gram: tot.gram });
-
-  // Al gelogd voor dit gerecht+moment? Dan het gekozen percentage vooraf invullen
-  const logId = 'dish-' + _mpDish.id + '-' + moment;
-  const existing = dayLog.find(i => i.logId === logId);
-  const pct = existing && existing._pct ? existing._pct : 100;
-  document.getElementById('mpm-pct').value = pct;
-  document.querySelectorAll('#meal-portion-modal .moment-btn').forEach(function(b) {
-    b.classList.toggle('active', b.textContent.replace('%','') == pct);
+  document.getElementById('mpm-reference').textContent = t('mealPortion.totalReference', {
+    gram: tot.gram, kcal: tot.kcal,
+    prot: Math.round(tot.prot*10)/10, carb: Math.round(tot.carb*10)/10, fat: Math.round(tot.fat*10)/10
   });
 
+  _mpMoment = 'ontbijt';
+  document.querySelectorAll('#meal-portion-modal .moment-btn').forEach(function(b, i) {
+    b.classList.toggle('active', i === 0);
+  });
+
+  document.getElementById('mpm-gram').value = tot.gram || 100;
   updateMealPortionPreview();
   document.getElementById('meal-portion-modal').classList.add('open');
 }
 
-function selectMealPct(pct) {
-  document.getElementById('mpm-pct').value = pct;
-  document.querySelectorAll('#meal-portion-modal .moment-btn').forEach(function(b) {
-    b.classList.toggle('active', b.textContent.replace('%','') == pct);
-  });
-  updateMealPortionPreview();
+function selectMealMoment(moment, btn) {
+  _mpMoment = moment;
+  document.querySelectorAll('#meal-portion-modal .moment-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 }
 
 function updateMealPortionPreview() {
   if (!_mpDish) return;
-  const pct = parseFloat(document.getElementById('mpm-pct').value) || 0;
   const tot = mealTotals(_mpDish);
-  const f = pct / 100;
+  const gram = parseFloat(document.getElementById('mpm-gram').value) || 0;
+  const f = tot.gram > 0 ? gram / tot.gram : 0;
   document.getElementById('mpv-kcal').textContent = Math.round(tot.kcal * f);
   document.getElementById('mpv-prot').textContent = Math.round(tot.prot * f * 10) / 10 + 'g';
   document.getElementById('mpv-carb').textContent = Math.round(tot.carb * f * 10) / 10 + 'g';
@@ -519,30 +503,27 @@ function closeMealPortionModal() {
 
 function addMealToLog() {
   if (!_mpDish) return;
-  const pct = parseFloat(document.getElementById('mpm-pct').value) || 0;
-  if (pct <= 0) return;
   const tot = mealTotals(_mpDish);
-  const f = pct / 100;
-  const logId = 'dish-' + _mpDish.id + '-' + _mpMoment;
+  const gram = parseFloat(document.getElementById('mpm-gram').value) || 0;
+  if (gram <= 0) return;
+  const f = tot.gram > 0 ? gram / tot.gram : 0;
 
-  dayLog = dayLog.filter(i => i.logId !== logId); // vervangt i.p.v. dupliceert
   dayLog.push({
-    logId: logId,
+    logId: ++logIdCounter,
+    dishId: _mpDish.id,
     name: dispName(_mpDish),
     icon: '🍽️',
     photo: _mpDish.photo || null,
     moment: _mpMoment,
-    gram: Math.round(tot.gram * f),
+    gram: Math.round(gram),
     kcal: Math.round(tot.kcal * f),
     prot: Math.round(tot.prot * f * 10) / 10,
     carb: Math.round(tot.carb * f * 10) / 10,
     fat:  Math.round(tot.fat  * f * 10) / 10,
-    type: 'meal',
-    _pct: pct
+    type: 'meal'
   });
 
   closeMealPortionModal();
-  renderMealPlan();
   updateMacroTotals();
   updateLogBadge();
 }
@@ -730,11 +711,7 @@ function renderDayLog() {
                 </div>
                 <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
               </div>
-              <button onclick="${
-                  item.type === 'meal' && String(item.logId).startsWith('dish-') ? `removeFromLog('${item.logId}')`
-                  : item.type === 'meal' ? `toggleMeal('${item.logId.replace('meal-','')}','${item.moment}')`
-                  : `removeFromLog(${item.logId})`
-                }"
+              <button onclick="removeFromLog(${item.logId})"
                 style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
             </div>
           </div>`).join('')}
