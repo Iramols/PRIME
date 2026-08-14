@@ -522,6 +522,9 @@ const I18N = {
     'mealPortion.customPct': 'Aangepast %',
     'mealPortion.totals': '{kcal} kcal · {prot}g eiwit · {carb}g koolh · {fat}g vet',
     'mealPortion.reference': '100% van dit gerecht ({gram}g)',
+    'food.addMeal.editTitle': 'Gerecht bewerken',
+    'food.addMeal.update': 'Wijzigen ✓',
+    'food.addMeal.cancel': 'Annuleren',
   },
   en: {
     'login.title': 'Log in to PRIME',
@@ -1023,6 +1026,9 @@ const I18N = {
     'mealPortion.customPct': 'Custom %',
     'mealPortion.totals': '{kcal} kcal · {prot}g protein · {carb}g carbs · {fat}g fat',
     'mealPortion.reference': '100% of this dish ({gram}g)',
+    'food.addMeal.editTitle': 'Edit dish',
+    'food.addMeal.update': 'Save changes ✓',
+    'food.addMeal.cancel': 'Cancel',
   }
 };
 

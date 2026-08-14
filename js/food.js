@@ -258,6 +258,7 @@ function mealTotals(dish) {
 
 let _amPhotoData = null;
 let _amRowCounter = 0;
+let _amEditingId = null;
 
 function addIngredientRow() {
   const tbody = document.getElementById('am-ingredients-body');
@@ -346,31 +347,86 @@ function addCustomMeal() {
   }
   errorEl.textContent = '';
 
-  const dish = {
-    id: 'custom-meal-' + Date.now() + Math.floor(Math.random() * 1000),
-    name: name,
-    moment: document.getElementById('am-moment').value,
-    photo: _amPhotoData || null,
-    ingredients: ingredients,
-    custom: true
-  };
-  customMeals.push(dish);
+  const moment = document.getElementById('am-moment').value;
+
+  if (_amEditingId) {
+    const dish = customMeals.find(m => m.id === _amEditingId);
+    if (dish) {
+      dish.name = name;
+      dish.moment = moment;
+      dish.photo = _amPhotoData || null;
+      dish.ingredients = ingredients;
+    }
+  } else {
+    customMeals.push({
+      id: 'custom-meal-' + Date.now() + Math.floor(Math.random() * 1000),
+      name: name,
+      moment: moment,
+      photo: _amPhotoData || null,
+      ingredients: ingredients,
+      custom: true
+    });
+  }
   syncSet('prime_custom_meals', customMeals);
 
-  // Formulier resetten
-  nameInput.value = '';
-  document.getElementById('am-moment').value = 'avond';
-  document.getElementById('am-photo-preview').innerHTML = '🍽️';
-  _amPhotoData = null;
-  document.getElementById('am-ingredients-body').innerHTML = '';
-  addIngredientRow();
-
+  resetMealForm();
   renderOwnMealsList();
   renderMealPlan();
 }
 
+function editCustomMeal(id) {
+  const dish = customMeals.find(m => m.id === id);
+  if (!dish) return;
+  _amEditingId = id;
+
+  document.getElementById('am-name').value = dish.name;
+  document.getElementById('am-moment').value = dish.moment;
+  _amPhotoData = dish.photo || null;
+  document.getElementById('am-photo-preview').innerHTML = dish.photo
+    ? '<img src="' + dish.photo + '" style="width:100%;height:100%;object-fit:cover">'
+    : '🍽️';
+
+  const tbody = document.getElementById('am-ingredients-body');
+  tbody.innerHTML = '';
+  (dish.ingredients || []).forEach(ing => {
+    addIngredientRow();
+    const row = tbody.lastElementChild;
+    row.querySelector('.am-ing-name').value = ing.name || '';
+    row.querySelector('.am-ing-gram').value = ing.gram || 0;
+    row.querySelector('.am-ing-prot').value = ing.prot || 0;
+    row.querySelector('.am-ing-carb').value = ing.carb || 0;
+    row.querySelector('.am-ing-fat').value  = ing.fat  || 0;
+  });
+  if (!dish.ingredients || !dish.ingredients.length) addIngredientRow();
+  updateMealFormTotals();
+
+  document.getElementById('am-form-title').textContent = t('food.addMeal.editTitle');
+  document.getElementById('am-submit-btn').textContent = t('food.addMeal.update');
+  document.getElementById('am-cancel-btn').style.display = 'inline-block';
+  document.getElementById('am-error').textContent = '';
+
+  document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Reset het formulier naar "nieuw gerecht"-stand — zowel na een geslaagde
+// toevoeging/wijziging als bij het annuleren van een bewerking.
+function resetMealForm() {
+  _amEditingId = null;
+  _amPhotoData = null;
+  document.getElementById('am-name').value = '';
+  document.getElementById('am-moment').value = 'avond';
+  document.getElementById('am-photo-preview').innerHTML = '🍽️';
+  document.getElementById('am-ingredients-body').innerHTML = '';
+  addIngredientRow();
+  document.getElementById('am-form-title').textContent = t('food.addMeal.formTitle');
+  document.getElementById('am-submit-btn').textContent = t('food.addMeal.submit');
+  document.getElementById('am-cancel-btn').style.display = 'none';
+  document.getElementById('am-error').textContent = '';
+}
+
 function removeCustomMeal(id) {
   if (!confirm(t('food.addMeal.confirmDelete'))) return;
+  if (_amEditingId === id) resetMealForm();
   customMeals = customMeals.filter(m => m.id !== id);
   syncSet('prime_custom_meals', customMeals);
   // Verwijder eventueel al gelogde porties van dit gerecht uit vandaag
@@ -400,6 +456,7 @@ function renderOwnMealsList() {
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(dish)} <span style="font-size:10px;color:var(--muted);font-weight:400">(${t('moment.' + dish.moment)})</span></div>
           <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.totalWeightLine', { gram: tot.gram })} · ${tot.kcal} kcal</div>
         </div>
+        <button onclick="editCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
         <button onclick="removeCustomMeal('${dish.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
       </div>
     </div>`;
@@ -408,7 +465,7 @@ function renderOwnMealsList() {
 
 function renderAddMealTab() {
   const tbody = document.getElementById('am-ingredients-body');
-  if (tbody && tbody.children.length === 0) addIngredientRow();
+  if (tbody && tbody.children.length === 0 && !_amEditingId) addIngredientRow();
   renderOwnMealsList();
 }
 

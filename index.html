@@ -460,7 +460,7 @@
     <!-- TAB: EIGEN GERECHT TOEVOEGEN -->
     <div id="foodtab-addmeal" style="display:none">
       <div class="card" style="margin-bottom:18px">
-        <div class="card-label" style="margin-bottom:14px" data-i18n="food.addMeal.formTitle">Nieuw gerecht</div>
+        <div class="card-label" style="margin-bottom:14px" id="am-form-title" data-i18n="food.addMeal.formTitle">Nieuw gerecht</div>
         <div class="form-row"><label data-i18n="food.addMeal.name">Naam</label><input type="text" id="am-name" data-i18n-placeholder="food.addMeal.namePlaceholder" placeholder="bijv. Kipcurry met rijst"></div>
         <div class="form-row"><label data-i18n="portion.momentLabel">Maaltijdmoment</label>
           <select id="am-moment">
@@ -508,7 +508,10 @@
         </div>
 
         <div id="am-error" style="color:#c0392b;font-size:12px;margin:10px 0 0"></div>
-        <button class="btn-primary" style="margin-top:12px" onclick="addCustomMeal()" data-i18n="food.addMeal.submit">Gerecht toevoegen</button>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn-primary" style="flex:1" id="am-submit-btn" onclick="addCustomMeal()" data-i18n="food.addMeal.submit">Gerecht toevoegen</button>
+          <button class="btn-sm" id="am-cancel-btn" style="display:none" onclick="resetMealForm()" data-i18n="food.addMeal.cancel">Annuleren</button>
+        </div>
       </div>
 
       <div class="card-label" style="margin-bottom:10px" data-i18n="food.addMeal.myMeals">Mijn eigen gerechten</div>
