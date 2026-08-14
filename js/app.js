@@ -74,11 +74,50 @@ function renderHome() {
   }
 }
 
+// ========== TRAINING AAN/UIT (profielinstelling) ==========
+// Verbergt de Training-tab én alle trainingsgerelateerde onderdelen
+// elders (dashboard-kaart, check-out samenvatting, Voortgang-statistieken)
+// wanneer de coach dit voor een klant uitzet in het profiel.
+function applyTrainingVisibility() {
+  const enabled = profile.trainingEnabled !== false;
+
+  const navBtn = document.getElementById('nav-btn-training');
+  if (navBtn) navBtn.style.display = enabled ? '' : 'none';
+
+  const homeCard = document.getElementById('home-training-card');
+  if (homeCard) homeCard.style.display = enabled ? '' : 'none';
+
+  const checkoutBlock = document.getElementById('training-summary-block');
+  if (checkoutBlock) checkoutBlock.style.display = enabled ? '' : 'none';
+  const checkoutDivider = document.getElementById('divider-after-training-summary');
+  if (checkoutDivider) checkoutDivider.style.display = enabled ? '' : 'none';
+
+  const hTrainingsCard = document.getElementById('h-trainings-card');
+  if (hTrainingsCard) hTrainingsCard.style.display = enabled ? '' : 'none';
+  const historyStats = document.getElementById('history-main-stats');
+  if (historyStats) historyStats.style.gridTemplateColumns = enabled ? 'repeat(4,1fr)' : 'repeat(3,1fr)';
+  const trainingTotalCard = document.getElementById('training-total-card');
+  if (trainingTotalCard) trainingTotalCard.style.display = enabled ? '' : 'none';
+
+  const progTabBtn = document.getElementById('htab-programma');
+  if (progTabBtn) progTabBtn.style.display = enabled ? '' : 'none';
+  const progTabContent = document.getElementById('hstab-content-programma');
+  if (!enabled && progTabContent && progTabContent.style.display !== 'none' && typeof switchHistoryTab === 'function') {
+    switchHistoryTab('stats');
+  }
+
+  const trainingScreen = document.getElementById('screen-training');
+  if (!enabled && trainingScreen && trainingScreen.classList.contains('active')) {
+    go('home');
+  }
+}
+
 // ========== INIT ==========
 function init() {
   // Laad eigen foto's van coach als eerste stap
   applyCustomPhotos();
 
+  applyTrainingVisibility();
   renderHome();
 
   // Init coach chat

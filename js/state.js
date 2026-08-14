@@ -8,7 +8,7 @@ let activeTrainingTab = 'dag';
 
 
 // ========== HOOFD STATE ==========
-let profile = JSON.parse(localStorage.getItem('prime_profile') || '{"name":"","age":35,"weight":70,"height":170,"gender":"v","goal":"Meer spiermassa opbouwen","activity":1.375}');
+let profile = JSON.parse(localStorage.getItem('prime_profile') || '{"name":"","age":35,"weight":70,"height":170,"gender":"v","goal":"Meer spiermassa opbouwen","activity":1.375,"trainingEnabled":true}');
 let history = JSON.parse(localStorage.getItem('prime_history') || '[]');
 let todayData = JSON.parse(localStorage.getItem('prime_today') || 'null');
 let checkin = { sleep:0, energy:0, stress:0, weight:null };

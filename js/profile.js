@@ -7,6 +7,7 @@ function openProfile() {
   document.getElementById('p-gender').value = profile.gender || 'v';
   document.getElementById('p-goal').value = profile.goal || '';
   document.getElementById('p-activity').value = profile.activity || 1.375;
+  document.getElementById('p-training-enabled').checked = profile.trainingEnabled !== false;
   document.getElementById('profile-modal').classList.add('open');
 }
 function closeProfile() { document.getElementById('profile-modal').classList.remove('open'); }
@@ -18,9 +19,11 @@ function saveProfile() {
     height: +document.getElementById('p-height').value,
     gender: document.getElementById('p-gender').value,
     goal: document.getElementById('p-goal').value,
-    activity: +document.getElementById('p-activity').value
+    activity: +document.getElementById('p-activity').value,
+    trainingEnabled: document.getElementById('p-training-enabled').checked
   };
   syncSet('prime_profile', profile);
+  applyTrainingVisibility();
   closeProfile();
 }
 

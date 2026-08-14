@@ -227,6 +227,8 @@ const I18N = {
     'profile.activity.low': 'Weinig actief (1-2x/week)',
     'profile.activity.mid': 'Matig actief (3-4x/week)',
     'profile.activity.high': 'Actief (5+x/week)',
+    'profile.trainingEnabled': 'Training',
+    'profile.trainingEnabledHint': 'Toon de Training-tab en trainingsonderdelen',
     'profile.save': 'Opslaan ✓',
 
     // Portie-modal
@@ -681,6 +683,8 @@ const I18N = {
     'profile.activity.low': 'Low activity (1-2x/week)',
     'profile.activity.mid': 'Moderately active (3-4x/week)',
     'profile.activity.high': 'Active (5+x/week)',
+    'profile.trainingEnabled': 'Training',
+    'profile.trainingEnabledHint': 'Show the Training tab and training sections',
     'profile.save': 'Save ✓',
 
     'portion.defaultName': 'Product',
