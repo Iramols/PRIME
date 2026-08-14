@@ -372,6 +372,7 @@
       <button class="food-tab active" id="tab-plan" onclick="switchFoodTab('plan')" data-i18n="food.tab.plan">Maaltijdplan</button>
       <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
       <button class="food-tab" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
+      <button class="food-tab" id="tab-add" onclick="switchFoodTab('add')" data-i18n="food.tab.add">+ Product toevoegen</button>
     </div>
 
     <!-- TAB: MAALTIJDPLAN -->
@@ -411,6 +412,48 @@
         <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px" data-i18n="food.log.totalsTitle">Totaal overzicht</div>
         <div id="log-summary"></div>
       </div>
+    </div>
+
+    <!-- TAB: EIGEN PRODUCT TOEVOEGEN -->
+    <div id="foodtab-add" style="display:none">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-label" style="margin-bottom:14px" data-i18n="food.add.formTitle">Nieuw product</div>
+        <div class="form-row"><label data-i18n="food.add.name">Naam</label><input type="text" id="ap-name" data-i18n-placeholder="food.add.namePlaceholder" placeholder="bijv. Kokosyoghurt"></div>
+        <div class="form-row"><label data-i18n="food.add.category">Categorie</label>
+          <select id="ap-cat">
+            <option value="fruit" data-i18n="cat.fruit">Fruit</option>
+            <option value="groente" data-i18n="cat.groente">Groente</option>
+            <option value="vlees" data-i18n="cat.vlees">Vlees</option>
+            <option value="vis" data-i18n="cat.vis">Vis</option>
+            <option value="zuivel" data-i18n="cat.zuivel">Zuivel</option>
+            <option value="granen" data-i18n="cat.granen">Granen</option>
+            <option value="noten" data-i18n="cat.noten">Noten</option>
+            <option value="overig" selected data-i18n="cat.overig">Overig</option>
+          </select>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin:-8px 0 12px" data-i18n="food.add.per100Hint">Vul de waarden per 100g in</div>
+        <div class="form-row"><label data-i18n="food.add.protein">Eiwitten (g)</label><input type="number" id="ap-prot" min="0" step="0.1" value="0" oninput="updateAddProductKcal()"></div>
+        <div class="form-row"><label data-i18n="food.add.carbs">Koolhydraten (g)</label><input type="number" id="ap-carb" min="0" step="0.1" value="0" oninput="updateAddProductKcal()"></div>
+        <div class="form-row"><label data-i18n="food.add.fat">Vetten (g)</label><input type="number" id="ap-fat" min="0" step="0.1" value="0" oninput="updateAddProductKcal()"></div>
+        <div class="form-row"><label data-i18n="food.add.calories">Calorieën</label>
+          <div style="padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;background:var(--sand);font-size:14px;font-weight:600;color:var(--charcoal)" id="ap-kcal-display">0 kcal</div>
+        </div>
+        <div class="form-row">
+          <label data-i18n="food.add.photo">Foto</label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="ap-photo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--sand);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">🍽️</div>
+            <label style="cursor:pointer">
+              <input type="file" accept="image/*" style="display:none" onchange="handleAddProductPhoto(event)">
+              <span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600" data-i18n="beheer.upload">📷 Upload</span>
+            </label>
+          </div>
+        </div>
+        <div id="ap-error" style="color:#c0392b;font-size:12px;margin-bottom:10px"></div>
+        <button class="btn-primary" onclick="addCustomProduct()" data-i18n="food.add.submit">+ Product toevoegen</button>
+      </div>
+
+      <div class="card-label" style="margin-bottom:10px" data-i18n="food.add.myProducts">Mijn eigen producten</div>
+      <div id="own-products-list"></div>
     </div>
 
   </div>

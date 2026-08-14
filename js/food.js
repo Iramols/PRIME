@@ -1,11 +1,17 @@
 // ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
-  ['plan','basis','log'].forEach(t => {
+  ['plan','basis','log','add'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
   if (tab === 'basis') renderProducts();
   if (tab === 'log') renderDayLog();
+  if (tab === 'add') renderAddProductTab();
+}
+
+// Combineert de vaste productcatalogus met de eigen producten van deze klant.
+function getAllProducts() {
+  return [...PRODUCTS, ...customProducts];
 }
 
 // ========== FOOD RENDER (meal plan tab) ==========
@@ -118,14 +124,14 @@ function filterCat(cat, btn) {
 
 function renderProducts() {
   const q = (document.getElementById('product-search')?.value || '').toLowerCase();
-  let list = PRODUCTS;
+  let list = getAllProducts();
   if (currentCat !== 'alle') list = list.filter(p => p.cat === currentCat);
   if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q));
   document.getElementById('product-grid').innerHTML = `<div class="product-grid">` +
     list.map(p => `
       <div class="product-card" onclick="openPortionModal('${p.id}')">
-        ${p.photo ? `<div class="product-photo" style="background-image:url('${p.photo}')"></div>` : `<div class="product-icon">${p.icon}</div>`}
-        <div class="product-name">${dispName(p)}</div>
+        ${p.photo ? `<div class="product-photo" style="background-image:url('${p.photo}')"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
+        <div class="product-name">${dispName(p)}${p.custom ? ' <span style="font-size:9px;color:var(--sage);font-weight:600">(' + t('food.add.own') + ')</span>' : ''}</div>
         <div class="product-per">${t('food.per100')}</div>
         <div class="product-macros">
           <span class="product-pill">${p.kcal} kcal</span>
@@ -134,9 +140,106 @@ function renderProducts() {
       </div>`).join('') + `</div>`;
 }
 
+// ========== EIGEN PRODUCT TOEVOEGEN ==========
+let _apPhotoData = null;
+
+function updateAddProductKcal() {
+  const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
+  const carb = parseFloat(document.getElementById('ap-carb').value) || 0;
+  const fat  = parseFloat(document.getElementById('ap-fat').value) || 0;
+  // Standaard voedingswaarde-formule: eiwit/koolhydraten 4 kcal/g, vet 9 kcal/g
+  const kcal = Math.round(prot * 4 + carb * 4 + fat * 9);
+  document.getElementById('ap-kcal-display').textContent = kcal + ' kcal';
+  return kcal;
+}
+
+function handleAddProductPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 1.5 * 1024 * 1024) {
+    document.getElementById('ap-error').textContent = t('food.add.photoTooBig');
+    return;
+  }
+  document.getElementById('ap-error').textContent = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _apPhotoData = e.target.result;
+    document.getElementById('ap-photo-preview').innerHTML = '<img src="' + _apPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addCustomProduct() {
+  const nameInput = document.getElementById('ap-name');
+  const name = nameInput.value.trim();
+  const errorEl = document.getElementById('ap-error');
+  if (!name) {
+    errorEl.textContent = t('food.add.nameRequired');
+    return;
+  }
+  errorEl.textContent = '';
+
+  const kcal = updateAddProductKcal();
+  const product = {
+    id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
+    name: name,
+    icon: '🍽️',
+    cat: document.getElementById('ap-cat').value,
+    kcal: kcal,
+    prot: parseFloat(document.getElementById('ap-prot').value) || 0,
+    carb: parseFloat(document.getElementById('ap-carb').value) || 0,
+    fat: parseFloat(document.getElementById('ap-fat').value) || 0,
+    photo: _apPhotoData || null,
+    custom: true
+  };
+  customProducts.push(product);
+  syncSet('prime_custom_products', customProducts);
+
+  // Formulier resetten
+  nameInput.value = '';
+  document.getElementById('ap-cat').value = 'overig';
+  document.getElementById('ap-prot').value = 0;
+  document.getElementById('ap-carb').value = 0;
+  document.getElementById('ap-fat').value = 0;
+  document.getElementById('ap-kcal-display').textContent = '0 kcal';
+  document.getElementById('ap-photo-preview').innerHTML = '🍽️';
+  _apPhotoData = null;
+
+  renderAddProductTab();
+}
+
+function removeCustomProduct(id) {
+  if (!confirm(t('food.add.confirmDelete'))) return;
+  customProducts = customProducts.filter(p => p.id !== id);
+  syncSet('prime_custom_products', customProducts);
+  renderAddProductTab();
+}
+
+function renderAddProductTab() {
+  const el = document.getElementById('own-products-list');
+  if (!el) return;
+  if (!customProducts.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('food.add.noOwnProducts') + '</div>';
+    return;
+  }
+  el.innerHTML = customProducts.map(p => `
+    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
+      ${p.photo
+        ? `<div style="width:64px;min-height:60px;background-image:url('${p.photo}');background-size:cover;background-position:center;flex-shrink:0"></div>`
+        : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${p.icon || '🍽️'}</div>`}
+      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(p)}</div>
+          <div style="font-size:11px;color:var(--muted)">${t('cat.' + p.cat)} · ${p.kcal} kcal · ${t('food.macroAbbr.protein')}${p.prot}g ${t('food.macroAbbr.carbs')}${p.carb}g ${t('food.macroAbbr.fat')}${p.fat}g</div>
+        </div>
+        <button onclick="removeCustomProduct('${p.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
+      </div>
+    </div>`).join('');
+}
+
 // ========== PORTION MODAL ==========
 function openPortionModal(productId) {
-  currentPortionProduct = PRODUCTS.find(p => p.id === productId);
+  currentPortionProduct = getAllProducts().find(p => p.id === productId);
   if (!currentPortionProduct) return;
   const p = currentPortionProduct;
   document.getElementById('pm-name').textContent = p.icon + ' ' + dispName(p);
