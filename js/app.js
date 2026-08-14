@@ -9,8 +9,13 @@ function go(screen) {
   if (screen === 'training') switchTrainingTab('dag');
   if (screen === 'beheer') { switchBeheerTab('training'); }
   if (screen === 'voeding') {
-    var basisTab = document.getElementById('foodtab-basis');
-    if (basisTab && basisTab.style.display !== 'none') renderProducts();
+    // Herbouw welke Voeding-tab nu ook actief is (bv. bij taalwissel),
+    // i.p.v. altijd terug te springen naar de eerste tab.
+    if (document.getElementById('foodtab-plan')?.style.display !== 'none') renderMealPlan();
+    if (document.getElementById('foodtab-basis')?.style.display !== 'none') renderProducts();
+    if (document.getElementById('foodtab-log')?.style.display !== 'none') renderDayLog();
+    if (document.getElementById('foodtab-add')?.style.display !== 'none') renderAddProductTab();
+    if (document.getElementById('foodtab-addmeal')?.style.display !== 'none') renderAddMealTab();
   }
 }
 

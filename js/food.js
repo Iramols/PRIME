@@ -655,6 +655,7 @@ function addProductToLog() {
   const f = gram / 100;
   dayLog.push({
     logId: ++logIdCounter,
+    productId: p.id,
     name: dispName(p),
     icon: p.icon,
     photo: p.photo || null,
@@ -684,6 +685,22 @@ function updateLogBadge() {
   const count = dayLog.length;
   badge.style.display = count > 0 ? 'inline' : 'none';
   badge.textContent = count;
+}
+
+// "Mijn dag" is een sessie-lang werkoverzicht (niet permanente historie
+// zoals Voortgang), dus toont de naam altijd in de huidige taal — leidt
+// hem elke render opnieuw af via het opgeslagen product/gerecht-id i.p.v.
+// de bevroren naam van het moment van loggen te gebruiken.
+function logItemDisplayName(item) {
+  if (item.productId) {
+    const p = getAllProducts().find(x => x.id === item.productId);
+    if (p) return dispName(p);
+  }
+  if (item.dishId) {
+    const d = customMeals.find(x => x.id === item.dishId);
+    if (d) return dispName(d);
+  }
+  return item.name; // fallback: bv. verwijderd product/gerecht, of ouder logitem zonder id
 }
 
 function renderDayLog() {
@@ -724,7 +741,7 @@ function renderDayLog() {
               : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
             <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
               <div style="flex:1">
-                <div style="font-weight:600;font-size:13px;margin-bottom:2px">${item.name}</div>
+                <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)}</div>
                 <div style="font-size:11px;color:var(--muted)">
                   ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
                 </div>
