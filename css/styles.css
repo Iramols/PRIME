@@ -33,6 +33,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   cursor: pointer; transition: all 0.15s; font-weight: 500;
 }
 .nav-btn.active, .nav-btn:hover { background: var(--sage-light); color: var(--sage); }
+.nav-btn-wip { opacity: 0.4; }
+.nav-btn-wip:hover { background: none; color: var(--muted); }
 
 /* SCREENS */
 .screen { display: none; }
