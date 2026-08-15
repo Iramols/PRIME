@@ -472,6 +472,7 @@ const PRODUCTS = [
   { id:'g10', name:'Sperziebonen', name_en:'Green beans', icon:'🫛', cat:'groente', kcal:31, prot:1.8, carb:7, fat:0.1, photo:'https://images.pexels.com/photos/399629/pexels-photo-399629.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'g11', name:'Avocado', name_en:'Avocado', icon:'🥑', cat:'groente', kcal:160, prot:2.0, carb:9, fat:15, photo:'https://images.pexels.com/photos/557659/pexels-photo-557659.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'g12', name:'Ui', name_en:'Onion', icon:'🧅', cat:'groente', kcal:40, prot:1.1, carb:9, fat:0.1, photo:'https://images.pexels.com/photos/5966431/pexels-photo-5966431.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'g13', name:'Doperwten', name_en:'Green peas', icon:'🫛', cat:'groente', kcal:81, prot:5.4, carb:14, fat:0.4},
   // VLEES
   { id:'v1', name:'Kipfilet', name_en:'Chicken breast', icon:'🍗', cat:'vlees', kcal:110, prot:23, carb:0, fat:1.5, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'v2', name:'Kipgehakt', name_en:'Ground chicken', icon:'🍗', cat:'vlees', kcal:143, prot:17, carb:0, fat:8, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -481,6 +482,8 @@ const PRODUCTS = [
   { id:'v6', name:'Pulled chicken', name_en:'Pulled chicken', icon:'🍗', cat:'vlees', kcal:130, prot:24, carb:0, fat:3, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'v7', name:'Spek (mager)', name_en:'Bacon (lean)', icon:'🥓', cat:'vlees', kcal:218, prot:14, carb:0, fat:18, photo:'https://images.pexels.com/photos/1211887/pexels-photo-1211887.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'v8', name:'Hamburger (mager)', name_en:'Hamburger (lean)', icon:'🍔', cat:'vlees', kcal:165, prot:20, carb:0, fat:9, photo:'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'v9', name:'Rosbief', name_en:'Roast beef', icon:'🥩', cat:'vlees', kcal:149, prot:22, carb:0, fat:6.5},
+  { id:'v10', name:'Lamsvlees', name_en:'Lamb', icon:'🍖', cat:'vlees', kcal:294, prot:25, carb:0, fat:21},
   // VIS
   { id:'f1', name:'Zalm', name_en:'Salmon', icon:'🐟', cat:'vis', kcal:208, prot:20, carb:0, fat:13, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'f2', name:'Tonijn (blik, water)', name_en:'Tuna (canned, water)', icon:'🐟', cat:'vis', kcal:84, prot:19, carb:0, fat:0.5, photo:'https://images.pexels.com/photos/14426299/pexels-photo-14426299.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -489,6 +492,11 @@ const PRODUCTS = [
   { id:'f5', name:'Makreel', name_en:'Mackerel', icon:'🐟', cat:'vis', kcal:205, prot:19, carb:0, fat:14, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'f6', name:'Garnalen', name_en:'Shrimp', icon:'🦐', cat:'vis', kcal:85, prot:18, carb:1, fat:1, photo:'https://images.pexels.com/photos/566345/pexels-photo-566345.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'f7', name:'Haring', name_en:'Herring', icon:'🐟', cat:'vis', kcal:158, prot:18, carb:0, fat:9, photo:'https://images.pexels.com/photos/676560/pexels-photo-676560.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'f8', name:"Gamba's", name_en:'King prawns', icon:'🦐', cat:'vis', kcal:99, prot:24, carb:0.2, fat:0.3},
+  { id:'f9', name:'Witvis', name_en:'White fish', icon:'🐟', cat:'vis', kcal:90, prot:20, carb:0, fat:1},
+  { id:'f10', name:'Kreeft', name_en:'Lobster', icon:'🦞', cat:'vis', kcal:89, prot:19, carb:0, fat:0.9},
+  { id:'f11', name:'Paling', name_en:'Eel', icon:'🐟', cat:'vis', kcal:236, prot:18, carb:0, fat:18},
+  { id:'f12', name:'Sardines', name_en:'Sardines', icon:'🐟', cat:'vis', kcal:208, prot:25, carb:0, fat:11},
   // ZUIVEL
   { id:'z1', name:'Griekse yoghurt (0%)', name_en:'Greek yogurt (0%)', icon:'🥛', cat:'zuivel', kcal:59, prot:10, carb:4, fat:0.4, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'z2', name:'Kwark', name_en:'Quark', icon:'🥛', cat:'zuivel', kcal:57, prot:9, carb:4, fat:0.2, photo:'https://images.pexels.com/photos/4006347/pexels-photo-4006347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -498,6 +506,11 @@ const PRODUCTS = [
   { id:'z6', name:'Halfvolle melk', name_en:'Semi-skimmed milk', icon:'🥛', cat:'zuivel', kcal:46, prot:3.4, carb:5, fat:1.5, photo:'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'z7', name:'Mozzarella', name_en:'Mozzarella', icon:'🧀', cat:'zuivel', kcal:280, prot:18, carb:3, fat:22, photo:'https://images.pexels.com/photos/1437268/pexels-photo-1437268.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'z8', name:'Eiwitpoeder (whey)', name_en:'Protein powder (whey)', icon:'🥛', cat:'zuivel', kcal:380, prot:80, carb:8, fat:5, photo:'https://images.pexels.com/photos/1346347/pexels-photo-1346347.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'z9', name:'Eiwit', name_en:'Egg white', icon:'🥚', cat:'zuivel', kcal:52, prot:11, carb:0.7, fat:0.2},
+  { id:'z10', name:'Skyr', name_en:'Skyr', icon:'🥛', cat:'zuivel', kcal:63, prot:11, carb:4, fat:0.2},
+  { id:'z11', name:'Kaas 20+', name_en:'Cheese (20+ fat)', icon:'🧀', cat:'zuivel', kcal:264, prot:24, carb:0, fat:19},
+  { id:'z12', name:'Eigeel', name_en:'Egg yolk', icon:'🥚', cat:'zuivel', kcal:322, prot:16, carb:3.6, fat:27},
+  { id:'z13', name:'Kaas 45+', name_en:'Cheese (45+ fat)', icon:'🧀', cat:'zuivel', kcal:350, prot:25, carb:0, fat:28},
   // GRANEN
   { id:'gr1', name:'Havermout', name_en:'Oatmeal', icon:'🥣', cat:'granen', kcal:368, prot:13, carb:66, fat:7, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'gr2', name:'Volkoren brood', name_en:'Wholegrain bread', icon:'🍞', cat:'granen', kcal:247, prot:9, carb:41, fat:3, photo:'https://images.pexels.com/photos/1756278/pexels-photo-1756278.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -509,6 +522,12 @@ const PRODUCTS = [
   { id:'gr8', name:'Granola', name_en:'Granola', icon:'🥣', cat:'granen', kcal:471, prot:10, carb:64, fat:20, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'gr9', name:'Rijstwafels', name_en:'Rice cakes', icon:'🫓', cat:'granen', kcal:387, prot:8, carb:82, fat:3, photo:'https://images.pexels.com/photos/7655878/pexels-photo-7655878.jpeg?auto=compress&cs=tinysrgb&w=300&h=200&fit=crop'},
   { id:'gr10', name:'Couscous (gekookt)', name_en:'Couscous (cooked)', icon:'🌾', cat:'granen', kcal:112, prot:3.8, carb:23, fat:0.2, photo:'https://images.pexels.com/photos/723198/pexels-photo-723198.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'gr11', name:'Volkoren basmatirijst (gekookt)', name_en:'Wholegrain basmati rice (cooked)', icon:'🍚', cat:'granen', kcal:123, prot:3.5, carb:25, fat:1},
+  { id:'gr12', name:'Volkoren pasta (gekookt)', name_en:'Wholegrain pasta (cooked)', icon:'🍝', cat:'granen', kcal:124, prot:5, carb:25, fat:1.1},
+  { id:'gr13', name:'Volkoren couscous (gekookt)', name_en:'Wholegrain couscous (cooked)', icon:'🌾', cat:'granen', kcal:112, prot:4.5, carb:23, fat:0.6},
+  { id:'gr14', name:'Volkoren wraps', name_en:'Wholegrain wraps', icon:'🌯', cat:'granen', kcal:245, prot:8, carb:40, fat:6},
+  { id:'gr15', name:'Brinta', name_en:'Brinta (wheat bran cereal)', icon:'🥣', cat:'granen', kcal:350, prot:11, carb:65, fat:3.5},
+  { id:'gr16', name:'Boekweit (gekookt)', name_en:'Buckwheat (cooked)', icon:'🌾', cat:'granen', kcal:92, prot:3.4, carb:20, fat:0.6},
   // NOTEN & ZADEN
   { id:'n1', name:'Amandelen', name_en:'Almonds', icon:'🌰', cat:'noten', kcal:576, prot:21, carb:22, fat:49, photo:'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'n2', name:'Walnoten', name_en:'Walnuts', icon:'🌰', cat:'noten', kcal:654, prot:15, carb:14, fat:65, photo:'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=300&h=200&fit=crop'},
@@ -517,6 +536,11 @@ const PRODUCTS = [
   { id:'n5', name:'Chiazaad', name_en:'Chia seeds', icon:'🌱', cat:'noten', kcal:486, prot:17, carb:42, fat:31, photo:'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'n6', name:'Lijnzaad', name_en:'Flaxseed', icon:'🌱', cat:'noten', kcal:534, prot:18, carb:29, fat:42, photo:'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'n7', name:'Pompoenpitten', name_en:'Pumpkin seeds', icon:'🌱', cat:'noten', kcal:446, prot:19, carb:54, fat:19, photo:'https://images.pexels.com/photos/1295572/pexels-photo-1295572.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'n8', name:'Hazelnoten', name_en:'Hazelnuts', icon:'🌰', cat:'noten', kcal:628, prot:15, carb:17, fat:61},
+  { id:'n9', name:'Pecannoten', name_en:'Pecans', icon:'🌰', cat:'noten', kcal:691, prot:9, carb:14, fat:72},
+  { id:'n10', name:'Pijnboompitten', name_en:'Pine nuts', icon:'🌰', cat:'noten', kcal:673, prot:14, carb:13, fat:68},
+  { id:'n11', name:'Sesamzaad', name_en:'Sesame seeds', icon:'🌱', cat:'noten', kcal:573, prot:18, carb:23, fat:50},
+  { id:'n12', name:'Zonnebloempitten', name_en:'Sunflower seeds', icon:'🌻', cat:'noten', kcal:584, prot:21, carb:20, fat:51},
   // OVERIG
   { id:'o1', name:'Hummus', name_en:'Hummus', icon:'🫙', cat:'overig', kcal:166, prot:8, carb:14, fat:10, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o2', name:'Olijfolie', name_en:'Olive oil', icon:'🫒', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'https://images.pexels.com/photos/1022385/pexels-photo-1022385.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -526,6 +550,17 @@ const PRODUCTS = [
   { id:'o6', name:'Kikkererwten (gekookt)', name_en:'Chickpeas (cooked)', icon:'🫘', cat:'overig', kcal:164, prot:9, carb:27, fat:2.6, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o7', name:'Proteinenbar', name_en:'Protein bar', icon:'🍫', cat:'overig', kcal:350, prot:25, carb:35, fat:9, photo:'https://images.pexels.com/photos/6208145/pexels-photo-6208145.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o8', name:'Kokosolie', name_en:'Coconut oil', icon:'🥥', cat:'overig', kcal:862, prot:0, carb:0, fat:100, photo:'https://images.pexels.com/photos/725998/pexels-photo-725998.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'o9', name:'Sojabonen (gekookt)', name_en:'Soybeans (cooked)', icon:'🫘', cat:'overig', kcal:173, prot:18, carb:9, fat:9},
+  { id:'o10', name:'Seitan', name_en:'Seitan', icon:'🌱', cat:'overig', kcal:130, prot:25, carb:4, fat:2},
+  { id:'o11', name:'Tofu', name_en:'Tofu', icon:'🌱', cat:'overig', kcal:76, prot:8, carb:1.9, fat:4.8},
+  { id:'o12', name:'Tempeh', name_en:'Tempeh', icon:'🌱', cat:'overig', kcal:192, prot:20, carb:7.6, fat:11},
+  { id:'o13', name:'Zwarte bonen (gekookt)', name_en:'Black beans (cooked)', icon:'🫘', cat:'overig', kcal:132, prot:8.9, carb:24, fat:0.5},
+  { id:'o14', name:'Witte bonen (gekookt)', name_en:'White beans (cooked)', icon:'🫘', cat:'overig', kcal:139, prot:9.7, carb:25, fat:0.5},
+  { id:'o15', name:'Bruine bonen (gekookt)', name_en:'Brown beans (cooked)', icon:'🫘', cat:'overig', kcal:127, prot:8.7, carb:23, fat:0.5},
+  { id:'o16', name:'Pure chocolade', name_en:'Dark chocolate', icon:'🍫', cat:'overig', kcal:546, prot:4.9, carb:61, fat:31},
+  { id:'o17', name:'Koolzaadolie', name_en:'Rapeseed oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100},
+  { id:'o18', name:'Lijnzaadolie', name_en:'Flaxseed oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100},
+  { id:'o19', name:'Zonnebloemolie', name_en:'Sunflower oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100},
 ];
 
 // ========== INGEBOUWDE PROGRAMMA'S ==========
