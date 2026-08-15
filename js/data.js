@@ -481,6 +481,7 @@ const PRODUCTS = [
   { id:'g19', name:'Spruiten', name_en:'Brussels sprouts', icon:'🥦', cat:'groente', kcal:34, prot:4.5, carb:3.3, fat:0.3},
   { id:'g20', name:'Asperges', name_en:'Asparagus', icon:'🌱', cat:'groente', kcal:16, prot:1, carb:3, fat:0},
   { id:'g21', name:'Tuinerwten', name_en:'Garden peas', icon:'🫛', cat:'groente', kcal:79, prot:6.6, carb:12, fat:0.5},
+  { id:'g22', name:'Koolraap', name_en:'Kohlrabi', icon:'🥬', cat:'groente', kcal:26, prot:1, carb:5, fat:0.2},
   // VLEES
   { id:'v1', name:'Kipfilet', name_en:'Chicken breast', icon:'🍗', cat:'vlees', kcal:113, prot:23, carb:0, fat:2.3, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'v2', name:'Kipgehakt', name_en:'Ground chicken', icon:'🍗', cat:'vlees', kcal:143, prot:17, carb:0, fat:8, photo:'https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
@@ -567,8 +568,8 @@ const PRODUCTS = [
   { id:'o2', name:'Olijfolie', name_en:'Olive oil', icon:'🫒', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'https://images.pexels.com/photos/1022385/pexels-photo-1022385.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o3', name:'Honing', name_en:'Honey', icon:'🍯', cat:'overig', kcal:304, prot:0.3, carb:82, fat:0, photo:'https://images.pexels.com/photos/1638230/pexels-photo-1638230.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o4', name:'Edamame', name_en:'Edamame', icon:'🫘', cat:'overig', kcal:121, prot:11, carb:9, fat:5, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-  { id:'o5', name:'Linzen (gekookt)', name_en:'Lentils (cooked)', icon:'🫘', cat:'overig', kcal:116, prot:9, carb:20, fat:0.4, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-  { id:'o6', name:'Kikkererwten (gekookt)', name_en:'Chickpeas (cooked)', icon:'🫘', cat:'overig', kcal:164, prot:9, carb:27, fat:2.6, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'o5', name:'Linzen (gekookt)', name_en:'Lentils (cooked)', icon:'🫘', cat:'overig', kcal:102, prot:7.6, carb:16, fat:0.8, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+  { id:'o6', name:'Kikkererwten (gekookt)', name_en:'Chickpeas (cooked)', icon:'🫘', cat:'overig', kcal:106, prot:6.5, carb:14, fat:2.7, photo:'https://images.pexels.com/photos/1640770/pexels-photo-1640770.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o7', name:'Proteinenbar', name_en:'Protein bar', icon:'🍫', cat:'overig', kcal:350, prot:25, carb:35, fat:9, photo:'https://images.pexels.com/photos/6208145/pexels-photo-6208145.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o8', name:'Kokosolie', name_en:'Coconut oil', icon:'🥥', cat:'overig', kcal:862, prot:0, carb:0, fat:100, photo:'https://images.pexels.com/photos/725998/pexels-photo-725998.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
   { id:'o9', name:'Sojabonen (gekookt)', name_en:'Soybeans (cooked)', icon:'🫘', cat:'overig', kcal:173, prot:18, carb:9, fat:9},
@@ -582,6 +583,8 @@ const PRODUCTS = [
   { id:'o17', name:'Koolzaadolie', name_en:'Rapeseed oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100},
   { id:'o18', name:'Lijnzaadolie', name_en:'Flaxseed oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100},
   { id:'o19', name:'Zonnebloemolie', name_en:'Sunflower oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100},
+  { id:'o20', name:'Cacaopoeder', name_en:'Cocoa powder', icon:'🍫', cat:'overig', kcal:255, prot:25.2, carb:13.7, fat:11},
+  { id:'o21', name:'Cacao nibs', name_en:'Cacao nibs', icon:'🍫', cat:'overig', kcal:488, prot:13.4, carb:2.5, fat:47.2},
 ];
 
 // ========== INGEBOUWDE PROGRAMMA'S ==========
