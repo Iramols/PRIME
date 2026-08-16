@@ -30,10 +30,28 @@ function fwDayTotals(dateStr) {
   }), { kcal: 0, prot: 0, carb: 0, fat: 0 });
 }
 
+// Vangnet: renderFoodWeek() zelf mag nooit een leeg/wit scherm opleveren.
+// Eerdere versie liet bij een crash gewoon niets achter (de laatste regel
+// zet pas aan het eind el.innerHTML = html, dus alles vóór een crash ging
+// verloren). Nu vult een mislukte render altijd een zichtbare foutkaart
+// i.p.v. stilzwijgend leeg te blijven — en per dag-kaart is er nog een
+// eigen vangnet, zodat één kapotte dag niet de hele week blank trekt.
 function renderFoodWeek() {
   const el = document.getElementById('foodweek-content');
   if (!el) return;
+  try {
+    el.innerHTML = buildFoodWeekHtml();
+  } catch (e) {
+    console.error('renderFoodWeek crash:', e);
+    el.innerHTML = `<div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+      <div style="font-weight:600;margin-bottom:6px">${t('foodweek.renderError')}</div>
+      <div style="font-size:12px;color:var(--muted)">${(e && e.message) || String(e)}</div>
+    </div>`;
+  }
+}
 
+function buildFoodWeekHtml() {
   const monday = fwStartOfWeek(fwWeekOffset);
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
   const weekNum = fwWeekNumber(monday);
@@ -61,15 +79,20 @@ function renderFoodWeek() {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     const dateStr = wpStr(d);
-    const tot = fwDayTotals(dateStr);
-    const hasData = (foodDays[dateStr] || []).length > 0;
-    const isToday = dateStr === todayStr;
-    const isOpen = fwOpenDag === dateStr;
-    html += fwBouwDagKaart(dateStr, d, i, tot, hasData, isToday, isOpen);
+    try {
+      const tot = fwDayTotals(dateStr);
+      const hasData = (foodDays[dateStr] || []).length > 0;
+      const isToday = dateStr === todayStr;
+      const isOpen = fwOpenDag === dateStr;
+      html += fwBouwDagKaart(dateStr, d, i, tot, hasData, isToday, isOpen);
+    } catch (e) {
+      console.error('fwBouwDagKaart crash voor ' + dateStr + ':', e);
+      html += `<div class="card" style="padding:16px;font-size:12px;color:var(--muted)">⚠️ ${dateStr}: ${(e && e.message) || String(e)}</div>`;
+    }
   }
   html += '</div>';
 
-  el.innerHTML = html;
+  return html;
 }
 
 function fwChangeWeek(delta) {
