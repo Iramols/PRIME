@@ -839,6 +839,64 @@
   </div>
 </div>
 
+<!-- COPY MEALS MODAL (Weekplanning: dag kopiëren naar andere dag(en)) -->
+<div class="portion-modal-wrap" id="foodcopy-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <div class="portion-product-name" data-i18n="foodweek.copy.title">Kopieer maaltijden</div>
+        <div class="portion-per100" data-i18n="foodweek.copy.subtitle">Kopieer alle voeding van deze dag naar een andere dag</div>
+      </div>
+      <button onclick="fwCloseCopyModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+
+    <div class="divider" style="margin:16px 0"></div>
+
+    <label style="display:flex;align-items:center;gap:12px;margin-bottom:16px;cursor:pointer">
+      <input type="radio" name="fwc-mode" id="fwc-mode-simple" checked onchange="fwCopySetMode('simple')" style="width:18px;height:18px;accent-color:var(--sage);flex-shrink:0">
+      <span style="font-size:13px;font-weight:500;color:var(--charcoal);width:100px;flex-shrink:0" data-i18n="foodweek.copy.to">Kopieer naar</span>
+      <input type="date" id="fwc-simple-date" style="flex:1;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none">
+    </label>
+
+    <label style="display:flex;align-items:center;gap:12px;margin-bottom:6px;cursor:pointer">
+      <input type="radio" name="fwc-mode" id="fwc-mode-advanced" onchange="fwCopySetMode('advanced')" style="width:18px;height:18px;accent-color:var(--sage);flex-shrink:0">
+      <span style="font-size:13px;font-weight:500;color:var(--charcoal)" data-i18n="foodweek.copy.advanced">Geavanceerd</span>
+    </label>
+
+    <div id="fwc-advanced-block" style="display:none;padding-left:30px;margin-top:12px">
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px" data-i18n="foodweek.copy.days">Dagen</div>
+        <div id="fwc-days-wrap" style="display:flex;gap:10px"></div>
+      </div>
+      <div class="form-row" style="margin-bottom:16px">
+        <label data-i18n="foodweek.copy.startOn">Start op</label>
+        <input type="date" id="fwc-start-date">
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:8px" data-i18n="foodweek.copy.ends">Eindigt</div>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer">
+          <input type="radio" name="fwc-end-mode" id="fwc-end-date-mode" checked onchange="fwCopySetEndMode('date')" style="width:16px;height:16px;accent-color:var(--sage);flex-shrink:0">
+          <span style="font-size:13px;color:var(--charcoal);width:30px;flex-shrink:0" data-i18n="foodweek.copy.onDate">Op</span>
+          <input type="date" id="fwc-end-date" style="flex:1;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none">
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="radio" name="fwc-end-mode" id="fwc-end-weeks-mode" onchange="fwCopySetEndMode('weeks')" style="width:16px;height:16px;accent-color:var(--sage);flex-shrink:0">
+          <span style="font-size:13px;color:var(--charcoal);width:30px;flex-shrink:0" data-i18n="foodweek.copy.after">Na</span>
+          <input type="number" id="fwc-weeks" value="4" min="1" max="52" disabled style="width:64px;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;text-align:center">
+          <span style="font-size:13px;color:var(--muted)" data-i18n="foodweek.copy.weeks">Weken</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="divider" style="margin:20px 0 16px"></div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn-sm" style="flex:1;text-align:center" onclick="fwCloseCopyModal()" data-i18n="foodweek.copy.close">Sluiten</button>
+      <button class="btn-primary" style="flex:1" onclick="fwConfirmCopy()" data-i18n="foodweek.copy.confirm">Kopiëren</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app-shell -->
 
 <script src="js/auth.js"></script>

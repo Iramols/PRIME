@@ -118,7 +118,10 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
   const detail = `
     <div style="display:${isOpen ? 'block' : 'none'};padding:0 16px 14px">
       ${itemsHtml}
-      <button class="btn-sm" style="margin-top:8px;width:100%" onclick="fwAddForDay('${dateStr}')">${t('foodweek.addForDay')}</button>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}')">${t('foodweek.addForDay')}</button>
+        ${hasData ? `<button class="btn-sm" style="flex:1" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button>` : ''}
+      </div>
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;
@@ -149,4 +152,112 @@ function fwRemoveItem(dateStr, logId) {
 function fwAddForDay(dateStr) {
   switchLogDate(dateStr);
   switchFoodTab('basis');
+}
+
+// ─── Kopieer maaltijden naar een andere dag (of terugkerend naar meerdere) ──
+let fwCopySourceDate = null;
+let fwCopyMode = 'simple'; // 'simple' | 'advanced'
+
+function fwBuildDayChecks() {
+  const wrap = document.getElementById('fwc-days-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = [0,1,2,3,4,5,6].map(i => `
+    <label style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--muted)">
+      <span>${wpDagKort(i)}</span>
+      <input type="checkbox" class="fwc-day-chk" data-day="${i}" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer">
+    </label>`).join('');
+}
+
+function fwOpenCopyModal(dateStr) {
+  fwCopySourceDate = dateStr;
+  fwCopyMode = 'simple';
+
+  document.getElementById('fwc-mode-simple').checked = true;
+  document.getElementById('fwc-mode-advanced').checked = false;
+  document.getElementById('fwc-advanced-block').style.display = 'none';
+  document.getElementById('fwc-simple-date').value = '';
+
+  document.getElementById('fwc-start-date').value = dateStr;
+  document.getElementById('fwc-end-date').value = '';
+  document.getElementById('fwc-end-date-mode').checked = true;
+  document.getElementById('fwc-end-weeks-mode').checked = false;
+  document.getElementById('fwc-end-date').disabled = false;
+  document.getElementById('fwc-weeks').value = 4;
+  document.getElementById('fwc-weeks').disabled = true;
+
+  fwBuildDayChecks();
+  document.getElementById('foodcopy-modal').classList.add('open');
+}
+
+function fwCloseCopyModal() {
+  document.getElementById('foodcopy-modal').classList.remove('open');
+}
+
+function fwCopySetMode(mode) {
+  fwCopyMode = mode;
+  document.getElementById('fwc-advanced-block').style.display = mode === 'advanced' ? 'block' : 'none';
+}
+
+function fwCopySetEndMode(mode) {
+  document.getElementById('fwc-end-date').disabled = mode !== 'date';
+  document.getElementById('fwc-weeks').disabled = mode !== 'weeks';
+}
+
+function fwConfirmCopy() {
+  if (!fwCopySourceDate) return;
+  const source = foodDays[fwCopySourceDate] || [];
+  if (!source.length) { alert(t('foodweek.copy.emptySource')); return; }
+
+  let targets = [];
+
+  if (fwCopyMode === 'simple') {
+    const val = document.getElementById('fwc-simple-date').value;
+    if (!val) { alert(t('foodweek.copy.chooseDate')); return; }
+    targets = [val];
+  } else {
+    const days = [...document.querySelectorAll('.fwc-day-chk')].filter(c => c.checked).map(c => parseInt(c.dataset.day, 10));
+    if (!days.length) { alert(t('foodweek.copy.chooseDays')); return; }
+
+    const startVal = document.getElementById('fwc-start-date').value;
+    if (!startVal) { alert(t('foodweek.copy.chooseStartDate')); return; }
+    const start = wpDate(startVal);
+
+    const endMode = document.getElementById('fwc-end-weeks-mode').checked ? 'weeks' : 'date';
+    let end;
+    if (endMode === 'date') {
+      const endVal = document.getElementById('fwc-end-date').value;
+      if (!endVal) { alert(t('foodweek.copy.chooseEndDate')); return; }
+      end = wpDate(endVal);
+    } else {
+      const weeks = parseInt(document.getElementById('fwc-weeks').value, 10) || 1;
+      end = new Date(start);
+      end.setDate(start.getDate() + weeks * 7 - 1);
+    }
+
+    const cur = new Date(start);
+    while (cur <= end) {
+      const wd = cur.getDay(); // 0=Zo..6=Za
+      const idx = wd === 0 ? 6 : wd - 1; // 0=Ma..6=Zo, zelfde volgorde als fwBuildDayChecks
+      if (days.includes(idx)) targets.push(wpStr(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    if (!targets.length) { alert(t('foodweek.copy.noMatchingDays')); return; }
+  }
+
+  let count = 0;
+  targets.forEach(dateStr => {
+    if (dateStr === fwCopySourceDate) return; // niet naar zichzelf kopiëren
+    const copies = source.map(item => ({ ...item, logId: newLogId() }));
+    const existing = foodDays[dateStr] || [];
+    foodDays[dateStr] = [...existing, ...copies];
+    count++;
+    if (dateStr === currentLogDate) dayLog = foodDays[dateStr];
+  });
+
+  if (count === 0) { alert(t('foodweek.copy.noMatchingDays')); return; }
+
+  syncSet('prime_food_days', foodDays);
+  fwCloseCopyModal();
+  updateMacroTotals();
+  renderFoodWeek();
 }
