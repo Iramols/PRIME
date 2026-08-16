@@ -416,15 +416,20 @@
 
     <!-- TAB: MIJN DAG LOG -->
     <div id="foodtab-log" style="display:none">
-      <div id="day-log-empty" style="text-align:center;padding:40px 20px;color:var(--muted);font-size:14px" data-i18n="food.log.empty">
-        Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.
+      <div id="day-log-empty" style="text-align:center;padding:24px 20px;color:var(--muted);font-size:14px">
+        <div style="margin-bottom:16px" data-i18n="food.log.empty">Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.</div>
+        <button class="btn-sm" style="width:100%" onclick="switchFoodTab('basis')" data-i18n="foodweek.addForDay">+ Voeding toevoegen</button>
       </div>
       <div id="day-log-list"></div>
       <div id="day-log-totals" style="display:none">
         <div class="divider"></div>
         <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px" data-i18n="food.log.totalsTitle">Totaal overzicht</div>
         <div id="log-summary"></div>
-        <button class="btn-sm" style="margin-top:14px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn-sm" style="flex:1" onclick="switchFoodTab('basis')" data-i18n="foodweek.addForDay">+ Voeding toevoegen</button>
+          <button class="btn-sm" style="flex:1" onclick="fwOpenCopyModal(currentLogDate)" data-i18n="foodweek.copy.button">📋 Kopieer maaltijden</button>
+        </div>
+        <button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
                 onclick="clearFoodDay(currentLogDate)" data-i18n="food.clearDay.button">🗑️ Alles verwijderen</button>
       </div>
     </div>
