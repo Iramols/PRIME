@@ -112,7 +112,7 @@ const I18N = {
     'food.goal.default': 'Doel: —',
     'food.tab.plan': 'Gerechten',
     'food.tab.basis': 'Basisproducten',
-    'food.tab.log': 'Mijn dag',
+    'food.tab.log': 'Vandaag',
     'food.plan.hint': 'Klik op een maaltijd om hem toe te voegen aan je dag',
     'food.search.placeholder': 'Zoek product...',
     'cat.alle': 'Alle',
@@ -126,6 +126,9 @@ const I18N = {
     'cat.overig': 'Overig',
     'food.log.empty': 'Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.',
     'food.log.totalsTitle': 'Totaal overzicht',
+    'food.clearDay.button': '🗑️ Alles verwijderen',
+    'food.clearDay.confirm': 'Alle voeding van deze dag verwijderen? Dit kan niet ongedaan gemaakt worden.',
+    'food.edit.noLongerAvailable': 'Dit item kan niet meer bewerkt worden (product/gerecht bestaat niet meer).',
 
     // Coach
     'coach.cardLabel': 'AI Coach',
@@ -244,7 +247,8 @@ const I18N = {
     'portion.protein': 'eiwit',
     'portion.carbs': 'koolh',
     'portion.fat': 'vet',
-    'portion.addToDay': 'Toevoegen aan mijn dag →',
+    'portion.addToDay': 'Toevoegen aan deze dag →',
+    'portion.updateInDay': 'Wijzigen ✓',
 
     // Weekprogramma's (programmas.js)
     'common.back': '← Terug',
@@ -654,7 +658,7 @@ const I18N = {
     'food.goal.default': 'Goal: —',
     'food.tab.plan': 'Dishes',
     'food.tab.basis': 'Basic products',
-    'food.tab.log': 'My day',
+    'food.tab.log': 'Today',
     'food.plan.hint': 'Click a meal to add it to your day',
     'food.search.placeholder': 'Search product...',
     'cat.alle': 'All',
@@ -668,6 +672,9 @@ const I18N = {
     'cat.overig': 'Other',
     'food.log.empty': 'Nothing logged yet. Add meals or products via the other tabs.',
     'food.log.totalsTitle': 'Total overview',
+    'food.clearDay.button': '🗑️ Remove all',
+    'food.clearDay.confirm': 'Remove all food for this day? This cannot be undone.',
+    'food.edit.noLongerAvailable': 'This item can no longer be edited (the product/dish no longer exists).',
 
     'coach.cardLabel': 'AI Coach',
     'coach.title': 'Coach Ira',
@@ -781,7 +788,8 @@ const I18N = {
     'portion.protein': 'protein',
     'portion.carbs': 'carbs',
     'portion.fat': 'fat',
-    'portion.addToDay': 'Add to my day →',
+    'portion.addToDay': 'Add to this day →',
+    'portion.updateInDay': 'Save changes ✓',
 
     // Weekprogramma's (programmas.js)
     'common.back': '← Back',

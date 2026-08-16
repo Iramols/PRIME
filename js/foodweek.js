@@ -108,10 +108,10 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
   const items = foodDays[dateStr] || [];
   const itemsHtml = items.length
     ? items.map(item => `
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark)">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);cursor:pointer" onclick="editLogItem('${dateStr}',${item.logId})" title="${t('common.edit')}">
           <div style="flex:1;font-size:12px;color:var(--charcoal)">${logItemDisplayName(item)}</div>
           <div style="font-size:11px;color:var(--muted);white-space:nowrap">${item.type === 'meal' ? '' : item.gram + 'g · '}${item.kcal} kcal</div>
-          <div onclick="fwRemoveItem('${dateStr}',${item.logId})" style="cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px" title="${t('common.edit')}">×</div>
+          <div onclick="event.stopPropagation(); fwRemoveItem('${dateStr}',${item.logId})" style="cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px" title="${t('common.delete')}">×</div>
         </div>`).join('')
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
@@ -122,6 +122,7 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}')">${t('foodweek.addForDay')}</button>
         ${hasData ? `<button class="btn-sm" style="flex:1" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button>` : ''}
       </div>
+      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;

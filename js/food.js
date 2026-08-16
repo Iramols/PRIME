@@ -548,6 +548,8 @@ let _mpMoment = 'ontbijt';
 function openMealPortionModal(dishId) {
   _mpDish = customMeals.find(m => m.id === dishId);
   if (!_mpDish) return;
+  _editingLogId = null;
+  document.getElementById('mpm-submit-btn').textContent = t('portion.addToDay');
   const tot = mealTotals(_mpDish);
   document.getElementById('mpm-name').textContent = dispName(_mpDish);
   document.getElementById('mpm-reference').textContent = t('mealPortion.totalReference', {
@@ -584,6 +586,8 @@ function updateMealPortionPreview() {
 
 function closeMealPortionModal() {
   document.getElementById('meal-portion-modal').classList.remove('open');
+  _editingLogId = null;
+  document.getElementById('mpm-submit-btn').textContent = t('portion.addToDay');
 }
 
 function addMealToLog() {
@@ -593,8 +597,7 @@ function addMealToLog() {
   if (gram <= 0) return;
   const f = tot.gram > 0 ? gram / tot.gram : 0;
 
-  dayLog.push({
-    logId: newLogId(),
+  const values = {
     dishId: _mpDish.id,
     name: dispName(_mpDish),
     icon: '🍽️',
@@ -611,18 +614,38 @@ function addMealToLog() {
     carb: Math.round(tot.carb * f * 10) / 10,
     fat:  Math.round(tot.fat  * f * 10) / 10,
     type: 'meal'
-  });
+  };
+
+  if (_editingLogId !== null) {
+    // Bewerken: bestaand item bijwerken i.p.v. een nieuwe toe te voegen.
+    const idx = dayLog.findIndex(i => i.logId === _editingLogId);
+    if (idx !== -1) dayLog[idx] = { ...dayLog[idx], ...values };
+    _editingLogId = null;
+  } else {
+    dayLog.push({ logId: newLogId(), ...values });
+  }
 
   closeMealPortionModal();
   persistDayLog();
   updateMacroTotals();
   updateLogBadge();
+  renderDayLog();
+  if (document.getElementById('foodweek-content')) renderFoodWeek();
 }
 
 // ========== PORTION MODAL ==========
+// _editingLogId: logId van het item dat bewerkt wordt (via editLogItem()),
+// of null als het gaat om een nieuw item toevoegen. Wordt hier bij het
+// openen bewust gereset — editLogItem() zet 'm pas ná deze aanroep weer,
+// zodat een blijven-hangen edit-status van een eerdere, niet-afgemaakte
+// bewerking nooit een gewone "nieuw item toevoegen"-actie kan besmetten.
+let _editingLogId = null;
+
 function openPortionModal(productId) {
   currentPortionProduct = getAllProducts().find(p => p.id === productId);
   if (!currentPortionProduct) return;
+  _editingLogId = null;
+  document.getElementById('pm-submit-btn').textContent = t('portion.addToDay');
   const p = currentPortionProduct;
   document.getElementById('pm-name').textContent = p.icon + ' ' + dispName(p);
   document.getElementById('pm-per100').textContent = `per 100g: ${p.kcal} kcal · ${p.prot}g ${t('portion.protein')} · ${p.carb}g ${t('portion.carbs')} · ${p.fat}g ${t('portion.fat')}`;
@@ -701,6 +724,17 @@ function portieAantal(delta) {
 
 function closePortionModal() {
   document.getElementById('portion-modal').classList.remove('open');
+  _editingLogId = null;
+  document.getElementById('pm-submit-btn').textContent = t('portion.addToDay');
+}
+
+// Zet de actieve maaltijdmoment-knop in één van de twee portiemodals
+// programmatisch (i.p.v. via een klik), voor editLogItem(). 0=ontbijt,
+// 1=lunch, 2=avond, 3=snack — zelfde volgorde als de knoppen in de HTML.
+function setActiveMomentBtn(modalSelector, moment) {
+  const order = ['ontbijt','lunch','avond','snack'];
+  const idx = order.indexOf(moment);
+  document.querySelectorAll(modalSelector + ' .moment-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
 }
 
 function selectMoment(moment, btn) {
@@ -725,8 +759,7 @@ function addProductToLog() {
   const gram = parseFloat(document.getElementById('pm-gram').value) || 0;
   if (!p || gram <= 0) return;
   const f = gram / 100;
-  dayLog.push({
-    logId: newLogId(),
+  const values = {
     productId: p.id,
     name: dispName(p),
     icon: p.icon,
@@ -739,11 +772,75 @@ function addProductToLog() {
     carb: Math.round(p.carb * f * 10) / 10,
     fat:  Math.round(p.fat  * f * 10) / 10,
     type: 'product'
-  });
+  };
+
+  if (_editingLogId !== null) {
+    // Bewerken: bestaand item bijwerken i.p.v. een nieuwe toe te voegen.
+    const idx = dayLog.findIndex(i => i.logId === _editingLogId);
+    if (idx !== -1) dayLog[idx] = { ...dayLog[idx], ...values };
+    _editingLogId = null;
+  } else {
+    dayLog.push({ logId: newLogId(), ...values });
+  }
+
   closePortionModal();
   persistDayLog();
   updateMacroTotals();
   updateLogBadge();
+  renderDayLog();
+  if (document.getElementById('foodweek-content')) renderFoodWeek();
+}
+
+// Opent de bijpassende portiemodal, voorgevuld met de huidige waarden
+// van een al gelogd item, zodat je het gewicht/moment kunt aanpassen
+// i.p.v. het te moeten verwijderen en opnieuw toe te voegen. Werkt
+// zowel vanuit "Vandaag" als vanuit een dag-kaart in Weekplanning —
+// zorgt er zelf voor dat dayLog eerst de juiste datum weergeeft.
+function editLogItem(dateStr, logId) {
+  if (dateStr !== currentLogDate) switchLogDate(dateStr);
+  const item = dayLog.find(i => i.logId === logId);
+  if (!item) return;
+
+  if (item.productId) {
+    openPortionModal(item.productId);
+    if (!currentPortionProduct) { alert(t('food.edit.noLongerAvailable')); return; }
+    _editingLogId = logId;
+    document.getElementById('pm-gram').value = item.gram;
+    currentMoment = item.moment;
+    setActiveMomentBtn('#portion-modal', item.moment);
+    updatePortionPreview();
+    document.getElementById('pm-submit-btn').textContent = t('portion.updateInDay');
+  } else if (item.dishId) {
+    openMealPortionModal(item.dishId);
+    if (!_mpDish) { alert(t('food.edit.noLongerAvailable')); return; }
+    _editingLogId = logId;
+    document.getElementById('mpm-gram').value = item.gram;
+    _mpMoment = item.moment;
+    setActiveMomentBtn('#meal-portion-modal', item.moment);
+    updateMealPortionPreview();
+    document.getElementById('mpm-submit-btn').textContent = t('portion.updateInDay');
+  } else {
+    alert(t('food.edit.noLongerAvailable'));
+  }
+}
+
+// Verwijdert in één keer alle gelogde voeding van een dag — werkt zowel
+// voor "Vandaag" als voor een willekeurige dag vanuit Weekplanning.
+function clearFoodDay(dateStr) {
+  const items = dateStr === currentLogDate ? dayLog : (foodDays[dateStr] || []);
+  if (!items.length) return;
+  if (!confirm(t('food.clearDay.confirm'))) return;
+
+  delete foodDays[dateStr];
+  syncSet('prime_food_days', foodDays);
+
+  if (dateStr === currentLogDate) {
+    dayLog = [];
+    updateMacroTotals();
+    renderDayLog();
+  }
+  updateLogBadge();
+  if (document.getElementById('foodweek-content')) renderFoodWeek();
 }
 
 function removeFromLog(logId) {
@@ -826,7 +923,7 @@ function renderDayLog() {
       <div style="margin-bottom:18px">
         <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">${momentLabels[moment]}</div>
         ${items.map(item => { const photo = logItemPhoto(item); return `
-          <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
+          <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:pointer" onclick="editLogItem(currentLogDate, ${item.logId})">
             ${photo
               ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
               : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
@@ -838,7 +935,7 @@ function renderDayLog() {
                 </div>
                 <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
               </div>
-              <button onclick="removeFromLog(${item.logId})"
+              <button onclick="event.stopPropagation(); removeFromLog(${item.logId})"
                 style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
             </div>
           </div>`; }).join('')}

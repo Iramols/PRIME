@@ -424,6 +424,8 @@
         <div class="divider"></div>
         <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px" data-i18n="food.log.totalsTitle">Totaal overzicht</div>
         <div id="log-summary"></div>
+        <button class="btn-sm" style="margin-top:14px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
+                onclick="clearFoodDay(currentLogDate)" data-i18n="food.clearDay.button">🗑️ Alles verwijderen</button>
       </div>
     </div>
 
@@ -804,7 +806,7 @@
       <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <button class="btn-primary" onclick="addProductToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
+    <button class="btn-primary" id="pm-submit-btn" onclick="addProductToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
   </div>
 </div>
 
@@ -835,7 +837,7 @@
       <div><div class="prev-val" id="mpv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="mpv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <button class="btn-primary" onclick="addMealToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
+    <button class="btn-primary" id="mpm-submit-btn" onclick="addMealToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
   </div>
 </div>
 
