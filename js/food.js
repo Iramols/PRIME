@@ -730,12 +730,13 @@ function closePortionModal() {
 
 // Zet de actieve maaltijdmoment-knop in één van de twee portiemodals
 // programmatisch (i.p.v. via een klik), voor editLogItem(). Zelfde
-// volgorde als de knoppen in de HTML (eerst de 3 maaltijden, dan de 3
-// tussendoortjes). Een oud logitem met het legacy moment 'snack' matcht
-// hier bewust niets (geen enkele knop heet meer zo) — blijft gewoon
-// bij geen enkele knop actief, verder onschadelijk.
+// volgorde als de knoppen in de HTML: elk tussendoortje direct na de
+// bijbehorende maaltijd (ontbijt, ochtendtussendoortje, lunch, ...).
+// Een oud logitem met het legacy moment 'snack' matcht hier bewust
+// niets (geen enkele knop heet meer zo) — blijft gewoon bij geen
+// enkele knop actief, verder onschadelijk.
 function setActiveMomentBtn(modalSelector, moment) {
-  const order = ['ontbijt','lunch','avond','tussendoorOchtend','tussendoorMiddag','tussendoorAvond'];
+  const order = ['ontbijt','tussendoorOchtend','lunch','tussendoorMiddag','avond','tussendoorAvond'];
   const idx = order.indexOf(moment);
   document.querySelectorAll(modalSelector + ' .moment-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
 }
@@ -910,18 +911,21 @@ function renderLogItemCard(dateStr, item) {
     </div>`;
 }
 
-// Groepeert een lijst logitems per moment (ontbijt/lunch/avond, dan de
-// 3 tussendoortjes) en bouwt daar de kaartenlijst voor — ook gedeeld
-// met Weekplanning. 'snack' blijft als legacy-fallback staan (oude
-// logitems van vóór de opsplitsing in ochtend/middag/avond), gesorteerd
-// helemaal achteraan onder een generieke "Tussendoortje"-kop.
+// Groepeert een lijst logitems per moment en bouwt daar de kaartenlijst
+// voor — ook gedeeld met Weekplanning. Elk tussendoortje staat direct
+// na de bijbehorende maaltijd (ontbijt, ochtendtussendoortje, lunch,
+// middagtussendoortje, avond, avondtussendoortje). 'snack' blijft als
+// legacy-fallback staan (oude logitems van vóór de opsplitsing in
+// ochtend/middag/avond), gesorteerd helemaal achteraan onder een
+// generieke "Tussendoortje"-kop.
 function renderLogItemsHtml(dateStr, items) {
   const momentLabels = {
-    ontbijt: t('moment.ontbijt'), lunch: t('moment.lunch'), avond: t('moment.avond'),
-    tussendoorOchtend: t('moment.tussendoorOchtend'), tussendoorMiddag: t('moment.tussendoorMiddag'), tussendoorAvond: t('moment.tussendoorAvond'),
+    ontbijt: t('moment.ontbijt'), tussendoorOchtend: t('moment.tussendoorOchtend'),
+    lunch: t('moment.lunch'), tussendoorMiddag: t('moment.tussendoorMiddag'),
+    avond: t('moment.avond'), tussendoorAvond: t('moment.tussendoorAvond'),
     snack: t('moment.snack')
   };
-  const momentOrder = { ontbijt:0, lunch:1, avond:2, tussendoorOchtend:3, tussendoorMiddag:4, tussendoorAvond:5, snack:6 };
+  const momentOrder = { ontbijt:0, tussendoorOchtend:1, lunch:2, tussendoorMiddag:3, avond:4, tussendoorAvond:5, snack:6 };
 
   const sorted = [...items].sort((a,b) => momentOrder[a.moment] - momentOrder[b.moment]);
   const grouped = {};
