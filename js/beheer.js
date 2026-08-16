@@ -11,7 +11,10 @@ function saveCustomPhotos(photos) {
 function loadPhotosFromFile(callback) {
   var done = function() { applyCustomPhotos(); if (callback) callback(); };
   try {
-    fetch('./custom-photos.json')
+    // Zelfde cache-busting-reden als loadAppScripts() in auth.js: dit
+    // wordt dynamisch opgehaald ná de initiële paginalading en kan
+    // anders een verouderde versie blijven serveren.
+    fetch('./custom-photos.json?v=' + Date.now())
       .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
       .then(function(filePhotos) {
         if (filePhotos && typeof filePhotos === 'object' && Object.keys(filePhotos).length > 0) {

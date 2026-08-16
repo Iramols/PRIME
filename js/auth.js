@@ -110,11 +110,21 @@ function switchClient() {
 // Laadt de app-scripts één voor één in vaste volgorde (elk pas nadat
 // de vorige klaar is), zodat de bestaande laadvolgorde/afhankelijkheden
 // intact blijven — en toont daarna de app.
+//
+// Cache-busting: deze scripts worden pas ná de initiële paginalading
+// dynamisch toegevoegd, dus een gewone harde refresh (Ctrl+Shift+R) van
+// de pagina ververst ze niet altijd betrouwbaar mee — met name GitHub
+// Pages' eigen CDN-caching kan een oudere versie nog een tijd
+// vasthouden. Eén tijdstip per paginalading als querystring dwingt een
+// verse download af, zodat een nieuwe commit nooit onopgemerkt "oud"
+// blijft draaien.
+const _appScriptsCacheBust = Date.now();
+
 function loadAppScripts(index) {
   index = index || 0;
   if (index >= APP_SCRIPTS.length) return;
   const script = document.createElement('script');
-  script.src = APP_SCRIPTS[index];
+  script.src = APP_SCRIPTS[index] + '?v=' + _appScriptsCacheBust;
   script.onload = function() { loadAppScripts(index + 1); };
   document.body.appendChild(script);
 }
