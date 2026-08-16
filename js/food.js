@@ -729,10 +729,13 @@ function closePortionModal() {
 }
 
 // Zet de actieve maaltijdmoment-knop in één van de twee portiemodals
-// programmatisch (i.p.v. via een klik), voor editLogItem(). 0=ontbijt,
-// 1=lunch, 2=avond, 3=snack — zelfde volgorde als de knoppen in de HTML.
+// programmatisch (i.p.v. via een klik), voor editLogItem(). Zelfde
+// volgorde als de knoppen in de HTML (eerst de 3 maaltijden, dan de 3
+// tussendoortjes). Een oud logitem met het legacy moment 'snack' matcht
+// hier bewust niets (geen enkele knop heet meer zo) — blijft gewoon
+// bij geen enkele knop actief, verder onschadelijk.
 function setActiveMomentBtn(modalSelector, moment) {
-  const order = ['ontbijt','lunch','avond','snack'];
+  const order = ['ontbijt','lunch','avond','tussendoorOchtend','tussendoorMiddag','tussendoorAvond'];
   const idx = order.indexOf(moment);
   document.querySelectorAll(modalSelector + ' .moment-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
 }
@@ -907,11 +910,18 @@ function renderLogItemCard(dateStr, item) {
     </div>`;
 }
 
-// Groepeert een lijst logitems per moment (ontbijt/lunch/avond/snack)
-// en bouwt daar de kaartenlijst voor — ook gedeeld met Weekplanning.
+// Groepeert een lijst logitems per moment (ontbijt/lunch/avond, dan de
+// 3 tussendoortjes) en bouwt daar de kaartenlijst voor — ook gedeeld
+// met Weekplanning. 'snack' blijft als legacy-fallback staan (oude
+// logitems van vóór de opsplitsing in ochtend/middag/avond), gesorteerd
+// helemaal achteraan onder een generieke "Tussendoortje"-kop.
 function renderLogItemsHtml(dateStr, items) {
-  const momentLabels = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('moment.avond'), snack:t('moment.snack') };
-  const momentOrder = { ontbijt:0, lunch:1, avond:2, snack:3 };
+  const momentLabels = {
+    ontbijt: t('moment.ontbijt'), lunch: t('moment.lunch'), avond: t('moment.avond'),
+    tussendoorOchtend: t('moment.tussendoorOchtend'), tussendoorMiddag: t('moment.tussendoorMiddag'), tussendoorAvond: t('moment.tussendoorAvond'),
+    snack: t('moment.snack')
+  };
+  const momentOrder = { ontbijt:0, lunch:1, avond:2, tussendoorOchtend:3, tussendoorMiddag:4, tussendoorAvond:5, snack:6 };
 
   const sorted = [...items].sort((a,b) => momentOrder[a.moment] - momentOrder[b.moment]);
   const grouped = {};
