@@ -105,14 +105,12 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
       <span style="font-size:11px;color:var(--muted);margin-left:8px;flex-shrink:0">${isOpen ? '▴' : '▾'}</span>
     </div>`;
 
+  // Zelfde kaartweergave als "Vandaag" (foto/icoon + naam + gewicht/kcal +
+  // macro's, gegroepeerd per moment) — zie renderLogItemCard/
+  // renderLogItemsHtml in food.js.
   const items = foodDays[dateStr] || [];
   const itemsHtml = items.length
-    ? items.map(item => `
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);cursor:pointer" onclick="editLogItem('${dateStr}',${item.logId})" title="${t('common.edit')}">
-          <div style="flex:1;font-size:12px;color:var(--charcoal)">${logItemDisplayName(item)}</div>
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap">${item.type === 'meal' ? '' : item.gram + 'g · '}${item.kcal} kcal</div>
-          <div onclick="event.stopPropagation(); fwRemoveItem('${dateStr}',${item.logId})" style="cursor:pointer;color:var(--muted);font-size:14px;padding:0 4px" title="${t('common.delete')}">×</div>
-        </div>`).join('')
+    ? renderLogItemsHtml(dateStr, items)
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
   const detail = `
@@ -146,6 +144,7 @@ function fwRemoveItem(dateStr, logId) {
     dayLog = [...items];
     try { updateMacroTotals(); } catch (e) { console.error('updateMacroTotals na verwijderen:', e); }
     try { if (document.getElementById('day-log-list')) renderDayLog(); } catch (e) { console.error('renderDayLog na verwijderen:', e); }
+    try { updateLogBadge(); } catch (e) { console.error('updateLogBadge na verwijderen:', e); }
   }
   try { renderFoodWeek(); } catch (e) { console.error('renderFoodWeek na verwijderen:', e); }
 }

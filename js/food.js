@@ -843,15 +843,6 @@ function clearFoodDay(dateStr) {
   if (document.getElementById('foodweek-content')) renderFoodWeek();
 }
 
-function removeFromLog(logId) {
-  dayLog = dayLog.filter(i => i.logId !== logId);
-  persistDayLog();
-  renderDayLog();
-  updateMacroTotals();
-  updateLogBadge();
-  if (document.getElementById('meal-plan')) renderMealPlan();
-}
-
 function updateLogBadge() {
   const badge = document.getElementById('log-count-badge');
   const count = dayLog.length;
@@ -891,9 +882,54 @@ function logItemPhoto(item) {
   return item.photo || null; // fallback: ouder logitem van vóór deze wijziging
 }
 
-function renderDayLog() {
+// Kaartje voor één gelogd item (foto/icoon + naam + gewicht/kcal +
+// macro's), klikbaar om te bewerken. Gedeeld tussen "Vandaag"
+// (renderDayLog hieronder) en een dag-kaart in Weekplanning
+// (fwBouwDagKaart in foodweek.js), zodat ze er identiek uitzien.
+function renderLogItemCard(dateStr, item) {
+  const photo = logItemPhoto(item);
+  return `
+    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:pointer" onclick="editLogItem('${dateStr}', ${item.logId})">
+      ${photo
+        ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
+        : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
+      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)}</div>
+          <div style="font-size:11px;color:var(--muted)">
+            ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
+          </div>
+          <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
+        </div>
+        <button onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})"
+          style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
+      </div>
+    </div>`;
+}
+
+// Groepeert een lijst logitems per moment (ontbijt/lunch/avond/snack)
+// en bouwt daar de kaartenlijst voor — ook gedeeld met Weekplanning.
+function renderLogItemsHtml(dateStr, items) {
   const momentLabels = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('moment.avond'), snack:t('moment.snack') };
   const momentOrder = { ontbijt:0, lunch:1, avond:2, snack:3 };
+
+  const sorted = [...items].sort((a,b) => momentOrder[a.moment] - momentOrder[b.moment]);
+  const grouped = {};
+  sorted.forEach(item => {
+    if (!grouped[item.moment]) grouped[item.moment] = [];
+    grouped[item.moment].push(item);
+  });
+
+  return Object.entries(grouped)
+    .sort((a,b) => momentOrder[a[0]] - momentOrder[b[0]])
+    .map(([moment, momentItems]) => `
+      <div style="margin-bottom:18px">
+        <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">${momentLabels[moment]}</div>
+        ${momentItems.map(item => renderLogItemCard(dateStr, item)).join('')}
+      </div>`).join('');
+}
+
+function renderDayLog() {
   const empty = document.getElementById('day-log-empty');
   const list = document.getElementById('day-log-list');
   const totals = document.getElementById('day-log-totals');
@@ -907,39 +943,7 @@ function renderDayLog() {
 
   empty.style.display = 'none';
   totals.style.display = 'block';
-
-  const sorted = [...dayLog].sort((a,b) => momentOrder[a.moment] - momentOrder[b.moment]);
-
-  // Groepeer per moment
-  const grouped = {};
-  sorted.forEach(item => {
-    if (!grouped[item.moment]) grouped[item.moment] = [];
-    grouped[item.moment].push(item);
-  });
-
-  list.innerHTML = Object.entries(grouped)
-    .sort((a,b) => momentOrder[a[0]] - momentOrder[b[0]])
-    .map(([moment, items]) => `
-      <div style="margin-bottom:18px">
-        <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">${momentLabels[moment]}</div>
-        ${items.map(item => { const photo = logItemPhoto(item); return `
-          <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:pointer" onclick="editLogItem(currentLogDate, ${item.logId})">
-            ${photo
-              ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
-              : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
-            <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
-              <div style="flex:1">
-                <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)}</div>
-                <div style="font-size:11px;color:var(--muted)">
-                  ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
-                </div>
-                <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
-              </div>
-              <button onclick="event.stopPropagation(); removeFromLog(${item.logId})"
-                style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
-            </div>
-          </div>`; }).join('')}
-      </div>`).join('');
+  list.innerHTML = renderLogItemsHtml(currentLogDate, dayLog);
 
   const tot = dayLog.reduce((a,i) => ({ kcal:a.kcal+i.kcal, prot:a.prot+i.prot, carb:a.carb+i.carb, fat:a.fat+i.fat }), {kcal:0,prot:0,carb:0,fat:0});
   document.getElementById('log-summary').innerHTML = `
