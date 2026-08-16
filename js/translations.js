@@ -524,6 +524,16 @@ const I18N = {
     'food.addMeal.editTitle': 'Gerecht bewerken',
     'food.addMeal.update': 'Wijzigen ✓',
     'food.addMeal.cancel': 'Annuleren',
+
+    // Voeding weekplanning
+    'food.tab.week': 'Weekplanning',
+    'foodweek.weekLabel': 'Week {n}',
+    'foodweek.backToThisWeek': 'Naar deze week',
+    'foodweek.notFilledIn': 'Nog niet ingevuld',
+    'foodweek.noItemsYet': 'Nog niets toegevoegd voor deze dag',
+    'foodweek.addForDay': '+ Voeding toevoegen',
+    'foodweek.editingDate': 'Je logt nu voor {date}, niet voor vandaag',
+    'foodweek.backToToday': 'Terug naar vandaag',
   },
   en: {
     'login.title': 'Log in to PRIME',
@@ -1027,6 +1037,16 @@ const I18N = {
     'food.addMeal.editTitle': 'Edit dish',
     'food.addMeal.update': 'Save changes ✓',
     'food.addMeal.cancel': 'Cancel',
+
+    // Nutrition weekly plan
+    'food.tab.week': 'Weekly plan',
+    'foodweek.weekLabel': 'Week {n}',
+    'foodweek.backToThisWeek': 'Go to this week',
+    'foodweek.notFilledIn': 'Not filled in yet',
+    'foodweek.noItemsYet': 'Nothing added for this day yet',
+    'foodweek.addForDay': '+ Add food',
+    'foodweek.editingDate': "You're logging for {date} now, not today",
+    'foodweek.backToToday': 'Back to today',
   }
 };
 

@@ -24,8 +24,13 @@ let chatHistory = [];
 let currentCat = 'alle';
 let currentPortionProduct = null;
 let currentMoment = 'ontbijt';
-let dayLog = []; // { id, name, icon, moment, gram, kcal, prot, carb, fat }
+let dayLog = []; // logitems van de actief geselecteerde datum (zie currentLogDate)
 let logIdCounter = 0;
 let customProducts = JSON.parse(localStorage.getItem('prime_custom_products') || '[]');
 let customMeals = JSON.parse(localStorage.getItem('prime_custom_meals') || '[]');
+
+// Voeding per datum (t.b.v. Weekplanning): { 'YYYY-MM-DD': [logitem, ...] }.
+// dayLog is altijd de array voor currentLogDate — zie switchLogDate() in food.js.
+let foodDays = JSON.parse(localStorage.getItem('prime_food_days') || '{}');
+let currentLogDate = null; // wordt in app.js init() op vandaag gezet
 

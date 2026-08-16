@@ -14,8 +14,10 @@ function go(screen) {
     if (document.getElementById('foodtab-plan')?.style.display !== 'none') renderMealPlan();
     if (document.getElementById('foodtab-basis')?.style.display !== 'none') renderProducts();
     if (document.getElementById('foodtab-log')?.style.display !== 'none') renderDayLog();
+    if (document.getElementById('foodtab-week')?.style.display !== 'none') renderFoodWeek();
     if (document.getElementById('foodtab-add')?.style.display !== 'none') renderAddProductTab();
     if (document.getElementById('foodtab-addmeal')?.style.display !== 'none') renderAddMealTab();
+    updateLogDateBanner();
   }
 }
 
@@ -121,6 +123,10 @@ function applyTrainingVisibility() {
 function init() {
   // Laad eigen foto's van coach als eerste stap
   applyCustomPhotos();
+
+  // "Mijn dag" start altijd op vandaag, gevuld met wat er voor die datum
+  // al eerder gelogd was (bv. via Weekplanning, of van eerder vandaag).
+  switchLogDate(fdTodayStr());
 
   applyTrainingVisibility();
   renderHome();

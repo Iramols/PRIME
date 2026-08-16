@@ -1,13 +1,16 @@
 // ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
-  ['plan','basis','log','add','addmeal'].forEach(t => {
+  ['plan','basis','log','add','addmeal','week'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
+  // "Mijn dag" betekent altijd vandaag — verlaat een eventueel via
+  // Weekplanning geopende andere datum weer.
+  if (tab === 'log') { switchLogDate(fdTodayStr()); renderDayLog(); }
   if (tab === 'basis') renderProducts();
-  if (tab === 'log') renderDayLog();
   if (tab === 'add') renderAddProductTab();
   if (tab === 'addmeal') renderAddMealTab();
+  if (tab === 'week') renderFoodWeek();
 }
 
 // Combineert de vaste productcatalogus met de eigen producten van deze klant.
@@ -15,38 +18,71 @@ function getAllProducts() {
   return [...PRODUCTS, ...customProducts];
 }
 
+// ========== VOEDING PER DATUM (t.b.v. Weekplanning) ==========
+// dayLog is altijd de array die hoort bij currentLogDate. Standaard is
+// dat vandaag ("Mijn dag"); vanuit Weekplanning kan een andere datum
+// tijdelijk actief gezet worden om voor die dag voeding toe te voegen.
+function fdTodayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function persistDayLog() {
+  if (dayLog.length) foodDays[currentLogDate] = dayLog;
+  else delete foodDays[currentLogDate];
+  syncSet('prime_food_days', foodDays);
+}
+
+function switchLogDate(dateStr) {
+  currentLogDate = dateStr;
+  dayLog = foodDays[dateStr] ? [...foodDays[dateStr]] : [];
+  updateLogDateBanner();
+  updateMacroTotals();
+}
+
+// Toont een kleine banner boven de Voeding-tabs zodra er voor een andere
+// dag dan vandaag gelogd wordt (bv. via Weekplanning), met een link terug.
+function updateLogDateBanner() {
+  const banner = document.getElementById('food-date-banner');
+  if (!banner) return;
+  const isToday = currentLogDate === fdTodayStr();
+  banner.style.display = isToday ? 'none' : 'flex';
+  if (!isToday) {
+    const [y,m,d] = currentLogDate.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    document.getElementById('food-date-banner-text').textContent =
+      t('foodweek.editingDate', { date: dateObj.toLocaleDateString(dateLocale(), { day:'numeric', month:'long' }) });
+  }
+}
+
+function backToTodayLog() {
+  switchLogDate(fdTodayStr());
+  switchFoodTab('log');
+}
+
+// logIdCounter begint elke sessie weer bij 0, maar foodDays blijft nu
+// (i.t.t. vroeger) bestaan tussen sessies — een kale ++logIdCounter zou
+// dus kunnen botsen met een logId dat gisteren al is uitgedeeld. Neem
+// daarom de huidige timestamp als basis, met de sessie-teller als
+// tiebreaker voor toevoegingen binnen dezelfde milliseconde.
+function newLogId() {
+  return Date.now() * 1000 + (logIdCounter++ % 1000);
+}
+
 // ========== FOOD RENDER (meal plan tab) ==========
+// Let op: dit vulde vroeger automatisch een "aanbevolen maaltijd" uit de
+// (inmiddels lege) MEALS-arrays, en reset daarbij steeds alle meal-type
+// dayLog-items. Nu de coach eigen gerechten toevoegt i.p.v. de oude
+// testmaaltijden bestaat die aanbeveling niet meer — dus geen reset meer,
+// anders verdwijnen zelf toegevoegde gerechten bij elke home-render.
 function renderFood() {
   document.getElementById('no-checkin-food').style.display = 'none';
   document.getElementById('food-content').style.display = 'block';
-  selectedMeals = {};
-  dayLog = dayLog.filter(i => i.type !== 'meal'); // reset meal entries, keep product logs
-  const data = MEALS[trainingType];
   document.getElementById('food-subtitle').textContent = {
     herstel:t('food.subtitle.recovery'),
     normaal:t('food.subtitle.normal'),
     zwaar:t('food.subtitle.heavy')
   }[trainingType];
-
-  for (const key of ['ontbijt','lunch','avond','snack']) {
-    const rec = data[key].find(m => m.rec);
-    if (rec) {
-      selectedMeals[rec.id] = rec;
-      dayLog.push({
-        logId: 'meal-' + rec.id,
-        name: dispName(rec),
-        icon: rec.icon,
-        photo: rec.photo || null,
-        moment: key,
-        gram: null,
-        kcal: rec.kcal,
-        prot: rec.prot,
-        carb: rec.carb,
-        fat:  rec.fat,
-        type: 'meal'
-      });
-    }
-  }
   renderMealPlan();
   updateMacroTotals();
 }
@@ -433,7 +469,13 @@ function removeCustomMeal(id) {
   if (_amEditingId === id) resetMealForm();
   customMeals = customMeals.filter(m => m.id !== id);
   syncSet('prime_custom_meals', customMeals);
-  // Verwijder eventueel al gelogde porties van dit gerecht uit vandaag
+  // Verwijder eventueel al gelogde porties van dit gerecht, op elke datum
+  // (niet alleen vandaag — sinds Weekplanning kan dat ook een andere dag zijn).
+  Object.keys(foodDays).forEach(dateStr => {
+    const filtered = foodDays[dateStr].filter(i => i.dishId !== id);
+    if (filtered.length) foodDays[dateStr] = filtered; else delete foodDays[dateStr];
+  });
+  syncSet('prime_food_days', foodDays);
   dayLog = dayLog.filter(i => i.dishId !== id);
   renderOwnMealsList();
   renderMealPlan();
@@ -528,7 +570,7 @@ function addMealToLog() {
   const f = tot.gram > 0 ? gram / tot.gram : 0;
 
   dayLog.push({
-    logId: ++logIdCounter,
+    logId: newLogId(),
     dishId: _mpDish.id,
     name: dispName(_mpDish),
     icon: '🍽️',
@@ -543,6 +585,7 @@ function addMealToLog() {
   });
 
   closeMealPortionModal();
+  persistDayLog();
   updateMacroTotals();
   updateLogBadge();
 }
@@ -654,7 +697,7 @@ function addProductToLog() {
   if (!p || gram <= 0) return;
   const f = gram / 100;
   dayLog.push({
-    logId: ++logIdCounter,
+    logId: newLogId(),
     productId: p.id,
     name: dispName(p),
     icon: p.icon,
@@ -668,12 +711,14 @@ function addProductToLog() {
     type: 'product'
   });
   closePortionModal();
+  persistDayLog();
   updateMacroTotals();
   updateLogBadge();
 }
 
 function removeFromLog(logId) {
   dayLog = dayLog.filter(i => i.logId !== logId);
+  persistDayLog();
   renderDayLog();
   updateMacroTotals();
   updateLogBadge();
