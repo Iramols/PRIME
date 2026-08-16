@@ -557,6 +557,7 @@ const I18N = {
     'foodweek.copy.noMatchingDays': 'Geen enkele dag in deze periode komt overeen met je keuze.',
     'foodweek.copy.successOne': 'Gekopieerd naar 1 dag ✓',
     'foodweek.copy.successMany': 'Gekopieerd naar {n} dagen ✓',
+    'foodweek.copy.unexpectedError': 'Er ging iets mis bij het kopiëren: {msg}',
   },
   en: {
     'login.title': 'Log in to PRIME',
@@ -1093,6 +1094,7 @@ const I18N = {
     'foodweek.copy.noMatchingDays': 'No day in this period matches your selection.',
     'foodweek.copy.successOne': 'Copied to 1 day ✓',
     'foodweek.copy.successMany': 'Copied to {n} days ✓',
+    'foodweek.copy.unexpectedError': 'Something went wrong while copying: {msg}',
   }
 };
 

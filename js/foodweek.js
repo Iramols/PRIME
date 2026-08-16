@@ -155,8 +155,11 @@ function fwAddForDay(dateStr) {
 }
 
 // ─── Kopieer maaltijden naar een andere dag (of terugkerend naar meerdere) ──
+// Welke modus (simpel/geavanceerd) actief is, wordt bewust NIET in een eigen
+// variabele bijgehouden: fwConfirmCopy() leest de radio's .checked-status
+// altijd rechtstreeks uit de DOM, zodat een gemist onchange-event op een
+// mobiele browser niet tot verouderde/foute keuzes kan leiden.
 let fwCopySourceDate = null;
-let fwCopyMode = 'simple'; // 'simple' | 'advanced'
 
 function fwBuildDayChecks() {
   const wrap = document.getElementById('fwc-days-wrap');
@@ -170,7 +173,6 @@ function fwBuildDayChecks() {
 
 function fwOpenCopyModal(dateStr) {
   fwCopySourceDate = dateStr;
-  fwCopyMode = 'simple';
 
   document.getElementById('fwc-mode-simple').checked = true;
   document.getElementById('fwc-mode-advanced').checked = false;
@@ -194,7 +196,6 @@ function fwCloseCopyModal() {
 }
 
 function fwCopySetMode(mode) {
-  fwCopyMode = mode;
   document.getElementById('fwc-advanced-block').style.display = mode === 'advanced' ? 'block' : 'none';
 }
 
@@ -203,14 +204,32 @@ function fwCopySetEndMode(mode) {
   document.getElementById('fwc-weeks').disabled = mode !== 'weeks';
 }
 
+// Vangnet: als hier ooit toch iets onverwachts misgaat, krijgt de coach
+// altijd een zichtbare melding i.p.v. dat het kopiëren stil faalt.
 function fwConfirmCopy() {
+  try {
+    fwConfirmCopyInner();
+  } catch (e) {
+    console.error('fwConfirmCopy error:', e);
+    alert(t('foodweek.copy.unexpectedError', { msg: (e && e.message) || String(e) }));
+  }
+}
+
+function fwConfirmCopyInner() {
   if (!fwCopySourceDate) return;
   const source = foodDays[fwCopySourceDate] || [];
   if (!source.length) { alert(t('foodweek.copy.emptySource')); return; }
 
   let targets = [];
 
-  if (fwCopyMode === 'simple') {
+  // Lees de modus rechtstreeks van de radio in de DOM i.p.v. van een
+  // apart bijgehouden variabele: die zou alleen bijgewerkt worden via
+  // het onchange-event van de radio, wat op sommige mobiele browsers
+  // niet altijd betrouwbaar afvuurt. Zo blijft dit werken ongeacht of
+  // dat event raakte.
+  const isAdvanced = document.getElementById('fwc-mode-advanced').checked;
+
+  if (!isAdvanced) {
     const val = document.getElementById('fwc-simple-date').value;
     if (!val) { alert(t('foodweek.copy.chooseDate')); return; }
     targets = [val];
