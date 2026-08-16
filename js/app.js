@@ -4,6 +4,11 @@
 // en hergebruikt het daarna gewoon.
 let _toastTimer = null;
 function showToast(msg) {
+  // Laat een eventueel actief invoerveld los (bv. het datumveld van de
+  // kopieer-modal), zodat een mobiel toetsenbord meteen dichtklapt i.p.v.
+  // de melding te verbergen tot na de timeout.
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+
   let el = document.getElementById('toast');
   if (!el) {
     el = document.createElement('div');
@@ -14,7 +19,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
 // ========== NAVIGATIE ==========

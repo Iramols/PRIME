@@ -17,8 +17,12 @@
 body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(--charcoal); min-height: 100vh; }
 
 /* TOAST (korte succesmelding, bv. na kopiëren) */
+/* Bewust bovenaan i.p.v. onderin: onderin kan op mobiel precies achter
+   het toetsenbord verdwijnen (bv. na het invullen van een datumveld in
+   de kopieer-modal), waardoor de melding binnen de timeout nooit
+   zichtbaar wordt. Boven de sticky header (60px) is dat risico er niet. */
 .toast {
-  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(16px);
+  position: fixed; left: 50%; top: 72px; transform: translateX(-50%) translateY(-12px);
   background: var(--sage); color: var(--white); padding: 12px 20px; border-radius: 12px;
   font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
   box-shadow: var(--shadow); z-index: 500; opacity: 0; pointer-events: none;
