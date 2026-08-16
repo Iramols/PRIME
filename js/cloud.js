@@ -66,7 +66,15 @@ async function hydrateFromCloud(clientId) {
 // slaat lokaal op (voor directe herlees-snelheid) én synchroniseert async
 // naar Supabase voor de actieve klant.
 function syncSet(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    // Bv. QuotaExceededError als de lokale opslag van de browser vol zit
+    // (5-10MB per site). Laat dit bewust NIET de aanroeper laten crashen
+    // — de cloud-sync hieronder heeft die beperking niet en kan de data
+    // dus nog steeds veilig wegschrijven, ook al lukt de lokale cache niet.
+    console.error('localStorage.setItem faalde voor ' + key + ':', e);
+  }
 
   if (!CLOUD_KEYS.includes(key)) return;
   if (!activeClientId) return; // nog niet ingelogd/gehydrateerd

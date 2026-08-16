@@ -148,6 +148,11 @@ function init() {
   // Laad eigen foto's van coach als eerste stap
   applyCustomPhotos();
 
+  // Eenmalige opschoning: verwijder eventuele al opgeslagen foto's uit
+  // foodDays van vóór deze wijziging (konden de localStorage-quota
+  // opvullen). Zie de toelichting bij stripPhotosFromFoodDays() in food.js.
+  stripPhotosFromFoodDays();
+
   // "Mijn dag" start altijd op vandaag, gevuld met wat er voor die datum
   // al eerder gelogd was (bv. via Weekplanning, of van eerder vandaag).
   switchLogDate(fdTodayStr());

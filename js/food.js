@@ -33,6 +33,30 @@ function persistDayLog() {
   syncSet('prime_food_days', foodDays);
 }
 
+// Eenmalige opschoning bij het opstarten: verwijdert eventuele al
+// opgeslagen foto's uit foodDays van vóór deze wijziging. Dat konden
+// grote data-URI's zijn (bij zelf geüploade producten/gerechten), die
+// bij elk gelogd item herhaald in localStorage stonden — met
+// Weekplanning die dezelfde dag naar meerdere andere dagen kan
+// kopiëren, liep de opslag daardoor snel vol (QuotaExceededError).
+// Idempotent (no-op zodra alles al opgeschoond is), dus veilig om bij
+// elke boot uit te voeren.
+function stripPhotosFromFoodDays() {
+  let changed = false;
+  Object.keys(foodDays).forEach(dateStr => {
+    (foodDays[dateStr] || []).forEach(item => {
+      // Alleen strippen als de foto ook echt live terug te vinden is
+      // via het bewaarde product/gerecht-id — anders zou de foto voor
+      // dat item helemaal verloren gaan.
+      if (item.photo !== undefined && (item.productId || item.dishId)) {
+        delete item.photo;
+        changed = true;
+      }
+    });
+  });
+  if (changed) syncSet('prime_food_days', foodDays);
+}
+
 function switchLogDate(dateStr) {
   currentLogDate = dateStr;
   dayLog = foodDays[dateStr] ? [...foodDays[dateStr]] : [];
@@ -574,7 +598,12 @@ function addMealToLog() {
     dishId: _mpDish.id,
     name: dispName(_mpDish),
     icon: '🍽️',
-    photo: _mpDish.photo || null,
+    // Bewust GEEN photo hier bewaren: die kan een grote data-URI zijn bij
+    // een zelf geüploade foto, en wordt bij elk gelogd item herhaald in
+    // localStorage — met Weekplanning die eenzelfde dag naar meerdere
+    // andere dagen kan kopiëren, liep de opslag daardoor snel vol
+    // (QuotaExceededError). De foto wordt nu live opgezocht via dishId,
+    // zie logItemPhoto().
     moment: _mpMoment,
     gram: Math.round(gram),
     kcal: Math.round(tot.kcal * f),
@@ -701,7 +730,8 @@ function addProductToLog() {
     productId: p.id,
     name: dispName(p),
     icon: p.icon,
-    photo: p.photo || null,
+    // Zie de toelichting bij addMealToLog(): geen photo hier bewaren,
+    // wordt live opgezocht via productId, zie logItemPhoto().
     moment: currentMoment,
     gram,
     kcal: Math.round(p.kcal * f),
@@ -748,6 +778,22 @@ function logItemDisplayName(item) {
   return item.name; // fallback: bv. verwijderd product/gerecht, of ouder logitem zonder id
 }
 
+// Zelfde live-opzoek-patroon als logItemDisplayName(), maar dan voor de
+// foto: die wordt bewust NIET in het logitem zelf bewaard (zie de
+// toelichting bij addProductToLog()/addMealToLog()), dus wordt hij hier
+// elke render opnieuw opgezocht via het bewaarde product/gerecht-id.
+function logItemPhoto(item) {
+  if (item.productId) {
+    const p = getAllProducts().find(x => x.id === item.productId);
+    if (p) return p.photo || null;
+  }
+  if (item.dishId) {
+    const d = customMeals.find(x => x.id === item.dishId);
+    if (d) return d.photo || null;
+  }
+  return item.photo || null; // fallback: ouder logitem van vóór deze wijziging
+}
+
 function renderDayLog() {
   const momentLabels = { ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('moment.avond'), snack:t('moment.snack') };
   const momentOrder = { ontbijt:0, lunch:1, avond:2, snack:3 };
@@ -779,10 +825,10 @@ function renderDayLog() {
     .map(([moment, items]) => `
       <div style="margin-bottom:18px">
         <div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">${momentLabels[moment]}</div>
-        ${items.map(item => `
+        ${items.map(item => { const photo = logItemPhoto(item); return `
           <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
-            ${item.photo
-              ? `<div style="width:80px;min-height:75px;background-image:url('${item.photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
+            ${photo
+              ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
               : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
             <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
               <div style="flex:1">
@@ -795,7 +841,7 @@ function renderDayLog() {
               <button onclick="removeFromLog(${item.logId})"
                 style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
             </div>
-          </div>`).join('')}
+          </div>`; }).join('')}
       </div>`).join('');
 
   const tot = dayLog.reduce((a,i) => ({ kcal:a.kcal+i.kcal, prot:a.prot+i.prot, carb:a.carb+i.carb, fat:a.fat+i.fat }), {kcal:0,prot:0,carb:0,fat:0});
