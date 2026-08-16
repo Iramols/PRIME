@@ -136,14 +136,17 @@ function fwRemoveItem(dateStr, logId) {
   const items = (foodDays[dateStr] || []).filter(i => i.logId !== logId);
   if (items.length) foodDays[dateStr] = items; else delete foodDays[dateStr];
   syncSet('prime_food_days', foodDays);
-  // Als deze datum toevallig ook de actieve log-datum is (bv. "Mijn dag"
-  // op vandaag), meteen bijwerken zodat alles synchroon blijft.
+
+  // Vanaf hier is het item al veilig verwijderd en opgeslagen; de rest is
+  // best-effort nazorg om het scherm bij te werken (zelfde patroon als
+  // fwConfirmCopyInner: een haperende ververs-stap mag de al gelukte
+  // verwijdering niet in de weg zitten).
   if (dateStr === currentLogDate) {
-    dayLog = items;
-    updateMacroTotals();
-    if (document.getElementById('day-log-list')) renderDayLog();
+    dayLog = [...items];
+    try { updateMacroTotals(); } catch (e) { console.error('updateMacroTotals na verwijderen:', e); }
+    try { if (document.getElementById('day-log-list')) renderDayLog(); } catch (e) { console.error('renderDayLog na verwijderen:', e); }
   }
-  renderFoodWeek();
+  try { renderFoodWeek(); } catch (e) { console.error('renderFoodWeek na verwijderen:', e); }
 }
 
 // Zet de actieve log-datum op deze dag en springt naar Basisproducten,
@@ -270,14 +273,25 @@ function fwConfirmCopyInner() {
     const existing = foodDays[dateStr] || [];
     foodDays[dateStr] = [...existing, ...copies];
     count++;
-    if (dateStr === currentLogDate) dayLog = foodDays[dateStr];
+    // Eigen kopie i.p.v. dezelfde array-referentie als foodDays[dateStr]
+    // (zelfde patroon als switchLogDate()): voorkomt dat een latere
+    // dayLog-mutatie ook meteen foodDays stiekem meeverandert.
+    if (dateStr === currentLogDate) dayLog = [...foodDays[dateStr]];
   });
 
   if (count === 0) { alert(t('foodweek.copy.noMatchingDays')); return; }
 
+  // Vanaf hier is de data al veilig gekopieerd en opgeslagen. Sluit de
+  // modal daarom EERST en onvoorwaardelijk, en behandel alles hierna
+  // (totalen bijwerken, het scherm verversen, de melding tonen) als
+  // losse, best-effort nazorg: als daar ooit iets in vastloopt, blijft
+  // de coach niet met een niet-sluitend venster zitten — de kopie zelf
+  // staat dan al goed, ook al ververst het scherm dan niet vanzelf.
   syncSet('prime_food_days', foodDays);
   fwCloseCopyModal();
-  updateMacroTotals();
-  renderFoodWeek();
-  showToast(count === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: count }));
+
+  const toastMsg = count === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: count });
+  try { updateMacroTotals(); } catch (e) { console.error('updateMacroTotals na kopieren:', e); }
+  try { renderFoodWeek(); } catch (e) { console.error('renderFoodWeek na kopieren:', e); }
+  try { showToast(toastMsg); } catch (e) { console.error('showToast na kopieren:', e); }
 }
