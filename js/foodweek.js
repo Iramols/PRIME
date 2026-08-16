@@ -260,4 +260,5 @@ function fwConfirmCopy() {
   fwCloseCopyModal();
   updateMacroTotals();
   renderFoodWeek();
+  showToast(count === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: count }));
 }

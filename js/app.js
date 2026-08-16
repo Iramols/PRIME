@@ -1,3 +1,22 @@
+// ========== TOAST (korte succesmelding) ==========
+// Generiek herbruikbaar over de hele app, bv. na het kopiëren van
+// maaltijden in Weekplanning. Bouwt het element bij eerste gebruik op
+// en hergebruikt het daarna gewoon.
+let _toastTimer = null;
+function showToast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
 // ========== NAVIGATIE ==========
 function go(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));

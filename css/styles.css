@@ -16,6 +16,16 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(--charcoal); min-height: 100vh; }
 
+/* TOAST (korte succesmelding, bv. na kopiëren) */
+.toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(16px);
+  background: var(--sage); color: var(--white); padding: 12px 20px; border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow); z-index: 500; opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease; max-width: calc(100% - 40px); text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 /* HEADER */
 .header {
   background: var(--white);
