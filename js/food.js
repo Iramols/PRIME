@@ -903,7 +903,7 @@ function renderLogItemCard(dateStr, item) {
           <div style="font-size:11px;color:var(--muted)">
             ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
           </div>
-          <div style="font-size:11px;color:var(--muted)">${t('food.macroAbbr.protein')}:${Math.round(item.prot)}g ${t('food.macroAbbr.carbs')}:${Math.round(item.carb)}g ${t('food.macroAbbr.fat')}:${Math.round(item.fat)}g</div>
+          <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
         <button onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})"
           style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>

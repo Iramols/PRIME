@@ -122,7 +122,7 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
       ${hasData
         ? `<div style="text-align:right">
              <div style="font-family:'DM Serif Display',serif;font-size:16px">${Math.round(tot.kcal)} kcal</div>
-             <div style="font-size:10px;color:var(--muted)">${t('food.macroAbbr.protein')}${Math.round(tot.prot)} · ${t('food.macroAbbr.carbs')}${Math.round(tot.carb)} · ${t('food.macroAbbr.fat')}${Math.round(tot.fat)}</div>
+             <div style="font-size:10px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(tot.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(tot.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(tot.fat)}g</div>
            </div>`
         : `<div style="font-size:12px;color:var(--muted)">${t('foodweek.notFilledIn')}</div>`}
       <span style="font-size:11px;color:var(--muted);margin-left:8px;flex-shrink:0">${isOpen ? '▴' : '▾'}</span>
