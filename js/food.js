@@ -992,15 +992,19 @@ function updateHomeMacros() {
 
   const macros = [
     { label:t('food.nutrient.calories'), val:Math.round(tot.kcal), doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
-    { label:t('food.nutrient.carbs'), val:Math.round(tot.carb), doel:doel.carb, unit:'g.', color:'#E91E8C' },
     { label:t('food.nutrient.protein'), val:Math.round(tot.prot), doel:doel.prot, unit:'g.', color:'#2196F3' },
+    { label:t('food.nutrient.carbs'), val:Math.round(tot.carb), doel:doel.carb, unit:'g.', color:'#E91E8C' },
     { label:t('food.nutrient.fat'), val:Math.round(tot.fat), doel:doel.fat, unit:'g.', color:'#FF5722' },
   ];
 
   el.innerHTML = macros.map(m => {
     const pct = Math.min(100, Math.round(m.val / m.doel * 100));
     const ratio = m.val / m.doel;
-    const fillColor = ratio > 1.1 ? '#E24B4A' : ratio >= 0.85 ? m.color : '#EF9F27';
+    // Elke balk toont z'n eigen vaste kleur, ongeacht voortgang — alleen
+    // duidelijk over-doel (>110%) krijgt de rode waarschuwingskleur.
+    // Voorheen werd alles onder 85% uniform oranje, waardoor de balken
+    // niet meer van elkaar te onderscheiden waren.
+    const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
     const rmin = Math.round(m.doel * 0.9);
     const rmax = Math.round(m.doel * 1.1);
     return `
@@ -1044,10 +1048,10 @@ function updateMacroTotals() {
   const macros = [
     { valId:'f-kcal', barId:'bar-kcal', pctId:'pct-kcal', doelId:'doel-kcal',
       val: tot.kcal, doel: doel.kcal, unit:'kcal', color:'#4CAF50' },
-    { valId:'f-carb', barId:'bar-carb', pctId:'pct-carb', doelId:'doel-carb',
-      val: tot.carb, doel: doel.carb, unit:'g.', color:'#E91E8C' },
     { valId:'f-prot', barId:'bar-prot', pctId:'pct-prot', doelId:'doel-prot',
       val: tot.prot, doel: doel.prot, unit:'g.', color:'#2196F3' },
+    { valId:'f-carb', barId:'bar-carb', pctId:'pct-carb', doelId:'doel-carb',
+      val: tot.carb, doel: doel.carb, unit:'g.', color:'#E91E8C' },
     { valId:'f-fat',  barId:'bar-fat',  pctId:'pct-fat',  doelId:'doel-fat',
       val: tot.fat,  doel: doel.fat,  unit:'g.', color:'#FF5722' },
   ];
@@ -1057,8 +1061,11 @@ function updateMacroTotals() {
     const pct = Math.min(100, Math.round(m.val / m.doel * 100));
     const ratio = m.val / m.doel;
 
-    // Kleur: groen op doel, rood te veel, oranje te weinig
-    const fillColor = ratio > 1.1 ? '#E24B4A' : ratio >= 0.85 ? m.color : '#EF9F27';
+    // Elke balk toont z'n eigen vaste kleur, ongeacht voortgang — alleen
+    // duidelijk over-doel (>110%) krijgt de rode waarschuwingskleur.
+    // Voorheen werd alles onder 85% uniform oranje, waardoor de balken
+    // niet meer van elkaar te onderscheiden waren.
+    const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
 
     document.getElementById(m.valId).textContent = `${m.val} ${m.unit}`;
     document.getElementById(m.barId).style.width = pct + '%';
