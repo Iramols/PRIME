@@ -587,6 +587,13 @@ const PRODUCTS = [
   { id:'o21', name:'Cacao nibs', name_en:'Cacao nibs', icon:'🍫', cat:'overig', kcal:488, prot:13.4, carb:2.5, fat:47.2, photo:'images/producten/o21.jpg'},
 ];
 
+// Cache-busting: elke keer dat een productfoto vervangen wordt, dit nummer ophogen.
+// data.js zelf wordt al bij elke paginalaad vers opgehaald (zie _appScriptsCacheBust in
+// auth.js), dus deze versie-toevoeging aan elk foto-pad zorgt dat de browser de nieuwe
+// foto ook meteen ophaalt i.p.v. een oude, gecachete versie te blijven tonen.
+const PRODUCT_PHOTO_VERSION = 2;
+PRODUCTS.forEach(p => { if (p.photo) p.photo += '?v=' + PRODUCT_PHOTO_VERSION; });
+
 // ========== INGEBOUWDE PROGRAMMA'S ==========
 const BUILTIN_PROGRAMMAS = [
   {
