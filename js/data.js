@@ -502,7 +502,8 @@ const PRODUCTS = [
   { id:'v17', name:'Herten/runderhamburger', name_en:'Venison/beef burger', icon:'🍔', cat:'vlees', kcal:176, prot:20, carb:2, fat:9.8, photo:'images/producten/v17.jpg'},
   { id:'v18', name:'Kipshoarma', name_en:'Chicken shoarma', icon:'🍗', cat:'vlees', kcal:92, prot:19, carb:0, fat:1.8, photo:'images/producten/v18.jpg'},
   // VIS
-  { id:'f1', name:'Zalm', name_en:'Salmon', icon:'🐟', cat:'vis', kcal:215, prot:24, carb:0, fat:13.2, photo:'images/producten/f1.jpg'},
+  { id:'f1', name:'Kweekzalm', name_en:'Farmed salmon', icon:'🐟', cat:'vis', kcal:225, prot:18, carb:0, fat:17, photo:'images/producten/f1.jpg'},
+  { id:'f13', name:'Wilde zalm', name_en:'Wild salmon', icon:'🐟', cat:'vis', kcal:123, prot:24, carb:0, fat:3, photo:'images/producten/f13.jpg'},
   { id:'f2', name:'Tonijn (blik, water)', name_en:'Tuna (canned, water)', icon:'🐟', cat:'vis', kcal:84, prot:19, carb:0, fat:0.5, photo:'images/producten/f2.jpg'},
   { id:'f3', name:'Kabeljauw', name_en:'Cod', icon:'🐠', cat:'vis', kcal:82, prot:18, carb:0, fat:0.7, photo:'images/producten/f3.jpg'},
   { id:'f4', name:'Tilapia', name_en:'Tilapia', icon:'🐠', cat:'vis', kcal:96, prot:20, carb:0, fat:1.7, photo:'images/producten/f4.jpg'},
