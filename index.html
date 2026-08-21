@@ -375,16 +375,16 @@
 
     <!-- TABS: MAALTIJDPLAN / BASISPRODUCTEN -->
     <div class="food-tabs">
-      <button class="food-tab" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
+      <button class="food-tab active" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
       <button class="food-tab" id="tab-week" onclick="switchFoodTab('week')" data-i18n="food.tab.week">Weekplanning</button>
       <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
-      <button class="food-tab active" id="tab-plan" onclick="switchFoodTab('plan')" data-i18n="food.tab.plan">Maaltijdplan</button>
+      <button class="food-tab" id="tab-plan" onclick="switchFoodTab('plan')" data-i18n="food.tab.plan">Maaltijdplan</button>
       <button class="food-tab" id="tab-add" onclick="switchFoodTab('add')" data-i18n="food.tab.add">+ Product toevoegen</button>
       <button class="food-tab" id="tab-addmeal" onclick="switchFoodTab('addmeal')" data-i18n="food.tab.addMeal">+ Gerecht toevoegen</button>
     </div>
 
     <!-- TAB: MAALTIJDPLAN -->
-    <div id="foodtab-plan">
+    <div id="foodtab-plan" style="display:none">
       <div id="meal-count" style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
       <div id="meal-plan"></div>
     </div>
@@ -415,7 +415,7 @@
     </div>
 
     <!-- TAB: MIJN DAG LOG -->
-    <div id="foodtab-log" style="display:none">
+    <div id="foodtab-log">
       <div id="day-log-empty" style="text-align:center;padding:24px 20px;color:var(--muted);font-size:14px">
         <div style="margin-bottom:16px" data-i18n="food.log.empty">Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.</div>
         <button class="btn-sm" style="width:100%" onclick="switchFoodTab('basis')" data-i18n="foodweek.addForDay">+ Voeding toevoegen</button>
