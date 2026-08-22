@@ -86,7 +86,7 @@ const I18N = {
     // Training
     'training.cardLabel': 'Training',
     'training.today': 'Vandaag',
-    'training.tab.day': 'Mijn dag',
+    'training.tab.day': 'Vandaag',
     'training.tab.exercises': 'Losse oefeningen',
     'training.tab.schemas': "Dagschema's",
     'training.tab.programs': "Weekprogramma's",
@@ -640,7 +640,7 @@ const I18N = {
 
     'training.cardLabel': 'Training',
     'training.today': 'Today',
-    'training.tab.day': 'My day',
+    'training.tab.day': 'Today',
     'training.tab.exercises': 'Individual exercises',
     'training.tab.schemas': 'Day schedules',
     'training.tab.programs': 'Week programs',
