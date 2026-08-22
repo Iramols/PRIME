@@ -351,9 +351,10 @@ function renderTrainingDag() {
     dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(i);
   });
 
-  function exCard(ex, onRemove, isDoneOverride, checkClickOverride) {
+  function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId) {
     const isDone = isDoneOverride !== undefined ? isDoneOverride : dagDone[ex.id];
-    const checkClick = checkClickOverride || "toggleDagDone('" + ex.id + "')";
+    const checkClick = (openDetailId ? 'event.stopPropagation();' : '') + (checkClickOverride || "toggleDagDone('" + ex.id + "')");
+    const cardClick = openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\" style=\"cursor:pointer\"" : '';
     let _photo = ex.photo;
     if (!_photo) {
       const _f = findCanonicalExercise(ex.name || ex.naam);
@@ -362,7 +363,7 @@ function renderTrainingDag() {
     const photoDiv = _photo
       ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(\'' + _photo + '\');background-size:cover;background-position:center"></div>'
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
-    return '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
+    return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
       + photoDiv
       + '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px">'
       + '<div style="flex:1">'
@@ -372,7 +373,7 @@ function renderTrainingDag() {
           if (!st) { var f = findCanonicalExercise(ex.name || ex.naam); if (f && f.stappen) st = dispField(f,'stappen'); }
           return st ? st : (ex.sets ? ex.sets + ' ' + t('programmas.setsAbbr') + ' \xD7 ' + (ex.reps||'') + (ex.rest||ex.rust ? ' \xB7 ' + t('training.restLabel') + ' ' + (ex.rest||ex.rust) : '') : (ex.reps||''));
         })() + '</div>'
-      + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
+      + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
       + '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div>'
@@ -416,8 +417,9 @@ function renderTrainingDag() {
       html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">💪 ' + groupLabel + '</div>';
       groups[group].forEach(function(ex) {
         html += exCard(ex,
-          '<button onclick="editExtraSets(\'' + ex.id + '\')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);cursor:pointer">✏️</button>'
-          + '<button onclick="removeExtraDag(\'' + ex.id + '\')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>'
+          '<button onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);cursor:pointer">✏️</button>'
+          + '<button onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>',
+          undefined, undefined, ex.id
         );
       });
       html += '</div>';
@@ -442,17 +444,6 @@ function removeExtraDag(exId) {
   sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
   renderTrainingDag();
   updateTrainingDagBadge();
-}
-
-function editExtraSets(exId) {
-  const ex = trainingDagLog.find(e => e.id === exId);
-  if (!ex) return;
-  const newSets = prompt(t('training.promptSets', { name: dispName(ex) }), ex.sets);
-  const newReps = prompt(t('training.promptReps', { name: dispName(ex) }), ex.reps);
-  if (newSets !== null) ex.sets = newSets;
-  if (newReps !== null) ex.reps = newReps;
-  // niet opslaan — reset elke sessie
-  renderTrainingDag();
 }
 
 function initSchemaEx() {
