@@ -358,7 +358,7 @@ function renderTrainingDag() {
   function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId) {
     const isDone = isDoneOverride !== undefined ? isDoneOverride : dagDone[ex.id];
     const checkClick = (openDetailId ? 'event.stopPropagation();' : '') + (checkClickOverride || "toggleDagDone('" + ex.id + "')");
-    const cardClick = openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\" style=\"cursor:pointer\"" : '';
+    const cardClick = openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\"" : '';
     let _photo = ex.photo;
     if (!_photo) {
       const _f = findCanonicalExercise(ex.name || ex.naam);
@@ -367,7 +367,7 @@ function renderTrainingDag() {
     const photoDiv = _photo
       ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(\'' + _photo + '\');background-size:cover;background-position:center"></div>'
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
-    return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
+    return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;' + (openDetailId ? 'cursor:pointer' : '') + '">'
       + photoDiv
       + '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px">'
       + '<div style="flex:1">'
