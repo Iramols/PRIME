@@ -139,18 +139,22 @@ function renderExtraExercises() {
         <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--charcoal)">${dispField(group,'group')}</div>
         <div style="flex:1;height:1px;background:var(--sand-dark);margin-left:8px"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+      <div>
         ${group.exercises.map(ex => {
           const inDag = trainingDagLog.find(e => e.id === ex.id);
           const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
           return `
-            <div class="ex-option-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" ondblclick="openExerciseDetail('${ex.id}')" style="cursor:pointer;padding:0 0 10px 0">
-              <div class="ex-option-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
-              ${ex.photo ? `<div class="ex-option-photo" style="background-image:url('${ex.photo}')"></div>` : `<div style="font-size:28px;text-align:center;padding:14px 8px 8px">${ex.icon}</div>`}
-              <div style="font-size:12px;font-weight:600;padding:0 8px;margin-bottom:3px;line-height:1.3">${dispName(ex)}</div>
-              <div style="font-size:10px;color:var(--muted);padding:0 8px">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
-              <a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" style="display:block;padding:4px 8px 0;font-size:10px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>
-              <button class="ex-detail-btn ${hasDetail ? 'has-data' : ''}" onclick="event.stopPropagation();openExerciseDetail('${ex.id}')">📝 ${t('extra.detail.editBtn')}</button>
+            <div class="ex-extra-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" ondblclick="openExerciseDetail('${ex.id}')">
+              <div class="ex-extra-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
+              ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon}</div>`}
+              <div class="ex-extra-body">
+                <div class="ex-extra-name">${dispName(ex)}</div>
+                <div class="ex-extra-meta">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
+                <a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" class="ex-extra-video">▶ Video</a>
+              </div>
+              <button class="ex-detail-btn ${hasDetail ? 'has-data' : ''}" onclick="event.stopPropagation();openExerciseDetail('${ex.id}')">
+                <span class="ex-detail-icon">📝</span><span class="ex-detail-label">${t('extra.detail.editBtn')}</span>
+              </button>
             </div>`;
         }).join('')}
       </div>
