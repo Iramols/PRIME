@@ -380,7 +380,9 @@ function renderTrainingDag() {
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-      + '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div>'
+      + (openDetailId
+          ? '<div class="ex-check-wrap"><div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
+          : '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div>')
       + onRemove
       + '</div>'
       + '</div></div>';
@@ -420,8 +422,10 @@ function renderTrainingDag() {
       const groupLabel = groupMeta ? dispField(groupMeta, 'group') : group;
       html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">💪 ' + groupLabel + '</div>';
       groups[group].forEach(function(ex) {
+        const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
         html += exCard(ex,
-          '<button onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')" style="font-size:11px;padding:4px 8px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);cursor:pointer">✏️</button>'
+          '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')">'
+          + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
           + '<button onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>',
           undefined, undefined, ex.id
         );

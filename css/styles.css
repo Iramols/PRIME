@@ -304,6 +304,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .ex-option-card.selected .ex-option-sel, .ex-option-card.is-default .ex-option-sel { background: var(--sage); color: white; }
 .ex-option-emoji { font-size: 36px; text-align: center; padding: 16px 8px 8px; display: block; }
 .ex-option-photo { width: 100%; height: 85px; background-size: cover; background-position: center; background-color: var(--sand-dark); margin-bottom: 8px; }
+.ex-check-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ex-check-label { font-size: 9px; font-weight: 600; color: var(--muted); white-space: nowrap; line-height: 1.2; }
 
 /* Losse oefeningen (renderExtraExercises): rij-layout, foto naast de tekst i.p.v. erboven */
 .ex-extra-card { display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; position: relative; background: var(--white); user-select: none; }
