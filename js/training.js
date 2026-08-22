@@ -144,7 +144,7 @@ function renderExtraExercises() {
           const inDag = trainingDagLog.find(e => e.id === ex.id);
           const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
           return `
-            <div class="ex-option-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" style="cursor:pointer;padding:0 0 10px 0">
+            <div class="ex-option-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" ondblclick="openExerciseDetail('${ex.id}')" style="cursor:pointer;padding:0 0 10px 0">
               <div class="ex-option-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
               ${ex.photo ? `<div class="ex-option-photo" style="background-image:url('${ex.photo}')"></div>` : `<div style="font-size:28px;text-align:center;padding:14px 8px 8px">${ex.icon}</div>`}
               <div style="font-size:12px;font-weight:600;padding:0 8px;margin-bottom:3px;line-height:1.3">${dispName(ex)}</div>
