@@ -850,6 +850,29 @@
   </div>
 </div>
 
+<!-- EXERCISE DETAIL MODAL (sets, herhalingen, rust, notities per losse oefening) -->
+<div class="portion-modal-wrap" id="exercise-detail-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div class="portion-product-name" id="ed-name">Oefening</div>
+      <button onclick="closeExerciseDetail()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <div class="ed-photo-wrap" id="ed-photo-wrap"></div>
+    <div class="ed-field-label" data-i18n="extra.detail.setsLabel">Sets</div>
+    <div class="ed-set-grid ed-set-head">
+      <span></span>
+      <span data-i18n="extra.detail.reps">Herhalingen</span>
+      <span data-i18n="extra.detail.rest">Rust (sec)</span>
+    </div>
+    <div id="ed-sets"></div>
+    <button class="ed-add-set" onclick="edAddSet()" data-i18n="extra.detail.addSet">+ Set toevoegen</button>
+    <div class="divider" style="margin:20px 0"></div>
+    <div class="ed-field-label" data-i18n="extra.detail.notesLabel">Notities</div>
+    <textarea id="ed-notes" class="ed-notes" data-i18n-placeholder="extra.detail.notesPlaceholder" placeholder="Schrijf een notitie..."></textarea>
+    <button class="btn-primary" style="margin-top:16px" onclick="saveExerciseDetail()" data-i18n="extra.detail.save">Opslaan</button>
+  </div>
+</div>
+
 <!-- COPY MEALS MODAL (Weekplanning: dag kopiëren naar andere dag(en)) -->
 <div class="portion-modal-wrap" id="foodcopy-modal">
   <div class="portion-modal">

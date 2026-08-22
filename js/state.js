@@ -28,6 +28,8 @@ let dayLog = []; // logitems van de actief geselecteerde datum (zie currentLogDa
 let logIdCounter = 0;
 let customProducts = JSON.parse(localStorage.getItem('prime_custom_products') || '[]');
 let customMeals = JSON.parse(localStorage.getItem('prime_custom_meals') || '[]');
+// Sets/herhalingen/rust/notities per losse oefening: { '<ex-id>': { sets:[{reps,rest}], notes:'' } }.
+let exerciseNotes = JSON.parse(localStorage.getItem('prime_exercise_notes') || '{}');
 
 // Voeding per datum (t.b.v. Weekplanning): { 'YYYY-MM-DD': [logitem, ...] }.
 // dayLog is altijd de array voor currentLogDate — zie switchLogDate() in food.js.

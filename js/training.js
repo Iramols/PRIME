@@ -142,6 +142,7 @@ function renderExtraExercises() {
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
         ${group.exercises.map(ex => {
           const inDag = trainingDagLog.find(e => e.id === ex.id);
+          const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
           return `
             <div class="ex-option-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" style="cursor:pointer;padding:0 0 10px 0">
               <div class="ex-option-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
@@ -149,11 +150,96 @@ function renderExtraExercises() {
               <div style="font-size:12px;font-weight:600;padding:0 8px;margin-bottom:3px;line-height:1.3">${dispName(ex)}</div>
               <div style="font-size:10px;color:var(--muted);padding:0 8px">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
               <a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" style="display:block;padding:4px 8px 0;font-size:10px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>
+              <button class="ex-detail-btn ${hasDetail ? 'has-data' : ''}" onclick="event.stopPropagation();openExerciseDetail('${ex.id}')">📝 ${t('extra.detail.editBtn')}</button>
             </div>`;
         }).join('')}
       </div>
     </div>
   `).join('');
+}
+
+// ========== OEFENING-DETAIL (sets, herhalingen, rust, notities) ==========
+let _edExerciseId = null;
+let _edSets = [];
+
+function findExtraExercise(exId) {
+  for (const group of EXTRA_EXERCISES) {
+    const found = group.exercises.find(e => e.id === exId);
+    if (found) return found;
+  }
+  return null;
+}
+
+// Zet een rust-label uit de vaste data ('90 sec', '3 min', '—') om naar een
+// kaal getal in seconden voor het invoerveld. Onbekende/lege labels blijven leeg.
+function restLabelToSeconds(label) {
+  if (!label) return '';
+  const secMatch = label.match(/^(\d+)\s*sec$/i);
+  if (secMatch) return secMatch[1];
+  const minMatch = label.match(/^(\d+)\s*min$/i);
+  if (minMatch) return String(Number(minMatch[1]) * 60);
+  return '';
+}
+
+function openExerciseDetail(exId) {
+  const ex = findExtraExercise(exId);
+  if (!ex) return;
+  _edExerciseId = exId;
+  const saved = exerciseNotes[exId];
+  if (saved && saved.sets && saved.sets.length) {
+    _edSets = saved.sets.map(s => ({ ...s }));
+  } else {
+    const n = Number(ex.sets) || 1;
+    const defaultReps = dispField(ex, 'reps') || '';
+    const defaultRest = restLabelToSeconds(ex.rest);
+    _edSets = Array.from({ length: n }, () => ({ reps: defaultReps, rest: defaultRest }));
+  }
+  document.getElementById('ed-name').textContent = dispName(ex);
+  document.getElementById('ed-photo-wrap').innerHTML = ex.photo
+    ? `<img src="${ex.photo}" alt="${dispName(ex)}">`
+    : `<div style="font-size:48px;text-align:center;padding:40px 0">${ex.icon}</div>`;
+  document.getElementById('ed-notes').value = (saved && saved.notes) || '';
+  edRenderSets();
+  document.getElementById('exercise-detail-modal').classList.add('open');
+}
+
+function closeExerciseDetail() {
+  document.getElementById('exercise-detail-modal').classList.remove('open');
+  _edExerciseId = null;
+}
+
+function edRenderSets() {
+  const el = document.getElementById('ed-sets');
+  el.innerHTML = _edSets.map((s, i) => `
+    <div class="ed-set-row">
+      <div class="ed-set-grid" style="flex:1">
+        <div class="ed-set-num">${i + 1}</div>
+        <input class="ed-set-input" type="text" value="${s.reps.replace(/"/g,'&quot;')}" oninput="_edSets[${i}].reps=this.value">
+        <input class="ed-set-input" type="text" value="${s.rest.replace(/"/g,'&quot;')}" oninput="_edSets[${i}].rest=this.value">
+      </div>
+      ${_edSets.length > 1 ? `<button class="ed-rm-btn" onclick="edRemoveSet(${i})" title="${t('extra.detail.removeSet')}">×</button>` : `<span style="width:20px;flex-shrink:0"></span>`}
+    </div>`).join('');
+}
+
+function edAddSet() {
+  const last = _edSets[_edSets.length - 1];
+  _edSets.push({ reps: last ? last.reps : '', rest: last ? last.rest : '' });
+  edRenderSets();
+}
+
+function edRemoveSet(i) {
+  _edSets.splice(i, 1);
+  edRenderSets();
+}
+
+function saveExerciseDetail() {
+  if (!_edExerciseId) return;
+  const notes = document.getElementById('ed-notes').value.trim();
+  exerciseNotes[_edExerciseId] = { sets: _edSets.map(s => ({ ...s })), notes };
+  syncSet('prime_exercise_notes', exerciseNotes);
+  closeExerciseDetail();
+  try { renderExtraExercises(); } catch(e) { console.error(e); }
+  try { showToast(t('extra.detail.saved')); } catch(e) { console.error(e); }
 }
 
 function toggleExtraDag(exId) {
