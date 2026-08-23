@@ -339,12 +339,15 @@ function restLabelToSeconds(label) {
 }
 
 // Als gezet, wordt dit i.p.v. het standaard exerciseNotes-pad gebruikt om op
-// te slaan -- zo kan hetzelfde detailscherm ook oefeningen binnen een
-// programmadag (Weekprogramma's) bewerken, zie openExerciseDetailGeneric().
+// te slaan -- zodat hetzelfde detailscherm ook los van een concreet
+// oefening-id gebruikt kan worden, zie openExerciseDetailGeneric() hieronder.
+// (Weekprogramma's heeft zijn eigen, inline sets/notities-paneel in
+// programmas.js en gebruikt dit mechanisme niet meer, maar het blijft
+// beschikbaar voor vergelijkbare toekomstige schermen.)
 let _edSaveCallback = null;
 
 // Generieke opener voor het sets/notities-scherm, losstaand van een concreet
-// oefening-id. Gebruikt door progOefOpenDetail() (Weekprogramma's).
+// oefening-id.
 function openExerciseDetailGeneric(opts) {
   _edExerciseId = null;
   _edSaveCallback = opts.onSave;

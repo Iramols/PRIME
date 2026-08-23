@@ -1,7 +1,8 @@
 // ========== PROGRAMMA'S ==========
 let progLijst = [];
 let progActiefId = null;
-let progActiefDagIdx = null;
+let progActiefDagIdx = null;   // welke dag is geselecteerd in kolom 1
+let progSelectedOefIdx = null; // welke oefening is geselecteerd in kolom 2 (detail in kolom 3)
 let progBibliotheekOpen = false;
 
 const PROG_DAGEN_KORT = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
@@ -28,13 +29,7 @@ function renderProgrammas() {
   progLaadData();
   const el = document.getElementById('programmas-content');
   if (!el) return;
-  if (progActiefDagIdx !== null) {
-    el.innerHTML = progBouwDagEditor();
-  } else if (progActiefId !== null) {
-    el.innerHTML = progBouwProgEditor();
-  } else {
-    el.innerHTML = progBouwLijst();
-  }
+  el.innerHTML = progActiefId !== null ? progBouw3ColEditor() : progBouwLijst();
 }
 
 // ─── Lijst ───────────────────────────────────────────────────────────────────
@@ -77,135 +72,154 @@ function progBouwLijst() {
     '<button class="btn-primary" style="width:100%" onclick="progNieuw()">' + t('programmas.new') + '</button>';
 }
 
-// ─── Programma editor ────────────────────────────────────────────────────────
+// ─── Programma editor: dagen | oefeningen | detail naast elkaar ──────────────
 // Dagen zijn een vrije, oplopende reeks ('Dag 1', 'Dag 2', ...) i.p.v. vast
 // gekoppeld aan kalenderweekdagen -- een programma kan zo een trainingscyclus
 // van elke gewenste lengte zijn (bv. een 4-daagse split of een 11-daags blok).
-function progBouwProgEditor() {
+function progBouw3ColEditor() {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) { progActiefId = null; return progBouwLijst(); }
   if (!prog.dagen) prog.dagen = {};
 
   const dagIndexen = Object.keys(prog.dagen).map(Number).sort((a,b) => a-b);
-  const dagRijen = dagIndexen.map(i => {
+  if (progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) {
+    progActiefDagIdx = dagIndexen.length ? dagIndexen[0] : null;
+    progSelectedOefIdx = null;
+  }
+  const geselecteerdeDag = progActiefDagIdx !== null ? prog.dagen[progActiefDagIdx] : null;
+  const oefeningen = geselecteerdeDag ? (geselecteerdeDag.oefeningen || []) : [];
+  if (progSelectedOefIdx === null || progSelectedOefIdx >= oefeningen.length) {
+    progSelectedOefIdx = oefeningen.length ? 0 : null;
+  }
+  const geselecteerdeOef = progSelectedOefIdx !== null ? oefeningen[progSelectedOefIdx] : null;
+
+  // Kolom 1: dagen
+  const dagRijenHtml = dagIndexen.map(i => {
     const dag = prog.dagen[i];
     const naam = (dag.naam_en && currentLang === 'en') ? dag.naam_en : (dag.naam || '');
-    const aantalOef = (dag.oefeningen || []).length;
-    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:10px;border:1.5px solid var(--sage);background:var(--sage-light)">' +
-      '<div style="width:52px;font-size:12px;font-weight:700;color:var(--sage);flex-shrink:0">' + t('programmas.dayLabel', { n: i + 1 }) + '</div>' +
-      '<div style="flex:1;min-width:0">' +
-      '<div style="font-size:13px;font-weight:600;color:var(--charcoal)">' + (naam || t('programmas.dayLabel', { n: i + 1 })) + '</div>' +
-      '<div style="font-size:11px;color:var(--muted)">' + aantalOef + ' ' + (aantalOef !== 1 ? t('programmas.exercisesPlural') : t('programmas.exerciseSingular')) + '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:6px;flex-shrink:0">' +
-      '<button class="btn-sm" onclick="progDagBewerken(' + i + ')">' + t('common.edit') + '</button>' +
-      '<button class="btn-sm" style="color:var(--accent)" onclick="progDagVerwijder(' + i + ')">&#x2715;</button>' +
-      '</div>' +
+    const isActief = i === progActiefDagIdx;
+    return '<div class="prog-list-row' + (isActief ? ' active' : '') + '" onclick="progDagSelecteer(' + i + ')">' +
+      '<span>' + t('programmas.dayLabel', { n: i + 1 }) + (naam ? ' – ' + naam : '') + '</span>' +
+      '<button class="prog-list-row-remove" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' +
       '</div>';
   }).join('');
 
-  return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">' +
-    '<button onclick="progTerugNaarLijst()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);cursor:pointer;font-size:13px;font-family:\'DM Sans\',sans-serif">' + t('common.back') + '</button>' +
-    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + t('programmas.editTitle') + '</div>' +
+  // Kolom 2: oefeningen van de geselecteerde dag
+  let oefRijenHtml;
+  if (!geselecteerdeDag) {
+    oefRijenHtml = '<div class="prog-list-empty">' + t('programmas.selectDayHint') + '</div>';
+  } else if (!oefeningen.length) {
+    oefRijenHtml = '<div class="prog-list-empty">' + t('programmas.noExercisesHint') + '</div>';
+  } else {
+    oefRijenHtml = oefeningen.map((oef, i) => {
+      const canonical = findCanonicalExercise(oef.naam);
+      const photo = canonical ? canonical.photo : null;
+      const isActief = i === progSelectedOefIdx;
+      const meta = oef.stappen ? oef.stappen : (oef.sets ? oef.sets + '\xD7 ' + (oef.reps || '') : (oef.reps || ''));
+      return '<div class="prog-list-row prog-oef-row' + (isActief ? ' active' : '') + '" onclick="progSelectOef(' + i + ')">' +
+        (photo
+          ? '<div class="prog-oef-thumb" style="background-image:url(\'' + photo + '\')"></div>'
+          : '<div class="prog-oef-thumb prog-oef-thumb-icon">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>') +
+        '<div class="prog-oef-info"><div class="prog-oef-name">' + (oef.naam || t('programmas.exercisePlaceholder')) + '</div><div class="prog-oef-meta">' + meta + '</div></div>' +
+        '<button class="prog-list-row-remove" onclick="event.stopPropagation();progOefVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  // Kolom 3: sets/notities-detail van de geselecteerde oefening
+  const detailHtml = geselecteerdeOef
+    ? progBouwOefDetail(geselecteerdeOef)
+    : '<div class="prog-list-empty" style="padding:60px 10px">' + t('programmas.selectExerciseHint') + '</div>';
+
+  return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">' +
+    '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
+    '<input type="text" id="prog-naam-input" class="prog-title-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" onchange="progNaamBijwerken(this.value)">' +
     '</div>' +
-    '<div class="card" style="margin-bottom:14px">' +
-    '<label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">' + t('programmas.nameLabel') + '</label>' +
-    '<input type="text" id="prog-naam-input" value="' + prog.naam.replace(/"/g,'&quot;') + '"' +
-    ' style="width:100%;padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;' +
-    'font-family:\'DM Sans\',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;box-sizing:border-box"' +
-    ' oninput="progNaamBijwerken(this.value)">' +
+    '<div class="prog-3col">' +
+
+    '<div class="prog-col">' +
+    '<div class="prog-col-head"><span>' + t('programmas.trainingDays') + '</span>' +
+    '<button class="prog-col-add" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button></div>' +
+    '<div class="prog-col-body">' + dagRijenHtml + '</div>' +
     '</div>' +
-    '<div class="card-label" style="margin-bottom:10px">' + t('programmas.trainingDays') + '</div>' +
-    dagRijen +
-    '<button class="btn-primary" style="width:100%;margin-top:4px" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button>';
+
+    '<div class="prog-col">' +
+    '<div class="prog-col-head">' +
+    (geselecteerdeDag
+      ? '<input type="text" class="prog-day-title-input" value="' + (geselecteerdeDag.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.dayLabel', { n: progActiefDagIdx + 1 }) + '" onchange="progDagNaamBijwerken(this.value)">'
+      : '<span>' + t('programmas.exercisesLabel') + '</span>') +
+    (geselecteerdeDag
+      ? '<div style="display:flex;gap:6px;flex-shrink:0"><button class="prog-col-add" onclick="progOefToevoegen()">+</button>' +
+        '<button class="prog-col-add" style="' + (progBibliotheekOpen ? 'background:var(--charcoal);border-color:var(--charcoal)' : '') + '" onclick="progToggleBibliotheek()">\u{1F4DA}</button></div>'
+      : '') +
+    '</div>' +
+    '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
+    (progBibliotheekOpen && geselecteerdeDag ? progBouwBibliotheek(oefeningen) : '') +
+    '</div>' +
+
+    '<div class="prog-col prog-col-detail">' + detailHtml + '</div>' +
+
+    '</div>';
 }
 
-// ─── Dag editor ───────────────────────────────────────────────────────────────
-function progBouwDagEditor() {
-  const prog = progLijst.find(p => p.id === progActiefId);
-  if (!prog || progActiefDagIdx === null) { progActiefDagIdx = null; return progBouwProgEditor(); }
-  const dagIdx = progActiefDagIdx;
-  const dag    = (prog.dagen && prog.dagen[dagIdx]) || { naam: '', oefeningen: [] };
-  const oefeningen = dag.oefeningen || [];
+// Detailpaneel (kolom 3): naam, foto, per-set herhalingen/rust, notities.
+// Stappen-oefeningen (Wandelen e.d.) krijgen i.p.v. de sets-tabel één
+// stappen-veld, net als voorheen in de tabelweergave.
+function progBouwOefDetail(oef) {
+  const canonical = findCanonicalExercise(oef.naam);
+  const photo = canonical ? canonical.photo : null;
+  const photoHtml = '<div class="ed-photo-wrap">' +
+    (photo ? '<img src="' + photo + '" alt="">' : '<div style="font-size:48px;text-align:center;padding:40px 0">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>') +
+    '</div>';
+  const naamInput = '<input type="text" class="prog-detail-title-input" value="' + (oef.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.exercisePlaceholder') + '" onchange="progOefDetailUpdateName(this.value)">';
+  const notesHtml = '<div class="divider" style="margin:20px 0"></div>' +
+    '<div class="ed-field-label">' + t('extra.detail.notesLabel') + '</div>' +
+    '<textarea class="ed-notes" placeholder="' + t('extra.detail.notesPlaceholder') + '" onchange="progOefDetailUpdateNotes(this.value)">' + (oef.notities || '').replace(/</g,'&lt;') + '</textarea>';
 
-  const oefRijen = oefeningen.map(function(oef, i) {
-    const isStappen = oef.naam === 'Wandelen' || oef.naam === 'Walking' || (oef.stappen !== undefined && oef.stappen !== '');
-    const naamTd = '<td style="padding:4px 6px 4px 0"><input type="text" value="' + (oef.naam || '').replace(/"/g,'&quot;') +
-      '" placeholder="' + t('programmas.exercisePlaceholder') + '" onchange="progOefNaamUpdate(' + i + ',this.value)"' +
-      ' style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>';
-    const deleteTd = '<td style="padding:4px 0 4px 4px;text-align:center">' +
-      '<button onclick="progOefVerwijder(' + i + ')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button>' +
-      '</td>';
-    if (isStappen) {
-      const stappenVal = (oef.stappen || '8000-10000').replace(/"/g,'&quot;');
-      return '<tr>' + naamTd +
-        '<td colspan="3" style="padding:4px 3px"><input type="text" value="' + stappenVal +
-        '" placeholder="' + t('programmas.stepsPlaceholder') + '" onchange="progOefUpdate(' + i + ',\'stappen\',this.value)"' +
-        ' style="width:100%;padding:6px 8px;border:1px solid var(--sage-mid);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sage-light);box-sizing:border-box">' +
-        '<div style="font-size:10px;color:var(--sage);margin-top:2px">' + t('programmas.stepsPerDay') + '</div></td>' +
-        '<td></td>' + deleteTd + '</tr>';
-    }
-    const hasDetail = oef.setsDetail && oef.setsDetail.length || oef.notities;
-    const detailTd = '<td style="padding:4px 0 4px 4px;text-align:center">' +
-      '<button onclick="progOefOpenDetail(' + i + ')" title="' + t('extra.detail.editBtn') + '" style="padding:5px 7px;border-radius:6px;border:1px solid ' + (hasDetail ? 'var(--accent)' : 'var(--sand-dark)') + ';background:' + (hasDetail ? 'var(--accent-light)' : 'var(--sand)') + ';cursor:pointer;font-size:12px">📝</button>' +
-      '</td>';
-    return '<tr>' + naamTd +
-      '<td style="padding:4px 3px"><input type="text" value="' + (oef.sets || '').replace(/"/g,'&quot;') +
-      '" placeholder="3" onchange="progOefUpdate(' + i + ',\'sets\',this.value)"' +
-      ' style="width:44px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-      '<td style="padding:4px 3px"><input type="text" value="' + (oef.reps || '').replace(/"/g,'&quot;') +
-      '" placeholder="10" onchange="progOefUpdate(' + i + ',\'reps\',this.value)"' +
-      ' style="width:44px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-      '<td style="padding:4px 3px"><input type="text" value="' + (oef.rust || '').replace(/"/g,'&quot;') +
-      '" placeholder="60s" onchange="progOefUpdate(' + i + ',\'rust\',this.value)"' +
-      ' style="width:48px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-      detailTd + deleteTd + '</tr>';
-  }).join('');
+  const isStappen = oef.naam === 'Wandelen' || oef.naam === 'Walking' || (oef.stappen !== undefined && oef.stappen !== '');
+  if (isStappen) {
+    return naamInput + photoHtml +
+      '<div class="ed-field-label">' + t('programmas.stepsPerDay') + '</div>' +
+      '<input type="text" class="ed-set-input" style="width:100%;box-sizing:border-box;text-align:left" value="' + (oef.stappen || '8000-10000').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.stepsPlaceholder') + '" onchange="progOefDetailUpdateStappen(this.value)">' +
+      notesHtml;
+  }
 
-  return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">' +
-    '<button onclick="progTerugNaarProg()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--sand-dark);background:var(--white);color:var(--charcoal);cursor:pointer;font-size:13px;font-family:\'DM Sans\',sans-serif">' + t('common.back') + '</button>' +
-    '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + t('programmas.dayLabel', { n: dagIdx + 1 }) + '</div>' +
+  const sets = (oef.setsDetail && oef.setsDetail.length) ? oef.setsDetail : progOefAfgeleidesSets(oef);
+  const setsRowsHtml = sets.map((s, i) => (
+    '<div class="ed-set-row">' +
+    '<div class="ed-set-grid" style="flex:1">' +
+    '<div class="ed-set-num">' + (i + 1) + '</div>' +
+    '<input class="ed-set-input" type="text" value="' + (s.reps || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'reps\',this.value)">' +
+    '<input class="ed-set-input" type="text" value="' + (s.rest || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'rest\',this.value)">' +
     '</div>' +
-    '<div class="card" style="margin-bottom:14px">' +
-    '<label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">' + t('programmas.dayNameLabel') + '</label>' +
-    '<input type="text" id="prog-dag-naam" value="' + (dag.naam || '').replace(/"/g,'&quot;') +
-    '" placeholder="' + t('programmas.dayNamePlaceholder') + '"' +
-    ' style="width:100%;padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;' +
-    'font-family:\'DM Sans\',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;box-sizing:border-box"' +
-    ' oninput="progDagNaamBijwerken(this.value)">' +
-    '</div>' +
-    '<div class="card" style="margin-bottom:14px">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
-    '<div class="card-label">' + t('programmas.exercisesLabel') + '</div>' +
-    '<div style="display:flex;gap:6px">' +
-    '<button class="btn-sm" onclick="progOefToevoegen()">' + t('programmas.addEmptyField') + '</button>' +
-    '<button class="btn-sm" style="' + (progBibliotheekOpen ? 'background:var(--sage);color:white;border-color:var(--sage)' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button>' +
-    '</div>' +
-    '</div>' +
-    (oefeningen.length > 0
-      ? '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
-        '<thead><tr>' +
-        '<th style="text-align:left;padding:0 6px 8px 0;font-size:11px;color:var(--muted);font-weight:600">' + t('programmas.col.exercise') + '</th>' +
-        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">' + t('programmas.col.sets') + '</th>' +
-        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">' + t('programmas.col.reps') + '</th>' +
-        '<th style="padding:0 3px 8px;font-size:11px;color:var(--muted);font-weight:600;text-align:center">' + t('programmas.col.rest') + '</th>' +
-        '<th style="width:32px"></th>' +
-        '<th style="width:32px"></th>' +
-        '</tr></thead>' +
-        '<tbody>' + oefRijen + '</tbody>' +
-        '</table></div>'
-      : '<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px 0">' + t('programmas.noExercisesHint') + '</div>') +
-    '</div>' +
-    (progBibliotheekOpen ? progBouwBibliotheek(oefeningen) : '');
+    (sets.length > 1 ? '<button class="ed-rm-btn" onclick="progOefDetailRemoveSet(' + i + ')" title="' + t('extra.detail.removeSet') + '">×</button>' : '<span style="width:20px;flex-shrink:0"></span>') +
+    '</div>'
+  )).join('');
+
+  return naamInput + photoHtml +
+    '<div class="ed-field-label">' + t('extra.detail.setsLabel') + '</div>' +
+    '<div class="ed-set-grid ed-set-head"><span></span><span>' + t('extra.detail.reps') + '</span><span>' + t('extra.detail.rest') + '</span></div>' +
+    setsRowsHtml +
+    '<button class="ed-add-set" onclick="progOefDetailAddSet()">' + t('extra.detail.addSet') + '</button>' +
+    notesHtml;
 }
 
-// ─── Acties ───────────────────────────────────────────────────────────────────
+// Leidt een startpunt voor de sets-tabel af uit de simpele sets/reps/rust-
+// velden, voor oefeningen die nog geen losse setsDetail hebben.
+function progOefAfgeleidesSets(oef) {
+  const n = Number(oef.sets) || 1;
+  const restMatch = String(oef.rust || '').match(/(\d+)/);
+  return Array.from({ length: n }, () => ({ reps: oef.reps || '', rest: restMatch ? restMatch[1] : '' }));
+}
+
+// ─── Acties: programma & dagen ────────────────────────────────────────────────
 function progNieuw() {
   const id = 'p' + Date.now() + Math.floor(Math.random() * 1000);
   progLijst.push({ id, naam: t('programmas.newProgramName'), dagen: {} });
   progSlaOp();
   progActiefId = id;
   progActiefDagIdx = null;
+  progSelectedOefIdx = null;
   renderProgrammas();
 }
 
@@ -223,17 +237,14 @@ function progOpenEditor(id) {
   if (!prog || prog.builtin) return;
   progActiefId = id;
   progActiefDagIdx = null;
+  progSelectedOefIdx = null;
   renderProgrammas();
 }
 
 function progTerugNaarLijst() {
   progActiefId = null;
   progActiefDagIdx = null;
-  renderProgrammas();
-}
-
-function progTerugNaarProg() {
-  progActiefDagIdx = null;
+  progSelectedOefIdx = null;
   progBibliotheekOpen = false;
   renderProgrammas();
 }
@@ -243,12 +254,20 @@ function progNaamBijwerken(val) {
   if (prog) { prog.naam = val; progSlaOp(); }
 }
 
+// Selecteert een dag in kolom 1 (toont zijn oefeningen in kolom 2).
+function progDagSelecteer(dagIdx) {
+  progActiefDagIdx = dagIdx;
+  progSelectedOefIdx = null;
+  renderProgrammas();
+}
+
 function progDagNaamBijwerken(val) {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (prog && progActiefDagIdx !== null) {
     if (!prog.dagen[progActiefDagIdx]) prog.dagen[progActiefDagIdx] = { naam: '', oefeningen: [] };
     prog.dagen[progActiefDagIdx].naam = val;
     progSlaOp();
+    renderProgrammas();
   }
 }
 
@@ -262,11 +281,7 @@ function progDagToevoegen() {
   prog.dagen[nieuwIdx] = { naam: '', oefeningen: [] };
   progSlaOp();
   progActiefDagIdx = nieuwIdx;
-  renderProgrammas();
-}
-
-function progDagBewerken(dagIdx) {
-  progActiefDagIdx = dagIdx;
+  progSelectedOefIdx = null;
   renderProgrammas();
 }
 
@@ -280,7 +295,15 @@ function progDagVerwijder(dagIdx) {
   const nieuweDagen = {};
   overigeIndexen.forEach((oudIdx, nieuwIdx) => { nieuweDagen[nieuwIdx] = prog.dagen[oudIdx]; });
   prog.dagen = nieuweDagen;
+  progActiefDagIdx = null; // opnieuw laten bepalen (eerste dag) bij render
+  progSelectedOefIdx = null;
   progSlaOp();
+  renderProgrammas();
+}
+
+// ─── Acties: oefeningen binnen de geselecteerde dag ───────────────────────────
+function progSelectOef(oefIdx) {
+  progSelectedOefIdx = oefIdx;
   renderProgrammas();
 }
 
@@ -289,7 +312,8 @@ function progOefToevoegen() {
   if (!prog || progActiefDagIdx === null) return;
   const idx = progActiefDagIdx;
   if (!prog.dagen[idx]) prog.dagen[idx] = { naam: '', oefeningen: [] };
-  prog.dagen[idx].oefeningen.push({ naam: '', sets: '3', reps: '10', rust: '60s', notities: '' });
+  prog.dagen[idx].oefeningen.push({ naam: '', sets: '3', reps: '10', rust: '60 sec', notities: '' });
+  progSelectedOefIdx = prog.dagen[idx].oefeningen.length - 1;
   progSlaOp();
   renderProgrammas();
 }
@@ -298,65 +322,76 @@ function progOefVerwijder(oefIdx) {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
   prog.dagen[progActiefDagIdx].oefeningen.splice(oefIdx, 1);
+  if (progSelectedOefIdx === oefIdx) progSelectedOefIdx = null;
+  else if (progSelectedOefIdx !== null && progSelectedOefIdx > oefIdx) progSelectedOefIdx--;
   progSlaOp();
   renderProgrammas();
 }
 
-// Opent hetzelfde sets/notities-detailscherm als bij Losse oefeningen (zie
-// training.js), maar dan voor één oefeningregel binnen een programmadag --
-// zo kunnen sets stuk voor stuk een eigen herhalingen/rust krijgen, plus een
-// vrije notitie, i.p.v. alleen de simpele sets/reps/rust-kolommen.
-function progOefOpenDetail(oefIdx) {
+// ─── Acties: detailpaneel (kolom 3) van de geselecteerde oefening ─────────────
+function progGeselecteerdeOef() {
   const prog = progLijst.find(p => p.id === progActiefId);
-  if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
-  const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
-  if (!oef) return;
-
-  let sets;
-  if (oef.setsDetail && oef.setsDetail.length) {
-    sets = oef.setsDetail.map(s => ({ ...s }));
-  } else {
-    const n = Number(oef.sets) || 1;
-    const restMatch = String(oef.rust || '').match(/(\d+)/);
-    sets = Array.from({ length: n }, () => ({ reps: oef.reps || '', rest: restMatch ? restMatch[1] : '' }));
-  }
-
-  const canonical = findCanonicalExercise(oef.naam);
-
-  openExerciseDetailGeneric({
-    name: oef.naam || t('programmas.exercisePlaceholder'),
-    photo: canonical ? canonical.photo : null,
-    icon: canonical ? canonical.icon : '🏋️',
-    sets: sets,
-    notes: oef.notities || '',
-    onSave: function(newSets, newNotes) {
-      oef.setsDetail = newSets;
-      oef.notities = newNotes;
-      oef.sets = String(newSets.length);
-      progSlaOp();
-      renderProgrammas();
-    }
-  });
+  if (!prog || progActiefDagIdx === null || progSelectedOefIdx === null) return null;
+  const dag = prog.dagen[progActiefDagIdx];
+  if (!dag) return null;
+  return dag.oefeningen[progSelectedOefIdx] || null;
 }
 
-function progOefUpdate(oefIdx, veld, val) {
-  const prog = progLijst.find(p => p.id === progActiefId);
-  if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
-  const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
-  if (oef) { oef[veld] = val; progSlaOp(); }
-}
-
-function progOefNaamUpdate(oefIdx, val) {
-  const prog = progLijst.find(p => p.id === progActiefId);
-  if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
-  const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
+function progOefDetailUpdateName(val) {
+  const oef = progGeselecteerdeOef();
   if (!oef) return;
   oef.naam = val;
-  if (val === 'Wandelen' || val === 'Walking') { oef.stappen = oef.stappen || '8000-10000'; oef.sets = ''; oef.reps = ''; oef.rust = ''; }
   progSlaOp();
   renderProgrammas();
 }
 
+function progOefDetailUpdateStappen(val) {
+  const oef = progGeselecteerdeOef();
+  if (!oef) return;
+  oef.stappen = val;
+  progSlaOp();
+  renderProgrammas();
+}
+
+function progOefDetailUpdateNotes(val) {
+  const oef = progGeselecteerdeOef();
+  if (!oef) return;
+  oef.notities = val;
+  progSlaOp();
+}
+
+function progOefDetailUpdateSet(setIdx, veld, val) {
+  const oef = progGeselecteerdeOef();
+  if (!oef) return;
+  if (!oef.setsDetail || !oef.setsDetail.length) oef.setsDetail = progOefAfgeleidesSets(oef);
+  if (!oef.setsDetail[setIdx]) return;
+  oef.setsDetail[setIdx][veld] = val;
+  oef.sets = String(oef.setsDetail.length);
+  progSlaOp();
+  renderProgrammas();
+}
+
+function progOefDetailAddSet() {
+  const oef = progGeselecteerdeOef();
+  if (!oef) return;
+  if (!oef.setsDetail || !oef.setsDetail.length) oef.setsDetail = progOefAfgeleidesSets(oef);
+  const last = oef.setsDetail[oef.setsDetail.length - 1];
+  oef.setsDetail.push({ reps: last ? last.reps : '', rest: last ? last.rest : '' });
+  oef.sets = String(oef.setsDetail.length);
+  progSlaOp();
+  renderProgrammas();
+}
+
+function progOefDetailRemoveSet(setIdx) {
+  const oef = progGeselecteerdeOef();
+  if (!oef || !oef.setsDetail) return;
+  oef.setsDetail.splice(setIdx, 1);
+  oef.sets = String(oef.setsDetail.length);
+  progSlaOp();
+  renderProgrammas();
+}
+
+// ─── Bibliotheek: oefening kiezen uit Losse oefeningen ────────────────────────
 function progToggleBibliotheek() {
   progBibliotheekOpen = !progBibliotheekOpen;
   renderProgrammas();
@@ -394,7 +429,7 @@ function progBouwBibliotheek(huidig) {
       '</div>';
   }).join('');
 
-  return '<div class="card" style="border-color:var(--sage)">' +
+  return '<div style="padding:14px;border-top:1px solid var(--sand-dark);background:var(--sand)">' +
     '<div style="font-size:13px;font-weight:600;color:var(--charcoal);margin-bottom:14px">' + t('programmas.chooseFromLibrary') + '</div>' +
     groepen +
     '</div>';
@@ -421,10 +456,12 @@ function progOefUitBibliotheek(exId) {
     stappen: gevonden.stappen || '',
     notities: ''
   });
+  progSelectedOefIdx = prog.dagen[idx].oefeningen.length - 1;
   progSlaOp();
   renderProgrammas();
 }
 
+// ─── Laden in Weekplanning ─────────────────────────────────────────────────────
 function progLadenInWeekplanning(id) {
   progLaadData();
   const prog = progLijst.find(p => p.id === id);
