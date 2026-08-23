@@ -581,6 +581,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .form-row label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
 .form-row input, .form-row select { width: 100%; padding: 11px 14px; border: 1.5px solid var(--sand-dark); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--charcoal); background: var(--white); outline: none; transition: border-color 0.2s; }
 .form-row input:focus, .form-row select:focus { border-color: var(--sage); }
+.form-row textarea { width: 100%; box-sizing: border-box; padding: 11px 14px; border: 1.5px solid var(--sand-dark); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--charcoal); background: var(--white); outline: none; transition: border-color 0.2s; min-height: 64px; resize: vertical; }
+.form-row textarea:focus { border-color: var(--sage); }
+.prog-info-kaart { margin-bottom: 18px; }
+.prog-info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.prog-info-grid .form-row { margin-bottom: 0; }
+@media(max-width:700px) { .prog-info-grid { grid-template-columns: 1fr; } }
 
 /* CHECKOUT TRAINING SUMMARY */
 .training-summary-block { background: var(--sand); border-radius: var(--radius-sm); padding: 16px; }

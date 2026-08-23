@@ -61,8 +61,16 @@ function progBouwLijst() {
       '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + dispName(prog) + '</div>' +
       (prog.builtin ? '<span style="font-size:10px;font-weight:700;background:var(--sage);color:white;padding:2px 8px;border-radius:8px">' + t('programmas.builtinBadge') + '</span>' : '') +
       '</div>' +
+      (dispField(prog, 'beschrijving') ? '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">' + dispField(prog, 'beschrijving') + '</div>' : '') +
       '<div style="font-size:12px;color:var(--muted)">' + t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef }) + '</div>' +
       (dagIcons ? '<div style="font-size:11px;color:var(--sage);margin-top:3px;font-weight:600">' + dagIcons + '</div>' : '') +
+      (prog.doel || prog.niveau || prog.dagenPerWeek
+        ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">' +
+          (prog.doel ? '<span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">🎯 ' + prog.doel + '</span>' : '') +
+          (prog.niveau ? '<span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📊 ' + t('programmas.level.' + prog.niveau.toLowerCase()) + '</span>' : '') +
+          (prog.dagenPerWeek ? '<span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📅 ' + prog.dagenPerWeek + '</span>' : '') +
+          '</div>'
+        : '') +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' + knoppen + '</div>' +
       '</div>';
@@ -135,6 +143,7 @@ function progBouw3ColEditor() {
     '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
     '<input type="text" id="prog-naam-input" class="prog-title-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" onchange="progNaamBijwerken(this.value)">' +
     '</div>' +
+    progBouwInfoKaart(prog) +
     '<div class="prog-3col">' +
 
     '<div class="prog-col">' +
@@ -166,6 +175,35 @@ function progBouw3ColEditor() {
     '<div class="prog-col prog-col-detail">' + detailHtml + '</div>' +
 
     '</div>';
+}
+
+// Programma-info: beschrijving, doel, niveau en dagen per week -- los van de
+// naam (die al bovenaan staat) en los van de dagen/oefeningen zelf. Altijd
+// zichtbaar en direct bewerkbaar, net als de rest van de editor (autosave).
+function progBouwInfoKaart(prog) {
+  return '<div class="card prog-info-kaart">' +
+    '<div class="form-row"><label>' + t('programmas.info.description') + '</label>' +
+    '<textarea class="prog-info-textarea" placeholder="' + t('programmas.info.descriptionPlaceholder') + '" onchange="progInfoBijwerken(\'beschrijving\',this.value)">' + (prog.beschrijving || '').replace(/</g,'&lt;') + '</textarea>' +
+    '</div>' +
+    '<div class="prog-info-grid">' +
+    '<div class="form-row"><label>' + t('programmas.info.goal') + '</label>' +
+    '<input type="text" value="' + (prog.doel || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.goalPlaceholder') + '" onchange="progInfoBijwerken(\'doel\',this.value)"></div>' +
+    '<div class="form-row"><label>' + t('programmas.info.level') + '</label>' +
+    '<select onchange="progInfoBijwerken(\'niveau\',this.value)">' +
+    '<option value=""' + (!prog.niveau ? ' selected' : '') + '>—</option>' +
+    ['Beginner','Gemiddeld','Gevorderd'].map(lvl =>
+      '<option value="' + lvl + '"' + (prog.niveau === lvl ? ' selected' : '') + '>' + t('programmas.level.' + lvl.toLowerCase()) + '</option>'
+    ).join('') +
+    '</select></div>' +
+    '<div class="form-row"><label>' + t('programmas.info.daysPerWeek') + '</label>' +
+    '<input type="text" value="' + (prog.dagenPerWeek || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.daysPerWeekPlaceholder') + '" onchange="progInfoBijwerken(\'dagenPerWeek\',this.value)"></div>' +
+    '</div>' +
+    '</div>';
+}
+
+function progInfoBijwerken(veld, val) {
+  const prog = progLijst.find(p => p.id === progActiefId);
+  if (prog) { prog[veld] = val; progSlaOp(); }
 }
 
 // Detailpaneel (kolom 3): naam, foto, per-set herhalingen/rust, notities.
