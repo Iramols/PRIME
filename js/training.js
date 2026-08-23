@@ -188,6 +188,7 @@ function findExtraExercise(exId) {
 
 // ========== EIGEN OEFENING TOEVOEGEN (met foto) ==========
 let _aePhotoData = null;
+let _aeEditingId = null;
 
 function handleAddExercisePhoto(event) {
   const file = event.target.files[0];
@@ -217,36 +218,84 @@ function addCustomExercise() {
   nameInput.style.borderColor = '';
   errorEl.textContent = '';
 
-  const exercise = {
-    id: 'custom-ex-' + Date.now() + Math.floor(Math.random() * 1000),
+  const fields = {
     name: name,
-    icon: '🏋️',
     group: document.getElementById('ae-group').value,
     sets: parseInt(document.getElementById('ae-sets').value, 10) || 1,
     reps: document.getElementById('ae-reps').value.trim(),
     rest: document.getElementById('ae-rest').value.trim(),
     youtube: document.getElementById('ae-youtube').value.trim(),
-    photo: _aePhotoData || null,
-    custom: true
+    photo: _aePhotoData || null
   };
-  customExercises.push(exercise);
+
+  if (_aeEditingId) {
+    const ex = customExercises.find(e => e.id === _aeEditingId);
+    if (ex) Object.assign(ex, fields);
+    // Meteen zichtbaar bijwerken als hij al in Vandaag staat.
+    const inDag = trainingDagLog.find(e => e.id === _aeEditingId);
+    if (inDag) Object.assign(inDag, fields);
+    sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+  } else {
+    customExercises.push({
+      id: 'custom-ex-' + Date.now() + Math.floor(Math.random() * 1000),
+      icon: '🏋️',
+      custom: true,
+      ...fields
+    });
+  }
   syncSet('prime_custom_exercises', customExercises);
 
-  // Formulier resetten
+  resetExerciseForm();
+  renderAddExerciseTab();
+}
+
+function editCustomExercise(id) {
+  const ex = customExercises.find(e => e.id === id);
+  if (!ex) return;
+  _aeEditingId = id;
+
+  document.getElementById('ae-name').value = ex.name;
+  document.getElementById('ae-group').value = ex.group;
+  document.getElementById('ae-sets').value = ex.sets || 1;
+  document.getElementById('ae-reps').value = ex.reps || '';
+  document.getElementById('ae-rest').value = ex.rest || '';
+  document.getElementById('ae-youtube').value = ex.youtube || '';
+  _aePhotoData = ex.photo || null;
+  document.getElementById('ae-photo-preview').innerHTML = ex.photo
+    ? '<img src="' + ex.photo + '" style="width:100%;height:100%;object-fit:cover">'
+    : '🏋️';
+
+  document.getElementById('ae-form-title').textContent = t('training.addExercise.editTitle');
+  document.getElementById('ae-submit-btn').textContent = t('training.addExercise.update');
+  document.getElementById('ae-cancel-btn').style.display = 'inline-block';
+  document.getElementById('ae-error').textContent = '';
+
+  document.getElementById('ae-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Reset het formulier naar "nieuwe oefening"-stand — zowel na een geslaagde
+// toevoeging/wijziging als bij het annuleren van een bewerking.
+function resetExerciseForm() {
+  _aeEditingId = null;
+  _aePhotoData = null;
+  const nameInput = document.getElementById('ae-name');
   nameInput.value = '';
+  nameInput.style.borderColor = '';
   document.getElementById('ae-group').value = 'Eigen oefeningen';
   document.getElementById('ae-sets').value = 3;
   document.getElementById('ae-reps').value = '';
   document.getElementById('ae-rest').value = '';
   document.getElementById('ae-youtube').value = '';
   document.getElementById('ae-photo-preview').innerHTML = '🏋️';
-  _aePhotoData = null;
-
-  renderAddExerciseTab();
+  document.getElementById('ae-form-title').textContent = t('training.addExercise.formTitle');
+  document.getElementById('ae-submit-btn').textContent = t('training.addExercise.submit');
+  document.getElementById('ae-cancel-btn').style.display = 'none';
+  document.getElementById('ae-error').textContent = '';
 }
 
 function removeCustomExercise(id) {
   if (!confirm(t('food.add.confirmDelete'))) return;
+  if (_aeEditingId === id) resetExerciseForm();
   customExercises = customExercises.filter(e => e.id !== id);
   syncSet('prime_custom_exercises', customExercises);
   // Ook verwijderen uit Vandaag als hij daar (nog) in staat.
@@ -272,6 +321,7 @@ function renderAddExerciseTab() {
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(ex)}</div>
           <div style="font-size:11px;color:var(--muted)">${ex.group} · ${ex.sets}${t('programmas.setsAbbr')} × ${ex.reps || '—'}${ex.rest ? ' · ' + t('training.restLabel') + ' ' + ex.rest : ''}</div>
         </div>
+        <button onclick="editCustomExercise('${ex.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
         <button onclick="removeCustomExercise('${ex.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
       </div>
     </div>`).join('');

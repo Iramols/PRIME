@@ -255,7 +255,7 @@
   <!-- TAB: EIGEN OEFENING TOEVOEGEN -->
   <div id="ttab-content-addexercise" style="display:none">
     <div class="card" style="margin-bottom:18px">
-      <div class="card-label" style="margin-bottom:14px" data-i18n="training.addExercise.formTitle">Nieuwe oefening</div>
+      <div class="card-label" style="margin-bottom:14px" id="ae-form-title" data-i18n="training.addExercise.formTitle">Nieuwe oefening</div>
       <div class="form-row"><label data-i18n="training.addExercise.name">Naam</label><input type="text" id="ae-name" data-i18n-placeholder="training.addExercise.namePlaceholder" placeholder="bijv. Cable Crossover"></div>
       <div class="form-row"><label data-i18n="training.addExercise.group">Spiergroep</label>
         <select id="ae-group">
@@ -287,7 +287,10 @@
         </div>
       </div>
       <div id="ae-error" style="color:#c0392b;font-size:12px;margin-bottom:10px"></div>
-      <button class="btn-primary" onclick="addCustomExercise()" data-i18n="training.addExercise.submit">+ Oefening toevoegen</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1" id="ae-submit-btn" onclick="addCustomExercise()" data-i18n="training.addExercise.submit">+ Oefening toevoegen</button>
+        <button class="btn-sm" id="ae-cancel-btn" style="display:none" onclick="resetExerciseForm()" data-i18n="training.addExercise.cancel">Annuleren</button>
+      </div>
     </div>
 
     <div class="card-label" style="margin-bottom:10px" data-i18n="training.addExercise.myExercises">Mijn eigen oefeningen</div>
