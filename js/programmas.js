@@ -141,7 +141,7 @@ function progBouw3ColEditor() {
 
   return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">' +
     '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
-    '<input type="text" id="prog-naam-input" class="prog-title-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" onchange="progNaamBijwerken(this.value)">' +
+    '<div class="prog-title-static">' + dispName(prog).replace(/</g,'&lt;') + '</div>' +
     '</div>' +
     progBouwInfoKaart(prog) +
     '<div class="prog-3col">' +
@@ -182,6 +182,8 @@ function progBouw3ColEditor() {
 // zichtbaar en direct bewerkbaar, net als de rest van de editor (autosave).
 function progBouwInfoKaart(prog) {
   return '<div class="card prog-info-kaart">' +
+    '<div class="form-row"><label>' + t('programmas.info.name') + '</label>' +
+    '<input type="text" id="prog-naam-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.namePlaceholder') + '" onchange="progNaamBijwerken(this.value)"></div>' +
     '<div class="form-row"><label>' + t('programmas.info.description') + '</label>' +
     '<textarea class="prog-info-textarea" placeholder="' + t('programmas.info.descriptionPlaceholder') + '" onchange="progInfoBijwerken(\'beschrijving\',this.value)">' + (prog.beschrijving || '').replace(/</g,'&lt;') + '</textarea>' +
     '</div>' +
@@ -295,7 +297,13 @@ function progTerugNaarLijst() {
 
 function progNaamBijwerken(val) {
   const prog = progLijst.find(p => p.id === progActiefId);
-  if (prog) { prog.naam = val; progSlaOp(); }
+  if (!prog) return;
+  prog.naam = val;
+  progSlaOp();
+  // Header-titel direct bijwerken zonder de hele editor opnieuw te tekenen
+  // (dat zou de focus/scroll van andere velden onnodig verstoren).
+  const titleEl = document.querySelector('.prog-title-static');
+  if (titleEl) titleEl.textContent = dispName(prog);
 }
 
 // Selecteert een dag in kolom 1 (toont zijn oefeningen in kolom 2).

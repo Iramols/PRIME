@@ -540,8 +540,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 
 /* PROGRAMMA-EDITOR: dagen / oefeningen / detail naast elkaar */
 .prog-back-btn { padding: 8px 14px; border-radius: 10px; border: 1.5px solid var(--sand-dark); background: var(--white); color: var(--charcoal); cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; flex-shrink: 0; }
-.prog-title-input { flex: 1; min-width: 0; font-family: 'DM Serif Display', serif; font-size: 18px; border: none; background: none; color: var(--charcoal); outline: none; padding: 4px 0; border-bottom: 1.5px solid transparent; }
-.prog-title-input:focus { border-bottom-color: var(--sage); }
+.prog-title-static { flex: 1; min-width: 0; font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--charcoal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prog-3col { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 14px; align-items: start; }
 .prog-col { background: var(--white); border: 1px solid var(--sand-dark); border-radius: var(--radius); overflow: hidden; }
 .prog-col-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; background: var(--sand); border-bottom: 1px solid var(--sand-dark); font-size: 12px; font-weight: 700; color: var(--charcoal); text-transform: uppercase; letter-spacing: 0.4px; }
