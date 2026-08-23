@@ -138,19 +138,21 @@ function progBouw3ColEditor() {
     '<div class="prog-3col">' +
 
     '<div class="prog-col">' +
-    '<div class="prog-col-head"><span>' + t('programmas.trainingDays') + '</span>' +
-    '<button class="prog-col-add" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button></div>' +
+    '<div class="prog-col-head"><span>' + t('programmas.trainingDays') + '</span></div>' +
+    '<div class="prog-col-actions">' +
+    '<button class="prog-col-add" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button>' +
+    '</div>' +
     '<div class="prog-col-body">' + dagRijenHtml + '</div>' +
     '</div>' +
 
     '<div class="prog-col">' +
-    '<div class="prog-col-head"><span>' + t('programmas.exercisesLabel') + '</span>' +
+    '<div class="prog-col-head"><span>' + t('programmas.exercisesLabel') + '</span></div>' +
     (geselecteerdeDag
-      ? '<div style="display:flex;gap:6px;flex-shrink:0">' +
+      ? '<div class="prog-col-actions">' +
         '<button class="prog-col-add" onclick="progOefToevoegen()">' + t('programmas.addEmptyField') + '</button>' +
-        '<button class="prog-col-add" style="' + (progBibliotheekOpen ? 'background:var(--charcoal);border-color:var(--charcoal)' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button></div>'
+        '<button class="prog-col-add' + (progBibliotheekOpen ? ' active' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button>' +
+        '</div>'
       : '') +
-    '</div>' +
     (geselecteerdeDag
       ? '<div class="prog-day-name-row">' +
         '<label>' + t('programmas.dayNameLabel') + '</label>' +
