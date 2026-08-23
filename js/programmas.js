@@ -144,15 +144,19 @@ function progBouw3ColEditor() {
     '</div>' +
 
     '<div class="prog-col">' +
-    '<div class="prog-col-head">' +
+    '<div class="prog-col-head"><span>' + t('programmas.exercisesLabel') + '</span>' +
     (geselecteerdeDag
-      ? '<input type="text" class="prog-day-title-input" value="' + (geselecteerdeDag.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.dayLabel', { n: progActiefDagIdx + 1 }) + '" onchange="progDagNaamBijwerken(this.value)">'
-      : '<span>' + t('programmas.exercisesLabel') + '</span>') +
-    (geselecteerdeDag
-      ? '<div style="display:flex;gap:6px;flex-shrink:0"><button class="prog-col-add" onclick="progOefToevoegen()">+</button>' +
-        '<button class="prog-col-add" style="' + (progBibliotheekOpen ? 'background:var(--charcoal);border-color:var(--charcoal)' : '') + '" onclick="progToggleBibliotheek()">\u{1F4DA}</button></div>'
+      ? '<div style="display:flex;gap:6px;flex-shrink:0">' +
+        '<button class="prog-col-add" onclick="progOefToevoegen()">' + t('programmas.addEmptyField') + '</button>' +
+        '<button class="prog-col-add" style="' + (progBibliotheekOpen ? 'background:var(--charcoal);border-color:var(--charcoal)' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button></div>'
       : '') +
     '</div>' +
+    (geselecteerdeDag
+      ? '<div class="prog-day-name-row">' +
+        '<label>' + t('programmas.dayNameLabel') + '</label>' +
+        '<input type="text" class="prog-day-title-input" value="' + (geselecteerdeDag.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.dayNamePlaceholder') + '" onchange="progDagNaamBijwerken(this.value)">' +
+        '</div>'
+      : '') +
     '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
     (progBibliotheekOpen && geselecteerdeDag ? progBouwBibliotheek(oefeningen) : '') +
     '</div>' +
