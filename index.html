@@ -496,7 +496,10 @@
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
           <div class="card-label" style="margin-bottom:0" data-i18n="food.addMeal.ingredientsTitle">Ingrediënten</div>
-          <button class="btn-sm" onclick="addIngredientRow()" data-i18n="food.addMeal.addIngredient">+ Ingrediënt toevoegen</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-sm" onclick="openIngredientProductPicker()" data-i18n="food.addMeal.addFromProducts">+ Basisproduct toevoegen</button>
+            <button class="btn-sm" onclick="addIngredientRow()" data-i18n="food.addMeal.addIngredient">+ Ingrediënt toevoegen</button>
+          </div>
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse">
@@ -870,6 +873,21 @@
     <div class="ed-field-label" data-i18n="extra.detail.notesLabel">Notities</div>
     <textarea id="ed-notes" class="ed-notes" data-i18n-placeholder="extra.detail.notesPlaceholder" placeholder="Schrijf een notitie..."></textarea>
     <button class="btn-primary" style="margin-top:16px" onclick="saveExerciseDetail()" data-i18n="extra.detail.save">Opslaan</button>
+  </div>
+</div>
+
+<!-- BASISPRODUCT KIEZEN VOOR INGREDIËNT (bij Gerecht toevoegen) -->
+<div class="portion-modal-wrap" id="ingredient-product-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div class="portion-product-name" data-i18n="food.addMeal.pickProductTitle">Kies een basisproduct</div>
+      <button onclick="closeIngredientProductPicker()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <div class="search-bar" style="margin-bottom:14px">
+      <span style="font-size:15px;color:var(--muted)">🔍</span>
+      <input type="text" id="ipm-search" data-i18n-placeholder="food.search.placeholder" placeholder="Zoek product..." oninput="renderIngredientProductList()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+    </div>
+    <div id="ipm-list" style="max-height:50vh;overflow-y:auto"></div>
   </div>
 </div>
 

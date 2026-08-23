@@ -311,22 +311,89 @@ let _amPhotoData = null;
 let _amRowCounter = 0;
 let _amEditingId = null;
 
-function addIngredientRow() {
+// prefill (optioneel): { name, gram, prot, carb, fat, per100:{prot,carb,fat} }.
+// Als per100 is meegegeven, staat de rij "gekoppeld" aan een basisproduct: het
+// gram-veld herberekent dan automatisch eiwit/koolh/vet bij elke wijziging.
+function addIngredientRow(prefill) {
   const tbody = document.getElementById('am-ingredients-body');
   if (!tbody) return;
   const rowId = 'amrow-' + (_amRowCounter++);
   const tr = document.createElement('tr');
   tr.id = rowId;
+  const p = prefill || {};
+  const gramInputAttrs = p.per100 ? ' oninput="updateLinkedIngredientRow(\'' + rowId + '\');updateMealFormTotals()"' : ' oninput="updateMealFormTotals()"';
+  if (p.per100) tr.dataset.per100 = JSON.stringify(p.per100);
   tr.innerHTML =
-    '<td style="padding:4px 6px 4px 0"><input type="text" class="am-ing-name" placeholder="' + t('food.addMeal.ingredientNamePlaceholder') + '" style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-gram" min="0" step="1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-prot" min="0" step="0.1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-carb" min="0" step="0.1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-fat" min="0" step="0.1" value="0" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 6px 4px 0"><input type="text" class="am-ing-name" placeholder="' + t('food.addMeal.ingredientNamePlaceholder') + '" value="' + (p.name ? String(p.name).replace(/"/g,'&quot;') : '') + '" style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-gram" min="0" step="1" value="' + (p.gram ?? 0) + '"' + gramInputAttrs + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-prot" min="0" step="0.1" value="' + (p.prot ?? 0) + '" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-carb" min="0" step="0.1" value="' + (p.carb ?? 0) + '" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-fat" min="0" step="0.1" value="' + (p.fat ?? 0) + '" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
     '<td style="padding:4px 3px;text-align:center;font-size:12px;color:var(--muted)" class="am-ing-kcal">0</td>' +
     '<td style="padding:4px 0 4px 4px;text-align:center"><button onclick="removeIngredientRow(\'' + rowId + '\')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button></td>';
+  if (p.per100) tr.style.borderLeft = '3px solid var(--sage)';
   tbody.appendChild(tr);
   updateMealFormTotals();
+}
+
+// Herberekent eiwit/koolh/vet van een aan een basisproduct gekoppelde rij,
+// op basis van het huidige gram-veld en de opgeslagen waarden per 100g.
+function updateLinkedIngredientRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row || !row.dataset.per100) return;
+  const per100 = JSON.parse(row.dataset.per100);
+  const gram = parseFloat(row.querySelector('.am-ing-gram')?.value) || 0;
+  const factor = gram / 100;
+  const round1 = n => Math.round(n * 10) / 10;
+  row.querySelector('.am-ing-prot').value = round1(per100.prot * factor);
+  row.querySelector('.am-ing-carb').value = round1(per100.carb * factor);
+  row.querySelector('.am-ing-fat').value  = round1(per100.fat  * factor);
+}
+
+// ========== BASISPRODUCT KIEZEN ALS INGREDIËNT (bij Gerecht toevoegen) ==========
+function openIngredientProductPicker() {
+  const search = document.getElementById('ipm-search');
+  if (search) search.value = '';
+  renderIngredientProductList();
+  document.getElementById('ingredient-product-modal').classList.add('open');
+}
+
+function closeIngredientProductPicker() {
+  document.getElementById('ingredient-product-modal').classList.remove('open');
+}
+
+function renderIngredientProductList() {
+  const q = (document.getElementById('ipm-search')?.value || '').trim().toLowerCase();
+  const list = getAllProducts()
+    .filter(p => !q || dispName(p).toLowerCase().includes(q))
+    .sort((a, b) => dispName(a).localeCompare(dispName(b), 'nl'));
+  const el = document.getElementById('ipm-list');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('food.search.noResults') + '</div>';
+    return;
+  }
+  el.innerHTML = list.map(p => `
+    <div onclick="pickIngredientProduct('${p.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--sand-dark);cursor:pointer">
+      ${p.photo ? `<div style="width:38px;height:38px;border-radius:8px;flex-shrink:0;background-size:cover;background-position:center;background-image:url('${p.photo}')"></div>` : `<div style="width:38px;height:38px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--sand)">${p.icon || '🍽️'}</div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${dispName(p)}</div>
+        <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.per100Macros',{kcal:p.kcal,prot:p.prot,carb:p.carb,fat:p.fat})}</div>
+      </div>
+    </div>`).join('');
+}
+
+function pickIngredientProduct(productId) {
+  const product = getAllProducts().find(p => p.id === productId);
+  if (!product) return;
+  addIngredientRow({
+    name: dispName(product),
+    gram: 100,
+    prot: product.prot,
+    carb: product.carb,
+    fat: product.fat,
+    per100: { prot: product.prot, carb: product.carb, fat: product.fat }
+  });
+  closeIngredientProductPicker();
 }
 
 function removeIngredientRow(rowId) {
