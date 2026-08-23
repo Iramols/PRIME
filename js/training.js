@@ -338,10 +338,31 @@ function restLabelToSeconds(label) {
   return '';
 }
 
+// Als gezet, wordt dit i.p.v. het standaard exerciseNotes-pad gebruikt om op
+// te slaan -- zo kan hetzelfde detailscherm ook oefeningen binnen een
+// programmadag (Weekprogramma's) bewerken, zie openExerciseDetailGeneric().
+let _edSaveCallback = null;
+
+// Generieke opener voor het sets/notities-scherm, losstaand van een concreet
+// oefening-id. Gebruikt door progOefOpenDetail() (Weekprogramma's).
+function openExerciseDetailGeneric(opts) {
+  _edExerciseId = null;
+  _edSaveCallback = opts.onSave;
+  _edSets = (opts.sets && opts.sets.length) ? opts.sets.map(s => ({ ...s })) : [{ reps: '', rest: '' }];
+  document.getElementById('ed-name').textContent = opts.name;
+  document.getElementById('ed-photo-wrap').innerHTML = opts.photo
+    ? `<img src="${opts.photo}" alt="${opts.name}">`
+    : `<div style="font-size:48px;text-align:center;padding:40px 0">${opts.icon || '🏋️'}</div>`;
+  document.getElementById('ed-notes').value = opts.notes || '';
+  edRenderSets();
+  document.getElementById('exercise-detail-modal').classList.add('open');
+}
+
 function openExerciseDetail(exId) {
   const ex = findExtraExercise(exId);
   if (!ex) return;
   _edExerciseId = exId;
+  _edSaveCallback = null;
   const saved = exerciseNotes[exId];
   if (saved && saved.sets && saved.sets.length) {
     _edSets = saved.sets.map(s => ({ ...s }));
@@ -363,6 +384,7 @@ function openExerciseDetail(exId) {
 function closeExerciseDetail() {
   document.getElementById('exercise-detail-modal').classList.remove('open');
   _edExerciseId = null;
+  _edSaveCallback = null;
 }
 
 function edRenderSets() {
@@ -371,8 +393,8 @@ function edRenderSets() {
     <div class="ed-set-row">
       <div class="ed-set-grid" style="flex:1">
         <div class="ed-set-num">${i + 1}</div>
-        <input class="ed-set-input" type="text" value="${s.reps.replace(/"/g,'&quot;')}" oninput="_edSets[${i}].reps=this.value">
-        <input class="ed-set-input" type="text" value="${s.rest.replace(/"/g,'&quot;')}" oninput="_edSets[${i}].rest=this.value">
+        <input class="ed-set-input" type="text" value="${(s.reps || '').replace(/"/g,'&quot;')}" oninput="_edSets[${i}].reps=this.value">
+        <input class="ed-set-input" type="text" value="${(s.rest || '').replace(/"/g,'&quot;')}" oninput="_edSets[${i}].rest=this.value">
       </div>
       ${_edSets.length > 1 ? `<button class="ed-rm-btn" onclick="edRemoveSet(${i})" title="${t('extra.detail.removeSet')}">×</button>` : `<span style="width:20px;flex-shrink:0"></span>`}
     </div>`).join('');
@@ -390,9 +412,17 @@ function edRemoveSet(i) {
 }
 
 function saveExerciseDetail() {
-  if (!_edExerciseId) return;
   const notes = document.getElementById('ed-notes').value.trim();
-  exerciseNotes[_edExerciseId] = { sets: _edSets.map(s => ({ ...s })), notes };
+  const sets = _edSets.map(s => ({ ...s }));
+  const callback = _edSaveCallback;
+  if (callback) {
+    callback(sets, notes);
+    closeExerciseDetail();
+    try { showToast(t('extra.detail.saved')); } catch(e) { console.error(e); }
+    return;
+  }
+  if (!_edExerciseId) return;
+  exerciseNotes[_edExerciseId] = { sets, notes };
   syncSet('prime_exercise_notes', exerciseNotes);
   closeExerciseDetail();
   try { renderExtraExercises(); } catch(e) { console.error(e); }
