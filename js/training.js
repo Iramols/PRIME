@@ -10,7 +10,7 @@ function getActiveEx(i) {
 
 function switchTrainingTab(tab) {
   activeTrainingTab = tab;
-  ['schemas','programmas','weekplanning','oefeningen','dag'].forEach(t => {
+  ['schemas','programmas','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
     const btn = document.getElementById(`ttab-${t}`);
     const content = document.getElementById(`ttab-content-${t}`);
     if (btn) btn.classList.toggle('active', t === tab);
@@ -19,6 +19,7 @@ function switchTrainingTab(tab) {
   if (tab === 'schemas') renderSchemas();
   if (tab === 'programmas') renderProgrammas();
   if (tab === 'oefeningen') renderExtraExercises();
+  if (tab === 'addexercise') renderAddExerciseTab();
   if (tab === 'dag') renderTrainingDag();
   if (tab === 'weekplanning') renderWeekplanning();
 }
@@ -132,7 +133,18 @@ function renderExtraExercises() {
   // Sync met sessionStorage
   try { const s = sessionStorage.getItem('prime_training_dag'); if (s) trainingDagLog = JSON.parse(s); } catch(e) {}
   const el = document.getElementById('extra-exercise-list');
-  el.innerHTML = EXTRA_EXERCISES.map(group => `
+  // Eigen oefeningen worden ingevoegd bij hun gekozen spiergroep; wat niet bij een
+  // bestaande groep hoort (of expliciet 'Eigen oefeningen') komt in een eigen sectie.
+  const matchedGroupNames = new Set(EXTRA_EXERCISES.map(g => g.group));
+  const groupsData = EXTRA_EXERCISES.map(g => ({
+    group: g.group, group_en: g.group_en, icon: g.icon,
+    exercises: [...g.exercises, ...customExercises.filter(ex => ex.group === g.group)]
+  }));
+  const leftoverCustom = customExercises.filter(ex => !matchedGroupNames.has(ex.group));
+  if (leftoverCustom.length) {
+    groupsData.push({ group: 'Eigen oefeningen', group_en: 'My exercises', icon: '⭐', exercises: leftoverCustom });
+  }
+  el.innerHTML = groupsData.map(group => `
     <div style="margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div style="font-size:20px">${group.icon}</div>
@@ -146,11 +158,11 @@ function renderExtraExercises() {
           return `
             <div class="ex-extra-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" ondblclick="openExerciseDetail('${ex.id}')">
               <div class="ex-extra-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
-              ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon}</div>`}
+              ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
               <div class="ex-extra-body">
                 <div class="ex-extra-name">${dispName(ex)}</div>
                 <div class="ex-extra-meta">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
-                <a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" class="ex-extra-video">▶ Video</a>
+                ${ex.youtube ? `<a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" class="ex-extra-video">▶ Video</a>` : ''}
               </div>
               <button class="ex-detail-btn ${hasDetail ? 'has-data' : ''}" onclick="event.stopPropagation();openExerciseDetail('${ex.id}')">
                 <span class="ex-detail-icon">📝</span><span class="ex-detail-label">${t('extra.detail.editBtn')}</span>
@@ -171,7 +183,98 @@ function findExtraExercise(exId) {
     const found = group.exercises.find(e => e.id === exId);
     if (found) return found;
   }
-  return null;
+  return customExercises.find(e => e.id === exId) || null;
+}
+
+// ========== EIGEN OEFENING TOEVOEGEN (met foto) ==========
+let _aePhotoData = null;
+
+function handleAddExercisePhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 1.5 * 1024 * 1024) {
+    document.getElementById('ae-error').textContent = t('food.add.photoTooBig');
+    return;
+  }
+  document.getElementById('ae-error').textContent = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _aePhotoData = e.target.result;
+    document.getElementById('ae-photo-preview').innerHTML = '<img src="' + _aePhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addCustomExercise() {
+  const nameInput = document.getElementById('ae-name');
+  const name = nameInput.value.trim();
+  const errorEl = document.getElementById('ae-error');
+  if (!name) {
+    errorEl.textContent = t('training.addExercise.nameRequired');
+    nameInput.style.borderColor = '#c0392b';
+    return;
+  }
+  nameInput.style.borderColor = '';
+  errorEl.textContent = '';
+
+  const exercise = {
+    id: 'custom-ex-' + Date.now() + Math.floor(Math.random() * 1000),
+    name: name,
+    icon: '🏋️',
+    group: document.getElementById('ae-group').value,
+    sets: parseInt(document.getElementById('ae-sets').value, 10) || 1,
+    reps: document.getElementById('ae-reps').value.trim(),
+    rest: document.getElementById('ae-rest').value.trim(),
+    youtube: document.getElementById('ae-youtube').value.trim(),
+    photo: _aePhotoData || null,
+    custom: true
+  };
+  customExercises.push(exercise);
+  syncSet('prime_custom_exercises', customExercises);
+
+  // Formulier resetten
+  nameInput.value = '';
+  document.getElementById('ae-group').value = 'Eigen oefeningen';
+  document.getElementById('ae-sets').value = 3;
+  document.getElementById('ae-reps').value = '';
+  document.getElementById('ae-rest').value = '';
+  document.getElementById('ae-youtube').value = '';
+  document.getElementById('ae-photo-preview').innerHTML = '🏋️';
+  _aePhotoData = null;
+
+  renderAddExerciseTab();
+}
+
+function removeCustomExercise(id) {
+  if (!confirm(t('food.add.confirmDelete'))) return;
+  customExercises = customExercises.filter(e => e.id !== id);
+  syncSet('prime_custom_exercises', customExercises);
+  // Ook verwijderen uit Vandaag als hij daar (nog) in staat.
+  trainingDagLog = trainingDagLog.filter(e => e.id !== id);
+  sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+  renderAddExerciseTab();
+}
+
+function renderAddExerciseTab() {
+  const el = document.getElementById('own-exercises-list');
+  if (!el) return;
+  if (!customExercises.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('training.addExercise.noOwnExercises') + '</div>';
+    return;
+  }
+  el.innerHTML = customExercises.map(ex => `
+    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
+      ${ex.photo
+        ? `<div style="width:64px;min-height:60px;background-image:url('${ex.photo}');background-size:cover;background-position:center;flex-shrink:0"></div>`
+        : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${ex.icon || '🏋️'}</div>`}
+      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(ex)}</div>
+          <div style="font-size:11px;color:var(--muted)">${ex.group} · ${ex.sets}${t('programmas.setsAbbr')} × ${ex.reps || '—'}${ex.rest ? ' · ' + t('training.restLabel') + ' ' + ex.rest : ''}</div>
+        </div>
+        <button onclick="removeCustomExercise('${ex.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
+      </div>
+    </div>`).join('');
 }
 
 // Zet een rust-label uit de vaste data ('90 sec', '3 min', '—') om naar een
@@ -251,11 +354,17 @@ function toggleExtraDag(exId) {
   if (existing !== -1) {
     trainingDagLog.splice(existing, 1);
   } else {
-    // Find exercise data
+    // Find exercise data — eerst in de vaste EXTRA_EXERCISES-groepen (die hun
+    // group-naam niet los op het oefening-object hebben staan), anders bij de
+    // eigen oefeningen (die group al als eigen veld hebben).
     let found = null;
     for (const group of EXTRA_EXERCISES) {
       found = group.exercises.find(e => e.id === exId);
       if (found) { found = { ...found, group: group.group }; break; }
+    }
+    if (!found) {
+      const custom = customExercises.find(e => e.id === exId);
+      if (custom) found = { ...custom };
     }
     if (found) trainingDagLog.push(found);
   }

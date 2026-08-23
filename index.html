@@ -224,6 +224,7 @@
     <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')" data-i18n="training.tab.exercises">Losse oefeningen</button>
     <button class="food-tab"        id="ttab-schemas"      onclick="switchTrainingTab('schemas')" data-i18n="training.tab.schemas">Dagschema's</button>
     <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Weekprogramma's</button>
+    <button class="food-tab"        id="ttab-addexercise"  onclick="switchTrainingTab('addexercise')" data-i18n="training.tab.addExercise">+ Oefening toevoegen</button>
   </div>
 
   <!-- TAB: PROGRAMMA'S -->
@@ -249,6 +250,48 @@
       <div style="font-size:13px;color:var(--charcoal)" data-i18n-html="training.exercises.hint">Klik op een oefening om hem toe te voegen aan <strong>Mijn dag</strong>. Je kunt sets en reps aanpassen.</div>
     </div>
     <div id="extra-exercise-list"></div>
+  </div>
+
+  <!-- TAB: EIGEN OEFENING TOEVOEGEN -->
+  <div id="ttab-content-addexercise" style="display:none">
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-label" style="margin-bottom:14px" data-i18n="training.addExercise.formTitle">Nieuwe oefening</div>
+      <div class="form-row"><label data-i18n="training.addExercise.name">Naam</label><input type="text" id="ae-name" data-i18n-placeholder="training.addExercise.namePlaceholder" placeholder="bijv. Cable Crossover"></div>
+      <div class="form-row"><label data-i18n="training.addExercise.group">Spiergroep</label>
+        <select id="ae-group">
+          <option value="Borst" data-i18n="training.group.chest">Borst</option>
+          <option value="Rug" data-i18n="training.group.back">Rug</option>
+          <option value="Schouders" data-i18n="training.group.shoulders">Schouders</option>
+          <option value="Benen" data-i18n="training.group.legs">Benen</option>
+          <option value="Core" data-i18n="training.group.core">Core</option>
+          <option value="Full body" data-i18n="training.group.fullbody">Full body</option>
+          <option value="Biceps" data-i18n="training.group.biceps">Biceps</option>
+          <option value="Triceps" data-i18n="training.group.triceps">Triceps</option>
+          <option value="Trapezius" data-i18n="training.group.trapezius">Trapezius</option>
+          <option value="Cardio" data-i18n="training.group.cardio">Cardio</option>
+          <option value="Eigen oefeningen" selected data-i18n="training.group.other">Overig</option>
+        </select>
+      </div>
+      <div class="form-row"><label data-i18n="training.addExercise.sets">Sets</label><input type="number" id="ae-sets" min="1" step="1" value="3"></div>
+      <div class="form-row"><label data-i18n="training.addExercise.reps">Herhalingen</label><input type="text" id="ae-reps" data-i18n-placeholder="training.addExercise.repsPlaceholder" placeholder="bijv. 10-12"></div>
+      <div class="form-row"><label data-i18n="training.addExercise.rest">Rust</label><input type="text" id="ae-rest" data-i18n-placeholder="training.addExercise.restPlaceholder" placeholder="bijv. 90 sec"></div>
+      <div class="form-row"><label data-i18n="training.addExercise.youtube">YouTube-link</label><input type="text" id="ae-youtube" placeholder="https://youtube.com/..."></div>
+      <div class="form-row">
+        <label data-i18n="food.add.photo">Foto</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="ae-photo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--sand);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">🏋️</div>
+          <label style="cursor:pointer">
+            <input type="file" accept="image/*" style="display:none" onchange="handleAddExercisePhoto(event)">
+            <span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600" data-i18n="beheer.upload">📷 Upload</span>
+          </label>
+        </div>
+      </div>
+      <div id="ae-error" style="color:#c0392b;font-size:12px;margin-bottom:10px"></div>
+      <button class="btn-primary" onclick="addCustomExercise()" data-i18n="training.addExercise.submit">+ Oefening toevoegen</button>
+    </div>
+
+    <div class="card-label" style="margin-bottom:10px" data-i18n="training.addExercise.myExercises">Mijn eigen oefeningen</div>
+    <div id="own-exercises-list"></div>
   </div>
 
   <!-- TAB: MIJN DAG -->

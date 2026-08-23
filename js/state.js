@@ -30,6 +30,8 @@ let customProducts = JSON.parse(localStorage.getItem('prime_custom_products') ||
 let customMeals = JSON.parse(localStorage.getItem('prime_custom_meals') || '[]');
 // Sets/herhalingen/rust/notities per losse oefening: { '<ex-id>': { sets:[{reps,rest}], notes:'' } }.
 let exerciseNotes = JSON.parse(localStorage.getItem('prime_exercise_notes') || '{}');
+// Eigen oefeningen die de coach zelf toevoegt (met foto), zichtbaar tussen Losse oefeningen.
+let customExercises = JSON.parse(localStorage.getItem('prime_custom_exercises') || '[]');
 
 // Voeding per datum (t.b.v. Weekplanning): { 'YYYY-MM-DD': [logitem, ...] }.
 // dayLog is altijd de array voor currentLogDate — zie switchLogDate() in food.js.
