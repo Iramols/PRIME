@@ -46,13 +46,28 @@ function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 // (rustdag) -- de losse dagschema's (TRAINING_SCHEMAS) zijn verwijderd. De
 // laatste regel blijft staan als nette fallback voor oude, al opgeslagen
 // weekplanningen die nog een kaal schema-id bevatten.
+// Zoekt een programma op id, zowel onder de eigen (per-klant) programma's
+// als onder de gedeelde PRIME-programma's (localStorage-cache daarvan --
+// zie primeProgLijst/'prime_prime_programmas' in programmas.js).
+function wpVindProgramma(progId) {
+  try {
+    const eigen = JSON.parse(localStorage.getItem('prime_programmas') || '[]');
+    const alles = [...BUILTIN_PROGRAMMAS, ...eigen];
+    const gevonden = alles.find(x => x.id === progId);
+    if (gevonden) return gevonden;
+  } catch (e) { /* val door naar PRIME-check hieronder */ }
+  try {
+    const prime = JSON.parse(localStorage.getItem('prime_prime_programmas') || '[]');
+    return prime.find(x => x.id === progId) || null;
+  } catch (e) { return null; }
+}
+
 function wpGetDisplay(sid) {
   if (!sid) return { icon: '\u{1F4A4}', naam: t('weekplan.rest'), sub: '' };
   if (String(sid).startsWith('prog:')) {
     const parts = String(sid).split(':');
     const progId = parts[1], dagIdx = parseInt(parts[2]);
-    const progs = (() => { try { const u = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); return [...BUILTIN_PROGRAMMAS, ...u]; } catch(e) { return [...BUILTIN_PROGRAMMAS]; } })();
-    const p = progs.find(x => x.id === progId);
+    const p = wpVindProgramma(progId);
     const dag = p ? (p.dagen || {})[dagIdx] : null;
     return { icon: '\u{1F4AA}', naam: dag ? (dispName(dag) || t('weekplan.trainingFallback')) : t('weekplan.trainingFallback'), sub: p ? dispName(p) : '' };
   }
@@ -65,8 +80,7 @@ function wpGetOefeningen(sid) {
   if (String(sid).startsWith('prog:')) {
     const parts = String(sid).split(':');
     const progId = parts[1], dagIdx = parseInt(parts[2]);
-    const progs = (() => { try { const u = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); return [...BUILTIN_PROGRAMMAS, ...u]; } catch(e) { return [...BUILTIN_PROGRAMMAS]; } })();
-    const p = progs.find(x => x.id === progId);
+    const p = wpVindProgramma(progId);
     const dag = p ? (p.dagen || {})[dagIdx] : null;
     return dag ? (dag.oefeningen || []) : [];
   }
