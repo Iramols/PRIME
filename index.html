@@ -935,8 +935,12 @@
       </div>
       <button onclick="closePortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
     </div>
-    <div class="portion-moment-label" data-i18n="portion.dayLabel">Dag</div>
-    <input type="date" id="pm-date" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;margin-bottom:14px">
+    <div style="position:relative;margin-bottom:14px">
+      <button type="button" style="width:100%;box-sizing:border-box;text-align:left;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;background:var(--sand);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);cursor:pointer">
+        <span>📅</span><span data-i18n="portion.dayLabel">Dag</span>: <span id="pm-date-label" style="font-weight:600"></span>
+      </button>
+      <input type="date" id="pm-date" onchange="updatePmDateLabel()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
+    </div>
     <div class="portion-moment-label" data-i18n="portion.momentLabel">Maaltijdmoment</div>
     <div class="moment-btns">
       <button class="moment-btn active" onclick="selectMoment('ontbijt',this)">🌅 <span data-i18n="moment.ontbijt">Ontbijt</span></button>
@@ -971,8 +975,12 @@
       </div>
       <button onclick="closeMealPortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
     </div>
-    <div class="portion-moment-label" data-i18n="portion.dayLabel">Dag</div>
-    <input type="date" id="mpm-date" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);background:var(--sand);outline:none;margin-bottom:14px">
+    <div style="position:relative;margin-bottom:14px">
+      <button type="button" style="width:100%;box-sizing:border-box;text-align:left;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;background:var(--sand);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);cursor:pointer">
+        <span>📅</span><span data-i18n="portion.dayLabel">Dag</span>: <span id="mpm-date-label" style="font-weight:600"></span>
+      </button>
+      <input type="date" id="mpm-date" onchange="updateMpmDateLabel()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
+    </div>
     <div class="portion-moment-label" data-i18n="portion.momentLabel">Maaltijdmoment</div>
     <div class="moment-btns">
       <button class="moment-btn active" onclick="selectMealMoment('ontbijt',this)">🌅 <span data-i18n="moment.ontbijt">Ontbijt</span></button>

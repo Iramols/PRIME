@@ -869,8 +869,19 @@ function openMealPortionModal(dishId) {
 
   document.getElementById('mpm-gram').value = tot.gram || 100;
   document.getElementById('mpm-date').value = currentLogDate;
+  updateMpmDateLabel();
   updateMealPortionPreview();
   document.getElementById('meal-portion-modal').classList.add('open');
+}
+
+// Zelfde als updatePmDateLabel(), maar voor de gerecht-portiemodal.
+function updateMpmDateLabel() {
+  const val = document.getElementById('mpm-date').value;
+  const label = document.getElementById('mpm-date-label');
+  if (!label) return;
+  if (!val || val === fdTodayStr()) { label.textContent = t('training.today'); return; }
+  const [y,m,d] = val.split('-').map(Number);
+  label.textContent = new Date(y, m-1, d).toLocaleDateString(dateLocale(), { day:'numeric', month:'long' });
 }
 
 function selectMealMoment(moment, btn) {
@@ -1004,8 +1015,21 @@ function openPortionModal(productId) {
   currentMoment = 'ontbijt';
   document.querySelectorAll('.moment-btn').forEach((b,i) => b.classList.toggle('active', i===0));
   document.getElementById('pm-date').value = currentLogDate;
+  updatePmDateLabel();
   updatePortionPreview();
   document.getElementById('portion-modal').classList.add('open');
+}
+
+// Toont de gekozen dag als leesbare tekst op de knop i.p.v. een kaal
+// datumveld -- klik op de knop opent (via het onzichtbare, exact
+// overlappende date-input eronder) gewoon de normale kalender.
+function updatePmDateLabel() {
+  const val = document.getElementById('pm-date').value;
+  const label = document.getElementById('pm-date-label');
+  if (!label) return;
+  if (!val || val === fdTodayStr()) { label.textContent = t('training.today'); return; }
+  const [y,m,d] = val.split('-').map(Number);
+  label.textContent = new Date(y, m-1, d).toLocaleDateString(dateLocale(), { day:'numeric', month:'long' });
 }
 
 let _portieAantal = 1;
