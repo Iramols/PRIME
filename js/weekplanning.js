@@ -167,7 +167,7 @@ function renderWeekplanning() {
     wpBouwGrid() +
     '<div id="wp-picker-wrap"></div>' +
     wpBouwInplannen() +
-    wpBouwOverzicht();
+    wpdBuildWeekHtml();
 }
 
 // ─── Weekgrid ────────────────────────────────────────────────────────────────
@@ -405,6 +405,148 @@ function wpVerwijder() {
   if (!confirm(t('weekplan.confirmRemovePlanning'))) return;
   geplanning = [];
   wpSlaPlanningOp();
+  renderWeekplanning();
+}
+
+// ─── Weekdoorblader-kaarten (zelfde look als Voeding's Weekplanning) ─────────
+// Vervangt (voorlopig alleen visueel, zie overleg met de coach) het
+// hierboven staande, vlakke "alle geplande weken op een rij"-overzicht
+// (wpBouwOverzicht, nog steeds aanwezig maar niet meer aangeroepen) door
+// dezelfde week-voor-week doorbladerbare dagkaarten als
+// foodweek.js's buildFoodWeekHtml()/fwBouwDagKaart(): ←/→ weeknavigatie,
+// 7 dagkaarten met "vandaag"-badge en "Nog niet ingevuld", uitklapbaar
+// naar de oefeningenlijst. De onderliggende data (geplanning/
+// trainingDays) en hoe een dag gevuld raakt (rooster + "plan N weken
+// vooruit" hierboven) blijven voorlopig ongewijzigd -- welke stap
+// daarna volgt (bv. losse oefeningen/programma's rechtstreeks per
+// dagkaart plannen, net als "+ Product"/"+ Gerecht" bij Voeding) wordt
+// in een volgende stap bepaald.
+let wpdWeekOffset = 0; // 0 = huidige week, +1 = volgende week, -1 = vorige week
+let wpdOpenDag = null; // datumstring van de uitgeklapte dagkaart, of null
+
+function wpdStartOfWeek(offset) {
+  const mon = wpMaandagVanaf(new Date());
+  const d = new Date(mon);
+  d.setDate(mon.getDate() + offset * 7);
+  return d;
+}
+
+// ISO-8601 weeknummer (zelfde berekening als fwWeekNumber in foodweek.js).
+function wpdWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+// Vangnet: net als renderFoodWeek() mag een mislukte render nooit een leeg
+// scherm opleveren, en één kapotte dagkaart mag niet de hele week blank trekken.
+function wpdBuildWeekHtml() {
+  try {
+    const monday = wpdStartOfWeek(wpdWeekOffset);
+    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+    const weekNum = wpdWeekNumber(monday);
+    const todayStr = wpStr(new Date());
+    const rangeLabel =
+      monday.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ' – ' +
+      sunday.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' });
+
+    let html = `<div class="card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <button class="btn-sm" onclick="wpdChangeWeek(-1)" style="padding:8px 14px">←</button>
+        <div style="text-align:center">
+          <div class="card-label" style="margin-bottom:2px">${t('foodweek.weekLabel', { n: weekNum })}</div>
+          <div style="font-size:13px;color:var(--muted)">${rangeLabel}</div>
+        </div>
+        <button class="btn-sm" onclick="wpdChangeWeek(1)" style="padding:8px 14px">→</button>
+      </div>
+      ${wpdWeekOffset !== 0 ? `<div style="text-align:center;margin-top:10px">
+        <button class="btn-sm" onclick="wpdGoToday()">${t('foodweek.backToThisWeek')}</button>
+      </div>` : ''}
+    </div>`;
+
+    html += '<div style="display:flex;flex-direction:column;gap:10px">';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateStr = wpStr(d);
+      try {
+        html += wpdBouwDagKaart(dateStr, d, i, todayStr);
+      } catch (e) {
+        console.error('wpdBouwDagKaart crash voor ' + dateStr + ':', e);
+        html += `<div class="card" style="padding:16px;font-size:12px;color:var(--muted)">⚠️ ${dateStr}: ${(e && e.message) || String(e)}</div>`;
+      }
+    }
+    html += '</div>';
+
+    return html;
+  } catch (e) {
+    console.error('wpdBuildWeekHtml crash:', e);
+    return `<div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:32px;margin-bottom:10px">⚠️</div>
+      <div style="font-weight:600;margin-bottom:6px">${t('foodweek.renderError')}</div>
+      <div style="font-size:12px;color:var(--muted)">${(e && e.message) || String(e)}</div>
+    </div>`;
+  }
+}
+
+function wpdChangeWeek(delta) {
+  wpdWeekOffset += delta;
+  wpdOpenDag = null;
+  renderWeekplanning();
+}
+
+function wpdGoToday() {
+  wpdWeekOffset = 0;
+  wpdOpenDag = null;
+  renderWeekplanning();
+}
+
+function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
+  const dagNaam = wpDagLang(dayIdx);
+  const dateLabel = d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' });
+  const isToday = dateStr === todayStr;
+  const isOpen = wpdOpenDag === dateStr;
+
+  const entry = geplanning.find(p => p.date === dateStr) || null;
+  const disp = entry ? wpGetDisplay(entry.schemaId) : null;
+  const geplandeOefeningen = entry ? wpGetOefeningen(entry.schemaId) : [];
+  const adhocOefeningen = trainingDays[dateStr] || [];
+  const alleOefeningen = [...geplandeOefeningen, ...adhocOefeningen];
+  const hasData = alleOefeningen.length > 0;
+
+  const header = `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="wpdToggleDag('${dateStr}')">
+      <div style="width:76px;flex-shrink:0">
+        <div style="font-size:12px;font-weight:700;color:${isToday ? 'var(--sage)' : 'var(--charcoal)'}">${dagNaam}</div>
+        <div style="font-size:11px;color:var(--muted)">${dateLabel}</div>
+      </div>
+      ${isToday ? `<span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;flex-shrink:0">${t('weekplan.today')}</span>` : ''}
+      <div style="flex:1"></div>
+      ${hasData
+        ? `<div style="text-align:right">
+             <div style="font-family:'DM Serif Display',serif;font-size:16px">${alleOefeningen.length} ${t(alleOefeningen.length === 1 ? 'programmas.exerciseSingular' : 'programmas.exercisesPlural')}</div>
+             ${disp && disp.naam ? `<div style="font-size:10px;color:var(--muted)">${disp.icon} ${disp.naam}</div>` : ''}
+           </div>`
+        : `<div style="font-size:12px;color:var(--muted)">${t('foodweek.notFilledIn')}</div>`}
+      <span style="font-size:11px;color:var(--muted);margin-left:8px;flex-shrink:0">${isOpen ? '▴' : '▾'}</span>
+    </div>`;
+
+  const detailHtml = alleOefeningen.length
+    ? wpBouwOefeningenAfvinken(alleOefeningen, dateStr)
+    : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
+
+  const detail = `
+    <div style="display:${isOpen ? 'block' : 'none'};padding:0 16px 14px">
+      ${detailHtml}
+    </div>`;
+
+  return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;
+}
+
+function wpdToggleDag(dateStr) {
+  wpdOpenDag = wpdOpenDag === dateStr ? null : dateStr;
   renderWeekplanning();
 }
 
