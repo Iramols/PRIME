@@ -955,10 +955,8 @@
       <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <div style="position:relative">
-      <button class="btn-primary" id="pm-submit-btn" style="width:100%" data-i18n="portion.addToDay">Toevoegen</button>
-      <input type="date" id="pm-date" onchange="addProductToLog()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
-    </div>
+    <button class="btn-primary" type="button" id="pm-submit-btn" style="width:100%" onclick="openPmDatePicker()" data-i18n="portion.addToDay">Toevoegen</button>
+    <input type="date" id="pm-date" onchange="addProductToLog()" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
   </div>
 </div>
 
@@ -991,10 +989,8 @@
       <div><div class="prev-val" id="mpv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="mpv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <div style="position:relative">
-      <button class="btn-primary" id="mpm-submit-btn" style="width:100%" data-i18n="portion.addToDay">Toevoegen</button>
-      <input type="date" id="mpm-date" onchange="addMealToLog()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
-    </div>
+    <button class="btn-primary" type="button" id="mpm-submit-btn" style="width:100%" onclick="openMpmDatePicker()" data-i18n="portion.addToDay">Toevoegen</button>
+    <input type="date" id="mpm-date" onchange="addMealToLog()" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
   </div>
 </div>
 

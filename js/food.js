@@ -868,13 +868,23 @@ function openMealPortionModal(dishId) {
   });
 
   document.getElementById('mpm-gram').value = tot.gram || 100;
-  // Standaard de dag die nu open staat (meestal vandaag); geen apart
-  // datumveld meer -- de "Toevoegen"-knop zelf is het (onzichtbare)
-  // date-input: erop klikken opent meteen de kalender, en de gekozen dag
-  // voegt het gerecht meteen toe (zie addMealToLog()).
+  // Standaard de dag die nu open staat (meestal vandaag); geen zichtbaar
+  // datumveld -- klik op "Toevoegen" (openMpmDatePicker()) opent meteen de
+  // kalender, en de gekozen dag voegt het gerecht meteen toe (zie
+  // addMealToLog(), aan het onchange-event van #mpm-date gekoppeld).
   document.getElementById('mpm-date').value = currentLogDate;
   updateMealPortionPreview();
   document.getElementById('meal-portion-modal').classList.add('open');
+}
+
+// Zelfde als openPmDatePicker(), maar voor de gerecht-portiemodal.
+function openMpmDatePicker() {
+  const input = document.getElementById('mpm-date');
+  if (input.showPicker) {
+    try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
+  }
+  input.focus();
+  input.click();
 }
 
 function selectMealMoment(moment, btn) {
@@ -1007,13 +1017,27 @@ function openPortionModal(productId) {
 
   currentMoment = 'ontbijt';
   document.querySelectorAll('.moment-btn').forEach((b,i) => b.classList.toggle('active', i===0));
-  // Standaard de dag die nu open staat (meestal vandaag); geen apart
-  // datumveld meer -- de "Toevoegen"-knop zelf is het (onzichtbare)
-  // date-input: erop klikken opent meteen de kalender, en de gekozen dag
-  // voegt het product meteen toe (zie addProductToLog()).
+  // Standaard de dag die nu open staat (meestal vandaag); geen zichtbaar
+  // datumveld -- klik op "Toevoegen" (openPmDatePicker()) opent meteen de
+  // kalender, en de gekozen dag voegt het product meteen toe (zie
+  // addProductToLog(), aan het onchange-event van #pm-date gekoppeld).
   document.getElementById('pm-date').value = currentLogDate;
   updatePortionPreview();
   document.getElementById('portion-modal').classList.add('open');
+}
+
+// Vraagt de browser expliciet om de datumkiezer te tonen (i.p.v. te
+// vertrouwen op een klik die toevallig het onzichtbare date-input raakt --
+// dat bleek in de praktijk niet altijd betrouwbaar). showPicker() moet
+// vanuit een echte gebruikersactie aangeroepen worden, dus alleen via deze
+// knop-klik, niet automatisch bij het openen van de modal zelf.
+function openPmDatePicker() {
+  const input = document.getElementById('pm-date');
+  if (input.showPicker) {
+    try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
+  }
+  input.focus();
+  input.click();
 }
 
 let _portieAantal = 1;
