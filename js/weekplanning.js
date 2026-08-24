@@ -378,9 +378,18 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
     ? wpBouwOefeningenAfvinken(alleOefeningen, dateStr)
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
+  // Zelfde knoppenrij als een uitgeklapte dagkaart bij Voeding
+  // (fwBouwDagKaart): toevoegen voor déze dag, en (alleen als er al iets
+  // staat) kopiëren/alles verwijderen.
   const detail = `
     <div style="display:${isOpen ? 'block' : 'none'};padding:0 16px 14px">
       ${detailHtml}
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn-sm" style="flex:1" onclick="wpdAddForDay('${dateStr}')">${t('training.dag.addExerciseForDay')}</button>
+        <button class="btn-sm" style="flex:1" onclick="wpdOpenProgramPicker('${dateStr}')">${t('training.dag.addProgramForDay')}</button>
+      </div>
+      ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="wpOpenTrainingCopyModal('${dateStr}')">${t('weekplan.trainingCopy.button')}</button></div>` : ''}
+      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;
@@ -388,6 +397,71 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
 
 function wpdToggleDag(dateStr) {
   wpdOpenDag = wpdOpenDag === dateStr ? null : dateStr;
+  renderWeekplanning();
+}
+
+// Zet de actieve oefen-datum op deze dag en springt naar Losse oefeningen,
+// zodat de bestaande oefening-toggle-selectie hergebruikt wordt om voor
+// déze dag iets toe te voegen i.p.v. voor vandaag (zelfde patroon als
+// fwAddForDay() bij Voeding).
+function wpdAddForDay(dateStr) {
+  switchTrainingLogDate(dateStr);
+  switchTrainingTab('oefeningen');
+}
+
+// ─── Programmadag kiezen voor een specifieke datum ───────────────────────────
+// "+ Programma" op een dagkaart: laat alle dagen van alle beschikbare
+// programma's (eigen + PRIME) zien, en wijst de gekozen dag toe aan deze
+// ene datum (geplanning/prime_planning) -- vervangt een eventueel al
+// geplande dag i.p.v. te stapelen, net als de rest van de app.
+let wpdProgramPickerDate = null;
+
+function wpdAlleProgrammaDagen() {
+  let eigen = [];
+  try { eigen = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); } catch(e) {}
+  let prime = [];
+  try { prime = JSON.parse(localStorage.getItem('prime_prime_programmas') || '[]'); } catch(e) {}
+  const alles = [...eigen, ...prime];
+  const result = [];
+  alles.forEach(prog => {
+    Object.keys(prog.dagen || {}).map(Number).sort((a,b) => a-b).forEach(dagIdx => {
+      const dag = prog.dagen[dagIdx];
+      const aantal = (dag.oefeningen || []).length;
+      result.push({
+        schemaId: 'prog:' + prog.id + ':' + dagIdx,
+        progNaam: dispName(prog),
+        dagNaam: dispName(dag) || t('programmas.dayLabel', { n: dagIdx + 1 }),
+        aantal
+      });
+    });
+  });
+  return result;
+}
+
+function wpdOpenProgramPicker(dateStr) {
+  wpdProgramPickerDate = dateStr;
+  const el = document.getElementById('training-program-picker-list');
+  const opties = wpdAlleProgrammaDagen();
+  el.innerHTML =
+    `<div class="prog-list-row" onclick="wpdKiesProgramDag(null)"><span>${t('programmas.restDay')}</span></div>` +
+    (opties.length
+      ? opties.map(o => `<div class="prog-list-row" onclick="wpdKiesProgramDag('${o.schemaId}')">
+          <span>${o.progNaam} — ${o.dagNaam} (${o.aantal} ${t(o.aantal === 1 ? 'programmas.exerciseSingular' : 'programmas.exercisesPlural')})</span>
+        </div>`).join('')
+      : `<div style="font-size:13px;color:var(--muted);padding:10px 0">${t('weekplan.noProgramsYet')}</div>`);
+  document.getElementById('training-program-picker-modal').classList.add('open');
+}
+
+function wpdCloseProgramPicker() {
+  document.getElementById('training-program-picker-modal').classList.remove('open');
+}
+
+function wpdKiesProgramDag(schemaId) {
+  if (!wpdProgramPickerDate) return;
+  geplanning = geplanning.filter(p => p.date !== wpdProgramPickerDate);
+  if (schemaId) geplanning.push({ date: wpdProgramPickerDate, schemaId });
+  wpSlaPlanningOp();
+  wpdCloseProgramPicker();
   renderWeekplanning();
 }
 

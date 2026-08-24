@@ -5,7 +5,13 @@
 // blijft de gemakslijst voor "vandaag"; persistTrainingDag() in
 // training.js schrijft 'm terug naar trainingDays[today].
 let trainingDays = JSON.parse(localStorage.getItem('prime_training_days') || '{}');
-let trainingDagLog = trainingDays[new Date().toISOString().split('T')[0]] || [];
+// Welke datum trainingDagLog op dit moment weergeeft/bewerkt -- normaal
+// gesproken vandaag, maar tijdelijk een andere datum als je vanuit
+// Weekplanning's "+ Oefening" voor een andere dag oefeningen toevoegt
+// (zelfde patroon als currentLogDate bij Voeding). switchTrainingTab('dag')
+// zet 'm altijd weer terug naar vandaag.
+let currentTrainingDate = new Date().toISOString().split('T')[0];
+let trainingDagLog = trainingDays[currentTrainingDate] || [];
 let selectedSchemaEx = {}; // Reset bij nieuwe check-in
 let activeTrainingTab = 'dag';
 

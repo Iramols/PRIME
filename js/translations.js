@@ -136,7 +136,8 @@ const I18N = {
     'training.dag.empty.hint': 'Nog niets gelogd. Voeg oefeningen of een programma toe via de andere tabbladen.',
     'training.dag.addExerciseForDay': '+ Oefening',
     'training.dag.addProgramForDay': '+ Programma',
-    'training.clearDay.confirm': 'Alle training van vandaag verwijderen? Dit kan niet ongedaan gemaakt worden.',
+    'training.clearDay.confirm': 'Alle training van deze dag verwijderen? Dit kan niet ongedaan gemaakt worden.',
+    'training.editingDate': 'Je voegt nu oefeningen toe voor {date}, niet voor vandaag',
     'training.progress': 'Voortgang',
 
     // Voeding
@@ -376,6 +377,8 @@ const I18N = {
     'weekplan.trainingCopy.button': '📋 Kopieer training',
     'weekplan.trainingCopy.title': 'Kopieer training',
     'weekplan.trainingCopy.subtitle': 'Kopieer de geplande training van deze dag naar een andere dag',
+    'weekplan.pickProgramTitle': 'Kies een programmadag',
+    'weekplan.noProgramsYet': 'Nog geen programma\'s. Maak er eerst een aan bij Training > Programma\'s.',
 
     // Check-in / checkout (checkin.js)
     'checkin.weightSkipped': 'Overgeslagen ✓',
@@ -761,7 +764,8 @@ const I18N = {
     'training.dag.empty.hint': 'Nothing logged yet. Add exercises or a program via the other tabs.',
     'training.dag.addExerciseForDay': '+ Exercise',
     'training.dag.addProgramForDay': '+ Program',
-    'training.clearDay.confirm': 'Remove all training for today? This cannot be undone.',
+    'training.clearDay.confirm': 'Remove all training for this day? This cannot be undone.',
+    'training.editingDate': "You're adding exercises for {date} now, not today",
     'training.progress': 'Progress',
 
     'food.title': 'Meal planner',
@@ -995,6 +999,8 @@ const I18N = {
     'weekplan.trainingCopy.button': '📋 Copy training',
     'weekplan.trainingCopy.title': 'Copy training',
     'weekplan.trainingCopy.subtitle': 'Copy the planned training from this day to another day',
+    'weekplan.pickProgramTitle': 'Choose a program day',
+    'weekplan.noProgramsYet': 'No programs yet. Create one first under Training > Programs.',
 
     // Check-in / checkout (checkin.js)
     'checkin.weightSkipped': 'Skipped ✓',

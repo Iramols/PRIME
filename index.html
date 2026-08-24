@@ -217,6 +217,12 @@
     <div id="training-screen-badge"></div>
   </div>
 
+  <!-- BANNER: actief oefeningen toevoegen voor een andere dag dan vandaag (via Weekplanning) -->
+  <div id="training-date-banner" style="display:none;align-items:center;gap:10px;justify-content:space-between;background:var(--accent-light);border:1px solid #e8c4a8;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--charcoal)">
+    <span id="training-date-banner-text"></span>
+    <button class="btn-sm" onclick="backToTodayTraining()" data-i18n="foodweek.backToToday">Terug naar vandaag</button>
+  </div>
+
   <!-- TABS -->
   <div class="food-tabs" style="margin-bottom:18px">
     <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')" data-i18n="training.tab.day">Vandaag</button>
@@ -1137,6 +1143,14 @@
       <button class="btn-sm" style="flex:1;text-align:center" onclick="wpCloseTrainingCopyModal()" data-i18n="foodweek.copy.close">Sluiten</button>
       <button class="btn-primary" style="flex:1" onclick="wpConfirmTrainingCopy()" data-i18n="foodweek.copy.confirm">Kopiëren</button>
     </div>
+  </div>
+</div>
+
+<!-- PROGRAMMADAG KIEZEN VOOR EEN SPECIFIEKE DATUM (Weekplanning > dagkaart > "+ Programma") -->
+<div class="overlay" id="training-program-picker-modal">
+  <div class="modal">
+    <div class="modal-title"><span data-i18n="weekplan.pickProgramTitle">Kies een programmadag</span> <button class="modal-close" onclick="wpdCloseProgramPicker()">×</button></div>
+    <div id="training-program-picker-list" style="max-height:360px;overflow-y:auto"></div>
   </div>
 </div>
 

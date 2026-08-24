@@ -6,8 +6,39 @@
 // in weekplanning.js).
 function _trainingToday() { return new Date().toISOString().split('T')[0]; }
 function persistTrainingDag() {
-  trainingDays[_trainingToday()] = trainingDagLog;
+  trainingDays[currentTrainingDate] = trainingDagLog;
   syncSet('prime_training_days', trainingDays);
+}
+
+// Zet welke datum trainingDagLog weergeeft/bewerkt -- zelfde patroon als
+// switchLogDate() bij Voeding. Gebruikt door wpdAddForDay() (Weekplanning >
+// dagkaart > "+ Oefening") zodat je oefeningen kunt toevoegen voor een
+// andere dag dan vandaag.
+function switchTrainingLogDate(dateStr) {
+  currentTrainingDate = dateStr;
+  trainingDagLog = trainingDays[dateStr] ? [...trainingDays[dateStr]] : [];
+  updateTrainingDateBanner();
+}
+
+// Toont een banner boven de Training-tabs zodra er voor een andere dag dan
+// vandaag oefeningen toegevoegd worden (zelfde opzet als
+// updateLogDateBanner() bij Voeding).
+function updateTrainingDateBanner() {
+  const banner = document.getElementById('training-date-banner');
+  if (!banner) return;
+  const isToday = currentTrainingDate === _trainingToday();
+  banner.style.display = isToday ? 'none' : 'flex';
+  if (!isToday) {
+    const [y,m,d] = currentTrainingDate.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    document.getElementById('training-date-banner-text').textContent =
+      t('training.editingDate', { date: dateObj.toLocaleDateString(dateLocale(), { day:'numeric', month:'long' }) });
+  }
+}
+
+function backToTodayTraining() {
+  switchTrainingLogDate(_trainingToday());
+  switchTrainingTab('dag');
 }
 
 function getActiveEx(i) {
@@ -46,12 +77,15 @@ function switchTrainingTab(tab) {
   if (tab === 'addprogram') resetNewProgramForm();
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'addexercise') renderAddExerciseTab();
-  if (tab === 'dag') renderTrainingDag();
+  // "Vandaag" betekent altijd vandaag — verlaat een eventueel via
+  // Weekplanning geopende andere datum weer (zelfde patroon als
+  // switchFoodTab('log') bij Voeding).
+  if (tab === 'dag') { switchTrainingLogDate(_trainingToday()); renderTrainingDag(); }
   if (tab === 'weekplanning') renderWeekplanning();
 }
 
 function renderExtraExercises() {
-  trainingDagLog = trainingDays[_trainingToday()] || [];
+  trainingDagLog = trainingDays[currentTrainingDate] || [];
   const el = document.getElementById('extra-exercise-list');
   // Eigen oefeningen worden ingevoegd bij hun gekozen spiergroep; wat niet bij een
   // bestaande groep hoort (of expliciet 'Eigen oefeningen') komt in een eigen sectie.
@@ -420,7 +454,7 @@ function renderTrainingDag() {
   const progWrap = document.getElementById('dag-progress-wrap');
 
   // Altijd synchroon houden met trainingDays (bv. na kopiëren vanuit Weekplanning)
-  trainingDagLog = trainingDays[_trainingToday()] || [];
+  trainingDagLog = trainingDays[currentTrainingDate] || [];
 
   // Weekplanning oefeningen voor vandaag
   const _dagToday = new Date().toISOString().split('T')[0];
@@ -542,26 +576,33 @@ function renderTrainingDag() {
 // (trainingDagLog, sessie-lang) én een eventueel voor vandaag geplande
 // programmadag (geplanning/prime_planning), plus hun afgevinkte status --
 // zelfde "alles verwijderen"-idee als clearFoodDay() bij Voeding.
-function clearTrainingDag() {
-  const today = new Date().toISOString().split('T')[0];
-  const heeftIets = trainingDagLog.length > 0 || geplanning.some(p => p.date === today);
+// dateStr is optioneel -- standaard vandaag (voor de knop op de Vandaag-tab
+// zelf), maar Weekplanning's dagkaarten geven hun eigen datum door zodat
+// je ook een andere dag in één keer leeg kunt maken zonder eerst naar die
+// dag te hoeven "wisselen".
+function clearTrainingDag(dateStr) {
+  const target = dateStr || _trainingToday();
+  const isVandaag = target === _trainingToday();
+  const heeftIets = (trainingDays[target] || []).length > 0 || geplanning.some(p => p.date === target);
   if (!heeftIets) return;
   if (!confirm(t('training.clearDay.confirm'))) return;
 
-  trainingDagLog = [];
-  persistTrainingDag();
+  delete trainingDays[target];
+  syncSet('prime_training_days', trainingDays);
+  if (isVandaag) trainingDagLog = [];
 
   const voorheen = geplanning.length;
-  geplanning = geplanning.filter(p => p.date !== today);
+  geplanning = geplanning.filter(p => p.date !== target);
   if (geplanning.length !== voorheen) wpSlaPlanningOp();
 
   let alleWpDone;
   try { alleWpDone = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); } catch(e) { alleWpDone = {}; }
-  if (alleWpDone[today]) { delete alleWpDone[today]; syncSet('prime_wp_done', alleWpDone); }
-  Object.keys(dagDone).forEach(k => delete dagDone[k]);
+  if (alleWpDone[target]) { delete alleWpDone[target]; syncSet('prime_wp_done', alleWpDone); }
+  if (isVandaag) Object.keys(dagDone).forEach(k => delete dagDone[k]);
 
   renderTrainingDag();
   updateTrainingDagBadge();
+  try { renderWeekplanning(); } catch (e) { console.error('renderWeekplanning na clearTrainingDag:', e); }
 }
 
 
