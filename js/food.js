@@ -460,6 +460,7 @@ let _amRowCounter = 0;
 let _amEditingId = null;
 let _amEditingIsPrime = false; // true zolang het formulier een PRIME-gerecht bewerkt i.p.v. een eigen gerecht
 let _amFormReadOnly = false;   // true zolang een niet-coach een PRIME-gerecht alleen bekijkt (geen wijzigingen mogelijk)
+let _amReturnTab = null;       // welke foodtab "Terug"/"Annuleren" moet openen (null = op + Gerecht toevoegen blijven, zoals bij een eigen gerecht)
 
 // prefill (optioneel): { name, gram, prot, carb, fat, per100:{prot,carb,fat} }.
 // Als per100 is meegegeven, staat de rij "gekoppeld" aan een basisproduct: het
@@ -669,10 +670,11 @@ function addCustomMeal() {
     syncSet('prime_custom_meals', customMeals);
   }
 
+  // resetMealForm() navigeert zelf terug naar de PRIME-tab (en ververst
+  // die daarbij) als dit een PRIME-gerecht was -- zie _amReturnTab.
   resetMealForm();
   renderOwnMealsList();
   renderMealPlan();
-  if (wasEditingPrime) renderPrimeMealPlan();
 }
 
 // Gedeeld tussen editCustomMeal (eigen gerecht, altijd bewerkbaar) en
@@ -709,6 +711,7 @@ function _populateMealForm(dish, isPrime) {
   updateMealFormTotals();
 
   document.getElementById('am-ingredient-actions').style.display = _amFormReadOnly ? 'none' : '';
+  document.getElementById('am-own-meals-section').style.display = isPrime ? 'none' : ''; // niet relevant terwijl een PRIME-gerecht open staat
   document.getElementById('am-form-title').textContent = isPrime
     ? (_amFormReadOnly ? t('food.primeMeals.viewTitle') : t('food.primeMeals.editTitle'))
     : t('food.addMeal.editTitle');
@@ -723,6 +726,7 @@ function _populateMealForm(dish, isPrime) {
 function editCustomMeal(id) {
   const dish = customMeals.find(m => m.id === id);
   if (!dish) return;
+  _amReturnTab = null; // "Annuleren" blijft gewoon op + Gerecht toevoegen, zoals bij een eigen gerecht
   _populateMealForm(dish, false);
   document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -731,10 +735,14 @@ function editCustomMeal(id) {
 // voor iedereen anders alleen-lezen (_populateMealForm bepaalt dat zelf
 // via isPrimeCoach()), zodat klanten kunnen zien wat er in het gerecht
 // zit zonder iets te kunnen wijzigen. Bereikbaar via "Bewerken" (coach)
-// of "Bekijken" (klant) op de kaart in renderPrimeMealPlan().
+// of "Bekijken" (klant) op de kaart in renderPrimeMealPlan(). Kwam je
+// hiervandaan (PRIME gerechten-tab), dan brengt "Terug"/"Annuleren"
+// (resetMealForm) je ook weer terug naar die tab i.p.v. op
+// "+ Gerecht toevoegen" te blijven staan.
 function editPrimeMeal(id) {
   const dish = primeMeals.find(m => m.id === id);
   if (!dish) return;
+  _amReturnTab = 'primemeals';
   _populateMealForm(dish, true);
   switchFoodTab('addmeal');
   document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -742,7 +750,8 @@ function editPrimeMeal(id) {
 
 // Reset het formulier naar "nieuw gerecht"-stand — zowel na een geslaagde
 // toevoeging/wijziging als bij het annuleren van een bewerking of het
-// sluiten van een alleen-lezen weergave.
+// sluiten van een alleen-lezen weergave. Navigeert daarbij terug naar
+// _amReturnTab als die gezet is (bv. de PRIME gerechten-tab).
 function resetMealForm() {
   _amEditingId = null;
   _amEditingIsPrime = false;
@@ -755,6 +764,7 @@ function resetMealForm() {
   document.getElementById('am-photo-preview').innerHTML = '🍽️';
   document.getElementById('am-photo-upload-label').style.display = '';
   document.getElementById('am-ingredient-actions').style.display = '';
+  document.getElementById('am-own-meals-section').style.display = '';
   document.getElementById('am-ingredients-body').innerHTML = '';
   addIngredientRow();
   document.getElementById('am-form-title').textContent = t('food.addMeal.formTitle');
@@ -764,6 +774,12 @@ function resetMealForm() {
   document.getElementById('am-cancel-btn').style.display = 'none';
   showMealFormError('');
   updateMealFormPrimeButtonVisibility();
+
+  if (_amReturnTab) {
+    const target = _amReturnTab;
+    _amReturnTab = null;
+    switchFoodTab(target);
+  }
 }
 
 // Toont "⭐ Opslaan als PRIME-gerecht" alleen aan de coach, en alleen
