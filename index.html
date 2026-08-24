@@ -222,8 +222,14 @@
     <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')" data-i18n="training.tab.day">Vandaag</button>
     <button class="food-tab"        id="ttab-weekplanning" onclick="switchTrainingTab('weekplanning')" data-i18n="training.tab.weekplanning">Weekplanning</button>
     <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')" data-i18n="training.tab.exercises">Losse oefeningen</button>
+    <button class="food-tab"        id="ttab-primeprog"    onclick="switchTrainingTab('primeprog')" data-i18n="training.tab.primeProgramas">PRIME programma's</button>
     <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Programma's</button>
     <button class="food-tab"        id="ttab-addexercise"  onclick="switchTrainingTab('addexercise')" data-i18n="training.tab.addExercise">+ Oefening toevoegen</button>
+  </div>
+
+  <!-- TAB: PRIME PROGRAMMA'S -->
+  <div id="ttab-content-primeprog" style="display:none">
+    <div id="primeprog-content"></div>
   </div>
 
   <!-- TAB: PROGRAMMA'S -->
@@ -824,6 +830,23 @@
       </label>
     </div>
     <button class="btn-primary" onclick="saveProfile()" data-i18n="profile.save">Opslaan ✓</button>
+  </div>
+</div>
+
+<!-- PRIME-PROGRAMMA OPSLAAN MODAL -->
+<div class="overlay" id="prime-save-modal">
+  <div class="modal">
+    <div class="modal-title"><span data-i18n="programmas.prime.modalTitle">Opslaan als PRIME-programma</span> <button class="modal-close" onclick="closePrimeSaveModal()">×</button></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" data-i18n="programmas.prime.modalHint">Deze naam is voor iedereen zichtbaar. Het "PRIME-" voorvoegsel staat altijd vast.</div>
+    <div class="form-row">
+      <label data-i18n="programmas.info.name">Naam</label>
+      <div style="display:flex;align-items:center;gap:0;border:1.5px solid var(--sand-dark);border-radius:10px;overflow:hidden">
+        <span style="padding:11px 0 11px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);font-weight:600;white-space:nowrap">PRIME-</span>
+        <input type="text" id="prime-save-suffix" style="border:none;border-radius:0;padding:11px 14px 11px 2px" data-i18n-placeholder="programmas.prime.namePlaceholder" placeholder="naam van het programma" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmPrimeSave();}">
+      </div>
+    </div>
+    <div id="prime-save-error" style="color:#c0392b;font-size:12px;margin-bottom:12px"></div>
+    <button class="btn-primary" style="width:100%" onclick="confirmPrimeSave()" data-i18n="programmas.prime.saveConfirm">Opslaan als PRIME-programma</button>
   </div>
 </div>
 

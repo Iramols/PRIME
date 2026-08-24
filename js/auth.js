@@ -6,6 +6,15 @@
 
 const CLIENT_EMAIL_DOMAIN = '@client.local';
 
+// Het echte, ingelogde Supabase-account-e-mailadres (dus altijd dat van de
+// coach zelf, ook als er via "Wissel klant" een klant bekeken wordt — dat
+// wisselt alleen activeClientId, niet de sessie). Gebruikt om coach-only
+// features zoals PRIME-programma's af te schermen. Wordt gezet in
+// resolveSession(), vóórdat de app-scripts geladen worden.
+let loggedInEmail = null;
+const PRIME_COACH_EMAIL = 'ira.mols@hotmail.com';
+function isPrimeCoach() { return loggedInEmail === PRIME_COACH_EMAIL; }
+
 const APP_SCRIPTS = [
   'js/data.js', 'js/state.js', 'js/beheer.js', 'js/checkin.js',
   'js/training.js', 'js/food.js', 'js/coach.js', 'js/programmas.js',
@@ -142,6 +151,7 @@ async function resolveSession() {
   const sb = getSupabase();
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { showLogin(); return; }
+  loggedInEmail = session.user.email || null;
 
   const { data: profileRow, error } = await sb
     .from('profiles')

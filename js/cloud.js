@@ -118,3 +118,32 @@ async function fetchClientList() {
   if (error) throw error;
   return data || [];
 }
+
+// ========== PRIME-PROGRAMMA'S (gedeeld, coach-only bewerkbaar) ==========
+// Deze lopen bewust NIET via CLOUD_KEYS/syncSet (dat is per-klant-scoped in
+// client_state), maar via een eigen, voor iedereen leesbare Supabase-tabel
+// (prime_programs, zie supabase/prime_programs.sql), zodat elke klant
+// dezelfde PRIME-programma's ziet ongeacht welk klant-account actief is.
+// localStorage blijft wel gebruikt als snelle cache/offline-fallback.
+
+async function fetchPrimeProgramsFromCloud() {
+  const sb = getSupabase();
+  const { data, error } = await sb.from('prime_programs').select('id, value');
+  if (error) { console.error('fetchPrimeProgramsFromCloud:', error); return null; }
+  const list = (data || []).map(row => row.value);
+  try { localStorage.setItem('prime_prime_programmas', JSON.stringify(list)); } catch (e) { console.error(e); }
+  return list;
+}
+
+async function savePrimeProgramToCloud(prog) {
+  const sb = getSupabase();
+  const { error } = await sb.from('prime_programs')
+    .upsert({ id: prog.id, value: prog, updated_at: new Date().toISOString() });
+  if (error) console.error('savePrimeProgramToCloud:', error);
+}
+
+async function deletePrimeProgramFromCloud(id) {
+  const sb = getSupabase();
+  const { error } = await sb.from('prime_programs').delete().eq('id', id);
+  if (error) console.error('deletePrimeProgramFromCloud:', error);
+}

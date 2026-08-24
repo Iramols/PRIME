@@ -10,13 +10,18 @@ function getActiveEx(i) {
 
 function switchTrainingTab(tab) {
   activeTrainingTab = tab;
-  ['programmas','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
+  ['programmas','primeprog','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
     const btn = document.getElementById(`ttab-${t}`);
     const content = document.getElementById(`ttab-content-${t}`);
     if (btn) btn.classList.toggle('active', t === tab);
     if (content) content.style.display = t === tab ? 'block' : 'none';
   });
-  if (tab === 'programmas') renderProgrammas();
+  if (tab === 'programmas') { progMode = 'normal'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null; renderProgrammas(); }
+  if (tab === 'primeprog') {
+    progMode = 'prime'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null;
+    renderProgrammas();
+    primeProgRefreshFromCloud(); // ververst op de achtergrond vanuit Supabase (gedeeld met alle klanten)
+  }
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'addexercise') renderAddExerciseTab();
   if (tab === 'dag') renderTrainingDag();

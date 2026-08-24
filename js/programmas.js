@@ -1,9 +1,23 @@
 // ========== PROGRAMMA'S ==========
+// progMode bepaalt welke lijst/opslag actief is: 'normal' (Programma's,
+// eigen + vaste programma's, per-klant opgeslagen) of 'prime' (PRIME
+// programma's, gedeeld met alle klanten, alleen de coach kan ze wijzigen —
+// zie supabase/prime_programs.sql). Vrijwel alle onderstaande functies
+// werken bewust op de generieke `progLijst`, die per modus naar de juiste
+// onderliggende array wijst, zodat de hele 3-kolommen-editor (dagen/
+// oefeningen/detail) voor beide hergebruikt kan worden i.p.v. gedupliceerd.
 let progLijst = [];
+let progMode = 'normal'; // 'normal' | 'prime'
 let progActiefId = null;
 let progActiefDagIdx = null;   // welke dag is geselecteerd in kolom 1
 let progSelectedOefIdx = null; // welke oefening is geselecteerd in kolom 2 (detail in kolom 3)
 let progBibliotheekOpen = false;
+
+// PRIME-programma's: cache-first (snelle eerste render vanuit localStorage),
+// daarna ververst vanuit de gedeelde Supabase-tabel zodra de tab geopend
+// wordt (zie primeProgRefreshFromCloud()).
+let primeProgLijst = [];
+try { primeProgLijst = JSON.parse(localStorage.getItem('prime_prime_programmas') || '[]'); } catch(e) {}
 
 const PROG_DAGEN_KORT = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const PROG_DAGEN_LANG = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
@@ -13,7 +27,15 @@ const PROG_DAGEN_LANG_EN = ['Monday','Tuesday','Wednesday','Thursday','Friday','
 function progDagKort(i) { return (currentLang === 'en' ? PROG_DAGEN_KORT_EN : PROG_DAGEN_KORT)[i]; }
 function progDagLang(i) { return (currentLang === 'en' ? PROG_DAGEN_LANG_EN : PROG_DAGEN_LANG)[i]; }
 
+// Mag de ingelogde gebruiker de huidige lijst bewerken? Bij 'normal' altijd
+// (eigen programma's van de klant zelf); bij 'prime' alleen de coach.
+function progCanEdit() { return progMode === 'normal' || isPrimeCoach(); }
+
 function progLaadData() {
+  if (progMode === 'prime') {
+    progLijst = primeProgLijst;
+    return;
+  }
   let userProgs = [];
   try { userProgs = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); }
   catch(e) {}
@@ -21,13 +43,34 @@ function progLaadData() {
   progLijst = [...BUILTIN_PROGRAMMAS, ...userProgs.filter(p => !builtinIds.has(p.id))];
 }
 
+// Slaat de huidige wijziging op. Bij 'prime' gebeurt dat per programma
+// (upsert naar prime_programs, zie cloud.js) i.p.v. de hele lijst ineens.
 function progSlaOp() {
+  if (progMode === 'prime') {
+    primeProgLijst = progLijst;
+    try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch(e) { console.error(e); }
+    const prog = progLijst.find(p => p.id === progActiefId);
+    if (prog) savePrimeProgramToCloud(prog);
+    return;
+  }
   syncSet('prime_programmas', progLijst.filter(p => !p.builtin));
+}
+
+// Ververst primeProgLijst vanuit de gedeelde Supabase-tabel (voor alle
+// klanten hetzelfde). Wordt aangeroepen zodra de PRIME-tab geopend wordt;
+// de al zichtbare cache-versie blijft intussen gewoon staan.
+async function primeProgRefreshFromCloud() {
+  const list = await fetchPrimeProgramsFromCloud();
+  if (list) {
+    primeProgLijst = list;
+    if (progMode === 'prime') { progLaadData(); renderProgrammas(); }
+  }
 }
 
 function renderProgrammas() {
   progLaadData();
-  const el = document.getElementById('programmas-content');
+  const elId = progMode === 'prime' ? 'primeprog-content' : 'programmas-content';
+  const el = document.getElementById(elId);
   if (!el) return;
   el.innerHTML = progActiefId !== null ? progBouw3ColEditor() : progBouwLijst();
 }
@@ -35,26 +78,30 @@ function renderProgrammas() {
 // ─── Lijst ───────────────────────────────────────────────────────────────────
 function progBouwLijst() {
   if (!progLijst.length) {
+    const hint = progMode === 'prime' ? t('programmas.prime.emptyHint') : t('programmas.empty.hint');
     return '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
-      '<div style="font-size:13px;color:var(--muted);margin-bottom:24px">' + t('programmas.empty.hint') + '</div>' +
-      '<button class="btn-primary" onclick="progNieuw()">' + t('programmas.new') + '</button>' +
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:24px">' + hint + '</div>' +
+      (progMode === 'normal' ? '<button class="btn-primary" onclick="progNieuw()">' + t('programmas.new') + '</button>' : '') +
       '</div>';
   }
 
+  const canEdit = progCanEdit();
   const kaarten = progLijst.map(prog => {
     const aantalDagen = Object.keys(prog.dagen || {}).length;
     const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
     // Vaste programma's blijven op kalenderweekdagen staan (Ma/Di/...); eigen
-    // programma's hebben een vrije dagreeks, dus die tonen 'Dag 1 · Dag 2 · ...'.
+    // en PRIME-programma's hebben een vrije dagreeks, dus die tonen 'Dag 1 · Dag 2 · ...'.
     const dagIcons    = Object.keys(prog.dagen || {}).sort((a,b) => Number(a)-Number(b))
       .map(i => prog.builtin ? progDagKort(Number(i)) : (Number(i) + 1)).join(' \xB7 ');
-    const knoppen = prog.builtin
-      ? '<button class="btn-primary" style="width:100%;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>'
-      : '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>' +
-        '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
+    let knoppen = '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>';
+    if (!prog.builtin && canEdit) {
+      knoppen += '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
         '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">' + t('common.delete') + '</button>';
+    } else if (!prog.builtin) {
+      knoppen += '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('programmas.view') + '</button>';
+    }
     return '<div class="card" style="margin-bottom:12px' + (prog.builtin ? ';border-color:var(--sage)' : '') + '">' +
       '<div style="display:flex;gap:14px;margin-bottom:10px">' +
       (prog.foto
@@ -82,7 +129,7 @@ function progBouwLijst() {
   }).join('');
 
   return '<div style="margin-bottom:4px">' + kaarten + '</div>' +
-    '<button class="btn-primary" style="width:100%" onclick="progNieuw()">' + t('programmas.new') + '</button>';
+    (progMode === 'normal' ? '<button class="btn-primary" style="width:100%" onclick="progNieuw()">' + t('programmas.new') + '</button>' : '');
 }
 
 // ─── Programma editor: dagen | oefeningen | detail naast elkaar ──────────────
@@ -93,6 +140,7 @@ function progBouw3ColEditor() {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) { progActiefId = null; return progBouwLijst(); }
   if (!prog.dagen) prog.dagen = {};
+  const canEdit = progCanEdit();
 
   const dagIndexen = Object.keys(prog.dagen).map(Number).sort((a,b) => a-b);
   if (progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) {
@@ -113,7 +161,7 @@ function progBouw3ColEditor() {
     const isActief = i === progActiefDagIdx;
     return '<div class="prog-list-row' + (isActief ? ' active' : '') + '" onclick="progDagSelecteer(' + i + ')">' +
       '<span>' + t('programmas.dayLabel', { n: i + 1 }) + (naam ? ' – ' + naam : '') + '</span>' +
-      '<button class="prog-list-row-remove" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' +
+      (canEdit ? '<button class="prog-list-row-remove" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' : '') +
       '</div>';
   }).join('');
 
@@ -134,34 +182,33 @@ function progBouw3ColEditor() {
           ? '<div class="prog-oef-thumb" style="background-image:url(\'' + photo + '\')"></div>'
           : '<div class="prog-oef-thumb prog-oef-thumb-icon">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>') +
         '<div class="prog-oef-info"><div class="prog-oef-name">' + (oef.naam || t('programmas.exercisePlaceholder')) + '</div><div class="prog-oef-meta">' + meta + '</div></div>' +
-        '<button class="prog-list-row-remove" onclick="event.stopPropagation();progOefVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' +
+        (canEdit ? '<button class="prog-list-row-remove" onclick="event.stopPropagation();progOefVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' : '') +
         '</div>';
     }).join('');
   }
 
   // Kolom 3: sets/notities-detail van de geselecteerde oefening
   const detailHtml = geselecteerdeOef
-    ? progBouwOefDetail(geselecteerdeOef)
+    ? progBouwOefDetail(geselecteerdeOef, canEdit)
     : '<div class="prog-list-empty" style="padding:60px 10px">' + t('programmas.selectExerciseHint') + '</div>';
 
   return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">' +
     '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
     '<div class="prog-title-static">' + dispName(prog).replace(/</g,'&lt;') + '</div>' +
+    (progMode === 'prime' ? '<span class="prog-prime-badge">' + t('programmas.prime.badge') + '</span>' : '') +
     '</div>' +
-    progBouwInfoKaart(prog) +
+    progBouwInfoKaart(prog, canEdit) +
     '<div class="prog-3col">' +
 
     '<div class="prog-col">' +
     '<div class="prog-col-head"><span>' + t('programmas.trainingDays') + '</span></div>' +
-    '<div class="prog-col-actions">' +
-    '<button class="prog-col-add" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button>' +
-    '</div>' +
+    (canEdit ? '<div class="prog-col-actions"><button class="prog-col-add" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button></div>' : '') +
     '<div class="prog-col-body">' + dagRijenHtml + '</div>' +
     '</div>' +
 
     '<div class="prog-col">' +
     '<div class="prog-col-head"><span>' + t('programmas.exercisesLabel') + '</span></div>' +
-    (geselecteerdeDag
+    (geselecteerdeDag && canEdit
       ? '<div class="prog-col-actions">' +
         '<button class="prog-col-add" onclick="progOefToevoegen()">' + t('programmas.addEmptyField') + '</button>' +
         '<button class="prog-col-add' + (progBibliotheekOpen ? ' active' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button>' +
@@ -170,11 +217,11 @@ function progBouw3ColEditor() {
     (geselecteerdeDag
       ? '<div class="prog-day-name-row">' +
         '<label>' + t('programmas.dayNameLabel') + '</label>' +
-        '<input type="text" class="prog-day-title-input" value="' + (geselecteerdeDag.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.dayNamePlaceholder') + '" onchange="progDagNaamBijwerken(this.value)">' +
+        '<input type="text" class="prog-day-title-input" value="' + (geselecteerdeDag.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.dayNamePlaceholder') + '" onchange="progDagNaamBijwerken(this.value)"' + (canEdit ? '' : ' disabled') + '>' +
         '</div>'
       : '') +
     '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
-    (progBibliotheekOpen && geselecteerdeDag ? progBouwBibliotheek(oefeningen) : '') +
+    (progBibliotheekOpen && geselecteerdeDag && canEdit ? progBouwBibliotheek(oefeningen) : '') +
     '</div>' +
 
     '<div class="prog-col prog-col-detail">' + detailHtml + '</div>' +
@@ -185,47 +232,64 @@ function progBouw3ColEditor() {
 // Programma-info: beschrijving, doel, niveau en dagen per week -- los van de
 // naam (die al bovenaan staat) en los van de dagen/oefeningen zelf. Altijd
 // zichtbaar en direct bewerkbaar, net als de rest van de editor (autosave).
-function progBouwInfoKaart(prog) {
-  return '<div class="card prog-info-kaart">' +
+// Bij PRIME-programma's staat er, alleen voor de coach en alleen op eigen
+// (niet-PRIME) programma's, een knop rechts om het huidige programma als
+// nieuw PRIME-programma op te slaan.
+function progBouwInfoKaart(prog, canEdit) {
+  const primeActie = (progMode === 'normal' && isPrimeCoach())
+    ? '<div class="prog-info-side">' +
+      '<div class="prog-info-side-label">' + t('programmas.prime.sideLabel') + '</div>' +
+      '<button class="btn-sm" style="width:100%" onclick="progOpenPrimeSaveModal()">' + t('programmas.prime.saveAs') + '</button>' +
+      '</div>'
+    : '';
+  const dis = canEdit ? '' : ' disabled';
+  return '<div class="prog-info-wrap">' +
+    '<div class="card prog-info-kaart">' +
     '<div class="form-row"><label>' + t('food.add.photo') + '</label>' +
     '<div style="display:flex;align-items:center;gap:12px">' +
     '<div id="prog-photo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--sand);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">' +
     (prog.foto ? '<img src="' + prog.foto + '" style="width:100%;height:100%;object-fit:cover">' : '📋') +
     '</div>' +
-    '<label style="cursor:pointer">' +
-    '<input type="file" accept="image/*" style="display:none" onchange="handleProgPhoto(event)">' +
-    '<span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600">' + t('beheer.upload') + '</span>' +
-    '</label>' +
+    (canEdit
+      ? '<label style="cursor:pointer">' +
+        '<input type="file" accept="image/*" style="display:none" onchange="handleProgPhoto(event)">' +
+        '<span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600">' + t('beheer.upload') + '</span>' +
+        '</label>'
+      : '') +
     '</div>' +
     '<div id="prog-photo-error" style="color:#c0392b;font-size:12px;margin-top:6px"></div>' +
     '</div>' +
     '<div class="form-row"><label>' + t('programmas.info.name') + '</label>' +
-    '<input type="text" id="prog-naam-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.namePlaceholder') + '" onchange="progNaamBijwerken(this.value)"></div>' +
+    '<input type="text" id="prog-naam-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.namePlaceholder') + '" onchange="progNaamBijwerken(this.value)"' + dis + '></div>' +
     '<div class="form-row"><label>' + t('programmas.info.description') + '</label>' +
-    '<textarea class="prog-info-textarea" placeholder="' + t('programmas.info.descriptionPlaceholder') + '" onchange="progInfoBijwerken(\'beschrijving\',this.value)">' + (prog.beschrijving || '').replace(/</g,'&lt;') + '</textarea>' +
+    '<textarea class="prog-info-textarea" placeholder="' + t('programmas.info.descriptionPlaceholder') + '" onchange="progInfoBijwerken(\'beschrijving\',this.value)"' + dis + '>' + (prog.beschrijving || '').replace(/</g,'&lt;') + '</textarea>' +
     '</div>' +
     '<div class="prog-info-grid">' +
     '<div class="form-row"><label>' + t('programmas.info.goal') + '</label>' +
-    '<input type="text" value="' + (prog.doel || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.goalPlaceholder') + '" onchange="progInfoBijwerken(\'doel\',this.value)"></div>' +
+    '<input type="text" value="' + (prog.doel || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.goalPlaceholder') + '" onchange="progInfoBijwerken(\'doel\',this.value)"' + dis + '></div>' +
     '<div class="form-row"><label>' + t('programmas.info.level') + '</label>' +
-    '<select onchange="progInfoBijwerken(\'niveau\',this.value)">' +
+    '<select onchange="progInfoBijwerken(\'niveau\',this.value)"' + dis + '>' +
     '<option value=""' + (!prog.niveau ? ' selected' : '') + '>—</option>' +
     ['Beginner','Gemiddeld','Gevorderd'].map(lvl =>
       '<option value="' + lvl + '"' + (prog.niveau === lvl ? ' selected' : '') + '>' + t('programmas.level.' + lvl.toLowerCase()) + '</option>'
     ).join('') +
     '</select></div>' +
     '<div class="form-row"><label>' + t('programmas.info.daysPerWeek') + '</label>' +
-    '<input type="text" value="' + (prog.dagenPerWeek || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.daysPerWeekPlaceholder') + '" onchange="progInfoBijwerken(\'dagenPerWeek\',this.value)"></div>' +
+    '<input type="text" value="' + (prog.dagenPerWeek || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.daysPerWeekPlaceholder') + '" onchange="progInfoBijwerken(\'dagenPerWeek\',this.value)"' + dis + '></div>' +
     '</div>' +
+    '</div>' +
+    primeActie +
     '</div>';
 }
 
 function progInfoBijwerken(veld, val) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (prog) { prog[veld] = val; progSlaOp(); }
 }
 
 function handleProgPhoto(event) {
+  if (!progCanEdit()) return;
   const file = event.target.files[0];
   if (!file) return;
   const errorEl = document.getElementById('prog-photo-error');
@@ -248,22 +312,23 @@ function handleProgPhoto(event) {
 // Detailpaneel (kolom 3): naam, foto, per-set herhalingen/rust, notities.
 // Stappen-oefeningen (Wandelen e.d.) krijgen i.p.v. de sets-tabel één
 // stappen-veld, net als voorheen in de tabelweergave.
-function progBouwOefDetail(oef) {
+function progBouwOefDetail(oef, canEdit) {
   const canonical = findCanonicalExercise(oef.naam);
   const photo = canonical ? canonical.photo : null;
   const photoHtml = '<div class="ed-photo-wrap">' +
     (photo ? '<img src="' + photo + '" alt="">' : '<div style="font-size:48px;text-align:center;padding:40px 0">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>') +
     '</div>';
-  const naamInput = '<input type="text" class="prog-detail-title-input" value="' + (oef.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.exercisePlaceholder') + '" onchange="progOefDetailUpdateName(this.value)">';
+  const dis = canEdit ? '' : ' disabled';
+  const naamInput = '<input type="text" class="prog-detail-title-input" value="' + (oef.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.exercisePlaceholder') + '" onchange="progOefDetailUpdateName(this.value)"' + dis + '>';
   const notesHtml = '<div class="divider" style="margin:20px 0"></div>' +
     '<div class="ed-field-label">' + t('extra.detail.notesLabel') + '</div>' +
-    '<textarea class="ed-notes" placeholder="' + t('extra.detail.notesPlaceholder') + '" onchange="progOefDetailUpdateNotes(this.value)">' + (oef.notities || '').replace(/</g,'&lt;') + '</textarea>';
+    '<textarea class="ed-notes" placeholder="' + t('extra.detail.notesPlaceholder') + '" onchange="progOefDetailUpdateNotes(this.value)"' + dis + '>' + (oef.notities || '').replace(/</g,'&lt;') + '</textarea>';
 
   const isStappen = oef.naam === 'Wandelen' || oef.naam === 'Walking' || (oef.stappen !== undefined && oef.stappen !== '');
   if (isStappen) {
     return naamInput + photoHtml +
       '<div class="ed-field-label">' + t('programmas.stepsPerDay') + '</div>' +
-      '<input type="text" class="ed-set-input" style="width:100%;box-sizing:border-box;text-align:left" value="' + (oef.stappen || '8000-10000').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.stepsPlaceholder') + '" onchange="progOefDetailUpdateStappen(this.value)">' +
+      '<input type="text" class="ed-set-input" style="width:100%;box-sizing:border-box;text-align:left" value="' + (oef.stappen || '8000-10000').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.stepsPlaceholder') + '" onchange="progOefDetailUpdateStappen(this.value)"' + dis + '>' +
       notesHtml;
   }
 
@@ -272,10 +337,10 @@ function progBouwOefDetail(oef) {
     '<div class="ed-set-row">' +
     '<div class="ed-set-grid" style="flex:1">' +
     '<div class="ed-set-num">' + (i + 1) + '</div>' +
-    '<input class="ed-set-input" type="text" value="' + (s.reps || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'reps\',this.value)">' +
-    '<input class="ed-set-input" type="text" value="' + (s.rest || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'rest\',this.value)">' +
+    '<input class="ed-set-input" type="text" value="' + (s.reps || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'reps\',this.value)"' + dis + '>' +
+    '<input class="ed-set-input" type="text" value="' + (s.rest || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'rest\',this.value)"' + dis + '>' +
     '</div>' +
-    (sets.length > 1 ? '<button class="ed-rm-btn" onclick="progOefDetailRemoveSet(' + i + ')" title="' + t('extra.detail.removeSet') + '">×</button>' : '<span style="width:20px;flex-shrink:0"></span>') +
+    (sets.length > 1 && canEdit ? '<button class="ed-rm-btn" onclick="progOefDetailRemoveSet(' + i + ')" title="' + t('extra.detail.removeSet') + '">×</button>' : '<span style="width:20px;flex-shrink:0"></span>') +
     '</div>'
   )).join('');
 
@@ -283,7 +348,7 @@ function progBouwOefDetail(oef) {
     '<div class="ed-field-label">' + t('extra.detail.setsLabel') + '</div>' +
     '<div class="ed-set-grid ed-set-head"><span></span><span>' + t('extra.detail.reps') + '</span><span>' + t('extra.detail.rest') + '</span></div>' +
     setsRowsHtml +
-    '<button class="ed-add-set" onclick="progOefDetailAddSet()">' + t('extra.detail.addSet') + '</button>' +
+    (canEdit ? '<button class="ed-add-set" onclick="progOefDetailAddSet()">' + t('extra.detail.addSet') + '</button>' : '') +
     notesHtml;
 }
 
@@ -297,6 +362,7 @@ function progOefAfgeleidesSets(oef) {
 
 // ─── Acties: programma & dagen ────────────────────────────────────────────────
 function progNieuw() {
+  if (progMode !== 'normal') return; // PRIME-programma's ontstaan alleen via "opslaan als"
   const id = 'p' + Date.now() + Math.floor(Math.random() * 1000);
   progLijst.push({ id, naam: t('programmas.newProgramName'), dagen: {} });
   progSlaOp();
@@ -307,11 +373,18 @@ function progNieuw() {
 }
 
 function progVerwijder(id) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === id);
   if (!prog || prog.builtin) return;
   if (!confirm(t('programmas.confirmDelete'))) return;
   progLijst = progLijst.filter(p => p.id !== id);
-  progSlaOp();
+  if (progMode === 'prime') {
+    primeProgLijst = progLijst;
+    try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch(e) { console.error(e); }
+    deletePrimeProgramFromCloud(id);
+  } else {
+    progSlaOp();
+  }
   renderProgrammas();
 }
 
@@ -333,6 +406,7 @@ function progTerugNaarLijst() {
 }
 
 function progNaamBijwerken(val) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) return;
   prog.naam = val;
@@ -351,6 +425,7 @@ function progDagSelecteer(dagIdx) {
 }
 
 function progDagNaamBijwerken(val) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (prog && progActiefDagIdx !== null) {
     if (!prog.dagen[progActiefDagIdx]) prog.dagen[progActiefDagIdx] = { naam: '', oefeningen: [] };
@@ -362,6 +437,7 @@ function progDagNaamBijwerken(val) {
 
 // Voegt een nieuwe dag toe aan het einde van de reeks (volgend vrij, oplopend nummer).
 function progDagToevoegen() {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) return;
   if (!prog.dagen) prog.dagen = {};
@@ -377,6 +453,7 @@ function progDagToevoegen() {
 // Verwijdert een dag en nummert de resterende dagen daarna opnieuw door, zodat
 // 'Dag 1, Dag 2, ...' altijd een aaneengesloten reeks zonder gaten blijft.
 function progDagVerwijder(dagIdx) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog || !prog.dagen) return;
   if (!confirm(t('programmas.confirmDeleteDay'))) return;
@@ -397,6 +474,7 @@ function progSelectOef(oefIdx) {
 }
 
 function progOefToevoegen() {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog || progActiefDagIdx === null) return;
   const idx = progActiefDagIdx;
@@ -408,6 +486,7 @@ function progOefToevoegen() {
 }
 
 function progOefVerwijder(oefIdx) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
   prog.dagen[progActiefDagIdx].oefeningen.splice(oefIdx, 1);
@@ -427,6 +506,7 @@ function progGeselecteerdeOef() {
 }
 
 function progOefDetailUpdateName(val) {
+  if (!progCanEdit()) return;
   const oef = progGeselecteerdeOef();
   if (!oef) return;
   oef.naam = val;
@@ -435,6 +515,7 @@ function progOefDetailUpdateName(val) {
 }
 
 function progOefDetailUpdateStappen(val) {
+  if (!progCanEdit()) return;
   const oef = progGeselecteerdeOef();
   if (!oef) return;
   oef.stappen = val;
@@ -443,6 +524,7 @@ function progOefDetailUpdateStappen(val) {
 }
 
 function progOefDetailUpdateNotes(val) {
+  if (!progCanEdit()) return;
   const oef = progGeselecteerdeOef();
   if (!oef) return;
   oef.notities = val;
@@ -450,6 +532,7 @@ function progOefDetailUpdateNotes(val) {
 }
 
 function progOefDetailUpdateSet(setIdx, veld, val) {
+  if (!progCanEdit()) return;
   const oef = progGeselecteerdeOef();
   if (!oef) return;
   if (!oef.setsDetail || !oef.setsDetail.length) oef.setsDetail = progOefAfgeleidesSets(oef);
@@ -461,6 +544,7 @@ function progOefDetailUpdateSet(setIdx, veld, val) {
 }
 
 function progOefDetailAddSet() {
+  if (!progCanEdit()) return;
   const oef = progGeselecteerdeOef();
   if (!oef) return;
   if (!oef.setsDetail || !oef.setsDetail.length) oef.setsDetail = progOefAfgeleidesSets(oef);
@@ -472,6 +556,7 @@ function progOefDetailAddSet() {
 }
 
 function progOefDetailRemoveSet(setIdx) {
+  if (!progCanEdit()) return;
   const oef = progGeselecteerdeOef();
   if (!oef || !oef.setsDetail) return;
   oef.setsDetail.splice(setIdx, 1);
@@ -482,6 +567,7 @@ function progOefDetailRemoveSet(setIdx) {
 
 // ─── Bibliotheek: oefening kiezen uit Losse oefeningen ────────────────────────
 function progToggleBibliotheek() {
+  if (!progCanEdit()) return;
   progBibliotheekOpen = !progBibliotheekOpen;
   renderProgrammas();
 }
@@ -525,6 +611,7 @@ function progBouwBibliotheek(huidig) {
 }
 
 function progOefUitBibliotheek(exId) {
+  if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog || progActiefDagIdx === null) return;
   const idx = progActiefDagIdx;
@@ -553,7 +640,10 @@ function progOefUitBibliotheek(exId) {
 // ─── Laden in Weekplanning ─────────────────────────────────────────────────────
 function progLadenInWeekplanning(id) {
   progLaadData();
-  const prog = progLijst.find(p => p.id === id);
+  let prog = progLijst.find(p => p.id === id);
+  // Kan ook een PRIME-programma zijn terwijl 'normal' actief is (of andersom
+  // als deze ooit los aangeroepen wordt) -- val terug op de andere lijst.
+  if (!prog) prog = primeProgLijst.find(p => p.id === id);
   if (!prog) return;
 
   let weekplanData = null;
@@ -573,4 +663,56 @@ function progLadenInWeekplanning(id) {
 
   syncSet('prime_weekplan', weekplanData);
   switchTrainingTab('weekplanning');
+}
+
+// ─── Opslaan als PRIME-programma ───────────────────────────────────────────────
+// Kloont het huidige (eigen) programma naar een nieuw, gedeeld PRIME-
+// programma. De naam krijgt altijd de vaste prefix 'PRIME-' -- dat deel is
+// niet aanpasbaar in het modaal, alleen het stuk erna.
+function progOpenPrimeSaveModal() {
+  if (!isPrimeCoach() || progMode !== 'normal') return;
+  const prog = progLijst.find(p => p.id === progActiefId);
+  if (!prog) return;
+  document.getElementById('prime-save-suffix').value = '';
+  document.getElementById('prime-save-error').textContent = '';
+  document.getElementById('prime-save-modal').classList.add('open');
+  document.getElementById('prime-save-suffix').focus();
+}
+
+function closePrimeSaveModal() {
+  document.getElementById('prime-save-modal').classList.remove('open');
+}
+
+function confirmPrimeSave() {
+  if (!isPrimeCoach() || progMode !== 'normal') return;
+  const prog = progLijst.find(p => p.id === progActiefId);
+  if (!prog) return;
+  const suffix = document.getElementById('prime-save-suffix').value.trim();
+  if (!suffix) {
+    document.getElementById('prime-save-error').textContent = t('programmas.prime.nameRequired');
+    return;
+  }
+  const nieuw = {
+    id: 'prime' + Date.now() + Math.floor(Math.random() * 1000),
+    naam: 'PRIME-' + suffix,
+    foto: prog.foto || null,
+    beschrijving: prog.beschrijving || '',
+    doel: prog.doel || '',
+    niveau: prog.niveau || '',
+    dagenPerWeek: prog.dagenPerWeek || '',
+    dagen: JSON.parse(JSON.stringify(prog.dagen || {}))
+  };
+  primeProgLijst.push(nieuw);
+  try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch(e) { console.error(e); }
+  savePrimeProgramToCloud(nieuw);
+
+  closePrimeSaveModal();
+  try { showToast(t('programmas.prime.saved')); } catch(e) { console.error(e); }
+
+  // Meteen naar het nieuwe PRIME-programma springen, ter bevestiging.
+  switchTrainingTab('primeprog');
+  progActiefId = nieuw.id;
+  progActiefDagIdx = null;
+  progSelectedOefIdx = null;
+  renderProgrammas();
 }
