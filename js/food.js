@@ -318,8 +318,10 @@ async function primeMealsRefreshFromCloud() {
 }
 
 // Lijst voor de "PRIME gerechten"-tab. Voor iedereen klikbaar om te loggen
-// (zelfde portiemodal als Maaltijdplan); alleen de coach ziet Bewerken/
-// Verwijderen per kaart.
+// (zelfde portiemodal als Maaltijdplan). De coach ziet Bewerken/Verwijderen;
+// iedereen anders ziet in plaats daarvan "Bekijken" -- opent hetzelfde
+// formulier als Bewerken, maar dan alleen-lezen, zodat klanten kunnen zien
+// wat er precies in een PRIME-gerecht zit (net als bij PRIME-programma's).
 function renderPrimeMealPlan() {
   const el = document.getElementById('prime-meal-plan');
   if (!el) return;
@@ -340,11 +342,14 @@ function renderPrimeMealPlan() {
           <span class="product-pill">${tot.kcal} kcal</span>
           <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
         </div>
-        ${canEdit ? `
         <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
+          ${canEdit ? `
           <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('common.edit')}</button>
           <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">${t('common.delete')}</button>
-        </div>` : ''}
+          ` : `
+          <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('programmas.view')}</button>
+          `}
+        </div>
       </div>`;
     }).join('') + `</div>`;
 }
@@ -454,6 +459,7 @@ let _amPhotoData = null;
 let _amRowCounter = 0;
 let _amEditingId = null;
 let _amEditingIsPrime = false; // true zolang het formulier een PRIME-gerecht bewerkt i.p.v. een eigen gerecht
+let _amFormReadOnly = false;   // true zolang een niet-coach een PRIME-gerecht alleen bekijkt (geen wijzigingen mogelijk)
 
 // prefill (optioneel): { name, gram, prot, carb, fat, per100:{prot,carb,fat} }.
 // Als per100 is meegegeven, staat de rij "gekoppeld" aan een basisproduct: het
@@ -465,16 +471,17 @@ function addIngredientRow(prefill) {
   const tr = document.createElement('tr');
   tr.id = rowId;
   const p = prefill || {};
-  const gramInputAttrs = p.per100 ? ' oninput="updateLinkedIngredientRow(\'' + rowId + '\');updateMealFormTotals()"' : ' oninput="updateMealFormTotals()"';
+  const dis = _amFormReadOnly ? ' disabled' : '';
+  const gramInputAttrs = (p.per100 ? ' oninput="updateLinkedIngredientRow(\'' + rowId + '\');updateMealFormTotals()"' : ' oninput="updateMealFormTotals()"') + dis;
   if (p.per100) tr.dataset.per100 = JSON.stringify(p.per100);
   tr.innerHTML =
-    '<td style="padding:4px 6px 4px 0"><input type="text" class="am-ing-name" placeholder="' + t('food.addMeal.ingredientNamePlaceholder') + '" value="' + (p.name ? String(p.name).replace(/"/g,'&quot;') : '') + '" style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
+    '<td style="padding:4px 6px 4px 0"><input type="text" class="am-ing-name" placeholder="' + t('food.addMeal.ingredientNamePlaceholder') + '" value="' + (p.name ? String(p.name).replace(/"/g,'&quot;') : '') + '"' + dis + ' style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
     '<td style="padding:4px 3px"><input type="number" class="am-ing-gram" min="0" step="1" value="' + (p.gram ?? 0) + '"' + gramInputAttrs + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-prot" min="0" step="0.1" value="' + (p.prot ?? 0) + '" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-carb" min="0" step="0.1" value="' + (p.carb ?? 0) + '" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
-    '<td style="padding:4px 3px"><input type="number" class="am-ing-fat" min="0" step="0.1" value="' + (p.fat ?? 0) + '" oninput="updateMealFormTotals()" style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-prot" min="0" step="0.1" value="' + (p.prot ?? 0) + '" oninput="updateMealFormTotals()"' + dis + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-carb" min="0" step="0.1" value="' + (p.carb ?? 0) + '" oninput="updateMealFormTotals()"' + dis + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
+    '<td style="padding:4px 3px"><input type="number" class="am-ing-fat" min="0" step="0.1" value="' + (p.fat ?? 0) + '" oninput="updateMealFormTotals()"' + dis + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
     '<td style="padding:4px 3px;text-align:center;font-size:12px;color:var(--muted)" class="am-ing-kcal">0</td>' +
-    '<td style="padding:4px 0 4px 4px;text-align:center"><button onclick="removeIngredientRow(\'' + rowId + '\')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px">&#x2715;</button></td>';
+    '<td style="padding:4px 0 4px 4px;text-align:center"><button onclick="removeIngredientRow(\'' + rowId + '\')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px' + (_amFormReadOnly ? ';display:none' : '') + '">&#x2715;</button></td>';
   if (p.per100) tr.style.borderLeft = '3px solid var(--sage)';
   tbody.appendChild(tr);
   updateMealFormTotals();
@@ -496,6 +503,7 @@ function updateLinkedIngredientRow(rowId) {
 
 // ========== BASISPRODUCT KIEZEN ALS INGREDIËNT (bij Gerecht toevoegen) ==========
 function openIngredientProductPicker() {
+  if (_amFormReadOnly) return; // defense-in-depth: knop is toch al verborgen
   const search = document.getElementById('ipm-search');
   if (search) search.value = '';
   renderIngredientProductList();
@@ -541,6 +549,7 @@ function pickIngredientProduct(productId) {
 }
 
 function removeIngredientRow(rowId) {
+  if (_amFormReadOnly) return; // defense-in-depth: knop is toch al verborgen
   const row = document.getElementById(rowId);
   if (row) row.remove();
   updateMealFormTotals();
@@ -566,6 +575,7 @@ function updateMealFormTotals() {
 }
 
 function handleAddMealPhoto(event) {
+  if (_amFormReadOnly) return; // defense-in-depth: upload-knop is toch al verborgen
   const file = event.target.files[0];
   if (!file) return;
   if (file.size > 1.5 * 1024 * 1024) {
@@ -665,18 +675,24 @@ function addCustomMeal() {
   if (wasEditingPrime) renderPrimeMealPlan();
 }
 
-// Gedeeld tussen editCustomMeal (eigen gerecht) en editPrimeMeal
-// (PRIME-gerecht, coach-only) -- vult het "+ Gerecht toevoegen"-formulier
-// met de gegevens van het op te bewerken gerecht.
+// Gedeeld tussen editCustomMeal (eigen gerecht, altijd bewerkbaar) en
+// editPrimeMeal (PRIME-gerecht -- bewerkbaar voor de coach, alleen-lezen
+// voor iedereen anders, zodat klanten wél kunnen zien wat er in een
+// PRIME-gerecht zit, net als bij PRIME-programma's) -- vult het
+// "+ Gerecht toevoegen"-formulier met de gegevens van het gerecht.
 function _populateMealForm(dish, isPrime) {
   _amEditingId = dish.id;
   _amEditingIsPrime = !!isPrime;
+  _amFormReadOnly = _amEditingIsPrime && !isPrimeCoach();
 
-  document.getElementById('am-name').value = dish.name;
+  const nameInput = document.getElementById('am-name');
+  nameInput.value = dish.name;
+  nameInput.disabled = _amFormReadOnly;
   _amPhotoData = dish.photo || null;
   document.getElementById('am-photo-preview').innerHTML = dish.photo
     ? '<img src="' + dish.photo + '" style="width:100%;height:100%;object-fit:cover">'
     : '🍽️';
+  document.getElementById('am-photo-upload-label').style.display = _amFormReadOnly ? 'none' : '';
 
   const tbody = document.getElementById('am-ingredients-body');
   tbody.innerHTML = '';
@@ -692,8 +708,13 @@ function _populateMealForm(dish, isPrime) {
   if (!dish.ingredients || !dish.ingredients.length) addIngredientRow();
   updateMealFormTotals();
 
-  document.getElementById('am-form-title').textContent = isPrime ? t('food.primeMeals.editTitle') : t('food.addMeal.editTitle');
+  document.getElementById('am-ingredient-actions').style.display = _amFormReadOnly ? 'none' : '';
+  document.getElementById('am-form-title').textContent = isPrime
+    ? (_amFormReadOnly ? t('food.primeMeals.viewTitle') : t('food.primeMeals.editTitle'))
+    : t('food.addMeal.editTitle');
+  document.getElementById('am-submit-btn').style.display = _amFormReadOnly ? 'none' : '';
   document.getElementById('am-submit-btn').textContent = t('food.addMeal.update');
+  document.getElementById('am-cancel-btn').textContent = t(_amFormReadOnly ? 'common.back' : 'food.addMeal.cancel');
   document.getElementById('am-cancel-btn').style.display = 'inline-block';
   showMealFormError('');
   updateMealFormPrimeButtonVisibility();
@@ -706,10 +727,12 @@ function editCustomMeal(id) {
   document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// PRIME-gerecht bewerken -- coach-only, de knop ernaartoe (in
-// renderPrimeMealPlan) is al afgeschermd, maar ook hier defense-in-depth.
+// Opent een PRIME-gerecht in het formulier -- voor de coach bewerkbaar,
+// voor iedereen anders alleen-lezen (_populateMealForm bepaalt dat zelf
+// via isPrimeCoach()), zodat klanten kunnen zien wat er in het gerecht
+// zit zonder iets te kunnen wijzigen. Bereikbaar via "Bewerken" (coach)
+// of "Bekijken" (klant) op de kaart in renderPrimeMealPlan().
 function editPrimeMeal(id) {
-  if (!isPrimeCoach()) return;
   const dish = primeMeals.find(m => m.id === id);
   if (!dish) return;
   _populateMealForm(dish, true);
@@ -718,19 +741,26 @@ function editPrimeMeal(id) {
 }
 
 // Reset het formulier naar "nieuw gerecht"-stand — zowel na een geslaagde
-// toevoeging/wijziging als bij het annuleren van een bewerking.
+// toevoeging/wijziging als bij het annuleren van een bewerking of het
+// sluiten van een alleen-lezen weergave.
 function resetMealForm() {
   _amEditingId = null;
   _amEditingIsPrime = false;
+  _amFormReadOnly = false;
   _amPhotoData = null;
   const nameInput = document.getElementById('am-name');
   nameInput.value = '';
   nameInput.style.borderColor = '';
+  nameInput.disabled = false;
   document.getElementById('am-photo-preview').innerHTML = '🍽️';
+  document.getElementById('am-photo-upload-label').style.display = '';
+  document.getElementById('am-ingredient-actions').style.display = '';
   document.getElementById('am-ingredients-body').innerHTML = '';
   addIngredientRow();
   document.getElementById('am-form-title').textContent = t('food.addMeal.formTitle');
+  document.getElementById('am-submit-btn').style.display = '';
   document.getElementById('am-submit-btn').textContent = t('food.addMeal.submit');
+  document.getElementById('am-cancel-btn').textContent = t('food.addMeal.cancel');
   document.getElementById('am-cancel-btn').style.display = 'none';
   showMealFormError('');
   updateMealFormPrimeButtonVisibility();
