@@ -136,6 +136,7 @@ const I18N = {
     'training.dag.empty.hint': 'Nog niets gelogd. Voeg oefeningen of een programma toe via de andere tabbladen.',
     'training.dag.addExerciseForDay': '+ Oefening',
     'training.dag.addProgramForDay': '+ Programma',
+    'training.clearDay.confirm': 'Alle training van vandaag verwijderen? Dit kan niet ongedaan gemaakt worden.',
     'training.progress': 'Voortgang',
 
     // Voeding
@@ -384,6 +385,9 @@ const I18N = {
     'weekplan.removePlanning': 'Verwijderen',
     'weekplan.today': 'vandaag',
     'weekplan.confirmRemovePlanning': 'Planning verwijderen?',
+    'weekplan.trainingCopy.button': '📋 Kopieer training',
+    'weekplan.trainingCopy.title': 'Kopieer training',
+    'weekplan.trainingCopy.subtitle': 'Kopieer de geplande training van deze dag naar een andere dag',
 
     // Check-in / checkout (checkin.js)
     'checkin.weightSkipped': 'Overgeslagen ✓',
@@ -769,6 +773,7 @@ const I18N = {
     'training.dag.empty.hint': 'Nothing logged yet. Add exercises or a program via the other tabs.',
     'training.dag.addExerciseForDay': '+ Exercise',
     'training.dag.addProgramForDay': '+ Program',
+    'training.clearDay.confirm': 'Remove all training for today? This cannot be undone.',
     'training.progress': 'Progress',
 
     'food.title': 'Meal planner',
@@ -1011,6 +1016,9 @@ const I18N = {
     'weekplan.removePlanning': 'Delete',
     'weekplan.today': 'today',
     'weekplan.confirmRemovePlanning': 'Delete schedule?',
+    'weekplan.trainingCopy.button': '📋 Copy training',
+    'weekplan.trainingCopy.title': 'Copy training',
+    'weekplan.trainingCopy.subtitle': 'Copy the planned training from this day to another day',
 
     // Check-in / checkout (checkin.js)
     'checkin.weightSkipped': 'Skipped ✓',

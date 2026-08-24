@@ -407,3 +407,127 @@ function wpVerwijder() {
   wpSlaPlanningOp();
   renderWeekplanning();
 }
+
+// ─── Training kopiëren (vanuit Vandaag) ───────────────────────────────────────
+// Zelfde opzet als fwOpenCopyModal/fwConfirmCopyInner in foodweek.js, maar
+// dan voor de geplande training van één dag (geplanning/prime_planning is
+// net als foodDays al een per-datum store, dus dit patroon hergebruikt
+// dezelfde simpel/geavanceerd-modus). Kopieert alleen de toegewezen
+// programmadag (schemaId) -- losse, ad-hoc oefeningen die via "Vandaag"
+// zijn toegevoegd (trainingDagLog) horen niet bij een specifieke datum en
+// worden daarom niet meegekopieerd.
+let wpTrainingCopySourceDate = null;
+
+function wpBuildTrainingCopyDayChecks() {
+  const wrap = document.getElementById('tc-days-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = [0,1,2,3,4,5,6].map(i => `
+    <label style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--muted)">
+      <span>${wpDagKort(i)}</span>
+      <input type="checkbox" class="tc-day-chk" data-day="${i}" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer">
+    </label>`).join('');
+}
+
+function wpOpenTrainingCopyModal(dateStr) {
+  wpTrainingCopySourceDate = dateStr;
+
+  document.getElementById('tc-mode-simple').checked = true;
+  document.getElementById('tc-mode-advanced').checked = false;
+  document.getElementById('tc-advanced-block').style.display = 'none';
+  document.getElementById('tc-simple-date').value = '';
+
+  document.getElementById('tc-start-date').value = dateStr;
+  document.getElementById('tc-end-date').value = '';
+  document.getElementById('tc-end-date-mode').checked = true;
+  document.getElementById('tc-end-weeks-mode').checked = false;
+  document.getElementById('tc-end-date').disabled = false;
+  document.getElementById('tc-weeks').value = 4;
+  document.getElementById('tc-weeks').disabled = true;
+
+  wpBuildTrainingCopyDayChecks();
+  document.getElementById('trainingcopy-modal').classList.add('open');
+}
+
+function wpCloseTrainingCopyModal() {
+  document.getElementById('trainingcopy-modal').classList.remove('open');
+}
+
+function wpTrainingCopySetMode(mode) {
+  document.getElementById('tc-advanced-block').style.display = mode === 'advanced' ? 'block' : 'none';
+}
+
+function wpTrainingCopySetEndMode(mode) {
+  document.getElementById('tc-end-date').disabled = mode !== 'date';
+  document.getElementById('tc-weeks').disabled = mode !== 'weeks';
+}
+
+function wpConfirmTrainingCopy() {
+  try {
+    wpConfirmTrainingCopyInner();
+  } catch (e) {
+    console.error('wpConfirmTrainingCopy error:', e);
+    alert(t('foodweek.copy.unexpectedError', { msg: (e && e.message) || String(e) }));
+  }
+}
+
+function wpConfirmTrainingCopyInner() {
+  if (!wpTrainingCopySourceDate) return;
+  const bron = geplanning.find(p => p.date === wpTrainingCopySourceDate);
+  if (!bron) { alert(t('foodweek.copy.emptySource')); return; }
+
+  let targets = [];
+  const isAdvanced = document.getElementById('tc-mode-advanced').checked;
+
+  if (!isAdvanced) {
+    const val = document.getElementById('tc-simple-date').value;
+    if (!val) { alert(t('foodweek.copy.chooseDate')); return; }
+    targets = [val];
+  } else {
+    const days = [...document.querySelectorAll('.tc-day-chk')].filter(c => c.checked).map(c => parseInt(c.dataset.day, 10));
+    if (!days.length) { alert(t('foodweek.copy.chooseDays')); return; }
+
+    const startVal = document.getElementById('tc-start-date').value;
+    if (!startVal) { alert(t('foodweek.copy.chooseStartDate')); return; }
+    const start = wpDate(startVal);
+
+    const endMode = document.getElementById('tc-end-weeks-mode').checked ? 'weeks' : 'date';
+    let end;
+    if (endMode === 'date') {
+      const endVal = document.getElementById('tc-end-date').value;
+      if (!endVal) { alert(t('foodweek.copy.chooseEndDate')); return; }
+      end = wpDate(endVal);
+    } else {
+      const weeks = parseInt(document.getElementById('tc-weeks').value, 10) || 1;
+      end = new Date(start);
+      end.setDate(start.getDate() + weeks * 7 - 1);
+    }
+
+    const cur = new Date(start);
+    while (cur <= end) {
+      const wd = cur.getDay();
+      const idx = wd === 0 ? 6 : wd - 1;
+      if (days.includes(idx)) targets.push(wpStr(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    if (!targets.length) { alert(t('foodweek.copy.noMatchingDays')); return; }
+  }
+
+  let count = 0;
+  targets.forEach(dateStr => {
+    if (dateStr === wpTrainingCopySourceDate) return; // niet naar zichzelf kopiëren
+    // Eén training per dag: vervangt een eventueel al geplande dag i.p.v. te stapelen.
+    geplanning = geplanning.filter(p => p.date !== dateStr);
+    geplanning.push({ date: dateStr, schemaId: bron.schemaId });
+    count++;
+  });
+
+  if (count === 0) { alert(t('foodweek.copy.noMatchingDays')); return; }
+
+  wpSlaPlanningOp();
+  wpCloseTrainingCopyModal();
+
+  const toastMsg = count === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: count });
+  try { renderWeekplanning(); } catch (e) { console.error('renderWeekplanning na kopieren:', e); }
+  try { renderTrainingDag(); } catch (e) { console.error('renderTrainingDag na kopieren:', e); }
+  try { showToast(toastMsg); } catch (e) { console.error('showToast na kopieren:', e); }
+}

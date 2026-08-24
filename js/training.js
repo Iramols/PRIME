@@ -525,7 +525,35 @@ function renderTrainingDag() {
     + '<div style="display:flex;gap:8px;margin-top:8px">'
     + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
     + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
-    + '</div>';
+    + '</div>'
+    + '<button class="btn-sm" style="width:100%;margin-top:8px" onclick="wpOpenTrainingCopyModal(\'' + _dagToday + '\')">' + t('weekplan.trainingCopy.button') + '</button>'
+    + '<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag()">' + t('food.clearDay.button') + '</button>';
+}
+
+// Wist de training van vandaag volledig: de losse, ad-hoc oefeningen
+// (trainingDagLog, sessie-lang) én een eventueel voor vandaag geplande
+// programmadag (geplanning/prime_planning), plus hun afgevinkte status --
+// zelfde "alles verwijderen"-idee als clearFoodDay() bij Voeding.
+function clearTrainingDag() {
+  const today = new Date().toISOString().split('T')[0];
+  const heeftIets = trainingDagLog.length > 0 || geplanning.some(p => p.date === today);
+  if (!heeftIets) return;
+  if (!confirm(t('training.clearDay.confirm'))) return;
+
+  trainingDagLog = [];
+  sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+
+  const voorheen = geplanning.length;
+  geplanning = geplanning.filter(p => p.date !== today);
+  if (geplanning.length !== voorheen) wpSlaPlanningOp();
+
+  let alleWpDone;
+  try { alleWpDone = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); } catch(e) { alleWpDone = {}; }
+  if (alleWpDone[today]) { delete alleWpDone[today]; syncSet('prime_wp_done', alleWpDone); }
+  Object.keys(dagDone).forEach(k => delete dagDone[k]);
+
+  renderTrainingDag();
+  updateTrainingDagBadge();
 }
 
 
