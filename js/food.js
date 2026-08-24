@@ -1,6 +1,6 @@
 // ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
-  ['plan','basis','log','add','addmeal','week'].forEach(t => {
+  ['plan','basis','primemeals','log','add','addmeal','week'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
@@ -8,6 +8,7 @@ function switchFoodTab(tab) {
   // Weekplanning geopende andere datum weer.
   if (tab === 'log') { switchLogDate(fdTodayStr()); renderDayLog(); }
   if (tab === 'basis') renderProducts();
+  if (tab === 'primemeals') { renderPrimeMealPlan(); primeMealsRefreshFromCloud(); }
   if (tab === 'add') renderAddProductTab();
   if (tab === 'addmeal') renderAddMealTab();
   if (tab === 'week') renderFoodWeek();
@@ -293,6 +294,148 @@ function renderAddProductTab() {
     </div>`).join('');
 }
 
+// ========== PRIME-GERECHTEN (gedeeld, alleen coach kan bewerken) ==========
+// Zelfde idee als de PRIME-programma's in Training: cache-first uit
+// localStorage, daarna ververst vanuit de gedeelde Supabase-tabel
+// (prime_meals, zie supabase/prime_meals.sql) zodra de tab geopend wordt.
+let primeMeals = [];
+try { primeMeals = JSON.parse(localStorage.getItem('prime_prime_meals') || '[]'); } catch(e) {}
+
+// Zoekt een gerecht op id, zowel onder de eigen (per-klant) gerechten als
+// onder de gedeelde PRIME-gerechten -- gebruikt overal waar een gelogd of
+// aan te klikken gerecht wordt opgezocht, zodat een PRIME-gerecht net zo
+// bruikbaar is als een eigen gerecht.
+function findAnyMeal(id) {
+  return customMeals.find(m => m.id === id) || primeMeals.find(m => m.id === id);
+}
+
+async function primeMealsRefreshFromCloud() {
+  const list = await fetchPrimeMealsFromCloud();
+  if (list) {
+    primeMeals = list;
+    if (document.getElementById('foodtab-primemeals')?.style.display !== 'none') renderPrimeMealPlan();
+  }
+}
+
+// Lijst voor de "PRIME gerechten"-tab. Voor iedereen klikbaar om te loggen
+// (zelfde portiemodal als Maaltijdplan); alleen de coach ziet Bewerken/
+// Verwijderen per kaart.
+function renderPrimeMealPlan() {
+  const el = document.getElementById('prime-meal-plan');
+  if (!el) return;
+  const canEdit = isPrimeCoach();
+  if (!primeMeals.length) {
+    el.innerHTML = `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.primeMeals.empty')}</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="product-grid">` +
+    primeMeals.map(m => {
+      const tot = mealTotals(m);
+      return `
+      <div class="product-card" onclick="openMealPortionModal('${m.id}')">
+        ${m.photo ? `<div class="product-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="product-icon">🍽️</div>`}
+        <div class="product-name">${dispName(m)}</div>
+        <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
+        <div class="product-macros">
+          <span class="product-pill">${tot.kcal} kcal</span>
+          <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
+        </div>
+        ${canEdit ? `
+        <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
+          <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('common.edit')}</button>
+          <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">${t('common.delete')}</button>
+        </div>` : ''}
+      </div>`;
+    }).join('') + `</div>`;
+}
+
+// Verwijdert een PRIME-gerecht -- coach-only (de knop ernaartoe is al
+// afgeschermd, dit is defense-in-depth; de echte grens is de Supabase
+// RLS-policy op prime_meals).
+function removePrimeMeal(id) {
+  if (!isPrimeCoach()) return;
+  if (!confirm(t('food.addMeal.confirmDelete'))) return;
+  if (_amEditingId === id && _amEditingIsPrime) resetMealForm();
+  primeMeals = primeMeals.filter(m => m.id !== id);
+  try { localStorage.setItem('prime_prime_meals', JSON.stringify(primeMeals)); } catch(e) { console.error(e); }
+  deletePrimeMealFromCloud(id);
+  // Verwijder eventueel al gelogde porties van dit gerecht, op elke datum.
+  Object.keys(foodDays).forEach(dateStr => {
+    const filtered = foodDays[dateStr].filter(i => i.dishId !== id);
+    if (filtered.length) foodDays[dateStr] = filtered; else delete foodDays[dateStr];
+  });
+  syncSet('prime_food_days', foodDays);
+  dayLog = dayLog.filter(i => i.dishId !== id);
+  renderPrimeMealPlan();
+  updateMacroTotals();
+  updateLogBadge();
+  renderDayLog();
+}
+
+// ─── Opslaan als PRIME-gerecht ─────────────────────────────────────────────
+// Kloont de HUIDIGE formulierwaarden (dus ook nog niet opgeslagen
+// wijzigingen) van een eigen gerecht naar een nieuw, gedeeld PRIME-gerecht.
+// De naam krijgt altijd de vaste prefix 'PRIME-' -- net als bij Training.
+function openPrimeMealSaveModal() {
+  if (!isPrimeCoach() || !_amEditingId || _amEditingIsPrime) return;
+  const name = document.getElementById('am-name').value.trim();
+  if (!name) { showMealFormError(t('food.addMeal.nameRequired')); return; }
+  const rows = document.querySelectorAll('#am-ingredients-body tr');
+  let hasIngredient = false;
+  rows.forEach(row => { if (row.querySelector('.am-ing-name')?.value.trim()) hasIngredient = true; });
+  if (!hasIngredient) { showMealFormError(t('food.addMeal.ingredientRequired')); return; }
+  showMealFormError('');
+
+  document.getElementById('prime-save-meal-suffix').value = '';
+  document.getElementById('prime-save-meal-error').textContent = '';
+  document.getElementById('prime-save-meal-modal').classList.add('open');
+  document.getElementById('prime-save-meal-suffix').focus();
+}
+
+function closePrimeMealSaveModal() {
+  document.getElementById('prime-save-meal-modal').classList.remove('open');
+}
+
+function confirmPrimeMealSave() {
+  if (!isPrimeCoach() || !_amEditingId || _amEditingIsPrime) return;
+  const suffix = document.getElementById('prime-save-meal-suffix').value.trim();
+  if (!suffix) {
+    document.getElementById('prime-save-meal-error').textContent = t('food.primeMeals.nameRequired');
+    return;
+  }
+
+  const name = document.getElementById('am-name').value.trim();
+  const ingredients = [];
+  document.querySelectorAll('#am-ingredients-body tr').forEach(row => {
+    const ingName = row.querySelector('.am-ing-name')?.value.trim();
+    if (!ingName) return;
+    ingredients.push({
+      name: ingName,
+      gram: parseFloat(row.querySelector('.am-ing-gram')?.value) || 0,
+      prot: parseFloat(row.querySelector('.am-ing-prot')?.value) || 0,
+      carb: parseFloat(row.querySelector('.am-ing-carb')?.value) || 0,
+      fat:  parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0
+    });
+  });
+
+  const nieuw = {
+    id: 'prime-meal-' + Date.now() + Math.floor(Math.random() * 1000),
+    name: 'PRIME-' + suffix,
+    photo: _amPhotoData || null,
+    ingredients: ingredients
+  };
+  primeMeals.push(nieuw);
+  try { localStorage.setItem('prime_prime_meals', JSON.stringify(primeMeals)); } catch(e) { console.error(e); }
+  savePrimeMealToCloud(nieuw);
+
+  closePrimeMealSaveModal();
+  try { showToast(t('food.primeMeals.saved')); } catch(e) { console.error(e); }
+
+  renderPrimeMealPlan();
+  resetMealForm();
+  switchFoodTab('primemeals');
+}
+
 // ========== EIGEN GERECHTEN (opgebouwd uit ingrediënten) ==========
 // Totalen worden altijd live berekend uit de ingrediëntenlijst — nooit
 // los opgeslagen, dus nooit verouderd na een bewerking.
@@ -310,6 +453,7 @@ function mealTotals(dish) {
 let _amPhotoData = null;
 let _amRowCounter = 0;
 let _amEditingId = null;
+let _amEditingIsPrime = false; // true zolang het formulier een PRIME-gerecht bewerkt i.p.v. een eigen gerecht
 
 // prefill (optioneel): { name, gram, prot, carb, fat, per100:{prot,carb,fat} }.
 // Als per100 is meegegeven, staat de rij "gekoppeld" aan een basisproduct: het
@@ -447,6 +591,10 @@ function showMealFormError(msg) {
 }
 
 function addCustomMeal() {
+  // Defense-in-depth: de knop/route hiernaartoe is al coach-only afgeschermd,
+  // maar de daadwerkelijke grens ligt in de Supabase RLS-policy op prime_meals.
+  if (_amEditingIsPrime && !isPrimeCoach()) return;
+
   const nameInput = document.getElementById('am-name');
   const name = nameInput.value.trim();
   if (!name) {
@@ -482,13 +630,24 @@ function addCustomMeal() {
   }
   showMealFormError('');
 
-  if (_amEditingId) {
+  const wasEditingPrime = _amEditingIsPrime;
+  if (wasEditingPrime) {
+    const dish = primeMeals.find(m => m.id === _amEditingId);
+    if (dish) {
+      dish.name = name;
+      dish.photo = _amPhotoData || null;
+      dish.ingredients = ingredients;
+      try { localStorage.setItem('prime_prime_meals', JSON.stringify(primeMeals)); } catch(e) { console.error(e); }
+      savePrimeMealToCloud(dish);
+    }
+  } else if (_amEditingId) {
     const dish = customMeals.find(m => m.id === _amEditingId);
     if (dish) {
       dish.name = name;
       dish.photo = _amPhotoData || null;
       dish.ingredients = ingredients;
     }
+    syncSet('prime_custom_meals', customMeals);
   } else {
     customMeals.push({
       id: 'custom-meal-' + Date.now() + Math.floor(Math.random() * 1000),
@@ -497,18 +656,21 @@ function addCustomMeal() {
       ingredients: ingredients,
       custom: true
     });
+    syncSet('prime_custom_meals', customMeals);
   }
-  syncSet('prime_custom_meals', customMeals);
 
   resetMealForm();
   renderOwnMealsList();
   renderMealPlan();
+  if (wasEditingPrime) renderPrimeMealPlan();
 }
 
-function editCustomMeal(id) {
-  const dish = customMeals.find(m => m.id === id);
-  if (!dish) return;
-  _amEditingId = id;
+// Gedeeld tussen editCustomMeal (eigen gerecht) en editPrimeMeal
+// (PRIME-gerecht, coach-only) -- vult het "+ Gerecht toevoegen"-formulier
+// met de gegevens van het op te bewerken gerecht.
+function _populateMealForm(dish, isPrime) {
+  _amEditingId = dish.id;
+  _amEditingIsPrime = !!isPrime;
 
   document.getElementById('am-name').value = dish.name;
   _amPhotoData = dish.photo || null;
@@ -530,11 +692,28 @@ function editCustomMeal(id) {
   if (!dish.ingredients || !dish.ingredients.length) addIngredientRow();
   updateMealFormTotals();
 
-  document.getElementById('am-form-title').textContent = t('food.addMeal.editTitle');
+  document.getElementById('am-form-title').textContent = isPrime ? t('food.primeMeals.editTitle') : t('food.addMeal.editTitle');
   document.getElementById('am-submit-btn').textContent = t('food.addMeal.update');
   document.getElementById('am-cancel-btn').style.display = 'inline-block';
   showMealFormError('');
+  updateMealFormPrimeButtonVisibility();
+}
 
+function editCustomMeal(id) {
+  const dish = customMeals.find(m => m.id === id);
+  if (!dish) return;
+  _populateMealForm(dish, false);
+  document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// PRIME-gerecht bewerken -- coach-only, de knop ernaartoe (in
+// renderPrimeMealPlan) is al afgeschermd, maar ook hier defense-in-depth.
+function editPrimeMeal(id) {
+  if (!isPrimeCoach()) return;
+  const dish = primeMeals.find(m => m.id === id);
+  if (!dish) return;
+  _populateMealForm(dish, true);
+  switchFoodTab('addmeal');
   document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -542,6 +721,7 @@ function editCustomMeal(id) {
 // toevoeging/wijziging als bij het annuleren van een bewerking.
 function resetMealForm() {
   _amEditingId = null;
+  _amEditingIsPrime = false;
   _amPhotoData = null;
   const nameInput = document.getElementById('am-name');
   nameInput.value = '';
@@ -553,6 +733,17 @@ function resetMealForm() {
   document.getElementById('am-submit-btn').textContent = t('food.addMeal.submit');
   document.getElementById('am-cancel-btn').style.display = 'none';
   showMealFormError('');
+  updateMealFormPrimeButtonVisibility();
+}
+
+// Toont "⭐ Opslaan als PRIME-gerecht" alleen aan de coach, en alleen
+// terwijl een bestaand EIGEN gerecht bewerkt wordt (niet bij een nieuw,
+// nog niet opgeslagen gerecht en niet terwijl al een PRIME-gerecht
+// bewerkt wordt) -- zelfde voorwaarde als bij Programma's.
+function updateMealFormPrimeButtonVisibility() {
+  const btn = document.getElementById('am-save-as-prime-btn');
+  if (!btn) return;
+  btn.style.display = (_amEditingId && !_amEditingIsPrime && isPrimeCoach()) ? 'inline-block' : 'none';
 }
 
 function removeCustomMeal(id) {
@@ -604,6 +795,7 @@ function renderAddMealTab() {
   const tbody = document.getElementById('am-ingredients-body');
   if (tbody && tbody.children.length === 0 && !_amEditingId) addIngredientRow();
   renderOwnMealsList();
+  updateMealFormPrimeButtonVisibility();
 }
 
 // ─── Portie (in gram) + maaltijdmoment kiezen bij loggen ──────────────────
@@ -613,7 +805,7 @@ let _mpDish = null;
 let _mpMoment = 'ontbijt';
 
 function openMealPortionModal(dishId) {
-  _mpDish = customMeals.find(m => m.id === dishId);
+  _mpDish = findAnyMeal(dishId);
   if (!_mpDish) return;
   _editingLogId = null;
   document.getElementById('mpm-submit-btn').textContent = t('portion.addToDay');
@@ -931,7 +1123,7 @@ function logItemDisplayName(item) {
     if (p) return dispName(p);
   }
   if (item.dishId) {
-    const d = customMeals.find(x => x.id === item.dishId);
+    const d = findAnyMeal(item.dishId);
     if (d) return dispName(d);
   }
   return item.name; // fallback: bv. verwijderd product/gerecht, of ouder logitem zonder id
@@ -947,7 +1139,7 @@ function logItemPhoto(item) {
     if (p) return p.photo || null;
   }
   if (item.dishId) {
-    const d = customMeals.find(x => x.id === item.dishId);
+    const d = findAnyMeal(item.dishId);
     if (d) return d.photo || null;
   }
   return item.photo || null; // fallback: ouder logitem van vóór deze wijziging

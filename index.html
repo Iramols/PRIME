@@ -423,9 +423,16 @@
       <button class="food-tab active" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
       <button class="food-tab" id="tab-week" onclick="switchFoodTab('week')" data-i18n="food.tab.week">Weekplanning</button>
       <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
+      <button class="food-tab" id="tab-primemeals" onclick="switchFoodTab('primemeals')" data-i18n="food.tab.primeMeals">PRIME gerechten</button>
       <button class="food-tab" id="tab-plan" onclick="switchFoodTab('plan')" data-i18n="food.tab.plan">Maaltijdplan</button>
       <button class="food-tab" id="tab-add" onclick="switchFoodTab('add')" data-i18n="food.tab.add">+ Product toevoegen</button>
       <button class="food-tab" id="tab-addmeal" onclick="switchFoodTab('addmeal')" data-i18n="food.tab.addMeal">+ Gerecht toevoegen</button>
+    </div>
+
+    <!-- TAB: PRIME GERECHTEN -->
+    <div id="foodtab-primemeals" style="display:none">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
+      <div id="prime-meal-plan"></div>
     </div>
 
     <!-- TAB: MAALTIJDPLAN -->
@@ -571,9 +578,10 @@
         </div>
 
         <div id="am-error" style="color:#c0392b;font-size:12px;margin:10px 0 0"></div>
-        <div style="display:flex;gap:8px;margin-top:12px">
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button class="btn-primary" style="flex:1" id="am-submit-btn" onclick="addCustomMeal()" data-i18n="food.addMeal.submit">Gerecht toevoegen</button>
           <button class="btn-sm" id="am-cancel-btn" style="display:none" onclick="resetMealForm()" data-i18n="food.addMeal.cancel">Annuleren</button>
+          <button class="btn-sm" id="am-save-as-prime-btn" style="display:none" onclick="openPrimeMealSaveModal()" data-i18n="food.primeMeals.saveAs">⭐ Opslaan als PRIME-gerecht</button>
         </div>
       </div>
 
@@ -847,6 +855,23 @@
     </div>
     <div id="prime-save-error" style="color:#c0392b;font-size:12px;margin-bottom:12px"></div>
     <button class="btn-primary" style="width:100%" onclick="confirmPrimeSave()" data-i18n="programmas.prime.saveConfirm">Opslaan als PRIME-programma</button>
+  </div>
+</div>
+
+<!-- PRIME-GERECHT OPSLAAN MODAL -->
+<div class="overlay" id="prime-save-meal-modal">
+  <div class="modal">
+    <div class="modal-title"><span data-i18n="food.primeMeals.modalTitle">Opslaan als PRIME-gerecht</span> <button class="modal-close" onclick="closePrimeMealSaveModal()">×</button></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px" data-i18n="programmas.prime.modalHint">Deze naam is voor iedereen zichtbaar. Het "PRIME-" voorvoegsel staat altijd vast.</div>
+    <div class="form-row">
+      <label data-i18n="food.addMeal.name">Naam</label>
+      <div style="display:flex;align-items:center;gap:0;border:1.5px solid var(--sand-dark);border-radius:10px;overflow:hidden">
+        <span style="padding:11px 0 11px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--muted);font-weight:600;white-space:nowrap">PRIME-</span>
+        <input type="text" id="prime-save-meal-suffix" style="border:none;border-radius:0;padding:11px 14px 11px 2px" data-i18n-placeholder="food.primeMeals.namePlaceholder" placeholder="naam van het gerecht" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmPrimeMealSave();}">
+      </div>
+    </div>
+    <div id="prime-save-meal-error" style="color:#c0392b;font-size:12px;margin-bottom:12px"></div>
+    <button class="btn-primary" style="width:100%" onclick="confirmPrimeMealSave()" data-i18n="food.primeMeals.saveConfirm">Opslaan als PRIME-gerecht</button>
   </div>
 </div>
 

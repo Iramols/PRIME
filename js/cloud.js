@@ -147,3 +147,29 @@ async function deletePrimeProgramFromCloud(id) {
   const { error } = await sb.from('prime_programs').delete().eq('id', id);
   if (error) console.error('deletePrimeProgramFromCloud:', error);
 }
+
+// ========== PRIME-GERECHTEN (gedeeld, coach-only bewerkbaar) ==========
+// Zelfde opzet als hierboven, maar dan voor "Voeding > PRIME gerechten"
+// (zie supabase/prime_meals.sql).
+
+async function fetchPrimeMealsFromCloud() {
+  const sb = getSupabase();
+  const { data, error } = await sb.from('prime_meals').select('id, value');
+  if (error) { console.error('fetchPrimeMealsFromCloud:', error); return null; }
+  const list = (data || []).map(row => row.value);
+  try { localStorage.setItem('prime_prime_meals', JSON.stringify(list)); } catch (e) { console.error(e); }
+  return list;
+}
+
+async function savePrimeMealToCloud(meal) {
+  const sb = getSupabase();
+  const { error } = await sb.from('prime_meals')
+    .upsert({ id: meal.id, value: meal, updated_at: new Date().toISOString() });
+  if (error) console.error('savePrimeMealToCloud:', error);
+}
+
+async function deletePrimeMealFromCloud(id) {
+  const sb = getSupabase();
+  const { error } = await sb.from('prime_meals').delete().eq('id', id);
+  if (error) console.error('deletePrimeMealFromCloud:', error);
+}
