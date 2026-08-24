@@ -279,7 +279,6 @@ const I18N = {
     // Portie-modal
     'portion.defaultName': 'Product',
     'portion.per100.default': 'per 100g: — kcal · — eiwit · — koolh · — vet',
-    'portion.dayLabel': 'Dag',
     'portion.momentLabel': 'Maaltijdmoment',
     'moment.ontbijt': 'Ontbijt',
     'moment.lunch': 'Lunch',
@@ -293,7 +292,7 @@ const I18N = {
     'portion.protein': 'eiwit',
     'portion.carbs': 'koolh',
     'portion.fat': 'vet',
-    'portion.addToDay': 'Toevoegen aan deze dag →',
+    'portion.addToDay': 'Toevoegen',
     'portion.updateInDay': 'Wijzigen ✓',
 
     // Weekprogramma's (programmas.js)
@@ -902,7 +901,6 @@ const I18N = {
 
     'portion.defaultName': 'Product',
     'portion.per100.default': 'per 100g: — kcal · — protein · — carbs · — fat',
-    'portion.dayLabel': 'Day',
     'portion.momentLabel': 'Meal moment',
     'moment.ontbijt': 'Breakfast',
     'moment.lunch': 'Lunch',
@@ -916,7 +914,7 @@ const I18N = {
     'portion.protein': 'protein',
     'portion.carbs': 'carbs',
     'portion.fat': 'fat',
-    'portion.addToDay': 'Add to this day →',
+    'portion.addToDay': 'Add',
     'portion.updateInDay': 'Save changes ✓',
 
     // Weekprogramma's (programmas.js)

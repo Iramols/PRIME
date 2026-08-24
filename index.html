@@ -935,12 +935,6 @@
       </div>
       <button onclick="closePortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
     </div>
-    <div style="position:relative;margin-bottom:14px">
-      <button type="button" style="width:100%;box-sizing:border-box;text-align:left;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;background:var(--sand);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);cursor:pointer">
-        <span>📅</span><span data-i18n="portion.dayLabel">Dag</span>: <span id="pm-date-label" style="font-weight:600"></span>
-      </button>
-      <input type="date" id="pm-date" onchange="updatePmDateLabel()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
-    </div>
     <div class="portion-moment-label" data-i18n="portion.momentLabel">Maaltijdmoment</div>
     <div class="moment-btns">
       <button class="moment-btn active" onclick="selectMoment('ontbijt',this)">🌅 <span data-i18n="moment.ontbijt">Ontbijt</span></button>
@@ -961,7 +955,10 @@
       <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <button class="btn-primary" id="pm-submit-btn" onclick="addProductToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
+    <div style="position:relative">
+      <button class="btn-primary" id="pm-submit-btn" style="width:100%" data-i18n="portion.addToDay">Toevoegen</button>
+      <input type="date" id="pm-date" onchange="addProductToLog()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
+    </div>
   </div>
 </div>
 
@@ -974,12 +971,6 @@
         <div class="portion-per100" id="mpm-reference">totaal: 0g</div>
       </div>
       <button onclick="closeMealPortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
-    </div>
-    <div style="position:relative;margin-bottom:14px">
-      <button type="button" style="width:100%;box-sizing:border-box;text-align:left;display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;background:var(--sand);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);cursor:pointer">
-        <span>📅</span><span data-i18n="portion.dayLabel">Dag</span>: <span id="mpm-date-label" style="font-weight:600"></span>
-      </button>
-      <input type="date" id="mpm-date" onchange="updateMpmDateLabel()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
     </div>
     <div class="portion-moment-label" data-i18n="portion.momentLabel">Maaltijdmoment</div>
     <div class="moment-btns">
@@ -1000,7 +991,10 @@
       <div><div class="prev-val" id="mpv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="mpv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <button class="btn-primary" id="mpm-submit-btn" onclick="addMealToLog()" data-i18n="portion.addToDay">Toevoegen aan mijn dag →</button>
+    <div style="position:relative">
+      <button class="btn-primary" id="mpm-submit-btn" style="width:100%" data-i18n="portion.addToDay">Toevoegen</button>
+      <input type="date" id="mpm-date" onchange="addMealToLog()" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
+    </div>
   </div>
 </div>
 
