@@ -24,7 +24,8 @@ const CLOUD_KEYS = [
   'prime_custom_meals',
   'prime_food_days',
   'prime_exercise_notes',
-  'prime_custom_exercises'
+  'prime_custom_exercises',
+  'prime_training_days'
 ];
 
 let _sb = null;

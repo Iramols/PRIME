@@ -1,3 +1,15 @@
+// Datum-string van vandaag, en het bijschrijven van trainingDagLog naar de
+// per-datum store trainingDays (zie state.js) -- vervangt de oude
+// sessionStorage('prime_training_dag')-opslag, zodat losse oefeningen net
+// als bij Voeding per dag bewaard blijven en dus ook (net als foodDays)
+// naar andere datums gekopieerd kunnen worden (zie wpConfirmTrainingCopy
+// in weekplanning.js).
+function _trainingToday() { return new Date().toISOString().split('T')[0]; }
+function persistTrainingDag() {
+  trainingDays[_trainingToday()] = trainingDagLog;
+  syncSet('prime_training_days', trainingDays);
+}
+
 function getActiveEx(i) {
   const exs = EXERCISES[trainingType];
   const ex = exs[i];
@@ -39,8 +51,7 @@ function switchTrainingTab(tab) {
 }
 
 function renderExtraExercises() {
-  // Sync met sessionStorage
-  try { const s = sessionStorage.getItem('prime_training_dag'); if (s) trainingDagLog = JSON.parse(s); } catch(e) {}
+  trainingDagLog = trainingDays[_trainingToday()] || [];
   const el = document.getElementById('extra-exercise-list');
   // Eigen oefeningen worden ingevoegd bij hun gekozen spiergroep; wat niet bij een
   // bestaande groep hoort (of expliciet 'Eigen oefeningen') komt in een eigen sectie.
@@ -143,7 +154,7 @@ function addCustomExercise() {
     // Meteen zichtbaar bijwerken als hij al in Vandaag staat.
     const inDag = trainingDagLog.find(e => e.id === _aeEditingId);
     if (inDag) Object.assign(inDag, fields);
-    sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+    persistTrainingDag();
   } else {
     customExercises.push({
       id: 'custom-ex-' + Date.now() + Math.floor(Math.random() * 1000),
@@ -209,7 +220,7 @@ function removeCustomExercise(id) {
   syncSet('prime_custom_exercises', customExercises);
   // Ook verwijderen uit Vandaag als hij daar (nog) in staat.
   trainingDagLog = trainingDagLog.filter(e => e.id !== id);
-  sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+  persistTrainingDag();
   renderAddExerciseTab();
 }
 
@@ -360,7 +371,7 @@ function toggleExtraDag(exId) {
     }
     if (found) trainingDagLog.push(found);
   }
-  sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+  persistTrainingDag();
   renderExtraExercises();
   updateTrainingDagBadge();
 }
@@ -408,11 +419,8 @@ function renderTrainingDag() {
   const totalEl = document.getElementById('training-dag-total');
   const progWrap = document.getElementById('dag-progress-wrap');
 
-  // Altijd synchroon houden met sessionStorage
-  try {
-    const stored = sessionStorage.getItem('prime_training_dag');
-    if (stored) trainingDagLog = JSON.parse(stored);
-  } catch(e) {}
+  // Altijd synchroon houden met trainingDays (bv. na kopiëren vanuit Weekplanning)
+  trainingDagLog = trainingDays[_trainingToday()] || [];
 
   // Weekplanning oefeningen voor vandaag
   const _dagToday = new Date().toISOString().split('T')[0];
@@ -541,7 +549,7 @@ function clearTrainingDag() {
   if (!confirm(t('training.clearDay.confirm'))) return;
 
   trainingDagLog = [];
-  sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+  persistTrainingDag();
 
   const voorheen = geplanning.length;
   geplanning = geplanning.filter(p => p.date !== today);
@@ -559,7 +567,7 @@ function clearTrainingDag() {
 
 function removeExtraDag(exId) {
   trainingDagLog = trainingDagLog.filter(e => e.id !== exId);
-  sessionStorage.setItem('prime_training_dag', JSON.stringify(trainingDagLog));
+  persistTrainingDag();
   renderTrainingDag();
   updateTrainingDagBadge();
 }

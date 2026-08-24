@@ -45,14 +45,10 @@ function checkCheckoutReady() {
 }
 
 function buildTrainingSummary() {
-  // Altijd sessionStorage laden
-  try {
-    const s = sessionStorage.getItem('prime_training_dag');
-    if (s) trainingDagLog = JSON.parse(s);
-  } catch(e) {}
-
   // Weekplanning oefeningen voor vandaag
   const _btsToday = new Date().toISOString().split('T')[0];
+  // Altijd synchroon houden met trainingDays (zie state.js/training.js)
+  trainingDagLog = trainingDays[_btsToday] || [];
   const _btsWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _btsToday) || null;
   const _btsWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_btsToday] || [];
   const _btsWpOef = _btsWpEntry ? wpGetOefeningen(_btsWpEntry.schemaId) : [];
@@ -295,9 +291,12 @@ async function doCheckin() {
   syncSet('prime_today', todayData);
   exerciseDone = [];
   syncSet('prime_exdone', exerciseDone);
-  trainingDagLog = [];
+  // Niet zomaar leegmaken: trainingDays is per datum (zie state.js), dus dit
+  // haalt gewoon op wat er voor de (mogelijk nieuwe) datum al staat -- leeg
+  // als er niets is, maar blijft intact als er bv. al training naartoe
+  // gekopieerd was via Weekplanning.
+  trainingDagLog = trainingDays[today] || [];
   selectedSchemaEx = {};
-  sessionStorage.removeItem('prime_training_dag');
 
   // Update stats
   updateStreak();

@@ -1,5 +1,11 @@
 ﻿// ========== TRAINING STATE ==========
-let trainingDagLog = JSON.parse(sessionStorage.getItem('prime_training_dag') || '[]');
+// Losse, ad-hoc oefeningen die rechtstreeks via "Vandaag" zijn toegevoegd,
+// per datum bewaard (net als foodDays bij Voeding) zodat ze -- net als
+// voeding -- naar andere dagen gekopieerd kunnen worden. trainingDagLog
+// blijft de gemakslijst voor "vandaag"; persistTrainingDag() in
+// training.js schrijft 'm terug naar trainingDays[today].
+let trainingDays = JSON.parse(localStorage.getItem('prime_training_days') || '{}');
+let trainingDagLog = trainingDays[new Date().toISOString().split('T')[0]] || [];
 let selectedSchemaEx = {}; // Reset bij nieuwe check-in
 let activeTrainingTab = 'dag';
 

@@ -410,12 +410,12 @@ function wpVerwijder() {
 
 // ─── Training kopiëren (vanuit Vandaag) ───────────────────────────────────────
 // Zelfde opzet als fwOpenCopyModal/fwConfirmCopyInner in foodweek.js, maar
-// dan voor de geplande training van één dag (geplanning/prime_planning is
-// net als foodDays al een per-datum store, dus dit patroon hergebruikt
-// dezelfde simpel/geavanceerd-modus). Kopieert alleen de toegewezen
-// programmadag (schemaId) -- losse, ad-hoc oefeningen die via "Vandaag"
-// zijn toegevoegd (trainingDagLog) horen niet bij een specifieke datum en
-// worden daarom niet meegekopieerd.
+// dan voor de training van één dag. Kopieert alles wat bij die dag hoort:
+// zowel de toegewezen programmadag (geplanning/prime_planning, schemaId)
+// als de losse, ad-hoc oefeningen die via "Vandaag" zijn toegevoegd
+// (trainingDays/prime_training_days -- sinds kort net als foodDays een
+// per-datum store, zie state.js/training.js), precies zoals Voeding's
+// kopieerfunctie alle voeding van een dag meeneemt.
 let wpTrainingCopySourceDate = null;
 
 function wpBuildTrainingCopyDayChecks() {
@@ -473,7 +473,8 @@ function wpConfirmTrainingCopy() {
 function wpConfirmTrainingCopyInner() {
   if (!wpTrainingCopySourceDate) return;
   const bron = geplanning.find(p => p.date === wpTrainingCopySourceDate);
-  if (!bron) { alert(t('foodweek.copy.emptySource')); return; }
+  const bronOefeningen = trainingDays[wpTrainingCopySourceDate] || [];
+  if (!bron && !bronOefeningen.length) { alert(t('foodweek.copy.emptySource')); return; }
 
   let targets = [];
   const isAdvanced = document.getElementById('tc-mode-advanced').checked;
@@ -513,17 +514,32 @@ function wpConfirmTrainingCopyInner() {
   }
 
   let count = 0;
+  let trainingDaysGewijzigd = false;
   targets.forEach(dateStr => {
     if (dateStr === wpTrainingCopySourceDate) return; // niet naar zichzelf kopiëren
-    // Eén training per dag: vervangt een eventueel al geplande dag i.p.v. te stapelen.
-    geplanning = geplanning.filter(p => p.date !== dateStr);
-    geplanning.push({ date: dateStr, schemaId: bron.schemaId });
+
+    // De geplande programmadag (schemaId): één per dag, dus vervangt een
+    // eventueel al geplande dag i.p.v. te stapelen.
+    if (bron) {
+      geplanning = geplanning.filter(p => p.date !== dateStr);
+      geplanning.push({ date: dateStr, schemaId: bron.schemaId });
+    }
+
+    // Losse, ad-hoc oefeningen: net als bij Voeding's kopieerfunctie
+    // toegevoegd aan wat er op de doeldag al staat i.p.v. dat te vervangen.
+    if (bronOefeningen.length) {
+      const bestaand = trainingDays[dateStr] || [];
+      trainingDays[dateStr] = [...bestaand, ...bronOefeningen.map(ex => ({ ...ex }))];
+      trainingDaysGewijzigd = true;
+    }
+
     count++;
   });
 
   if (count === 0) { alert(t('foodweek.copy.noMatchingDays')); return; }
 
-  wpSlaPlanningOp();
+  if (bron) wpSlaPlanningOp();
+  if (trainingDaysGewijzigd) syncSet('prime_training_days', trainingDays);
   wpCloseTrainingCopyModal();
 
   const toastMsg = count === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: count });
