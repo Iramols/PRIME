@@ -1,9 +1,5 @@
 // ========== WEEKPLANNING ==========
-let weekplan = null;
 let geplanning = [];
-let geselecteerdeWeken = 4;
-let activeDagPicker = null;
-let wpOpenDagen = new Set();
 
 const WP_KORT  = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const WP_LANG  = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
@@ -33,12 +29,9 @@ function wpMaandagVanaf(d) {
 
 function wpLaadData() {
   try {
-    weekplan   = JSON.parse(localStorage.getItem('prime_weekplan') || 'null');
     geplanning = JSON.parse(localStorage.getItem('prime_planning') || '[]');
   } catch(e) {}
-  if (!weekplan) weekplan = { dagen: [null,null,null,null,null,null,null] };
 }
-function wpSlaWeekOp()    { syncSet('prime_weekplan', weekplan); }
 function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 
 // ─── Helper: vertaal schemaId (ook prog:ID:DAG) naar display ─────────────────
@@ -157,168 +150,16 @@ function wpBouwOefeningenAfvinken(oefeningen, dateStr) {
 }
 
 // ─── Hoofd render ────────────────────────────────────────────────────────────
+// Toont voorlopig alleen de week-doorblader-kaarten (zelfde look als
+// Voeding); het rooster ("kies training per weekdag") + "plan N weken
+// vooruit" is op verzoek weggehaald -- hoe een dag precies gevuld gaat
+// worden (los van het huidige geplanning/trainingDays-mechanisme) wordt
+// in een volgende stap samen met de coach bepaald.
 function renderWeekplanning() {
   wpLaadData();
-  activeDagPicker = null;
-  wpOpenDagen = new Set();
   const el = document.getElementById('weekplanning-content');
   if (!el) return;
-  el.innerHTML =
-    wpBouwGrid() +
-    '<div id="wp-picker-wrap"></div>' +
-    wpBouwInplannen() +
-    wpdBuildWeekHtml();
-}
-
-// ─── Weekgrid ────────────────────────────────────────────────────────────────
-function wpBouwGrid() {
-  const dagen = weekplan.dagen.map((sid, i) => {
-    const disp = wpGetDisplay(sid);
-    return '<div class="wp-dag" id="wp-dag-' + i + '" onclick="wpTogglePicker(' + i + ')">' +
-      '<div class="wp-dag-nm">' + wpDagKort(i) + '</div>' +
-      '<div class="wp-dag-ic">' + disp.icon + '</div>' +
-      '<div class="wp-dag-lb">' + disp.naam.split(' ').slice(0,2).join(' ') + '</div>' +
-      '</div>';
-  }).join('');
-  return '<div class="card" style="margin-bottom:14px">' +
-    '<div class="card-label" style="margin-bottom:6px">' + t('weekplan.title') + '</div>' +
-    '<div style="font-size:13px;color:var(--muted);margin-bottom:14px">' + t('weekplan.hint') + '</div>' +
-    '<div class="wp-dag-grid">' + dagen + '</div>' +
-    '</div>';
-}
-
-function wpTogglePicker(i) {
-  const wrap = document.getElementById('wp-picker-wrap');
-  if (!wrap) return;
-  if (activeDagPicker === i) {
-    activeDagPicker = null;
-    wrap.innerHTML = '';
-  } else {
-    activeDagPicker = i;
-    wrap.innerHTML = wpBouwPicker(i);
-  }
-  document.querySelectorAll('.wp-dag').forEach((el, j) =>
-    el.classList.toggle('wp-dag-act', j === activeDagPicker));
-}
-
-// Dagschema's (losse trainingsdag-templates) zijn verwijderd -- een dag kiezen
-// gebeurt nu via 'Laden in weekplanning' bij een heel Programma (Training >
-// Programma's), of blijft hier op Rustdag staan.
-function wpBouwPicker(i) {
-  const opties = [
-    { id: null, icon: '\u{1F4A4}', naam: t('programmas.restDay'), sub: t('weekplan.noTrainingSub') }
-  ];
-  const huidig = weekplan.dagen[i];
-  const oefeningen = wpGetOefeningen(huidig);
-  const oefHtml = huidig && oefeningen.length
-    ? '<div style="margin-top:12px;padding-top:12px;border-top:1.5px solid var(--sand-dark)">' +
-      '<div style="font-size:11px;font-weight:700;color:var(--sage);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px">' + t('programmas.exercisesLabel') + '</div>' +
-      wpBouwOefeningenLijst(oefeningen) +
-      '</div>'
-    : '';
-  return `<div class="card" style="margin-bottom:14px;border-color:var(--sage)">
-    <div class="card-label" style="margin-bottom:10px">${t('weekplan.pickTrainingFor', { day: wpDagLang(i) })}</div>
-    ${opties.map(o => {
-      const sel = huidig === o.id;
-      return `<div onclick="wpKiesSchema(${i},${o.id ? "'" + o.id + "'" : 'null'})"
-        style="display:flex;align-items:center;gap:12px;padding:10px 12px;margin-bottom:6px;
-               border-radius:10px;cursor:pointer;transition:all 0.15s;
-               background:${sel ? 'var(--sage)' : 'var(--white)'};
-               border:1.5px solid ${sel ? 'var(--sage)' : 'var(--sand-dark)'}">
-        <span style="font-size:22px;flex-shrink:0">${o.icon}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:${sel ? 'white' : 'var(--charcoal)'};">${o.naam}</div>
-          <div style="font-size:11px;color:${sel ? 'rgba(255,255,255,0.75)' : 'var(--muted)'};">${o.sub}</div>
-        </div>
-        ${sel ? '<span style="color:white;font-weight:700;flex-shrink:0">✓</span>' : ''}
-      </div>`;
-    }).join('')}
-    ${oefHtml}
-  </div>`;
-}
-
-function wpKiesSchema(dagIdx, schemaId) {
-  weekplan.dagen[dagIdx] = schemaId;
-  wpSlaWeekOp();
-  renderWeekplanning();
-}
-
-// ─── Inplannen ───────────────────────────────────────────────────────────────
-function wpBouwInplannen() {
-  const actief = weekplan.dagen.filter(Boolean).length;
-  if (actief === 0) return '<div class="card" style="margin-bottom:14px">' +
-    '<div class="card-label" style="margin-bottom:8px">' + t('weekplan.planningTitle') + '</div>' +
-    '<div style="font-size:13px;color:var(--muted)">' + t('weekplan.assignFirst') + '</div>' +
-    '</div>';
-
-  const defaultMon = wpStr(new Date());
-
-  return `<div class="card" style="margin-bottom:14px">
-    <div class="card-label" style="margin-bottom:14px">${t('weekplan.planningTitle')}</div>
-
-    <div style="margin-bottom:16px">
-      <label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:6px">${t('weekplan.startDate')}</label>
-      <input type="date" id="wp-start" value="${defaultMon}"
-        style="padding:10px 14px;border:1.5px solid var(--sand-dark);border-radius:10px;
-               font-family:'DM Sans',sans-serif;font-size:14px;color:var(--charcoal);
-               background:var(--sand);outline:none;width:100%;max-width:200px">
-      <div style="font-size:11px;color:var(--muted);margin-top:4px">${t('weekplan.startDateHint')}</div>
-    </div>
-
-    <div style="margin-bottom:20px">
-      <label style="font-size:12px;font-weight:600;color:var(--charcoal);display:block;margin-bottom:8px">${t('weekplan.weekCount')}</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${[1,2,4,6,8,12].map(n =>
-          '<button class="wp-w-btn' + (n === geselecteerdeWeken ? ' wp-w-act' : '') +
-          '" onclick="wpKiesWeken(' + n + ',this)">' + n + 'w</button>'
-        ).join('')}
-      </div>
-    </div>
-
-    <button class="btn-primary" id="wp-plan-btn" onclick="wpInplannen()">
-      ${geplanning.length > 0 ? t('weekplan.updatePlanning') : t('weekplan.scheduleTrainings', { n: actief * geselecteerdeWeken })}
-    </button>
-  </div>`;
-}
-
-function wpKiesWeken(n, btn) {
-  geselecteerdeWeken = n;
-  document.querySelectorAll('.wp-w-btn').forEach(b => b.classList.remove('wp-w-act'));
-  btn.classList.add('wp-w-act');
-  const planBtn = document.getElementById('wp-plan-btn');
-  if (planBtn && geplanning.length === 0) {
-    const actief = weekplan.dagen.filter(Boolean).length;
-    planBtn.textContent = t('weekplan.scheduleTrainings', { n: actief * n });
-  }
-}
-
-function wpInplannen() {
-  const inp = document.getElementById('wp-start');
-  if (!inp || !inp.value) { alert(t('weekplan.chooseStartDate')); return; }
-
-  const startGekozen = wpDate(inp.value);
-
-  // Vind de maandag van de gekozen week
-  const dagVdWeek = startGekozen.getDay();
-  const diffToMon = dagVdWeek === 0 ? -6 : 1 - dagVdWeek;
-  const maandag = new Date(startGekozen);
-  maandag.setDate(startGekozen.getDate() + diffToMon);
-
-  const result = [];
-  for (let w = 0; w < geselecteerdeWeken; w++) {
-    for (let d = 0; d < 7; d++) {
-      const sid = weekplan.dagen[d];
-      if (!sid) continue;
-      const datum = new Date(maandag);
-      datum.setDate(maandag.getDate() + w * 7 + d);
-      if (datum < startGekozen) continue; // sla datums voor startdatum over
-      result.push({ date: wpStr(datum), schemaId: sid });
-    }
-  }
-
-  geplanning = result;
-  wpSlaPlanningOp();
-  renderWeekplanning();
+  el.innerHTML = wpdBuildWeekHtml();
 }
 
 // ─── Overzicht ───────────────────────────────────────────────────────────────
