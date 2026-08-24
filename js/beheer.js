@@ -49,7 +49,7 @@ function exportCustomPhotosFile() {
 }
 
 function switchBeheerTab(tab) {
-  ['training','schemas','maaltijden','producten'].forEach(t => {
+  ['training','maaltijden','producten'].forEach(t => {
     document.getElementById('btab-' + t).classList.toggle('active', t === tab);
     document.getElementById('btab-content-' + t).style.display = t === tab ? 'block' : 'none';
   });
@@ -81,10 +81,6 @@ function renderBeheerTab(tab) {
       });
     });
     items = items.filter(function(item, idx, self) { return self.findIndex(function(i) { return i.key === item.key; }) === idx; });
-  } else if (tab === 'schemas') {
-    TRAINING_SCHEMAS.forEach(function(schema) {
-      items.push({ key: 'schema-' + schema.id, label: dispName(schema), group: t('beheer.group.schemas'), currentPhoto: photos['schema-' + schema.id] || schema.foto || '' });
-    });
   } else if (tab === 'maaltijden') {
     var momentLabel = {ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('moment.avond'), snack:t('moment.snack')};
     ['herstel','normaal','zwaar'].forEach(function(type) {
@@ -210,13 +206,6 @@ function applyCustomPhotos() {
   // Pas toe op EXTRA_EXERCISES
   EXTRA_EXERCISES.forEach(group => {
     group.exercises.forEach(ex => {
-      if (photos['ex-' + ex.name]) ex.photo = photos['ex-' + ex.name];
-    });
-  });
-  // Pas toe op TRAINING_SCHEMAS
-  TRAINING_SCHEMAS.forEach(schema => {
-    if (photos['schema-' + schema.id]) schema.foto = photos['schema-' + schema.id];
-    (schema.oefeningen || []).forEach(ex => {
       if (photos['ex-' + ex.name]) ex.photo = photos['ex-' + ex.name];
     });
   });

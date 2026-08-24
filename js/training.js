@@ -10,123 +10,17 @@ function getActiveEx(i) {
 
 function switchTrainingTab(tab) {
   activeTrainingTab = tab;
-  ['schemas','programmas','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
+  ['programmas','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
     const btn = document.getElementById(`ttab-${t}`);
     const content = document.getElementById(`ttab-content-${t}`);
     if (btn) btn.classList.toggle('active', t === tab);
     if (content) content.style.display = t === tab ? 'block' : 'none';
   });
-  if (tab === 'schemas') renderSchemas();
   if (tab === 'programmas') renderProgrammas();
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'addexercise') renderAddExerciseTab();
   if (tab === 'dag') renderTrainingDag();
   if (tab === 'weekplanning') renderWeekplanning();
-}
-
-function renderSchemas() {
-  const el = document.getElementById('schemas-list');
-  el.innerHTML = TRAINING_SCHEMAS.map(schema => {
-    const isActive = activeSchemaId === schema.id;
-    return `
-    <div class="card" style="margin-bottom:16px;border:2px solid ${isActive ? schema.kleur : 'var(--sand-dark)'};
-         background:${isActive ? schema.kleur + '12' : 'var(--white)'};cursor:pointer;transition:all 0.2s"
-         onclick="selectSchema('${schema.id}')">
-      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:14px">
-        ${schema.foto ? `<div style="width:80px;height:80px;border-radius:10px;background-image:url('${schema.foto}');background-size:cover;background-position:center;flex-shrink:0"></div>` : `<div style="font-size:36px;flex-shrink:0">${schema.icon}</div>`}
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <div style="font-family:'DM Serif Display',serif;font-size:18px">${dispName(schema)}</div>
-            ${isActive ? `<span style="background:${schema.kleur};color:white;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px">${t('training.selected')}</span>` : ''}
-          </div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${dispField(schema,'beschrijving')}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📊 ${dispField(schema,'level')}</span>
-            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">🎯 ${dispField(schema,'doel')}</span>
-            <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">⏱ ${schema.duur}</span>
-          </div>
-        </div>
-      </div>
-      <div style="border-top:1px solid var(--sand-dark);padding-top:12px">
-        <div style="font-size:11px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px">
-          ${t('training.exerciseCount', { n: schema.oefeningen.length })}
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
-          ${schema.oefeningen.map((ex, ei) => {
-            const itemKey = schema.id + '-' + ei;
-            const isOn = isActive ? (selectedSchemaItems[itemKey] !== false) : true;
-            return `
-            <div onclick="${isActive ? `toggleSchemaItem('${schema.id}', ${ei})` : ''}"
-                 style="border:1.5px solid ${isOn && isActive ? 'var(--sage)' : 'var(--sand-dark)'};border-radius:8px;overflow:hidden;
-                        background:${isOn && isActive ? 'var(--sage-light)' : 'var(--white)'};
-                        opacity:${!isActive || isOn ? '1' : '0.45'};
-                        cursor:${isActive ? 'pointer' : 'default'};transition:all 0.15s;position:relative">
-              ${isActive ? `<div style="position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;
-                background:${isOn ? 'var(--sage)' : 'var(--white)'};border:1.5px solid ${isOn ? 'var(--sage)' : 'var(--muted)'};
-                display:flex;align-items:center;justify-content:center;font-size:9px;color:white;font-weight:700;z-index:1">
-                ${isOn ? '✓' : ''}</div>` : ''}
-              ${ex.photo ? `<div style="height:60px;background-image:url('${ex.photo}');background-size:cover;background-position:center"></div>`
-                         : `<div style="height:60px;display:flex;align-items:center;justify-content:center;font-size:24px;background:var(--sand)">${ex.icon}</div>`}
-              <div style="padding:6px 8px">
-                <div style="font-size:11px;font-weight:600;line-height:1.3">${dispName(ex)}</div>
-                <div style="font-size:10px;color:var(--muted)">${ex.sets}×${ex.reps}</div>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-        ${isActive ? `
-          <button onclick="event.stopPropagation();deselectSchema()"
-            style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--sand-dark);
-            background:var(--white);color:var(--muted);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif">
-            ${t('training.removeSchemaFromDay')}
-          </button>` : `
-          <button onclick="event.stopPropagation();selectSchema('${schema.id}')"
-            style="margin-top:12px;width:100%;padding:10px;border-radius:10px;border:none;
-            background:${schema.kleur};color:white;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif">
-            ${t('training.addSchemaToDay')}
-          </button>`}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function selectSchema(id) {
-  if (activeSchemaId === id) return; // al geselecteerd
-  activeSchemaId = id;
-  sessionStorage.setItem('prime_active_schema', id);
-  // Zet alle oefeningen standaard AAN
-  const schema = TRAINING_SCHEMAS.find(s => s.id === id);
-  if (schema) {
-    schema.oefeningen.forEach(function(ex, i) {
-      selectedSchemaItems[id + '-' + i] = true;
-    });
-    sessionStorage.setItem('prime_schema_items', JSON.stringify(selectedSchemaItems));
-  }
-  renderSchemas();
-  updateTrainingDagBadge();
-}
-
-function deselectSchema() {
-  if (activeSchemaId) {
-    // Verwijder selecties voor dit schema
-    const schema = TRAINING_SCHEMAS.find(s => s.id === activeSchemaId);
-    if (schema) schema.oefeningen.forEach(function(ex, i) {
-      delete selectedSchemaItems[activeSchemaId + '-' + i];
-    });
-    sessionStorage.setItem('prime_schema_items', JSON.stringify(selectedSchemaItems));
-  }
-  activeSchemaId = null;
-  sessionStorage.removeItem('prime_active_schema');
-  renderSchemas();
-  updateTrainingDagBadge();
-}
-
-function toggleSchemaItem(schemaId, idx) {
-  const key = schemaId + '-' + idx;
-  selectedSchemaItems[key] = !selectedSchemaItems[key];
-  sessionStorage.setItem('prime_schema_items', JSON.stringify(selectedSchemaItems));
-  renderSchemas();
-  updateTrainingDagBadge();
 }
 
 function renderExtraExercises() {
@@ -459,12 +353,10 @@ function toggleExtraDag(exId) {
 function updateTrainingDagBadge() {
   const tab = document.getElementById('ttab-dag');
   if (!tab) return;
-  const activeSchema = activeSchemaId ? TRAINING_SCHEMAS.find(s => s.id === activeSchemaId) : null;
-  const schemaTabCount = activeSchema ? activeSchema.oefeningen.length : 0;
   const today = new Date().toISOString().split('T')[0];
   const wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
   const wpCount = wpEntry ? (wpGetOefeningen(wpEntry.schemaId) || []).length : 0;
-  const count = schemaTabCount + wpCount + trainingDagLog.length;
+  const count = wpCount + trainingDagLog.length;
   tab.textContent = count > 0 ? t('training.dayTabWithCount', { n: count }) : t('training.tab.day');
 }
 
@@ -505,10 +397,7 @@ function renderTrainingDag() {
   try {
     const stored = sessionStorage.getItem('prime_training_dag');
     if (stored) trainingDagLog = JSON.parse(stored);
-    const ssi = sessionStorage.getItem('prime_schema_items');
-    if (ssi) selectedSchemaItems = JSON.parse(ssi);
   } catch(e) {}
-  activeSchemaId = sessionStorage.getItem('prime_active_schema') || null;
 
   // Weekplanning oefeningen voor vandaag
   const _dagToday = new Date().toISOString().split('T')[0];
@@ -517,15 +406,7 @@ function renderTrainingDag() {
   const _dagWpOef = _dagWpEntry ? (wpGetOefeningen(_dagWpEntry.schemaId) || []) : [];
   const _dagWpDisp = _dagWpEntry ? wpGetDisplay(_dagWpEntry.schemaId) : null;
 
-  // Bouw items op — filter op selectedSchemaItems
-  const activeSchema = activeSchemaId ? TRAINING_SCHEMAS.find(s => s.id === activeSchemaId) : null;
-  const schemaTabItems = activeSchema ? activeSchema.oefeningen.map(function(ex, i) {
-    return Object.assign({}, ex, { id: 'schema-tab-' + i, groep: activeSchema.name, _idx: i });
-  }).filter(function(ex) {
-    return selectedSchemaItems[activeSchemaId + '-' + ex._idx] !== false;
-  }) : [];
-
-  const totalItems = schemaTabItems.length + _dagWpOef.length + trainingDagLog.length;
+  const totalItems = _dagWpOef.length + trainingDagLog.length;
 
   if (totalItems === 0) {
     emptyEl.style.display = 'block';
@@ -539,8 +420,7 @@ function renderTrainingDag() {
   totalEl.style.display = 'block';
   if (progWrap) progWrap.style.display = 'block';
 
-  // Init dagDone voor schema-tab en losse oefeningen
-  schemaTabItems.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
+  // Init dagDone voor losse oefeningen
   trainingDagLog.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
   // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done)
   _dagWpOef.forEach(function(_, i) {
@@ -593,14 +473,6 @@ function renderTrainingDag() {
     html += '</div>';
   }
 
-  // Schema's tab
-  if (schemaTabItems.length > 0) {
-    html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">📋 ' + dispName(activeSchema) + '</div>';
-    schemaTabItems.forEach(function(ex) {
-      html += exCard(ex, '<button onclick="deselectSchema();renderTrainingDag();" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>');
-    });
-    html += '</div>';
-  }
 
   // Losse oefeningen
   if (trainingDagLog.length > 0) {
@@ -629,8 +501,7 @@ function renderTrainingDag() {
   listEl.innerHTML = html;
   updateDagProgress();
 
-  const totalSets = schemaTabItems.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
-    + _dagWpOef.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
+  const totalSets = _dagWpOef.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
     + trainingDagLog.reduce(function(a,e){ return a + Number(e.sets||0); }, 0);
   totalEl.innerHTML = '<div class="card" style="background:var(--sage-light);border-color:var(--sage-mid);margin-top:4px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('training.totalOverview') + '</div>'

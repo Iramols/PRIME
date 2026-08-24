@@ -1,7 +1,4 @@
 ﻿// ========== TRAINING STATE ==========
-let activeSchemaId = sessionStorage.getItem('prime_active_schema') || null;
-let selectedSchemaItems = JSON.parse(sessionStorage.getItem('prime_schema_items') || '{}');
-// { 'full-body-3x-0': true, 'full-body-3x-1': false, ... }
 let trainingDagLog = JSON.parse(sessionStorage.getItem('prime_training_dag') || '[]');
 let selectedSchemaEx = {}; // Reset bij nieuwe check-in
 let activeTrainingTab = 'dag';

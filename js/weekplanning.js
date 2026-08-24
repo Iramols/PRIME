@@ -42,6 +42,10 @@ function wpSlaWeekOp()    { syncSet('prime_weekplan', weekplan); }
 function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 
 // ─── Helper: vertaal schemaId (ook prog:ID:DAG) naar display ─────────────────
+// 'sid' is tegenwoordig altijd 'prog:ID:DAG' (een programmadag) of leeg
+// (rustdag) -- de losse dagschema's (TRAINING_SCHEMAS) zijn verwijderd. De
+// laatste regel blijft staan als nette fallback voor oude, al opgeslagen
+// weekplanningen die nog een kaal schema-id bevatten.
 function wpGetDisplay(sid) {
   if (!sid) return { icon: '\u{1F4A4}', naam: t('weekplan.rest'), sub: '' };
   if (String(sid).startsWith('prog:')) {
@@ -52,9 +56,7 @@ function wpGetDisplay(sid) {
     const dag = p ? (p.dagen || {})[dagIdx] : null;
     return { icon: '\u{1F4AA}', naam: dag ? (dispName(dag) || t('weekplan.trainingFallback')) : t('weekplan.trainingFallback'), sub: p ? dispName(p) : '' };
   }
-  const s = TRAINING_SCHEMAS.find(x => x.id === sid);
-  return s ? { icon: s.icon, naam: dispName(s), sub: s.duur + ' · ' + s.freq }
-           : { icon: '\u{1F4AA}', naam: String(sid), sub: '' };
+  return { icon: '\u{1F4AA}', naam: String(sid), sub: '' };
 }
 
 // ─── Helper: haal oefeningen op voor een schemaId ────────────────────────────
@@ -68,8 +70,7 @@ function wpGetOefeningen(sid) {
     const dag = p ? (p.dagen || {})[dagIdx] : null;
     return dag ? (dag.oefeningen || []) : [];
   }
-  const s = TRAINING_SCHEMAS.find(x => x.id === sid);
-  return s ? s.oefeningen : [];
+  return [];
 }
 
 function wpLookupStappen(naam) {
@@ -186,10 +187,12 @@ function wpTogglePicker(i) {
     el.classList.toggle('wp-dag-act', j === activeDagPicker));
 }
 
+// Dagschema's (losse trainingsdag-templates) zijn verwijderd -- een dag kiezen
+// gebeurt nu via 'Laden in weekplanning' bij een heel Programma (Training >
+// Programma's), of blijft hier op Rustdag staan.
 function wpBouwPicker(i) {
   const opties = [
-    { id: null, icon: '\u{1F4A4}', naam: t('programmas.restDay'), sub: t('weekplan.noTrainingSub') },
-    ...TRAINING_SCHEMAS.map(s => ({ id: s.id, icon: s.icon, naam: dispName(s), sub: s.duur + ' · ' + s.freq }))
+    { id: null, icon: '\u{1F4A4}', naam: t('programmas.restDay'), sub: t('weekplan.noTrainingSub') }
   ];
   const huidig = weekplan.dagen[i];
   const oefeningen = wpGetOefeningen(huidig);

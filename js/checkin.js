@@ -49,21 +49,7 @@ function buildTrainingSummary() {
   try {
     const s = sessionStorage.getItem('prime_training_dag');
     if (s) trainingDagLog = JSON.parse(s);
-    const a = sessionStorage.getItem('prime_active_schema');
-    if (a) activeSchemaId = a;
   } catch(e) {}
-
-  // Bouw volledige lijst van alle oefeningen in Mijn dag
-  try {
-    const ssi = sessionStorage.getItem('prime_schema_items');
-    if (ssi) selectedSchemaItems = JSON.parse(ssi);
-  } catch(e) {}
-
-  const activeSchema = activeSchemaId ? TRAINING_SCHEMAS.find(s => s.id === activeSchemaId) : null;
-  const schemaTabItems = activeSchema
-    ? activeSchema.oefeningen.map(function(ex, i) { return Object.assign({}, ex, {id:'schema-tab-'+i, _idx:i}); })
-        .filter(function(ex) { return selectedSchemaItems[activeSchemaId + '-' + ex._idx] !== false; })
-    : [];
 
   // Weekplanning oefeningen voor vandaag
   const _btsToday = new Date().toISOString().split('T')[0];
@@ -74,7 +60,7 @@ function buildTrainingSummary() {
     return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)) };
   });
 
-  const allItems = schemaTabItems.concat(wpItems).concat(trainingDagLog);
+  const allItems = wpItems.concat(trainingDagLog);
   const total = allItems.length;
 
   // Tel afgevinkte: dagDone voor schema-tab en losse, prime_wp_done voor weekplanning
@@ -310,10 +296,8 @@ async function doCheckin() {
   exerciseDone = [];
   syncSet('prime_exdone', exerciseDone);
   trainingDagLog = [];
-  activeSchemaId = null;
   selectedSchemaEx = {};
   sessionStorage.removeItem('prime_training_dag');
-  sessionStorage.removeItem('prime_active_schema');
 
   // Update stats
   updateStreak();

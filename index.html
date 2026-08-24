@@ -222,8 +222,7 @@
     <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')" data-i18n="training.tab.day">Vandaag</button>
     <button class="food-tab"        id="ttab-weekplanning" onclick="switchTrainingTab('weekplanning')" data-i18n="training.tab.weekplanning">Weekplanning</button>
     <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')" data-i18n="training.tab.exercises">Losse oefeningen</button>
-    <button class="food-tab"        id="ttab-schemas"      onclick="switchTrainingTab('schemas')" data-i18n="training.tab.schemas">Dagschema's</button>
-    <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Weekprogramma's</button>
+    <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Programma's</button>
     <button class="food-tab"        id="ttab-addexercise"  onclick="switchTrainingTab('addexercise')" data-i18n="training.tab.addExercise">+ Oefening toevoegen</button>
   </div>
 
@@ -235,12 +234,6 @@
   <!-- TAB: WEEKPLANNING -->
   <div id="ttab-content-weekplanning" style="display:none">
     <div id="weekplanning-content"></div>
-  </div>
-
-  <!-- TAB: DAGSCHEMA'S -->
-  <div id="ttab-content-schemas" style="display:none">
-    <div style="font-size:14px;color:var(--muted);margin-bottom:16px" data-i18n-html="training.schemas.hint">Kies een dagschema voor vandaag. De oefeningen worden direct toegevoegd aan <strong>Mijn dag</strong>.</div>
-    <div id="schemas-list"></div>
   </div>
 
   <!-- TAB: LOSSE OEFENINGEN -->
@@ -771,13 +764,11 @@
     <!-- TABS -->
     <div class="food-tabs" style="margin-bottom:18px">
       <button class="food-tab active" id="btab-training" onclick="switchBeheerTab('training')" data-i18n="beheer.tab.training">Training</button>
-      <button class="food-tab" id="btab-schemas" onclick="switchBeheerTab('schemas')" data-i18n="beheer.tab.schemas">Schema's</button>
       <button class="food-tab" id="btab-maaltijden" onclick="switchBeheerTab('maaltijden')" data-i18n="beheer.tab.meals">Maaltijden</button>
       <button class="food-tab" id="btab-producten" onclick="switchBeheerTab('producten')" data-i18n="beheer.tab.products">Producten</button>
     </div>
 
     <div id="btab-content-training"></div>
-    <div id="btab-content-schemas" style="display:none"></div>
     <div id="btab-content-maaltijden" style="display:none"></div>
     <div id="btab-content-producten" style="display:none"></div>
 
