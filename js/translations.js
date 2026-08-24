@@ -602,7 +602,8 @@ const I18N = {
     'foodweek.backToThisWeek': 'Naar deze week',
     'foodweek.notFilledIn': 'Nog niet ingevuld',
     'foodweek.noItemsYet': 'Nog niets toegevoegd voor deze dag',
-    'foodweek.addForDay': '+ Voeding toevoegen',
+    'foodweek.addProductForDay': '+ Product',
+    'foodweek.addMealForDay': '+ Gerecht',
     'foodweek.editingDate': 'Je logt nu voor {date}, niet voor vandaag',
     'foodweek.backToToday': 'Terug naar vandaag',
 
@@ -1211,7 +1212,8 @@ const I18N = {
     'foodweek.backToThisWeek': 'Go to this week',
     'foodweek.notFilledIn': 'Not filled in yet',
     'foodweek.noItemsYet': 'Nothing added for this day yet',
-    'foodweek.addForDay': '+ Add food',
+    'foodweek.addProductForDay': '+ Product',
+    'foodweek.addMealForDay': '+ Dish',
     'foodweek.editingDate': "You're logging for {date} now, not today",
     'foodweek.backToToday': 'Back to today',
 

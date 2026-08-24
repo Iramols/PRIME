@@ -140,9 +140,10 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
     <div style="display:${isOpen ? 'block' : 'none'};padding:0 16px 14px">
       ${itemsHtml}
       <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}')">${t('foodweek.addForDay')}</button>
-        ${hasData ? `<button class="btn-sm" style="flex:1" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button>` : ''}
+        <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','basis')">${t('foodweek.addProductForDay')}</button>
+        <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','plan')">${t('foodweek.addMealForDay')}</button>
       </div>
+      ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button></div>` : ''}
       ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;
 
@@ -172,12 +173,13 @@ function fwRemoveItem(dateStr, logId) {
   try { renderFoodWeek(); } catch (e) { console.error('renderFoodWeek na verwijderen:', e); }
 }
 
-// Zet de actieve log-datum op deze dag en springt naar Basisproducten,
-// zodat de bestaande product/gerecht-selectie + portiemodal hergebruikt
-// wordt om voor déze dag iets toe te voegen i.p.v. voor vandaag.
-function fwAddForDay(dateStr) {
+// Zet de actieve log-datum op deze dag en springt naar Basisproducten of
+// Gerechten (tab: 'basis' of 'plan'), zodat de bestaande product/gerecht-
+// selectie + portiemodal hergebruikt wordt om voor déze dag iets toe te
+// voegen i.p.v. voor vandaag.
+function fwAddForDay(dateStr, tab) {
   switchLogDate(dateStr);
-  switchFoodTab('basis');
+  switchFoodTab(tab || 'basis');
 }
 
 // ─── Kopieer maaltijden naar een andere dag (of terugkerend naar meerdere) ──
