@@ -534,7 +534,8 @@
 
     <!-- TAB: EIGEN GERECHT TOEVOEGEN -->
     <div id="foodtab-addmeal" style="display:none">
-      <div class="card" style="margin-bottom:18px">
+      <div class="prog-info-wrap">
+      <div class="card prog-info-kaart" style="margin-bottom:0;flex:1;min-width:0">
         <div class="card-label" style="margin-bottom:14px" id="am-form-title" data-i18n="food.addMeal.formTitle">Nieuw gerecht</div>
         <div class="form-row"><label data-i18n="food.addMeal.name">Naam</label><input type="text" id="am-name" data-i18n-placeholder="food.addMeal.namePlaceholder" placeholder="bijv. Kipcurry met rijst"></div>
         <div class="form-row">
@@ -581,8 +582,13 @@
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
           <button class="btn-primary" style="flex:1" id="am-submit-btn" onclick="addCustomMeal()" data-i18n="food.addMeal.submit">Gerecht toevoegen</button>
           <button class="btn-sm" id="am-cancel-btn" style="display:none" onclick="resetMealForm()" data-i18n="food.addMeal.cancel">Annuleren</button>
-          <button class="btn-sm" id="am-save-as-prime-btn" style="display:none" onclick="openPrimeMealSaveModal()" data-i18n="food.primeMeals.saveAs">⭐ Opslaan als PRIME-gerecht</button>
         </div>
+      </div>
+
+      <div class="prog-info-side" id="am-prime-side" style="display:none">
+        <div class="prog-info-side-label" data-i18n="programmas.prime.sideLabel">Coach-actie</div>
+        <button class="btn-sm" style="width:100%" onclick="openPrimeMealSaveModal()" data-i18n="food.primeMeals.saveAs">⭐ Opslaan als PRIME-gerecht</button>
+      </div>
       </div>
 
       <div class="card-label" style="margin-bottom:10px" data-i18n="food.addMeal.myMeals">Mijn eigen gerechten</div>

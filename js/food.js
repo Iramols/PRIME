@@ -741,9 +741,9 @@ function resetMealForm() {
 // nog niet opgeslagen gerecht en niet terwijl al een PRIME-gerecht
 // bewerkt wordt) -- zelfde voorwaarde als bij Programma's.
 function updateMealFormPrimeButtonVisibility() {
-  const btn = document.getElementById('am-save-as-prime-btn');
-  if (!btn) return;
-  btn.style.display = (_amEditingId && !_amEditingIsPrime && isPrimeCoach()) ? 'inline-block' : 'none';
+  const side = document.getElementById('am-prime-side');
+  if (!side) return;
+  side.style.display = (_amEditingId && !_amEditingIsPrime && isPrimeCoach()) ? 'block' : 'none';
 }
 
 function removeCustomMeal(id) {
