@@ -133,9 +133,9 @@ const I18N = {
     'extra.detail.save': 'Opslaan',
     'extra.detail.saved': 'Opgeslagen',
     'extra.detail.markDone': 'Markeer als gedaan',
-    'training.dag.empty.title': 'Nog geen extra oefeningen',
-    'training.dag.empty.hint': 'Voeg losse oefeningen toe via het tabblad "Losse oefeningen".',
-    'training.dag.empty.cta': 'Voeg oefening toe →',
+    'training.dag.empty.hint': 'Nog niets gelogd. Voeg oefeningen of een programma toe via de andere tabbladen.',
+    'training.dag.addExerciseForDay': '+ Oefening',
+    'training.dag.addProgramForDay': '+ Programma',
     'training.progress': 'Voortgang',
 
     // Voeding
@@ -766,9 +766,9 @@ const I18N = {
     'extra.detail.save': 'Save',
     'extra.detail.saved': 'Saved',
     'extra.detail.markDone': 'Mark as done',
-    'training.dag.empty.title': 'No extra exercises yet',
-    'training.dag.empty.hint': 'Add individual exercises via the "Individual exercises" tab.',
-    'training.dag.empty.cta': 'Add exercise →',
+    'training.dag.empty.hint': 'Nothing logged yet. Add exercises or a program via the other tabs.',
+    'training.dag.addExerciseForDay': '+ Exercise',
+    'training.dag.addProgramForDay': '+ Program',
     'training.progress': 'Progress',
 
     'food.title': 'Meal planner',

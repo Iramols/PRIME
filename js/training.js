@@ -521,6 +521,10 @@ function renderTrainingDag() {
   totalEl.innerHTML = '<div class="card" style="background:var(--sage-light);border-color:var(--sage-mid);margin-top:4px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('training.totalOverview') + '</div>'
     + '<div style="font-size:13px;color:var(--charcoal)">' + t('training.totalSummary', { items: totalItems, sets: totalSets }) + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:8px">'
+    + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
+    + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
     + '</div>';
 }
 

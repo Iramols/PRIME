@@ -340,11 +340,12 @@
         <div class="progress-bg"><div class="progress-fill" id="dag-progress-bar" style="width:0%"></div></div>
       </div>
     </div>
-    <div id="training-dag-empty" class="card" style="text-align:center;padding:40px;display:none">
-      <div style="font-size:40px;margin-bottom:12px">🏋️</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px" data-i18n="training.dag.empty.title">Nog geen extra oefeningen</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:18px" data-i18n="training.dag.empty.hint">Voeg losse oefeningen toe via het tabblad "Losse oefeningen".</div>
-      <button class="btn-sm" onclick="switchTrainingTab('oefeningen')" data-i18n="training.dag.empty.cta">Voeg oefening toe →</button>
+    <div id="training-dag-empty" style="text-align:center;padding:24px 20px;color:var(--muted);font-size:14px;display:none">
+      <div style="margin-bottom:16px" data-i18n="training.dag.empty.hint">Nog niets gelogd. Voeg oefeningen of een programma toe via de andere tabbladen.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('oefeningen')" data-i18n="training.dag.addExerciseForDay">+ Oefening</button>
+        <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('weekplanning')" data-i18n="training.dag.addProgramForDay">+ Programma</button>
+      </div>
     </div>
     <div id="training-dag-list"></div>
     <div id="training-dag-total" style="display:none;margin-top:16px"></div>
