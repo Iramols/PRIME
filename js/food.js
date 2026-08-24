@@ -868,6 +868,7 @@ function openMealPortionModal(dishId) {
   });
 
   document.getElementById('mpm-gram').value = tot.gram || 100;
+  document.getElementById('mpm-date').value = currentLogDate;
   updateMealPortionPreview();
   document.getElementById('meal-portion-modal').classList.add('open');
 }
@@ -900,6 +901,10 @@ function addMealToLog() {
   const tot = mealTotals(_mpDish);
   const gram = parseFloat(document.getElementById('mpm-gram').value) || 0;
   if (gram <= 0) return;
+  // Welke dag: standaard de dag die nu open staat (meestal vandaag), maar
+  // vrij te kiezen in het "Dag"-veld -- zo kun je meteen hier al voor een
+  // andere dag loggen i.p.v. eerst via Weekplanning te moeten wisselen.
+  const targetDate = document.getElementById('mpm-date').value || currentLogDate;
   const f = tot.gram > 0 ? gram / tot.gram : 0;
 
   const values = {
@@ -922,16 +927,31 @@ function addMealToLog() {
   };
 
   if (_editingLogId !== null) {
-    // Bewerken: bestaand item bijwerken i.p.v. een nieuwe toe te voegen.
-    const idx = dayLog.findIndex(i => i.logId === _editingLogId);
-    if (idx !== -1) dayLog[idx] = { ...dayLog[idx], ...values };
+    // editLogItem() heeft currentLogDate al op de oorspronkelijke datum
+    // van dit item gezet. Haal het daar weg en zet het terug op de
+    // (eventueel gewijzigde) gekozen dag -- zo verplaatst een andere
+    // keuze in "Dag" het item meteen mee naar die andere dag.
+    const bestaand = dayLog.find(i => i.logId === _editingLogId);
+    const logId = bestaand ? bestaand.logId : newLogId();
+    dayLog = dayLog.filter(i => i.logId !== _editingLogId);
+    foodDays[currentLogDate] = dayLog;
+    const nieuwItem = { logId, ...values };
+    if (targetDate === currentLogDate) {
+      dayLog.push(nieuwItem);
+      foodDays[currentLogDate] = dayLog;
+    } else {
+      foodDays[targetDate] = [...(foodDays[targetDate] || []), nieuwItem];
+    }
     _editingLogId = null;
-  } else {
+  } else if (targetDate === currentLogDate) {
     dayLog.push({ logId: newLogId(), ...values });
+    foodDays[currentLogDate] = dayLog;
+  } else {
+    foodDays[targetDate] = [...(foodDays[targetDate] || []), { logId: newLogId(), ...values }];
   }
 
+  syncSet('prime_food_days', foodDays);
   closeMealPortionModal();
-  persistDayLog();
   updateMacroTotals();
   updateLogBadge();
   renderDayLog();
@@ -983,6 +1003,7 @@ function openPortionModal(productId) {
 
   currentMoment = 'ontbijt';
   document.querySelectorAll('.moment-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.getElementById('pm-date').value = currentLogDate;
   updatePortionPreview();
   document.getElementById('portion-modal').classList.add('open');
 }
@@ -1067,6 +1088,10 @@ function addProductToLog() {
   const p = currentPortionProduct;
   const gram = parseFloat(document.getElementById('pm-gram').value) || 0;
   if (!p || gram <= 0) return;
+  // Welke dag: standaard de dag die nu open staat (meestal vandaag), maar
+  // vrij te kiezen in het "Dag"-veld -- zo kun je meteen hier al voor een
+  // andere dag loggen i.p.v. eerst via Weekplanning te moeten wisselen.
+  const targetDate = document.getElementById('pm-date').value || currentLogDate;
   const f = gram / 100;
   const values = {
     productId: p.id,
@@ -1084,16 +1109,31 @@ function addProductToLog() {
   };
 
   if (_editingLogId !== null) {
-    // Bewerken: bestaand item bijwerken i.p.v. een nieuwe toe te voegen.
-    const idx = dayLog.findIndex(i => i.logId === _editingLogId);
-    if (idx !== -1) dayLog[idx] = { ...dayLog[idx], ...values };
+    // editLogItem() heeft currentLogDate al op de oorspronkelijke datum
+    // van dit item gezet. Haal het daar weg en zet het terug op de
+    // (eventueel gewijzigde) gekozen dag -- zo verplaatst een andere
+    // keuze in "Dag" het item meteen mee naar die andere dag.
+    const bestaand = dayLog.find(i => i.logId === _editingLogId);
+    const logId = bestaand ? bestaand.logId : newLogId();
+    dayLog = dayLog.filter(i => i.logId !== _editingLogId);
+    foodDays[currentLogDate] = dayLog;
+    const nieuwItem = { logId, ...values };
+    if (targetDate === currentLogDate) {
+      dayLog.push(nieuwItem);
+      foodDays[currentLogDate] = dayLog;
+    } else {
+      foodDays[targetDate] = [...(foodDays[targetDate] || []), nieuwItem];
+    }
     _editingLogId = null;
-  } else {
+  } else if (targetDate === currentLogDate) {
     dayLog.push({ logId: newLogId(), ...values });
+    foodDays[currentLogDate] = dayLog;
+  } else {
+    foodDays[targetDate] = [...(foodDays[targetDate] || []), { logId: newLogId(), ...values }];
   }
 
+  syncSet('prime_food_days', foodDays);
   closePortionModal();
-  persistDayLog();
   updateMacroTotals();
   updateLogBadge();
   renderDayLog();
