@@ -242,7 +242,30 @@
   <div id="ttab-content-addprogram" style="display:none">
     <div class="card" style="margin-bottom:18px">
       <div class="card-label" style="margin-bottom:14px" data-i18n="programmas.add.formTitle">Nieuw programma</div>
-      <div class="form-row"><label data-i18n="programmas.info.name">Naam</label><input type="text" id="apr-name" data-i18n-placeholder="programmas.info.namePlaceholder" placeholder="bijv. Full Body Krachttraining" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewProgram();}"></div>
+      <div class="form-row"><label data-i18n="programmas.info.name">Naam</label><input type="text" id="apr-name" data-i18n-placeholder="programmas.info.namePlaceholder" placeholder="bijv. Full Body Krachttraining"></div>
+      <div class="form-row"><label data-i18n="programmas.info.description">Beschrijving</label><textarea id="apr-beschrijving" class="prog-info-textarea" data-i18n-placeholder="programmas.info.descriptionPlaceholder" placeholder="Korte omschrijving van dit programma..."></textarea></div>
+      <div class="prog-info-grid">
+        <div class="form-row"><label data-i18n="programmas.info.goal">Doel</label><input type="text" id="apr-doel" data-i18n-placeholder="programmas.info.goalPlaceholder" placeholder="bijv. Kracht &amp; conditie"></div>
+        <div class="form-row"><label data-i18n="programmas.info.level">Niveau</label>
+          <select id="apr-niveau">
+            <option value="" selected>—</option>
+            <option value="Beginner" data-i18n="programmas.level.beginner">Beginner</option>
+            <option value="Gemiddeld" data-i18n="programmas.level.gemiddeld">Gemiddeld</option>
+            <option value="Gevorderd" data-i18n="programmas.level.gevorderd">Gevorderd</option>
+          </select>
+        </div>
+        <div class="form-row"><label data-i18n="programmas.info.daysPerWeek">Dagen per week</label><input type="text" id="apr-dagenperweek" data-i18n-placeholder="programmas.info.daysPerWeekPlaceholder" placeholder="bijv. 3x per week"></div>
+      </div>
+      <div class="form-row">
+        <label data-i18n="food.add.photo">Foto</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div id="apr-photo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--sand);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">📋</div>
+          <label style="cursor:pointer">
+            <input type="file" accept="image/*" style="display:none" onchange="handleNewProgramPhoto(event)">
+            <span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600" data-i18n="beheer.upload">📷 Upload</span>
+          </label>
+        </div>
+      </div>
       <div id="apr-error" style="color:#c0392b;font-size:12px;margin-bottom:10px"></div>
       <button class="btn-primary" style="width:100%" onclick="addNewProgram()" data-i18n="programmas.add.submit">+ Programma toevoegen</button>
     </div>

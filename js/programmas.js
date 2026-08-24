@@ -82,8 +82,7 @@ function progBouwLijst() {
     return '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
-      '<div style="font-size:13px;color:var(--muted)' + (progMode === 'normal' ? ';margin-bottom:24px' : '') + '">' + hint + '</div>' +
-      (progMode === 'normal' ? '<button class="btn-primary" onclick="switchTrainingTab(\'addprogram\')">' + t('programmas.new') + '</button>' : '') +
+      '<div style="font-size:13px;color:var(--muted)">' + hint + '</div>' +
       '</div>';
   }
 
@@ -128,8 +127,7 @@ function progBouwLijst() {
       '</div>';
   }).join('');
 
-  return '<div style="margin-bottom:4px">' + kaarten + '</div>' +
-    (progMode === 'normal' ? '<button class="btn-primary" style="width:100%" onclick="switchTrainingTab(\'addprogram\')">' + t('programmas.new') + '</button>' : '');
+  return '<div style="margin-bottom:4px">' + kaarten + '</div>';
 }
 
 // ─── Programma editor: dagen | oefeningen | detail naast elkaar ──────────────
@@ -362,15 +360,43 @@ function progOefAfgeleidesSets(oef) {
 
 // ─── Acties: programma & dagen ────────────────────────────────────────────────
 // "+ Programma toevoegen"-tab: eigen (losse) tab i.p.v. een knop onder
-// Programma's, net als "+ Oefening toevoegen" naast Losse oefeningen.
-// Na aanmaken springt de coach meteen door naar Programma's om er dagen
-// en oefeningen aan toe te voegen via de 3-koloms-editor.
+// Programma's, net als "+ Oefening toevoegen" naast Losse oefeningen -- en
+// net als daar staan alle velden meteen samen in één formulier (naam,
+// beschrijving, doel, niveau, dagen per week, foto), i.p.v. eerst alleen
+// een naam te vragen en de rest pas later in de editor. Na aanmaken springt
+// de coach door naar Programma's om er dagen en oefeningen aan toe te
+// voegen via de 3-koloms-editor (dat deel past niet in een plat formulier).
+let _aprPhotoData = null;
+
 function resetNewProgramForm() {
   const nameInput = document.getElementById('apr-name');
   if (!nameInput) return;
   nameInput.value = '';
   nameInput.style.borderColor = '';
+  document.getElementById('apr-beschrijving').value = '';
+  document.getElementById('apr-doel').value = '';
+  document.getElementById('apr-niveau').value = '';
+  document.getElementById('apr-dagenperweek').value = '';
+  document.getElementById('apr-photo-preview').innerHTML = '📋';
+  _aprPhotoData = null;
   document.getElementById('apr-error').textContent = '';
+}
+
+function handleNewProgramPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const errorEl = document.getElementById('apr-error');
+  if (file.size > 1.5 * 1024 * 1024) {
+    errorEl.textContent = t('food.add.photoTooBig');
+    return;
+  }
+  errorEl.textContent = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _aprPhotoData = e.target.result;
+    document.getElementById('apr-photo-preview').innerHTML = '<img src="' + _aprPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+  };
+  reader.readAsDataURL(file);
 }
 
 function addNewProgram() {
@@ -388,7 +414,16 @@ function addNewProgram() {
   progMode = 'normal';
   progLaadData();
   const id = 'p' + Date.now() + Math.floor(Math.random() * 1000);
-  progLijst.push({ id, naam: name, dagen: {} });
+  progLijst.push({
+    id,
+    naam: name,
+    beschrijving: document.getElementById('apr-beschrijving').value.trim(),
+    doel: document.getElementById('apr-doel').value.trim(),
+    niveau: document.getElementById('apr-niveau').value,
+    dagenPerWeek: document.getElementById('apr-dagenperweek').value.trim(),
+    foto: _aprPhotoData || null,
+    dagen: {}
+  });
   progSlaOp();
   progActiefId = id;
   progActiefDagIdx = null;
