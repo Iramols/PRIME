@@ -82,8 +82,8 @@ function progBouwLijst() {
     return '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
-      '<div style="font-size:13px;color:var(--muted);margin-bottom:24px">' + hint + '</div>' +
-      (progMode === 'normal' ? '<button class="btn-primary" onclick="progNieuw()">' + t('programmas.new') + '</button>' : '') +
+      '<div style="font-size:13px;color:var(--muted)' + (progMode === 'normal' ? ';margin-bottom:24px' : '') + '">' + hint + '</div>' +
+      (progMode === 'normal' ? '<button class="btn-primary" onclick="switchTrainingTab(\'addprogram\')">' + t('programmas.new') + '</button>' : '') +
       '</div>';
   }
 
@@ -129,7 +129,7 @@ function progBouwLijst() {
   }).join('');
 
   return '<div style="margin-bottom:4px">' + kaarten + '</div>' +
-    (progMode === 'normal' ? '<button class="btn-primary" style="width:100%" onclick="progNieuw()">' + t('programmas.new') + '</button>' : '');
+    (progMode === 'normal' ? '<button class="btn-primary" style="width:100%" onclick="switchTrainingTab(\'addprogram\')">' + t('programmas.new') + '</button>' : '');
 }
 
 // ─── Programma editor: dagen | oefeningen | detail naast elkaar ──────────────
@@ -361,14 +361,44 @@ function progOefAfgeleidesSets(oef) {
 }
 
 // ─── Acties: programma & dagen ────────────────────────────────────────────────
-function progNieuw() {
-  if (progMode !== 'normal') return; // PRIME-programma's ontstaan alleen via "opslaan als"
+// "+ Programma toevoegen"-tab: eigen (losse) tab i.p.v. een knop onder
+// Programma's, net als "+ Oefening toevoegen" naast Losse oefeningen.
+// Na aanmaken springt de coach meteen door naar Programma's om er dagen
+// en oefeningen aan toe te voegen via de 3-koloms-editor.
+function resetNewProgramForm() {
+  const nameInput = document.getElementById('apr-name');
+  if (!nameInput) return;
+  nameInput.value = '';
+  nameInput.style.borderColor = '';
+  document.getElementById('apr-error').textContent = '';
+}
+
+function addNewProgram() {
+  const nameInput = document.getElementById('apr-name');
+  const name = nameInput.value.trim();
+  const errorEl = document.getElementById('apr-error');
+  if (!name) {
+    errorEl.textContent = t('programmas.add.nameRequired');
+    nameInput.style.borderColor = '#c0392b';
+    return;
+  }
+  errorEl.textContent = '';
+  nameInput.style.borderColor = '';
+
+  progMode = 'normal';
+  progLaadData();
   const id = 'p' + Date.now() + Math.floor(Math.random() * 1000);
-  progLijst.push({ id, naam: t('programmas.newProgramName'), dagen: {} });
+  progLijst.push({ id, naam: name, dagen: {} });
   progSlaOp();
   progActiefId = id;
   progActiefDagIdx = null;
   progSelectedOefIdx = null;
+
+  // Bewust _setActiveTrainingTabDom() i.p.v. switchTrainingTab('programmas')
+  // -- die laatste reset progActiefId altijd naar null (voor de normale
+  // tabklik, die de lijst moet tonen), terwijl we hier juist meteen de
+  // editor van het zojuist aangemaakte programma willen openen.
+  _setActiveTrainingTabDom('programmas');
   renderProgrammas();
 }
 

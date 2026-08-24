@@ -8,20 +8,30 @@ function getActiveEx(i) {
   return ex;
 }
 
-function switchTrainingTab(tab) {
+// Zet alleen welke tabknop/inhoud actief is, zonder verder tab-specifieke
+// state te resetten -- los getrokken van switchTrainingTab() zodat
+// addNewProgram() (programmas.js) na het aanmaken van een programma naar
+// de Programma's-tab kan springen MET het nieuwe programma meteen open,
+// i.p.v. dat de normale tabklik-reset (progActiefId = null) dat teniet doet.
+function _setActiveTrainingTabDom(tab) {
   activeTrainingTab = tab;
-  ['programmas','primeprog','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
+  ['programmas','primeprog','addprogram','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
     const btn = document.getElementById(`ttab-${t}`);
     const content = document.getElementById(`ttab-content-${t}`);
     if (btn) btn.classList.toggle('active', t === tab);
     if (content) content.style.display = t === tab ? 'block' : 'none';
   });
+}
+
+function switchTrainingTab(tab) {
+  _setActiveTrainingTabDom(tab);
   if (tab === 'programmas') { progMode = 'normal'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null; renderProgrammas(); }
   if (tab === 'primeprog') {
     progMode = 'prime'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null;
     renderProgrammas();
     primeProgRefreshFromCloud(); // ververst op de achtergrond vanuit Supabase (gedeeld met alle klanten)
   }
+  if (tab === 'addprogram') resetNewProgramForm();
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'addexercise') renderAddExerciseTab();
   if (tab === 'dag') renderTrainingDag();
