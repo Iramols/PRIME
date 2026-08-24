@@ -56,7 +56,11 @@ function progBouwLijst() {
         '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
         '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">' + t('common.delete') + '</button>';
     return '<div class="card" style="margin-bottom:12px' + (prog.builtin ? ';border-color:var(--sage)' : '') + '">' +
-      '<div style="margin-bottom:10px">' +
+      '<div style="display:flex;gap:14px;margin-bottom:10px">' +
+      (prog.foto
+        ? '<div style="width:64px;height:64px;border-radius:10px;flex-shrink:0;background-size:cover;background-position:center;background-image:url(\'' + prog.foto + '\')"></div>'
+        : '<div style="width:64px;height:64px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;background:var(--sand)">📋</div>') +
+      '<div style="flex:1;min-width:0">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:18px">' + dispName(prog) + '</div>' +
       (prog.builtin ? '<span style="font-size:10px;font-weight:700;background:var(--sage);color:white;padding:2px 8px;border-radius:8px">' + t('programmas.builtinBadge') + '</span>' : '') +
@@ -71,6 +75,7 @@ function progBouwLijst() {
           (prog.dagenPerWeek ? '<span style="font-size:11px;padding:3px 8px;border-radius:8px;background:var(--sand);color:var(--charcoal)">📅 ' + prog.dagenPerWeek + '</span>' : '') +
           '</div>'
         : '') +
+      '</div>' +
       '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' + knoppen + '</div>' +
       '</div>';
@@ -182,6 +187,18 @@ function progBouw3ColEditor() {
 // zichtbaar en direct bewerkbaar, net als de rest van de editor (autosave).
 function progBouwInfoKaart(prog) {
   return '<div class="card prog-info-kaart">' +
+    '<div class="form-row"><label>' + t('food.add.photo') + '</label>' +
+    '<div style="display:flex;align-items:center;gap:12px">' +
+    '<div id="prog-photo-preview" style="width:64px;height:64px;border-radius:8px;background:var(--sand);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted)">' +
+    (prog.foto ? '<img src="' + prog.foto + '" style="width:100%;height:100%;object-fit:cover">' : '📋') +
+    '</div>' +
+    '<label style="cursor:pointer">' +
+    '<input type="file" accept="image/*" style="display:none" onchange="handleProgPhoto(event)">' +
+    '<span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600">' + t('beheer.upload') + '</span>' +
+    '</label>' +
+    '</div>' +
+    '<div id="prog-photo-error" style="color:#c0392b;font-size:12px;margin-top:6px"></div>' +
+    '</div>' +
     '<div class="form-row"><label>' + t('programmas.info.name') + '</label>' +
     '<input type="text" id="prog-naam-input" value="' + prog.naam.replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.info.namePlaceholder') + '" onchange="progNaamBijwerken(this.value)"></div>' +
     '<div class="form-row"><label>' + t('programmas.info.description') + '</label>' +
@@ -206,6 +223,26 @@ function progBouwInfoKaart(prog) {
 function progInfoBijwerken(veld, val) {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (prog) { prog[veld] = val; progSlaOp(); }
+}
+
+function handleProgPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const errorEl = document.getElementById('prog-photo-error');
+  if (file.size > 1.5 * 1024 * 1024) {
+    errorEl.textContent = t('food.add.photoTooBig');
+    return;
+  }
+  errorEl.textContent = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const prog = progLijst.find(p => p.id === progActiefId);
+    if (!prog) return;
+    prog.foto = e.target.result;
+    progSlaOp();
+    document.getElementById('prog-photo-preview').innerHTML = '<img src="' + prog.foto + '" style="width:100%;height:100%;object-fit:cover">';
+  };
+  reader.readAsDataURL(file);
 }
 
 // Detailpaneel (kolom 3): naam, foto, per-set herhalingen/rust, notities.
