@@ -451,6 +451,14 @@ function edSubmit() {
 // Zelfde als openPmDatePicker() bij Voeding, maar voor dit detailscherm.
 function openEdDatePicker() {
   const input = document.getElementById('ed-date');
+  // Eerst leegmaken: het veld staat al standaard op vandaag, en een
+  // <input type="date"> vuurt zijn onchange-event alleen als de
+  // waarde ECHT verandert. Zonder deze reset deed niets het als je in
+  // de kalender gewoon vandaag opnieuw aanklikte (geen wijziging t.o.v.
+  // de al ingevulde waarde -> geen change-event -> addExerciseFromDetailModal()
+  // werd nooit aangeroepen). Door leeg te beginnen is elke keuze, ook
+  // vandaag, altijd een echte wijziging.
+  input.value = '';
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }

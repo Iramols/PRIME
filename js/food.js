@@ -880,6 +880,10 @@ function openMealPortionModal(dishId) {
 // Zelfde als openPmDatePicker(), maar voor de gerecht-portiemodal.
 function openMpmDatePicker() {
   const input = document.getElementById('mpm-date');
+  // Zelfde reset als openPmDatePicker(): zonder leegmaken vuurt onchange
+  // niet als je in de kalender gewoon vandaag (de al ingevulde waarde)
+  // opnieuw aanklikt.
+  input.value = '';
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -1033,6 +1037,12 @@ function openPortionModal(productId) {
 // knop-klik, niet automatisch bij het openen van de modal zelf.
 function openPmDatePicker() {
   const input = document.getElementById('pm-date');
+  // Leegmaken vóór het openen: het veld staat al standaard op vandaag,
+  // maar een <input type="date"> vuurt onchange alleen bij een ECHTE
+  // wijziging. Zonder deze reset gebeurde er niets als je in de
+  // kalender gewoon vandaag opnieuw aanklikte. Door leeg te beginnen
+  // is elke keuze, ook vandaag, altijd een echte wijziging.
+  input.value = '';
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
