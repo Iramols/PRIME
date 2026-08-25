@@ -112,7 +112,10 @@ function renderExtraExercises() {
             <div class="ex-extra-card" onclick="openExerciseAddModal('${ex.id}')">
               ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
               <div class="ex-extra-body">
-                <div class="ex-extra-name">${dispName(ex)}</div>
+                <div class="ex-extra-name-row">
+                  <div class="ex-extra-name">${dispName(ex)}</div>
+                  <span class="ex-schedule-badge" onclick="event.stopPropagation();openExerciseAddModal('${ex.id}')">${t('portion.addToDay')}</span>
+                </div>
                 <div class="ex-extra-meta">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
                 ${ex.youtube ? `<a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" class="ex-extra-video">▶ Video</a>` : ''}
               </div>

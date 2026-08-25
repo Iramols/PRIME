@@ -292,7 +292,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .ex-extra-photo { width: 64px; height: 60px; flex-shrink: 0; border-radius: 10px; background-size: cover; background-position: center; background-color: var(--sand-dark); }
 .ex-extra-photo.ex-extra-icon { display: flex; align-items: center; justify-content: center; font-size: 26px; }
 .ex-extra-body { flex: 1; min-width: 0; }
-.ex-extra-name { font-size: 13px; font-weight: 600; color: var(--charcoal); margin-bottom: 2px; line-height: 1.3; }
+.ex-extra-name { font-size: 13px; font-weight: 600; color: var(--charcoal); line-height: 1.3; }
+.ex-extra-name-row { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.ex-schedule-badge { flex-shrink: 0; font-size: 10px; font-weight: 700; color: white; background: var(--sage); padding: 2px 8px; border-radius: 100px; cursor: pointer; transition: background 0.15s; }
+.ex-schedule-badge:hover { background: var(--sage-mid); }
 .ex-extra-meta { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
 .ex-extra-video { display: inline-block; font-size: 10px; font-weight: 600; color: #ff0000; text-decoration: none; }
 .ex-detail-btn { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--sand-dark); background: var(--sand); cursor: pointer; font-family: 'DM Sans', sans-serif; }
