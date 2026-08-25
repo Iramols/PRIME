@@ -1269,8 +1269,9 @@ function logItemPhoto(item) {
 // (fwBouwDagKaart in foodweek.js), zodat ze er identiek uitzien.
 function renderLogItemCard(dateStr, item) {
   const photo = logItemPhoto(item);
+  const isEaten = !!item.eaten;
   return `
-    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:pointer" onclick="editLogItem('${dateStr}', ${item.logId})">
+    <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:pointer;opacity:${isEaten ? '0.55' : '1'}" onclick="editLogItem('${dateStr}', ${item.logId})">
       ${photo
         ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
         : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
@@ -1282,10 +1283,29 @@ function renderLogItemCard(dateStr, item) {
           </div>
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
+        <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" title="${t('food.log.markEaten')}">✓</div>
         <button onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})"
           style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
       </div>
     </div>`;
+}
+
+// Markeert een gelogd item als (niet) gegeten -- zuiver visueel (zelfde
+// idee als "gedaan" afvinken bij Training), telt niet mee in de
+// kcal/macro-totalen. Werkt zowel voor "Mijn dag" als voor een
+// willekeurige datum vanuit Weekplanning.
+function toggleFoodEaten(dateStr, logId) {
+  const items = dateStr === currentLogDate ? dayLog : (foodDays[dateStr] || []);
+  const item = items.find(i => i.logId === logId);
+  if (!item) return;
+  item.eaten = !item.eaten;
+  foodDays[dateStr] = items;
+  syncSet('prime_food_days', foodDays);
+
+  const chk = document.getElementById('food-chk-' + logId);
+  const card = document.getElementById('food-item-' + logId);
+  if (chk) chk.classList.toggle('done', item.eaten);
+  if (card) card.style.opacity = item.eaten ? '0.55' : '1';
 }
 
 // Groepeert een lijst logitems per moment en bouwt daar de kaartenlijst
