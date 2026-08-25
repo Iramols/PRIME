@@ -158,24 +158,76 @@ function wpToggleOefDone(dateStr, oefIdx) {
   if (row) row.style.opacity = isDone ? '0.45' : '1';
 }
 
-// Naam + sets/rust staan samen links (zelfde opzet als een oefeningkaart
-// bij Vandaag), zodat alleen het vinkje nog rechts staat -- duidelijk
-// gescheiden en zelf het enige klikbare doel om af te vinken.
-function wpBouwOefeningenAfvinken(oefeningen, dateStr) {
-  if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
+// Zelfde kaart-opzet als een oefening bij Vandaag (exCard in training.js):
+// fotominiatuur + naam/sets-rust links, afvinken + verwijderen rechts met
+// tekstlabel. 'rows' is een array van { oef, doneIdx, kind, verwijderIdx?,
+// exId? } (zie wpdBouwDagKaart), niet de kale oefening-objecten -- zo
+// blijft het afvink-/verwijder-doel kloppen ook als een deel van de lijst
+// voor deze dag verborgen is (verwijderde programma-oefeningen).
+function wpBouwOefeningenAfvinken(rows, dateStr) {
+  if (!rows.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   const done = wpGetDone(dateStr);
-  return oefeningen.map((o, i) => {
-    var naam   = dispName(o);
-    var detail = wpOefDetail(o);
-    var isDone = done.includes(i);
-    return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
-      '<div style="flex:1;min-width:0">' +
+  return rows.map(function(row) {
+    const o = row.oef, i = row.doneIdx;
+    const naam = dispName(o);
+    const detail = wpOefDetail(o);
+    const isDone = done.includes(i);
+
+    let photo = o.photo;
+    if (!photo && typeof findCanonicalExercise === 'function') {
+      const f = findCanonicalExercise(o.name || o.naam);
+      if (f && f.photo) photo = f.photo;
+    }
+    const photoDiv = photo
+      ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;background-image:url(\'' + photo + '\');background-size:cover;background-position:center"></div>'
+      : '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (o.icon || '💪') + '</div>';
+
+    let delBtn = '';
+    if (row.kind === 'prog') {
+      delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + dateStr + '\',' + row.verwijderIdx + ');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+    } else if (row.kind === 'adhoc') {
+      delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+    }
+
+    return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
+      photoDiv +
+      '<div style="flex:1;min-width:120px">' +
         '<div style="font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
         '<div style="font-size:11px;color:var(--muted)">' + detail + '</div>' +
       '</div>' +
-      '<div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="' + t('weekplan.markDone') + '">✓</div>' +
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
+        '<div class="ex-check-wrap"><div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+        delBtn +
+      '</div>' +
       '</div>';
   }).join('');
+}
+
+// Ná het verwijderen van een oefening (voor deze dag) alles opnieuw
+// renderen: de dagkaart zelf (renderWeekplanning behoudt wpdOpenDag, dus
+// blijft uitgeklapt), en als "Vandaag" ook getoond wordt bij Training,
+// die erbij (dezelfde datum kan in allebei de schermen staan).
+function wpdRefreshNaVerwijderen(dateStr) {
+  renderWeekplanning();
+  try {
+    if (dateStr === new Date().toISOString().split('T')[0] && document.getElementById('training-dag-list')) {
+      renderTrainingDag();
+      updateTrainingDagBadge();
+    }
+  } catch (e) { console.error(e); }
+}
+
+// Verwijdert één losse (ad-hoc) oefening voor een specifieke dag -- ook
+// bruikbaar vanuit Weekplanning voor een dag die niet "vandaag" is
+// (i.t.t. removeExtraDag() in training.js, die alleen currentTrainingDate
+// aanpast).
+function wpRemoveAdhocForDay(dateStr, exId) {
+  const lijst = (trainingDays[dateStr] || []).filter(function(e) { return e.id !== exId; });
+  trainingDays[dateStr] = lijst;
+  syncSet('prime_training_days', trainingDays);
+  if (typeof currentTrainingDate !== 'undefined' && dateStr === currentTrainingDate) {
+    trainingDagLog = lijst;
+  }
 }
 
 // ─── Hoofd render ────────────────────────────────────────────────────────────
@@ -222,9 +274,12 @@ function wpBouwOverzicht() {
       const oefeningen = wpGetOefeningen(item.schemaId);
       const detailId   = 'wp-detail-' + item.date;
       const arrowId    = 'wp-arrow-' + item.date;
+      // Ongebruikte weergave (zie comment bij wpBouwOverzicht) -- geen
+      // verwijderknop nodig, dus platte 'legacy'-rijen zonder kind.
+      const oefRows = oefeningen.map(function(oef, i) { return { oef: oef, doneIdx: i, kind: 'legacy' }; });
       const detailHtml = oefeningen.length
         ? '<div id="' + detailId + '" style="display:none;padding:6px 0 4px 90px">' +
-          wpBouwOefeningenAfvinken(oefeningen, item.date) + '</div>'
+          wpBouwOefeningenAfvinken(oefRows, item.date) + '</div>'
         : '';
       return '<div style="border-bottom:0.5px solid var(--sand-dark);opacity:' + (isVerleden ? '0.4' : '1') + '">' +
         '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer" onclick="wpToggleDagDetail(\'' + item.date + '\')">' +
@@ -382,9 +437,18 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
   const entry = geplanning.find(p => p.date === dateStr) || null;
   const disp = entry ? wpGetDisplay(entry.schemaId) : null;
   const geplandeOefeningen = entry ? wpGetOefeningen(entry.schemaId) : [];
+  // Voor deze dag verwijderde programma-oefeningen (zie wpRemoveOefForDay,
+  // ook gebruikt bij Vandaag) overslaan; het programma zelf blijft intact.
+  const wpVerwijderd = wpGetRemoved(dateStr);
+  const geplandeRows = geplandeOefeningen
+    .map(function(oef, i) { return { oef: oef, doneIdx: i, verwijderIdx: i, kind: 'prog' }; })
+    .filter(function(x) { return !wpVerwijderd.includes(x.verwijderIdx); });
   const adhocOefeningen = trainingDays[dateStr] || [];
-  const alleOefeningen = [...geplandeOefeningen, ...adhocOefeningen];
-  const hasData = alleOefeningen.length > 0;
+  const adhocRows = adhocOefeningen.map(function(oef, i) {
+    return { oef: oef, doneIdx: geplandeOefeningen.length + i, kind: 'adhoc', exId: oef.id };
+  });
+  const alleRows = [...geplandeRows, ...adhocRows];
+  const hasData = alleRows.length > 0;
 
   const header = `
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="wpdToggleDag('${dateStr}')">
@@ -396,15 +460,15 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
       <div style="flex:1"></div>
       ${hasData
         ? `<div style="text-align:right">
-             <div style="font-family:'DM Serif Display',serif;font-size:16px">${alleOefeningen.length} ${t(alleOefeningen.length === 1 ? 'programmas.exerciseSingular' : 'programmas.exercisesPlural')}</div>
+             <div style="font-family:'DM Serif Display',serif;font-size:16px">${alleRows.length} ${t(alleRows.length === 1 ? 'programmas.exerciseSingular' : 'programmas.exercisesPlural')}</div>
              ${disp && disp.naam ? `<div style="font-size:10px;color:var(--muted)">${disp.icon} ${disp.naam}</div>` : ''}
            </div>`
         : `<div style="font-size:12px;color:var(--muted)">${t('foodweek.notFilledIn')}</div>`}
       <span style="font-size:11px;color:var(--muted);margin-left:8px;flex-shrink:0">${isOpen ? '▴' : '▾'}</span>
     </div>`;
 
-  const detailHtml = alleOefeningen.length
-    ? wpBouwOefeningenAfvinken(alleOefeningen, dateStr)
+  const detailHtml = alleRows.length
+    ? wpBouwOefeningenAfvinken(alleRows, dateStr)
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
   // Zelfde knoppenrij als een uitgeklapte dagkaart bij Voeding
