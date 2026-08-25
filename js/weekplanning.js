@@ -19,9 +19,15 @@ function wpDate(str) {
   const [y,m,d] = str.split('-').map(Number);
   return new Date(y, m-1, d);
 }
+// Geeft de maandag van de week WAARIN d valt (dus vaak terug in de tijd,
+// bv. dinsdag -> gisteren), niet de eerstvolgende maandag. De oude formule
+// ((8-day)%7) deed dat laatste per ongeluk -- correct voor d=maandag zelf
+// (diff 0), maar voor elke andere dag sprong het een hele week te ver
+// vooruit. Zelfde, wel al correcte formule als elders in de app
+// (bv. wpBouwOverzicht/wpConfirmTrainingCopyInner: wd===0?6:wd-1).
 function wpMaandagVanaf(d) {
-  const day = d.getDay();
-  const diff = day === 1 ? 0 : (8 - day) % 7;
+  const day = d.getDay(); // 0 = zondag .. 6 = zaterdag
+  const diff = day === 0 ? -6 : 1 - day;
   const mon = new Date(d);
   mon.setDate(d.getDate() + diff);
   return mon;
@@ -134,6 +140,9 @@ function wpToggleOefDone(dateStr, oefIdx) {
   if (row) row.style.opacity = isDone ? '0.45' : '1';
 }
 
+// Naam + sets/rust staan samen links (zelfde opzet als een oefeningkaart
+// bij Vandaag), zodat alleen het vinkje nog rechts staat -- duidelijk
+// gescheiden en zelf het enige klikbare doel om af te vinken.
 function wpBouwOefeningenAfvinken(oefeningen, dateStr) {
   if (!oefeningen.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   const done = wpGetDone(dateStr);
@@ -141,9 +150,11 @@ function wpBouwOefeningenAfvinken(oefeningen, dateStr) {
     var naam   = dispName(o);
     var detail = wpOefDetail(o);
     var isDone = done.includes(i);
-    return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
-      '<div style="flex:1;font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
-      '<div style="font-size:11px;color:var(--muted);white-space:nowrap">' + detail + '</div>' +
+    return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
+      '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">' + detail + '</div>' +
+      '</div>' +
       '<div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="' + t('weekplan.markDone') + '">✓</div>' +
       '</div>';
   }).join('');
