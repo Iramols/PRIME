@@ -1283,9 +1283,14 @@ function renderLogItemCard(dateStr, item) {
           </div>
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
-        <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" title="${t('food.log.markEaten')}">✓</div>
-        <button onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})"
-          style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
+        <div class="ex-check-wrap">
+          <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" title="${t('food.log.markEaten')}">✓</div>
+          <span class="ex-check-label">${t('food.log.markEaten')}</span>
+        </div>
+        <div class="ex-check-wrap" onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" style="cursor:pointer">
+          <span style="font-size:16px;color:var(--muted);line-height:1">×</span>
+          <span class="ex-check-label">${t('common.delete')}</span>
+        </div>
       </div>
     </div>`;
 }

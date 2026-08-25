@@ -599,9 +599,7 @@ function renderTrainingDag() {
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
-      + (openDetailId
-          ? '<div class="ex-check-wrap"><div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
-          : '<div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div>')
+      + '<div class="ex-check-wrap"><div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
       + onRemove
       + '</div>'
       + '</div></div>';
@@ -637,7 +635,7 @@ function renderTrainingDag() {
         html += exCard(ex,
           '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')">'
           + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
-          + '<button onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer">✕</button>',
+          + '<div class="ex-check-wrap" onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
           undefined, undefined, ex.id
         );
       });

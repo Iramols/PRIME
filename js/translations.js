@@ -374,7 +374,7 @@ const I18N = {
     'weekplan.removePlanning': 'Verwijderen',
     'weekplan.today': 'vandaag',
     'weekplan.confirmRemovePlanning': 'Planning verwijderen?',
-    'weekplan.trainingCopy.button': '📋 Kopieer training',
+    'weekplan.trainingCopy.button': '📋 Kopieer training van deze dag',
     'weekplan.trainingCopy.title': 'Kopieer training',
     'weekplan.trainingCopy.subtitle': 'Kopieer de geplande training van deze dag naar een andere dag',
     'weekplan.scheduleModalTitle': 'Programma inplannen',
@@ -626,7 +626,7 @@ const I18N = {
     'foodweek.backToToday': 'Terug naar vandaag',
 
     // Voeding weekplanning: dag kopiëren naar een andere dag
-    'foodweek.copy.button': '📋 Kopieer maaltijden',
+    'foodweek.copy.button': '📋 Kopieer maaltijden van deze dag',
     'foodweek.copy.title': 'Kopieer maaltijden',
     'foodweek.copy.subtitle': 'Kopieer alle voeding van deze dag naar een andere dag',
     'foodweek.copy.to': 'Kopieer naar',
@@ -1002,7 +1002,7 @@ const I18N = {
     'weekplan.removePlanning': 'Delete',
     'weekplan.today': 'today',
     'weekplan.confirmRemovePlanning': 'Delete schedule?',
-    'weekplan.trainingCopy.button': '📋 Copy training',
+    'weekplan.trainingCopy.button': '📋 Copy training for this day',
     'weekplan.trainingCopy.title': 'Copy training',
     'weekplan.trainingCopy.subtitle': 'Copy the planned training from this day to another day',
     'weekplan.scheduleModalTitle': 'Schedule program',
@@ -1254,7 +1254,7 @@ const I18N = {
     'foodweek.backToToday': 'Back to today',
 
     // Nutrition weekly plan: copy a day to another day
-    'foodweek.copy.button': '📋 Copy meals',
+    'foodweek.copy.button': '📋 Copy meals for this day',
     'foodweek.copy.title': 'Copy meals',
     'foodweek.copy.subtitle': 'Copy all food from this day to another day',
     'foodweek.copy.to': 'Copy to',
