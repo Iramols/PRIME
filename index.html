@@ -995,6 +995,22 @@
 </div>
 
 <!-- EXERCISE DETAIL MODAL (sets, herhalingen, rust, notities per losse oefening) -->
+<!-- EXERCISE ADD MODAL (Losse oefeningen: dag kiezen om toe te voegen -- zelfde opzet als de product-portiemodal bij Voeding) -->
+<div class="portion-modal-wrap" id="exercise-add-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+      <div>
+        <div class="portion-product-name" id="ea-name">Oefening</div>
+        <div class="portion-per100" id="ea-meta"></div>
+      </div>
+      <button onclick="closeExerciseAddModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <div class="ed-photo-wrap" id="ea-photo-wrap" style="margin-top:14px"></div>
+    <button class="btn-primary" type="button" id="ea-submit-btn" style="width:100%" onclick="openEaDatePicker()" data-i18n="portion.addToDay">Toevoegen</button>
+    <input type="date" id="ea-date" onchange="addExerciseFromModal()" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
+  </div>
+</div>
+
 <div class="portion-modal-wrap" id="exercise-detail-modal">
   <div class="portion-modal">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">

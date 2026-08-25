@@ -289,9 +289,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 /* Losse oefeningen (renderExtraExercises): rij-layout, foto naast de tekst i.p.v. erboven */
 .ex-extra-card { display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; position: relative; background: var(--white); user-select: none; }
 .ex-extra-card:hover { border-color: var(--sage-mid); }
-.ex-extra-card.selected { border-color: var(--sage); }
-.ex-extra-sel { position: absolute; top: 8px; left: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--sand-dark); color: transparent; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: all 0.15s; z-index: 1; }
-.ex-extra-card.selected .ex-extra-sel { background: var(--sage); color: white; }
 .ex-extra-photo { width: 64px; height: 60px; flex-shrink: 0; border-radius: 10px; background-size: cover; background-position: center; background-color: var(--sand-dark); }
 .ex-extra-photo.ex-extra-icon { display: flex; align-items: center; justify-content: center; font-size: 26px; }
 .ex-extra-body { flex: 1; min-width: 0; }

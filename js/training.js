@@ -107,11 +107,9 @@ function renderExtraExercises() {
       </div>
       <div>
         ${group.exercises.map(ex => {
-          const inDag = trainingDagLog.find(e => e.id === ex.id);
           const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
           return `
-            <div class="ex-extra-card ${inDag ? 'selected' : ''}" onclick="toggleExtraDag('${ex.id}')" ondblclick="openExerciseDetail('${ex.id}')">
-              <div class="ex-extra-sel" id="extra-sel-${ex.id}">${inDag ? '✓' : ''}</div>
+            <div class="ex-extra-card" onclick="openExerciseAddModal('${ex.id}')">
               ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
               <div class="ex-extra-body">
                 <div class="ex-extra-name">${dispName(ex)}</div>
@@ -386,28 +384,76 @@ function saveExerciseDetail() {
   try { showToast(t('extra.detail.saved')); } catch(e) { console.error(e); }
 }
 
-function toggleExtraDag(exId) {
-  const existing = trainingDagLog.findIndex(e => e.id === exId);
-  if (existing !== -1) {
-    trainingDagLog.splice(existing, 1);
-  } else {
-    // Find exercise data — eerst in de vaste EXTRA_EXERCISES-groepen (die hun
-    // group-naam niet los op het oefening-object hebben staan), anders bij de
-    // eigen oefeningen (die group al als eigen veld hebben).
-    let found = null;
-    for (const group of EXTRA_EXERCISES) {
-      found = group.exercises.find(e => e.id === exId);
-      if (found) { found = { ...found, group: group.group }; break; }
-    }
-    if (!found) {
-      const custom = customExercises.find(e => e.id === exId);
-      if (custom) found = { ...custom };
-    }
-    if (found) trainingDagLog.push(found);
+// Zoekt een oefening op id -- eerst in de vaste EXTRA_EXERCISES-groepen (die
+// hun group-naam niet los op het oefening-object hebben staan), anders bij
+// de eigen oefeningen (die group al als eigen veld hebben).
+function findAnyExtraExercise(exId) {
+  for (const group of EXTRA_EXERCISES) {
+    const found = group.exercises.find(e => e.id === exId);
+    if (found) return { ...found, group: group.group };
   }
-  persistTrainingDag();
+  const custom = customExercises.find(e => e.id === exId);
+  return custom ? { ...custom } : null;
+}
+
+// ========== OEFENING TOEVOEGEN (Losse oefeningen) ==========
+// Zelfde opzet als de product-portiemodal bij Voeding: klik op een
+// oefening opent een modaal met een "Toevoegen"-knop die de kalender
+// opent om de dag te kiezen (standaard de dag die nu open staat, meestal
+// vandaag) -- i.p.v. de oefening rechtstreeks aan/uit te vinken.
+let _eaExercise = null;
+
+function openExerciseAddModal(exId) {
+  const found = findAnyExtraExercise(exId);
+  if (!found) return;
+  _eaExercise = found;
+
+  document.getElementById('ea-name').textContent = dispName(found);
+  const meta = dispField(found, 'stappen')
+    || (found.sets ? found.sets + '× ' + (found.reps || '') + (found.rest ? ' · ' + t('training.restLabel') + ' ' + found.rest : '') : (found.reps || ''));
+  document.getElementById('ea-meta').textContent = meta;
+  document.getElementById('ea-photo-wrap').innerHTML = found.photo
+    ? '<img src="' + found.photo + '" alt="">'
+    : '<div style="font-size:48px;text-align:center;padding:40px 0">' + (found.icon || '🏋️') + '</div>';
+  // Standaard de dag die nu open staat (meestal vandaag); geen zichtbaar
+  // datumveld -- klik op "Toevoegen" (openEaDatePicker()) opent meteen de
+  // kalender, en de gekozen dag voegt de oefening meteen toe (zie
+  // addExerciseFromModal(), aan het onchange-event van #ea-date gekoppeld).
+  document.getElementById('ea-date').value = currentTrainingDate;
+  document.getElementById('exercise-add-modal').classList.add('open');
+}
+
+function closeExerciseAddModal() {
+  document.getElementById('exercise-add-modal').classList.remove('open');
+  _eaExercise = null;
+}
+
+// Zelfde als openPmDatePicker() bij Voeding, maar voor de oefening-toevoegmodal.
+function openEaDatePicker() {
+  const input = document.getElementById('ea-date');
+  if (input.showPicker) {
+    try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
+  }
+  input.focus();
+  input.click();
+}
+
+function addExerciseFromModal() {
+  if (!_eaExercise) return;
+  const targetDate = document.getElementById('ea-date').value || currentTrainingDate;
+  const lijst = trainingDays[targetDate] || [];
+  // Niet dubbel toevoegen als de oefening op die dag al staat.
+  if (!lijst.find(e => e.id === _eaExercise.id)) {
+    trainingDays[targetDate] = [...lijst, _eaExercise];
+    syncSet('prime_training_days', trainingDays);
+    if (targetDate === currentTrainingDate) trainingDagLog = trainingDays[targetDate];
+  }
+
+  closeExerciseAddModal();
   renderExtraExercises();
   updateTrainingDagBadge();
+  if (document.getElementById('training-dag-list')) renderTrainingDag();
+  try { if (document.getElementById('weekplanning-content')) renderWeekplanning(); } catch (e) { console.error(e); }
 }
 
 function updateTrainingDagBadge() {
