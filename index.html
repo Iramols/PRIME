@@ -995,22 +995,12 @@
 </div>
 
 <!-- EXERCISE DETAIL MODAL (sets, herhalingen, rust, notities per losse oefening) -->
-<!-- EXERCISE ADD MODAL (Losse oefeningen: dag kiezen om toe te voegen -- zelfde opzet als de product-portiemodal bij Voeding) -->
-<div class="portion-modal-wrap" id="exercise-add-modal">
-  <div class="portion-modal">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
-      <div>
-        <div class="portion-product-name" id="ea-name">Oefening</div>
-        <div class="portion-per100" id="ea-meta"></div>
-      </div>
-      <button onclick="closeExerciseAddModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
-    </div>
-    <div class="ed-photo-wrap" id="ea-photo-wrap" style="margin-top:14px"></div>
-    <button class="btn-primary" type="button" id="ea-submit-btn" style="width:100%" onclick="openEaDatePicker()" data-i18n="portion.addToDay">Toevoegen</button>
-    <input type="date" id="ea-date" onchange="addExerciseFromModal()" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
-  </div>
-</div>
-
+<!-- EXERCISE DETAIL MODAL -- gedeeld tussen "bewerken" van een al toegevoegde
+     oefening (Vandaag/Weekplanning) en "toevoegen" vanuit Losse oefeningen:
+     in beide gevallen kun je sets/rust/notities aanpassen; bij toevoegen
+     opent de knop (via het onzichtbare, showPicker()-gestuurde #ed-date)
+     eerst de kalender om de dag te kiezen, zie edSubmit()/
+     addExerciseFromDetailModal() in training.js. -->
 <div class="portion-modal-wrap" id="exercise-detail-modal">
   <div class="portion-modal">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
@@ -1029,7 +1019,8 @@
     <div class="divider" style="margin:20px 0"></div>
     <div class="ed-field-label" data-i18n="extra.detail.notesLabel">Notities</div>
     <textarea id="ed-notes" class="ed-notes" data-i18n-placeholder="extra.detail.notesPlaceholder" placeholder="Schrijf een notitie..."></textarea>
-    <button class="btn-primary" style="margin-top:16px" onclick="saveExerciseDetail()" data-i18n="extra.detail.save">Opslaan</button>
+    <button class="btn-primary" type="button" id="ed-save-btn" style="margin-top:16px;width:100%" onclick="edSubmit()" data-i18n="extra.detail.save">Opslaan</button>
+    <input type="date" id="ed-date" onchange="addExerciseFromDetailModal()" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
   </div>
 </div>
 

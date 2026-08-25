@@ -129,6 +129,7 @@ function renderExtraExercises() {
 // ========== OEFENING-DETAIL (sets, herhalingen, rust, notities) ==========
 let _edExerciseId = null;
 let _edSets = [];
+let _edMode = 'edit'; // 'edit' (al toegevoegd, "📝 Bewerken") | 'add' (Losse oefeningen, zie openExerciseAddModal())
 
 function findExtraExercise(exId) {
   for (const group of EXTRA_EXERCISES) {
@@ -303,6 +304,7 @@ let _edSaveCallback = null;
 function openExerciseDetailGeneric(opts) {
   _edExerciseId = null;
   _edSaveCallback = opts.onSave;
+  _edMode = 'edit';
   _edSets = (opts.sets && opts.sets.length) ? opts.sets.map(s => ({ ...s })) : [{ reps: '', rest: '' }];
   document.getElementById('ed-name').textContent = opts.name;
   document.getElementById('ed-photo-wrap').innerHTML = opts.photo
@@ -310,6 +312,7 @@ function openExerciseDetailGeneric(opts) {
     : `<div style="font-size:48px;text-align:center;padding:40px 0">${opts.icon || '🏋️'}</div>`;
   document.getElementById('ed-notes').value = opts.notes || '';
   edRenderSets();
+  document.getElementById('ed-save-btn').textContent = t('extra.detail.save');
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
@@ -318,6 +321,7 @@ function openExerciseDetail(exId) {
   if (!ex) return;
   _edExerciseId = exId;
   _edSaveCallback = null;
+  _edMode = 'edit';
   const saved = exerciseNotes[exId];
   if (saved && saved.sets && saved.sets.length) {
     _edSets = saved.sets.map(s => ({ ...s }));
@@ -333,6 +337,7 @@ function openExerciseDetail(exId) {
     : `<div style="font-size:48px;text-align:center;padding:40px 0">${ex.icon}</div>`;
   document.getElementById('ed-notes').value = (saved && saved.notes) || '';
   edRenderSets();
+  document.getElementById('ed-save-btn').textContent = t('extra.detail.save');
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
@@ -340,6 +345,7 @@ function closeExerciseDetail() {
   document.getElementById('exercise-detail-modal').classList.remove('open');
   _edExerciseId = null;
   _edSaveCallback = null;
+  _edMode = 'edit';
 }
 
 function edRenderSets() {
@@ -397,40 +403,51 @@ function findAnyExtraExercise(exId) {
 }
 
 // ========== OEFENING TOEVOEGEN (Losse oefeningen) ==========
-// Zelfde opzet als de product-portiemodal bij Voeding: klik op een
-// oefening opent een modaal met een "Toevoegen"-knop die de kalender
-// opent om de dag te kiezen (standaard de dag die nu open staat, meestal
-// vandaag) -- i.p.v. de oefening rechtstreeks aan/uit te vinken.
-let _eaExercise = null;
-
+// Klik op een oefening opent hetzelfde detailscherm als "📝 Bewerken"
+// (sets/rust aanpassen, een set toevoegen, notities), maar dan in
+// "toevoegen"-stand: de knop heet "Toevoegen" en opent (net als bij een
+// product in Basisproducten) eerst de kalender om de dag te kiezen,
+// standaard de dag die nu open staat (meestal vandaag). Zie edSubmit()/
+// addExerciseFromDetailModal() hieronder en _edMode bij openExerciseDetail().
 function openExerciseAddModal(exId) {
-  const found = findAnyExtraExercise(exId);
-  if (!found) return;
-  _eaExercise = found;
+  const ex = findAnyExtraExercise(exId);
+  if (!ex) return;
+  _edExerciseId = exId;
+  _edSaveCallback = null;
+  _edMode = 'add';
 
-  document.getElementById('ea-name').textContent = dispName(found);
-  const meta = dispField(found, 'stappen')
-    || (found.sets ? found.sets + '× ' + (found.reps || '') + (found.rest ? ' · ' + t('training.restLabel') + ' ' + found.rest : '') : (found.reps || ''));
-  document.getElementById('ea-meta').textContent = meta;
-  document.getElementById('ea-photo-wrap').innerHTML = found.photo
-    ? '<img src="' + found.photo + '" alt="">'
-    : '<div style="font-size:48px;text-align:center;padding:40px 0">' + (found.icon || '🏋️') + '</div>';
-  // Standaard de dag die nu open staat (meestal vandaag); geen zichtbaar
-  // datumveld -- klik op "Toevoegen" (openEaDatePicker()) opent meteen de
-  // kalender, en de gekozen dag voegt de oefening meteen toe (zie
-  // addExerciseFromModal(), aan het onchange-event van #ea-date gekoppeld).
-  document.getElementById('ea-date').value = currentTrainingDate;
-  document.getElementById('exercise-add-modal').classList.add('open');
+  const saved = exerciseNotes[exId];
+  if (saved && saved.sets && saved.sets.length) {
+    _edSets = saved.sets.map(s => ({ ...s }));
+  } else {
+    const n = Number(ex.sets) || 1;
+    const defaultReps = dispField(ex, 'reps') || '';
+    const defaultRest = restLabelToSeconds(ex.rest);
+    _edSets = Array.from({ length: n }, () => ({ reps: defaultReps, rest: defaultRest }));
+  }
+  document.getElementById('ed-name').textContent = dispName(ex);
+  document.getElementById('ed-photo-wrap').innerHTML = ex.photo
+    ? `<img src="${ex.photo}" alt="${dispName(ex)}">`
+    : `<div style="font-size:48px;text-align:center;padding:40px 0">${ex.icon || '🏋️'}</div>`;
+  document.getElementById('ed-notes').value = (saved && saved.notes) || '';
+  edRenderSets();
+
+  document.getElementById('ed-save-btn').textContent = t('portion.addToDay');
+  document.getElementById('ed-date').value = currentTrainingDate;
+  document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
-function closeExerciseAddModal() {
-  document.getElementById('exercise-add-modal').classList.remove('open');
-  _eaExercise = null;
+// De ene knop onderaan het detailscherm doet iets anders afhankelijk van
+// de stand waarin het geopend is: "bewerken" slaat meteen op
+// (saveExerciseDetail(), bestond al), "toevoegen" opent eerst de kalender.
+function edSubmit() {
+  if (_edMode === 'add') { openEdDatePicker(); return; }
+  saveExerciseDetail();
 }
 
-// Zelfde als openPmDatePicker() bij Voeding, maar voor de oefening-toevoegmodal.
-function openEaDatePicker() {
-  const input = document.getElementById('ea-date');
+// Zelfde als openPmDatePicker() bij Voeding, maar voor dit detailscherm.
+function openEdDatePicker() {
+  const input = document.getElementById('ed-date');
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -438,22 +455,46 @@ function openEaDatePicker() {
   input.click();
 }
 
-function addExerciseFromModal() {
-  if (!_eaExercise) return;
-  const targetDate = document.getElementById('ea-date').value || currentTrainingDate;
-  const lijst = trainingDays[targetDate] || [];
-  // Niet dubbel toevoegen als de oefening op die dag al staat.
-  if (!lijst.find(e => e.id === _eaExercise.id)) {
-    trainingDays[targetDate] = [...lijst, _eaExercise];
-    syncSet('prime_training_days', trainingDays);
-    if (targetDate === currentTrainingDate) trainingDagLog = trainingDays[targetDate];
-  }
+// Voegt de oefening toe (of werkt 'm bij, als hij al op die dag stond) met
+// de in dit scherm ingestelde sets/rust en notities, voor de in de
+// kalender gekozen dag.
+function addExerciseFromDetailModal() {
+  if (_edMode !== 'add' || !_edExerciseId) return;
+  const exId = _edExerciseId;
+  const ex = findAnyExtraExercise(exId);
+  if (!ex) { closeExerciseDetail(); return; }
 
-  closeExerciseAddModal();
+  const notes = document.getElementById('ed-notes').value.trim();
+  const sets = _edSets.map(s => ({ ...s }));
+  // Zelfde opslagplek als de bestaande "📝 Bewerken"-flow: per
+  // catalogusoefening, niet per logregel (dus gedeeld tussen dagen).
+  exerciseNotes[exId] = { sets, notes };
+  syncSet('prime_exercise_notes', exerciseNotes);
+
+  const laatsteSet = sets[sets.length - 1] || {};
+  const entry = {
+    ...ex,
+    sets: String(sets.length),
+    reps: laatsteSet.reps || ex.reps || '',
+    rest: laatsteSet.rest || ex.rest || '',
+    setsDetail: sets,
+    notities: notes
+  };
+
+  const targetDate = document.getElementById('ed-date').value || currentTrainingDate;
+  const lijst = trainingDays[targetDate] || [];
+  const bestaandIdx = lijst.findIndex(e => e.id === exId);
+  if (bestaandIdx !== -1) lijst[bestaandIdx] = entry; else lijst.push(entry);
+  trainingDays[targetDate] = [...lijst];
+  syncSet('prime_training_days', trainingDays);
+  if (targetDate === currentTrainingDate) trainingDagLog = trainingDays[targetDate];
+
+  closeExerciseDetail();
   renderExtraExercises();
   updateTrainingDagBadge();
   if (document.getElementById('training-dag-list')) renderTrainingDag();
   try { if (document.getElementById('weekplanning-content')) renderWeekplanning(); } catch (e) { console.error(e); }
+  try { showToast(t('extra.detail.saved')); } catch (e) { console.error(e); }
 }
 
 function updateTrainingDagBadge() {
