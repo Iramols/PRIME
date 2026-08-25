@@ -518,7 +518,7 @@ const I18N = {
     'history.exercisesShort': '{n} oef.',
 
     // Training (training.js)
-    'training.dayTabWithCount': 'Mijn dag ({n})',
+    'training.dayTabWithCount': 'Vandaag ({n})',
     'training.progressText': '{done} / {total} gedaan',
     'training.exerciseFallback': 'Oefening {n}',
     'training.totalOverview': '📋 Totaaloverzicht',
@@ -1146,7 +1146,7 @@ const I18N = {
     'history.exercisesShort': '{n} ex.',
 
     // Training (training.js)
-    'training.dayTabWithCount': 'My day ({n})',
+    'training.dayTabWithCount': 'Today ({n})',
     'training.progressText': '{done} / {total} done',
     'training.exerciseFallback': 'Exercise {n}',
     'training.totalOverview': '📋 Total overview',
