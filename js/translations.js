@@ -292,7 +292,7 @@ const I18N = {
     'portion.protein': 'eiwit',
     'portion.carbs': 'koolh',
     'portion.fat': 'vet',
-    'portion.addToDay': 'Toevoegen',
+    'portion.addToDay': 'Inplannen',
     'portion.updateInDay': 'Wijzigen ✓',
 
     // Weekprogramma's (programmas.js)
@@ -919,7 +919,7 @@ const I18N = {
     'portion.protein': 'protein',
     'portion.carbs': 'carbs',
     'portion.fat': 'fat',
-    'portion.addToDay': 'Add',
+    'portion.addToDay': 'Schedule',
     'portion.updateInDay': 'Save changes ✓',
 
     // Weekprogramma's (programmas.js)
