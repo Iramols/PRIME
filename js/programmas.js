@@ -724,7 +724,10 @@ function progLadenInWeekplanning(id) {
   }
 
   progScheduleProgId = id;
-  document.getElementById('sched-program-name').textContent = dispName(prog);
+  const aantalDagen = Object.keys(prog.dagen).length;
+  const aantalOef = Object.values(prog.dagen).reduce((a, d) => a + (d.oefeningen || []).length, 0);
+  document.getElementById('sched-program-name').textContent =
+    dispName(prog) + ' · ' + t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef });
   document.getElementById('sched-start-date').value = wpStr(new Date());
   document.getElementById('sched-weeks').value = 1;
   document.getElementById('sched-days-wrap').innerHTML = [0,1,2,3,4,5,6].map(i => `
