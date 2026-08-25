@@ -124,6 +124,24 @@ function wpGetDone(dateStr) {
   catch(e) { return []; }
 }
 
+// Verwijderde (voor deze dag verborgen) oefening-indices van een
+// ingepland programma -- de programma-definitie zelf blijft ongewijzigd,
+// alleen "voor vandaag/deze dag niet tonen". Zelfde opzet als prime_wp_done.
+function wpGetRemoved(dateStr) {
+  try { return JSON.parse(localStorage.getItem('prime_wp_removed') || '{}')[dateStr] || []; }
+  catch (e) { return []; }
+}
+
+function wpRemoveOefForDay(dateStr, oefIdx) {
+  let all;
+  try { all = JSON.parse(localStorage.getItem('prime_wp_removed') || '{}'); }
+  catch (e) { all = {}; }
+  const removed = all[dateStr] || [];
+  if (!removed.includes(oefIdx)) removed.push(oefIdx);
+  all[dateStr] = removed;
+  syncSet('prime_wp_removed', all);
+}
+
 function wpToggleOefDone(dateStr, oefIdx) {
   let all;
   try { all = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); }

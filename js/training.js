@@ -505,7 +505,8 @@ function updateTrainingDagBadge() {
   if (!tab) return;
   const today = new Date().toISOString().split('T')[0];
   const wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
-  const wpCount = wpEntry ? (wpGetOefeningen(wpEntry.schemaId) || []).length : 0;
+  const wpVerwijderd = wpGetRemoved(today);
+  const wpCount = wpEntry ? (wpGetOefeningen(wpEntry.schemaId) || []).filter(function(_, i) { return !wpVerwijderd.includes(i); }).length : 0;
   const count = wpCount + trainingDagLog.length;
   tab.textContent = count > 0 ? t('training.dayTabWithCount', { n: count }) : t('training.tab.day');
 }
@@ -552,8 +553,12 @@ function renderTrainingDag() {
   const _dagWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_dagToday] || [];
   const _dagWpOef = _dagWpEntry ? (wpGetOefeningen(_dagWpEntry.schemaId) || []) : [];
   const _dagWpDisp = _dagWpEntry ? wpGetDisplay(_dagWpEntry.schemaId) : null;
+  // Voor vandaag verwijderde weekplanning-oefeningen (blijven in het
+  // programma zelf staan, tellen hier niet meer mee).
+  const _dagWpVerwijderd = wpGetRemoved(_dagToday);
+  const _dagWpZichtbaar = _dagWpOef.map(function(oef, i) { return { oef: oef, i: i }; }).filter(function(x) { return !_dagWpVerwijderd.includes(x.i); });
 
-  const totalItems = _dagWpOef.length + trainingDagLog.length;
+  const totalItems = _dagWpZichtbaar.length + trainingDagLog.length;
 
   if (totalItems === 0) {
     emptyEl.style.display = 'block';
@@ -569,8 +574,10 @@ function renderTrainingDag() {
 
   // Init dagDone voor losse oefeningen
   trainingDagLog.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
-  // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done)
+  // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done) --
+  // alleen de zichtbare (niet-verwijderde) indices tellen mee in de voortgang.
   _dagWpOef.forEach(function(_, i) {
+    if (_dagWpVerwijderd.includes(i)) { delete dagDone['wp-dag-' + i]; return; }
     dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(i);
   });
 
@@ -607,13 +614,16 @@ function renderTrainingDag() {
 
   let html = '';
 
-  // Weekplanning oefeningen
-  if (_dagWpOef.length > 0) {
+  // Weekplanning oefeningen (verwijderde/"voor vandaag verborgen" indices overslaan)
+  if (_dagWpZichtbaar.length > 0) {
     const wpLabel = _dagWpDisp ? (_dagWpDisp.icon + ' ' + _dagWpDisp.naam) : t('training.weekplanFallback');
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
-    _dagWpOef.forEach(function(oef, i) {
+    _dagWpZichtbaar.forEach(function(entry) {
+      const oef = entry.oef, i = entry.i;
       const norm = { id: 'wp-dag-' + i, name: dispName(oef) || t('training.exerciseFallback', { n: i+1 }), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '', photo: oef.photo || '' };
-      html += exCard(norm, '', _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")");
+      html += exCard(norm,
+        '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
+        _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")");
     });
     html += '</div>';
   }
@@ -646,7 +656,7 @@ function renderTrainingDag() {
   listEl.innerHTML = html;
   updateDagProgress();
 
-  const totalSets = _dagWpOef.reduce(function(a,e){ return a + Number(e.sets||0); }, 0)
+  const totalSets = _dagWpZichtbaar.reduce(function(a,x){ return a + Number(x.oef.sets||0); }, 0)
     + trainingDagLog.reduce(function(a,e){ return a + Number(e.sets||0); }, 0);
   totalEl.innerHTML = '<div class="card" style="background:var(--sage-light);border-color:var(--sage-mid);margin-top:4px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('training.totalOverview') + '</div>'

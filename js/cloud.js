@@ -18,6 +18,7 @@ const CLOUD_KEYS = [
   'prime_exdone',
   'prime_planning',
   'prime_wp_done',
+  'prime_wp_removed',
   'prime_weekplan',
   'prime_programmas',
   'prime_custom_products',
