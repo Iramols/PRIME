@@ -170,7 +170,7 @@ const I18N = {
     'cat.overig': 'Overig',
     'food.log.empty': 'Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.',
     'food.log.totalsTitle': 'Totaal overzicht',
-    'food.clearDay.button': '🗑️ Alles verwijderen',
+    'food.clearDay.button': '🗑️ Alles verwijderen van deze dag',
     'food.clearDay.confirm': 'Alle voeding van deze dag verwijderen? Dit kan niet ongedaan gemaakt worden.',
     'food.edit.noLongerAvailable': 'Dit item kan niet meer bewerkt worden (product/gerecht bestaat niet meer).',
 
@@ -797,7 +797,7 @@ const I18N = {
     'cat.overig': 'Other',
     'food.log.empty': 'Nothing logged yet. Add meals or products via the other tabs.',
     'food.log.totalsTitle': 'Total overview',
-    'food.clearDay.button': '🗑️ Remove all',
+    'food.clearDay.button': '🗑️ Remove everything for this day',
     'food.clearDay.confirm': 'Remove all food for this day? This cannot be undone.',
     'food.edit.noLongerAvailable': 'This item can no longer be edited (the product/dish no longer exists).',
 
