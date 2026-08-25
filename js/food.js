@@ -1275,21 +1275,23 @@ function renderLogItemCard(dateStr, item) {
       ${photo
         ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
         : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
-      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
-        <div style="flex:1">
+      <div style="flex:1;min-width:0;padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">
+        <div style="flex:1;min-width:120px">
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)}</div>
           <div style="font-size:11px;color:var(--muted)">
             ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
           </div>
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
-        <div class="ex-check-wrap">
-          <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" title="${t('food.log.markEaten')}">✓</div>
-          <span class="ex-check-label">${t('food.log.markEaten')}</span>
-        </div>
-        <div class="ex-check-wrap" onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" style="cursor:pointer">
-          <span style="font-size:16px;color:var(--muted);line-height:1">×</span>
-          <span class="ex-check-label">${t('common.delete')}</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">
+          <div class="ex-check-wrap">
+            <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" title="${t('food.log.markEaten')}">✓</div>
+            <span class="ex-check-label">${t('food.log.markEaten')}</span>
+          </div>
+          <div class="ex-check-wrap" onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" style="cursor:pointer">
+            <span style="font-size:16px;color:var(--muted);line-height:1">×</span>
+            <span class="ex-check-label">${t('common.delete')}</span>
+          </div>
         </div>
       </div>
     </div>`;

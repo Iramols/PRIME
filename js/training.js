@@ -588,8 +588,8 @@ function renderTrainingDag() {
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
     return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;' + (openDetailId ? 'cursor:pointer' : '') + '">'
       + photoDiv
-      + '<div style="flex:1;padding:12px 14px;display:flex;align-items:center;gap:10px">'
-      + '<div style="flex:1">'
+      + '<div style="flex:1;min-width:0;padding:12px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">'
+      + '<div style="flex:1;min-width:120px">'
       + '<div style="font-weight:600;font-size:14px;margin-bottom:2px">' + dispName(ex) + '</div>'
       + '<div style="font-size:12px;color:var(--muted)">' + (function(){
           var st = ex.stappen ? dispField(ex,'stappen') : null;
@@ -598,7 +598,7 @@ function renderTrainingDag() {
         })() + '</div>'
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0">'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">'
       + '<div class="ex-check-wrap"><div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" onclick="' + checkClick + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
       + onRemove
       + '</div>'
