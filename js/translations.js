@@ -379,6 +379,13 @@ const I18N = {
     'weekplan.trainingCopy.subtitle': 'Kopieer de geplande training van deze dag naar een andere dag',
     'weekplan.pickProgramTitle': 'Kies een programmadag',
     'weekplan.noProgramsYet': 'Nog geen programma\'s. Maak er eerst een aan bij Training > Programma\'s.',
+    'weekplan.scheduleModalTitle': 'Programma inplannen',
+    'weekplan.scheduleNoDays': 'Dit programma heeft nog geen dagen om in te plannen.',
+    'weekplan.startDate': 'Startdatum',
+    'weekplan.weekCount': 'Aantal weken',
+    'weekplan.selectDays': 'Selecteer dagen',
+    'weekplan.planButton': 'Plan',
+    'weekplan.scheduleSuccess': '{n} trainingsdagen ingepland ✓',
 
     // Check-in / checkout (checkin.js)
     'checkin.weightSkipped': 'Overgeslagen ✓',
@@ -1001,6 +1008,13 @@ const I18N = {
     'weekplan.trainingCopy.subtitle': 'Copy the planned training from this day to another day',
     'weekplan.pickProgramTitle': 'Choose a program day',
     'weekplan.noProgramsYet': 'No programs yet. Create one first under Training > Programs.',
+    'weekplan.scheduleModalTitle': 'Schedule program',
+    'weekplan.scheduleNoDays': 'This program does not have any days to schedule yet.',
+    'weekplan.startDate': 'Start date',
+    'weekplan.weekCount': 'Number of weeks',
+    'weekplan.selectDays': 'Select days',
+    'weekplan.planButton': 'Plan',
+    'weekplan.scheduleSuccess': '{n} training days scheduled ✓',
 
     // Check-in / checkout (checkin.js)
     'checkin.weightSkipped': 'Skipped ✓',

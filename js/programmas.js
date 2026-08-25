@@ -702,7 +702,15 @@ function progOefUitBibliotheek(exId) {
   renderProgrammas();
 }
 
-// ─── Laden in Weekplanning ─────────────────────────────────────────────────────
+// ─── Programma inplannen (startdatum + aantal weken + weekdagen) ─────────────
+// "Laden in weekplanning" opent nu een modaal (zelfde opzet als een
+// 'workout inplannen'-scherm) i.p.v. het programma stilzwijgend over de
+// huidige kalenderweek te cyclen: de coach kiest zelf een startdatum, het
+// aantal weken en op welke weekdagen het programma terugkeert. De
+// programmadagen (Dag 1, Dag 2, ...) worden daarna cyclisch over precies
+// die gekozen weekdagen verdeeld, voor het gekozen aantal weken.
+let progScheduleProgId = null;
+
 function progLadenInWeekplanning(id) {
   progLaadData();
   let prog = progLijst.find(p => p.id === id);
@@ -710,23 +718,69 @@ function progLadenInWeekplanning(id) {
   // als deze ooit los aangeroepen wordt) -- val terug op de andere lijst.
   if (!prog) prog = primeProgLijst.find(p => p.id === id);
   if (!prog) return;
-
-  let weekplanData = null;
-  try { weekplanData = JSON.parse(localStorage.getItem('prime_weekplan') || 'null'); }
-  catch(e) {}
-  if (!weekplanData) weekplanData = { dagen: [null,null,null,null,null,null,null] };
-
-  // Dagen zijn een vrije reeks (Dag 1, Dag 2, ...), niet per se 7 stuks --
-  // bij het laden in de kalenderweek herhaalt de cyclus zich vanaf maandag
-  // (dag 1 van het programma, dag 8, dag 15, ... vallen dus allemaal op
-  // maandag). Bij een programma van 7 dagen of minder komt dit overeen met
-  // het oude gedrag (elke programmadag exact op zijn eigen weekdag).
-  const aantalDagen = prog.dagen ? Object.keys(prog.dagen).length : 0;
-  for (let i = 0; i < 7; i++) {
-    weekplanData.dagen[i] = aantalDagen > 0 ? 'prog:' + id + ':' + (i % aantalDagen) : null;
+  if (!prog.dagen || !Object.keys(prog.dagen).length) {
+    alert(t('weekplan.scheduleNoDays'));
+    return;
   }
 
-  syncSet('prime_weekplan', weekplanData);
+  progScheduleProgId = id;
+  document.getElementById('sched-program-name').textContent = dispName(prog);
+  document.getElementById('sched-start-date').value = wpStr(new Date());
+  document.getElementById('sched-weeks').value = 1;
+  document.getElementById('sched-days-wrap').innerHTML = [0,1,2,3,4,5,6].map(i => `
+    <label style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--muted)">
+      <span>${wpDagKort(i)}</span>
+      <input type="checkbox" class="sched-day-chk" data-day="${i}" style="width:16px;height:16px;accent-color:var(--sage);cursor:pointer">
+    </label>`).join('');
+  document.getElementById('schedule-program-modal').classList.add('open');
+}
+
+function progCloseScheduleModal() {
+  document.getElementById('schedule-program-modal').classList.remove('open');
+}
+
+function progConfirmSchedule() {
+  if (!progScheduleProgId) return;
+  progLaadData();
+  let prog = progLijst.find(p => p.id === progScheduleProgId);
+  if (!prog) prog = primeProgLijst.find(p => p.id === progScheduleProgId);
+  if (!prog) { progCloseScheduleModal(); return; }
+
+  const dagIndexen = Object.keys(prog.dagen || {}).map(Number).sort((a,b) => a-b);
+  if (!dagIndexen.length) { progCloseScheduleModal(); return; }
+
+  const startVal = document.getElementById('sched-start-date').value;
+  if (!startVal) { alert(t('foodweek.copy.chooseStartDate')); return; }
+  const weeks = parseInt(document.getElementById('sched-weeks').value, 10) || 1;
+  const selectedWeekdays = [...document.querySelectorAll('.sched-day-chk')].filter(c => c.checked).map(c => parseInt(c.dataset.day, 10));
+  if (!selectedWeekdays.length) { alert(t('foodweek.copy.chooseDays')); return; }
+
+  const start = wpDate(startVal);
+  const end = new Date(start);
+  end.setDate(start.getDate() + weeks * 7 - 1);
+
+  const targets = [];
+  const cur = new Date(start);
+  while (cur <= end) {
+    const wd = cur.getDay(); // 0=Zo..6=Za
+    const idx = wd === 0 ? 6 : wd - 1; // 0=Ma..6=Zo, zelfde volgorde als sched-days-wrap
+    if (selectedWeekdays.includes(idx)) targets.push(wpStr(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  if (!targets.length) { alert(t('foodweek.copy.noMatchingDays')); return; }
+
+  // Cyclisch door de programmadagen heen: eerste gekozen datum krijgt Dag 1,
+  // de volgende Dag 2, enzovoort, en begint weer bij Dag 1 zodra het einde
+  // van de programmareeks bereikt is.
+  targets.forEach((dateStr, i) => {
+    const dagIdx = dagIndexen[i % dagIndexen.length];
+    geplanning = geplanning.filter(p => p.date !== dateStr);
+    geplanning.push({ date: dateStr, schemaId: 'prog:' + progScheduleProgId + ':' + dagIdx });
+  });
+
+  wpSlaPlanningOp();
+  progCloseScheduleModal();
+  try { showToast(t('weekplan.scheduleSuccess', { n: targets.length })); } catch(e) { console.error(e); }
   switchTrainingTab('weekplanning');
 }
 

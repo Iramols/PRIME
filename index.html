@@ -1156,6 +1156,30 @@
   </div>
 </div>
 
+<!-- PROGRAMMA INPLANNEN (Programma's / PRIME programma's > "Laden in weekplanning") -->
+<div class="overlay" id="schedule-program-modal">
+  <div class="modal">
+    <div class="modal-title"><span data-i18n="weekplan.scheduleModalTitle">Programma inplannen</span> <button class="modal-close" onclick="progCloseScheduleModal()">×</button></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px" id="sched-program-name"></div>
+    <div class="form-row">
+      <label data-i18n="weekplan.startDate">Startdatum</label>
+      <input type="date" id="sched-start-date">
+    </div>
+    <div class="form-row">
+      <label data-i18n="weekplan.weekCount">Aantal weken</label>
+      <input type="number" id="sched-weeks" min="1" max="52" value="1">
+    </div>
+    <div class="form-row" style="margin-bottom:8px">
+      <label data-i18n="weekplan.selectDays">Selecteer dagen</label>
+      <div id="sched-days-wrap" style="display:flex;gap:10px;margin-top:6px"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn-sm" style="flex:1;text-align:center" onclick="progCloseScheduleModal()" data-i18n="food.addMeal.cancel">Annuleren</button>
+      <button class="btn-primary" style="flex:1" onclick="progConfirmSchedule()" data-i18n="weekplan.planButton">Plan</button>
+    </div>
+  </div>
+</div>
+
 </div><!-- /app-shell -->
 
 <script src="js/auth.js"></script>
