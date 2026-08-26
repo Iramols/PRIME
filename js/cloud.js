@@ -83,12 +83,22 @@ function syncSet(key, value) {
   if (!CLOUD_KEYS.includes(key)) return;
   if (!activeClientId) return; // nog niet ingelogd/gehydrateerd
 
-  const sb = getSupabase();
-  sb.from('client_state')
-    .upsert({ client_id: activeClientId, key, value, updated_at: new Date().toISOString() })
-    .then(({ error }) => {
-      if (error) console.error('syncSet upsert error voor ' + key + ':', error);
-    });
+  // De cloud-sync hieronder mag NOOIT de aanroeper laten crashen: syncSet()
+  // wordt overal aangeroepen vlak vóór een DOM-update (bv. toggleFoodEaten,
+  // addProductToLog), en een niet-opgevangen fout hier (bv. Supabase nog
+  // niet geconfigureerd, of een synchrone fout in de query-opbouw) zou die
+  // DOM-update anders stilletjes overslaan -- de klik lijkt dan "niets te
+  // doen", terwijl de lokale opslag (hierboven) al wel gelukt is.
+  try {
+    const sb = getSupabase();
+    sb.from('client_state')
+      .upsert({ client_id: activeClientId, key, value, updated_at: new Date().toISOString() })
+      .then(({ error }) => {
+        if (error) console.error('syncSet upsert error voor ' + key + ':', error);
+      });
+  } catch (e) {
+    console.error('syncSet cloud-sync faalde voor ' + key + ':', e);
+  }
 }
 
 // Vervangt localStorage.removeItem('prime_x') call sites: verwijdert

@@ -1316,13 +1316,20 @@ function toggleFoodEaten(dateStr, logId) {
   const item = items.find(i => i.logId === logId);
   if (!item) return;
   item.eaten = !item.eaten;
-  foodDays[dateStr] = items;
-  syncSet('prime_food_days', foodDays);
 
+  // Het bolletje omzetten gebeurt EERST, vóór het opslaan -- zo is het
+  // vinkje altijd meteen zichtbaar, ook als de opslag hieronder om wat
+  // voor reden dan ook misgaat (zelfde "best-effort nazorg"-patroon als
+  // fwRemoveItem in foodweek.js).
   const chk = document.getElementById('food-chk-' + logId);
   const card = document.getElementById('food-item-' + logId);
   if (chk) chk.classList.toggle('done', item.eaten);
   if (card) card.style.opacity = item.eaten ? '0.55' : '1';
+
+  try {
+    foodDays[dateStr] = items;
+    syncSet('prime_food_days', foodDays);
+  } catch (e) { console.error('toggleFoodEaten opslaan mislukt:', e); }
 }
 
 // Groepeert een lijst logitems per moment en bouwt daar de kaartenlijst
