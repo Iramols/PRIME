@@ -142,6 +142,26 @@ function wpRemoveOefForDay(dateStr, oefIdx) {
   syncSet('prime_wp_removed', all);
 }
 
+// Per-dag "overschrijving" van sets/reps/rust/notities voor één
+// programma-oefening -- net als bij een gelogd voedingsitem (Voeding)
+// dat je aanpast zonder het onderliggende product te wijzigen, past dit
+// alleen DEZE ene dag aan, nooit het programma zelf (dat blijft
+// ongewijzigd voor elke andere dag waarop het gepland staat). Zie
+// openWpExerciseDetail() in training.js.
+function wpGetExerciseOverride(dateStr, oefIdx) {
+  try { return (JSON.parse(localStorage.getItem('prime_wp_ex_overrides') || '{}')[dateStr] || {})[oefIdx] || null; }
+  catch (e) { return null; }
+}
+
+function wpSetExerciseOverride(dateStr, oefIdx, sets, notes) {
+  let all;
+  try { all = JSON.parse(localStorage.getItem('prime_wp_ex_overrides') || '{}'); }
+  catch (e) { all = {}; }
+  if (!all[dateStr]) all[dateStr] = {};
+  all[dateStr][oefIdx] = { sets: sets, notes: notes };
+  syncSet('prime_wp_ex_overrides', all);
+}
+
 function wpToggleOefDone(dateStr, oefIdx) {
   let all;
   try { all = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); }
@@ -170,8 +190,16 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
   return rows.map(function(row) {
     const o = row.oef, i = row.doneIdx;
     const naam = dispName(o);
-    const detail = wpOefDetail(o);
     const isDone = done.includes(i);
+
+    // Voor een programma-oefening telt een per-dag aanpassing (sets/
+    // reps/rust, zie openWpExerciseDetail()) mee in wat hier getoond
+    // wordt, zonder de programma-definitie zelf aan te raken.
+    const override = row.kind === 'prog' ? wpGetExerciseOverride(dateStr, row.verwijderIdx) : null;
+    const laatsteSet = override && override.sets && override.sets.length ? override.sets[override.sets.length - 1] : null;
+    const detail = laatsteSet
+      ? (override.sets.length + '\xD7' + (laatsteSet.reps || '') + (laatsteSet.rest ? ' \xB7 ' + laatsteSet.rest : ''))
+      : wpOefDetail(o);
 
     let photo = o.photo;
     if (!photo && typeof findCanonicalExercise === 'function') {
@@ -182,8 +210,12 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
       ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;background-image:url(\'' + photo + '\');background-size:cover;background-position:center"></div>'
       : '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (o.icon || '💪') + '</div>';
 
+    let editBtn = '';
     let delBtn = '';
     if (row.kind === 'prog') {
+      const hasDetail = !!(override && (override.notes || (override.sets && override.sets.length)));
+      editBtn = '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + dateStr + '\',' + row.verwijderIdx + ')">'
+        + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
       delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + dateStr + '\',' + row.verwijderIdx + ');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     } else if (row.kind === 'adhoc') {
       delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
@@ -197,6 +229,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
       '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
         '<div class="ex-check-wrap" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" style="cursor:pointer"><div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+        editBtn +
         delBtn +
       '</div>' +
       '</div>';

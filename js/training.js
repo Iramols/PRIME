@@ -320,6 +320,50 @@ function openExerciseDetailGeneric(opts) {
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
+// Sets/reps/rust/notities aanpassen voor één oefening uit een ingepland
+// programma, voor één specifieke dag -- net als bij Voeding een gelogd
+// item aanpassen zonder het onderliggende product te wijzigen. Gebruikt
+// dezelfde generieke opener als hierboven, met een onSave die de
+// aanpassing als per-dag "overschrijving" bewaart (wpSetExerciseOverride
+// in weekplanning.js) i.p.v. in exerciseNotes (dat is per catalogus-
+// oefening, gedeeld tussen elke dag) -- het programma zelf blijft dus
+// voor elke andere dag ongewijzigd.
+function openWpExerciseDetail(dateStr, oefIdx) {
+  // Niet vertrouwen op de globale 'geplanning'-variabele zonder eerst te
+  // verversen: die wordt alleen bijgewerkt door wpLaadData() (via
+  // renderWeekplanning()), en kan dus stale zijn als je nog geen
+  // Weekplanning-render hebt gehad deze sessie.
+  wpLaadData();
+  const entry = geplanning.find(function(p) { return p.date === dateStr; });
+  if (!entry) return;
+  const oefeningen = wpGetOefeningen(entry.schemaId) || [];
+  const oef = oefeningen[oefIdx];
+  if (!oef) return;
+
+  const naam = dispName(oef) || t('training.exerciseFallback', { n: oefIdx + 1 });
+  const override = wpGetExerciseOverride(dateStr, oefIdx);
+  let sets = override && override.sets && override.sets.length ? override.sets.map(function(s) { return { ...s }; }) : null;
+  if (!sets) {
+    const n = Number(oef.sets) || 1;
+    const defaultReps = oef.reps || '';
+    const defaultRest = oef.rust || oef.rest || '';
+    sets = Array.from({ length: n }, function() { return { reps: defaultReps, rest: defaultRest }; });
+  }
+
+  openExerciseDetailGeneric({
+    name: naam,
+    photo: oef.photo,
+    icon: oef.icon,
+    sets: sets,
+    notes: (override && override.notes) || '',
+    onSave: function(newSets, newNotes) {
+      wpSetExerciseOverride(dateStr, oefIdx, newSets, newNotes);
+      try { if (document.getElementById('training-dag-list')) renderTrainingDag(); } catch (e) { console.error(e); }
+      try { if (document.getElementById('weekplanning-content')) renderWeekplanning(); } catch (e) { console.error(e); }
+    }
+  });
+}
+
 function openExerciseDetail(exId) {
   const ex = findExtraExercise(exId);
   if (!ex) return;
@@ -604,10 +648,11 @@ function renderTrainingDag() {
     dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(i);
   });
 
-  function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId) {
+  function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId, cardClickFn) {
     const isDone = isDoneOverride !== undefined ? isDoneOverride : dagDone[ex.id];
-    const checkClick = (openDetailId ? 'event.stopPropagation();' : '') + (checkClickOverride || "toggleDagDone('" + ex.id + "')");
-    const cardClick = openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\"" : '';
+    const clickable = !!(cardClickFn || openDetailId);
+    const checkClick = (clickable ? 'event.stopPropagation();' : '') + (checkClickOverride || "toggleDagDone('" + ex.id + "')");
+    const cardClick = cardClickFn ? (' onclick="' + cardClickFn + '"') : (openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\"" : '');
     let _photo = ex.photo;
     if (!_photo) {
       const _f = findCanonicalExercise(ex.name || ex.naam);
@@ -616,7 +661,7 @@ function renderTrainingDag() {
     const photoDiv = _photo
       ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(\'' + _photo + '\');background-size:cover;background-position:center"></div>'
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
-    return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;' + (openDetailId ? 'cursor:pointer' : '') + '">'
+    return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;' + (clickable ? 'cursor:pointer' : '') + '">'
       + photoDiv
       + '<div style="flex:1;min-width:0;padding:12px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">'
       + '<div style="flex:1;min-width:120px">'
@@ -643,10 +688,28 @@ function renderTrainingDag() {
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
     _dagWpZichtbaar.forEach(function(entry) {
       const oef = entry.oef, i = entry.i;
-      const norm = { id: 'wp-dag-' + i, name: dispName(oef) || t('training.exerciseFallback', { n: i+1 }), icon: oef.icon || '💪', sets: oef.sets || '', reps: oef.reps || '', rest: oef.rust || oef.rest || '', youtube: oef.youtube || '', photo: oef.photo || '' };
+      // Per-dag aanpassing (sets/reps/rust/notities) overschrijft de
+      // programma-waarden alleen voor de weergave van vandaag -- het
+      // programma zelf blijft ongewijzigd. Zie openWpExerciseDetail().
+      const override = wpGetExerciseOverride(_dagToday, i);
+      const laatsteSet = override && override.sets && override.sets.length ? override.sets[override.sets.length - 1] : null;
+      const norm = {
+        id: 'wp-dag-' + i,
+        name: dispName(oef) || t('training.exerciseFallback', { n: i+1 }),
+        icon: oef.icon || '💪',
+        sets: laatsteSet ? String(override.sets.length) : (oef.sets || ''),
+        reps: laatsteSet ? laatsteSet.reps : (oef.reps || ''),
+        rest: laatsteSet ? laatsteSet.rest : (oef.rust || oef.rest || ''),
+        youtube: oef.youtube || '',
+        photo: oef.photo || ''
+      };
+      const hasDetail = !!(override && (override.notes || (override.sets && override.sets.length)));
       html += exCard(norm,
-        '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
-        _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")");
+        '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + _dagToday + '\',' + i + ')">'
+        + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+        + '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
+        _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")",
+        undefined, "openWpExerciseDetail('" + _dagToday + "'," + i + ")");
     });
     html += '</div>';
   }
