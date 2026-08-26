@@ -460,9 +460,16 @@ function edSubmit() {
 // een maand vooruit bij een Weekplanning-dag) -- dit schuift daarom maar
 // één dag op (dezelfde maand blijft dus gewoon te zien). +1 dag bij de 1e
 // van de maand, anders -1, zodat de schuif nooit een maandgrens oversteekt.
-function _bumpDatePickerBaseline(input) {
-  if (!input.value) return;
-  const [y, m, d] = input.value.split('-').map(Number);
+// 'baseline' moet altijd de ECHTE bedoelde dag zijn (currentTrainingDate),
+// nooit input.value zelf -- anders schuift de datum verder op bij elke
+// volgende druk op "Toevoegen" zonder dat er iets gekozen werd (bv.
+// kalender per ongeluk gesloten, of nogmaals geklikt): dan zou de 2e keer
+// vanaf de AL opgeschoven waarde weer een dag opschuiven, enzovoort. Door
+// steeds opnieuw vanaf dezelfde, ongewijzigde bedoelde dag te schuiven
+// blijft het resultaat elke keer identiek (nooit verder wegdrijvend).
+function _bumpDatePickerBaseline(input, baseline) {
+  if (!baseline) return;
+  const [y, m, d] = baseline.split('-').map(Number);
   const dt = new Date(y, m - 1, d);
   dt.setDate(dt.getDate() + (d > 1 ? -1 : 1));
   input.value = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
@@ -471,7 +478,7 @@ function _bumpDatePickerBaseline(input) {
 // Zelfde als openPmDatePicker() bij Voeding, maar voor dit detailscherm.
 function openEdDatePicker() {
   const input = document.getElementById('ed-date');
-  _bumpDatePickerBaseline(input);
+  _bumpDatePickerBaseline(input, currentTrainingDate);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
