@@ -383,7 +383,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .food-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--sand-dark); padding-bottom: 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
 .food-tabs::-webkit-scrollbar { display: none; }
 .food-tab { padding: 10px 18px; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
-.food-tab.active { color: var(--sage); border-bottom-color: var(--sage); }
+.food-tab.active { color: var(--sage); border-bottom-color: var(--sage); border-bottom-width: 3px; font-weight: 700; }
 .food-tab:hover { color: var(--sage); }
 
 /* CATEGORY TABS */
