@@ -1294,8 +1294,8 @@ function renderLogItemCard(dateStr, item) {
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">
-          <div class="ex-check-wrap">
-            <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" title="${t('food.log.markEaten')}">✓</div>
+          <div class="ex-check-wrap" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" style="cursor:pointer">
+            <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" title="${t('food.log.markEaten')}">✓</div>
             <span class="ex-check-label">${t('food.log.markEaten')}</span>
           </div>
           <div class="ex-check-wrap" onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" style="cursor:pointer">

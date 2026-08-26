@@ -196,7 +196,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         '<div style="font-size:11px;color:var(--muted)">' + detail + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
-        '<div class="ex-check-wrap"><div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+        '<div class="ex-check-wrap" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" style="cursor:pointer"><div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
         delBtn +
       '</div>' +
       '</div>';
