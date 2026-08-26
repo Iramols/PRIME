@@ -316,6 +316,7 @@ function openExerciseDetailGeneric(opts) {
   document.getElementById('ed-notes').value = opts.notes || '';
   edRenderSets();
   document.getElementById('ed-save-btn').textContent = t('extra.detail.save');
+  document.getElementById('ed-date-row').style.display = 'none';
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
@@ -341,6 +342,7 @@ function openExerciseDetail(exId) {
   document.getElementById('ed-notes').value = (saved && saved.notes) || '';
   edRenderSets();
   document.getElementById('ed-save-btn').textContent = t('extra.detail.save');
+  document.getElementById('ed-date-row').style.display = 'none';
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
@@ -437,62 +439,41 @@ function openExerciseAddModal(exId) {
 
   document.getElementById('ed-save-btn').textContent = t('portion.addToDay');
   document.getElementById('ed-date').value = currentTrainingDate;
+  document.getElementById('ed-date-row').style.display = 'flex';
+  updateEdDateLabel();
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
 // De ene knop onderaan het detailscherm doet iets anders afhankelijk van
 // de stand waarin het geopend is: "bewerken" slaat meteen op
-// (saveExerciseDetail(), bestond al), "toevoegen" opent eerst de kalender.
+// (saveExerciseDetail(), bestond al); "toevoegen" voegt ook meteen toe
+// (addExerciseFromDetailModal()), met de dag die op dat moment bij
+// "📅 ..." staat -- de kalender (openEdDatePicker(), via de "Andere
+// dag"-knop) is puur om die dag desgewenst te WIJZIGEN, geen aparte
+// bevestigingsstap. Eerdere versies koppelden toevoegen aan het
+// change-event van de kalender zelf, maar <input type="date"> laat dat
+// event alleen afgaan bij een ECHTE wijziging: sloot je de kalender
+// simpelweg omdat de getoonde standaarddag (meestal vandaag) al klopte
+// -- wat de meeste mensen doen -- dan gebeurde er dus niets.
 function edSubmit() {
-  if (_edMode === 'add') { openEdDatePicker(); return; }
+  if (_edMode === 'add') { addExerciseFromDetailModal(); return; }
   saveExerciseDetail();
 }
 
-// Zet het (onzichtbare) datumveld op de ECHTE bedoelde dag
-// (currentTrainingDate) vlak vóór de kalender opengaat -- zelfde als
-// _setDatePickerBaseline in food.js (kan hier niet hergebruikt worden:
-// training.js laadt vóór food.js).
-//
-// Eerdere pogingen (leegmaken, of één dag opschuiven) waren bedoeld om
-// een vermeende beperking van <input type="date"> te omzeilen, maar
-// gaven zelf een zichtbaar fout standaard-datum (bv. "vrijdag" i.p.v.
-// "zaterdag" bij het inplannen vóór zaterdag) -- duidelijk erger dan
-// het oorspronkelijke probleem, en dus teruggedraaid.
-function _setDatePickerBaseline(input, baseline) {
-  if (baseline) input.value = baseline;
-}
-
-// Zorgt dat toevoegen ook doorgaat als je de kalender sluit ZONDER een
-// andere dag te kiezen dan de al getoonde (juiste) standaarddag -- zelfde
-// als _armDatePickerConfirm in food.js (kan hier niet hergebruikt
-// worden: training.js laadt vóór food.js). Zie de uitgebreide
-// toelichting daar.
-function _armDatePickerConfirm(input, modalId, addFn) {
-  if (input._pickerConfirmCleanup) input._pickerConfirmCleanup();
-  let changed = false;
-  function onChange() { changed = true; }
-  function onBlur() {
-    cleanup();
-    setTimeout(() => {
-      const modal = document.getElementById(modalId);
-      if (!changed && modal && modal.classList.contains('open')) addFn();
-    }, 0);
-  }
-  function cleanup() {
-    input.removeEventListener('change', onChange);
-    input.removeEventListener('blur', onBlur);
-    input._pickerConfirmCleanup = null;
-  }
-  input.addEventListener('change', onChange);
-  input.addEventListener('blur', onBlur);
-  input._pickerConfirmCleanup = cleanup;
+// Toont het (onzichtbare) #ed-date-veld leesbaar naast de "Opslaan"-
+// knop (alleen zichtbaar in "toevoegen"-stand, zie #ed-date-row in
+// openExerciseAddModal()). Zelfde als updatePmDateLabel() in food.js
+// (kan hier niet hergebruikt worden: training.js laadt vóór food.js),
+// gebruikt formatPickerDateLabel() uit i18n.js (laadt wél eerder).
+function updateEdDateLabel() {
+  const el = document.getElementById('ed-date-label');
+  if (el) el.textContent = formatPickerDateLabel(document.getElementById('ed-date').value);
 }
 
 // Zelfde als openPmDatePicker() bij Voeding, maar voor dit detailscherm.
 function openEdDatePicker() {
   const input = document.getElementById('ed-date');
-  _setDatePickerBaseline(input, currentTrainingDate);
-  _armDatePickerConfirm(input, 'exercise-detail-modal', addExerciseFromDetailModal);
+  if (currentTrainingDate) input.value = currentTrainingDate;
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }

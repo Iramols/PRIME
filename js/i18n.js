@@ -63,6 +63,25 @@ function dateLocale() {
   return currentLang === 'en' ? 'en-US' : 'nl-NL';
 }
 
+// Leesbaar label voor een YYYY-MM-DD-string, gebruikt in de portie-
+// modals bij Voeding en het oefening-detailscherm bij Training (zie
+// updatePmDateLabel()/updateMpmDateLabel() in food.js,
+// updateEdDateLabel() in training.js) -- "Vandaag" voor de huidige dag,
+// anders "<weekdag> <dag maand>". Hier in i18n.js i.p.v. food.js/
+// training.js omdat allebei dit nodig hebben en training.js vóór
+// food.js laadt.
+function formatPickerDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const now = new Date();
+  const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+  if (dateStr === todayStr) return t('weekplan.today');
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const weekday = dt.toLocaleDateString(dateLocale(), { weekday: 'long' });
+  const rest = dt.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' });
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1) + ' ' + rest;
+}
+
 // Loopt alle statische [data-i18n]/[data-i18n-html]/[data-i18n-placeholder]
 // elementen af en past de huidige taal toe. Zelfde "loop alles af, pas
 // toe"-patroon als applyCustomPhotos() in beheer.js.

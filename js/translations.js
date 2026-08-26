@@ -294,6 +294,7 @@ const I18N = {
     'portion.fat': 'vet',
     'portion.addToDay': 'Inplannen',
     'portion.updateInDay': 'Wijzigen ✓',
+    'portion.changeDay': 'Andere dag',
 
     // Weekprogramma's (programmas.js)
     'common.back': '← Terug',
@@ -922,6 +923,7 @@ const I18N = {
     'portion.fat': 'fat',
     'portion.addToDay': 'Schedule',
     'portion.updateInDay': 'Save changes ✓',
+    'portion.changeDay': 'Different day',
 
     // Weekprogramma's (programmas.js)
     'common.back': '← Back',

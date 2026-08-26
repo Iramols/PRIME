@@ -884,20 +884,28 @@ function openMealPortionModal(dishId) {
   });
 
   document.getElementById('mpm-gram').value = tot.gram || 100;
-  // Standaard de dag die nu open staat (meestal vandaag); geen zichtbaar
-  // datumveld -- klik op "Toevoegen" (openMpmDatePicker()) opent meteen de
-  // kalender, en de gekozen dag voegt het gerecht meteen toe (zie
-  // addMealToLog(), aan het onchange-event van #mpm-date gekoppeld).
+  // Standaard de dag die nu open staat (meestal vandaag), zichtbaar als
+  // leesbaar label (updateMpmDateLabel()) naast "Andere dag" -- die
+  // knop opent de kalender (openMpmDatePicker()) om een andere dag te
+  // kiezen. "Inplannen" voegt altijd toe met de dag die op dat moment
+  // getoond wordt, of je de kalender nu gebruikt hebt of niet
+  // (addMealToLog()).
   document.getElementById('mpm-date').value = currentLogDate;
+  updateMpmDateLabel();
   updateMealPortionPreview();
   document.getElementById('meal-portion-modal').classList.add('open');
+}
+
+// Zelfde als updatePmDateLabel(), maar voor de gerecht-portiemodal.
+function updateMpmDateLabel() {
+  const el = document.getElementById('mpm-date-label');
+  if (el) el.textContent = formatPickerDateLabel(document.getElementById('mpm-date').value);
 }
 
 // Zelfde als openPmDatePicker(), maar voor de gerecht-portiemodal.
 function openMpmDatePicker() {
   const input = document.getElementById('mpm-date');
-  _setDatePickerBaseline(input, currentLogDate);
-  _armDatePickerConfirm(input, 'meal-portion-modal', addMealToLog);
+  if (currentLogDate) input.value = currentLogDate;
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -1049,69 +1057,24 @@ function openPortionModal(productId) {
 
   currentMoment = 'ontbijt';
   document.querySelectorAll('.moment-btn').forEach((b,i) => b.classList.toggle('active', i===0));
-  // Standaard de dag die nu open staat (meestal vandaag); geen zichtbaar
-  // datumveld -- klik op "Toevoegen" (openPmDatePicker()) opent meteen de
-  // kalender, en de gekozen dag voegt het product meteen toe (zie
-  // addProductToLog(), aan het onchange-event van #pm-date gekoppeld).
+  // Standaard de dag die nu open staat (meestal vandaag), zichtbaar als
+  // leesbaar label (updatePmDateLabel()) naast "Andere dag" -- die knop
+  // opent de kalender (openPmDatePicker()) om een andere dag te kiezen.
+  // "Inplannen" voegt altijd toe met de dag die op dat moment getoond
+  // wordt, of je de kalender nu gebruikt hebt of niet (addProductToLog()).
   document.getElementById('pm-date').value = currentLogDate;
+  updatePmDateLabel();
   updatePortionPreview();
   document.getElementById('portion-modal').classList.add('open');
 }
 
-// Zet het (onzichtbare) datumveld op de ECHTE bedoelde dag vlak vóór de
-// kalender opengaat -- 'baseline' is bv. currentLogDate, nooit
-// input.value zelf, want dat mag nooit tussentijds afwijken van de dag
-// die je daadwerkelijk aan het bewerken bent.
-//
-// Eerdere pogingen (leegmaken, of één dag opschuiven) waren bedoeld om
-// een vermeende beperking van <input type="date"> te omzeilen: het idee
-// was dat het change-event niet zou afgaan als je in de kalender
-// toevallig weer dezelfde dag aanklikte die er al in stond. Dat gaf
-// zelf weer een zichtbaar fout standaard-datum (bv. "vrijdag" i.p.v.
-// "zaterdag" bij het inplannen vóór zaterdag) -- een duidelijk erger
-// probleem dan het oorspronkelijke, en dus teruggedraaid: de kalender
-// moet altijd gewoon de juiste dag laten zien.
-function _setDatePickerBaseline(input, baseline) {
-  if (baseline) input.value = baseline;
-}
-
-// Zorgt dat toevoegen ook doorgaat als je de kalender sluit ZONDER een
-// andere dag te kiezen dan de al getoonde (juiste) standaarddag. Een
-// <input type="date"> laat zijn change-event namelijk alleen afgaan bij
-// een ECHTE wijziging -- dus zowel "dezelfde dag nog eens expliciet
-// aanklikken" als "de kalender gewoon sluiten omdat de getoonde dag al
-// goed is" (wat de meeste mensen doen) deed tot nu toe niets.
-//
-// Werkwijze: bij openen noteren we of het change-event alsnog afgaat
-// (een ECHTE andere dag gekozen -> de bestaande onchange-koppeling in
-// de HTML doet dan gewoon zijn werk, hier hoeft niets aanvullends te
-// gebeuren). Verliest het veld daarna de focus (blur -- gebeurt zowel
-// bij een succesvolle keuze als bij sluiten zonder keuze) zonder dat er
-// een change was, dan zijn er twee mogelijkheden: (a) de kalender werd
-// gesloten terwijl de getoonde dag al klopte -> alsnog toevoegen met
-// die dag, of (b) ondertussen werd de HELE modal geannuleerd (de ×) --
-// dat sluit de modal al synchroon vóórdat deze blur-check (bewust een
-// tick later, via setTimeout) draait, dus de "staat de modal nog open"-
-// check hieronder voorkomt dan alsnog een ongewenste toevoeging.
-function _armDatePickerConfirm(input, modalId, addFn) {
-  if (input._pickerConfirmCleanup) input._pickerConfirmCleanup();
-  let changed = false;
-  function onChange() { changed = true; }
-  function onBlur() {
-    cleanup();
-    setTimeout(() => {
-      const modal = document.getElementById(modalId);
-      if (!changed && modal && modal.classList.contains('open')) addFn();
-    }, 0);
-  }
-  function cleanup() {
-    input.removeEventListener('change', onChange);
-    input.removeEventListener('blur', onBlur);
-    input._pickerConfirmCleanup = null;
-  }
-  input.addEventListener('change', onChange);
-  input.addEventListener('blur', onBlur);
-  input._pickerConfirmCleanup = cleanup;
+// Toont het (onzichtbare) #pm-date-veld leesbaar naast de "Inplannen"-
+// knop (zie formatPickerDateLabel() in i18n.js). Gekoppeld aan zowel
+// het openen van de modal (met de standaarddag) als het onchange-event
+// van #pm-date (na een keuze in de kalender).
+function updatePmDateLabel() {
+  const el = document.getElementById('pm-date-label');
+  if (el) el.textContent = formatPickerDateLabel(document.getElementById('pm-date').value);
 }
 
 // Vraagt de browser expliciet om de datumkiezer te tonen (i.p.v. te
@@ -1119,10 +1082,20 @@ function _armDatePickerConfirm(input, modalId, addFn) {
 // dat bleek in de praktijk niet altijd betrouwbaar). showPicker() moet
 // vanuit een echte gebruikersactie aangeroepen worden, dus alleen via deze
 // knop-klik, niet automatisch bij het openen van de modal zelf.
+//
+// "Inplannen" voegt zelf toe (addProductToLog(), rechtstreeks aan de
+// knop gekoppeld) met wat er op dat moment in #pm-date staat -- deze
+// kalender is puur om die dag desgewenst te WIJZIGEN. Eerdere versies
+// probeerden toevoegen te koppelen aan het change-event van de
+// kalender zelf, maar <input type="date"> laat dat event alleen afgaan
+// bij een ECHTE wijziging: sloot je de kalender simpelweg omdat de
+// getoonde standaarddag (meestal vandaag) al klopte -- wat de meeste
+// mensen doen -- dan gebeurde er dus niets. Door "Inplannen" los van
+// de kalender te maken werkt toevoegen nu altijd, ongeacht of je de
+// kalender open klikt.
 function openPmDatePicker() {
   const input = document.getElementById('pm-date');
-  _setDatePickerBaseline(input, currentLogDate);
-  _armDatePickerConfirm(input, 'portion-modal', addProductToLog);
+  if (currentLogDate) input.value = currentLogDate;
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
