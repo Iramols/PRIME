@@ -134,6 +134,20 @@ let _edExerciseId = null;
 let _edSets = [];
 let _edMode = 'edit'; // 'edit' (al toegevoegd, "📝 Bewerken") | 'add' (Losse oefeningen, zie openExerciseAddModal())
 
+// Onthoudt vanuit welk tabblad ("dag" = Vandaag, "weekplanning") op
+// "+ Oefening" is geklikt, zodat addExerciseFromDetailModal() daar na
+// het toevoegen weer naartoe kan springen i.p.v. op Losse oefeningen
+// te blijven hangen -- zelfde patroon als _portionReturnTab bij Voeding
+// (food.js). null = niet via zo'n knop hierheen gekomen.
+let _trainingReturnTab = null;
+
+// Voor de "+ Oefening"-knop op Vandaag zelf (zie wpdAddForDay in
+// weekplanning.js voor de Weekplanning-variant).
+function trainingAddForDay(tab) {
+  _trainingReturnTab = 'dag';
+  switchTrainingTab(tab);
+}
+
 function findExtraExercise(exId) {
   for (const group of EXTRA_EXERCISES) {
     const found = group.exercises.find(e => e.id === exId);
@@ -395,6 +409,13 @@ function closeExerciseDetail() {
   _edExerciseId = null;
   _edSaveCallback = null;
   _edMode = 'edit';
+  // Annuleren (dit is de ×, niet de submit) mag _trainingReturnTab niet
+  // laten "hangen": zonder deze reset zou een latere, hélemaal
+  // ongerelateerde toevoeging/bewerking je alsnog naar dit oude
+  // tabblad terugsturen. addExerciseFromDetailModal() legt de waarde
+  // zelf al vast VÓÓR het deze functie aanroept, dus deze reset
+  // verstoort een geslaagde toevoeging niet.
+  _trainingReturnTab = null;
 }
 
 function edRenderSets() {
@@ -559,12 +580,22 @@ function addExerciseFromDetailModal() {
   syncSet('prime_training_days', trainingDays);
   if (targetDate === currentTrainingDate) trainingDagLog = trainingDays[targetDate];
 
+  // Vóór closeExerciseDetail() vastleggen: die zet _trainingReturnTab
+  // zelf ook op null (nodig voor de ×/annuleren-knop, zie daar), dus na
+  // de aanroep zou de check hieronder altijd false zijn.
+  const _returnTab = _trainingReturnTab;
+
   closeExerciseDetail();
   renderExtraExercises();
   updateTrainingDagBadge();
   if (document.getElementById('training-dag-list')) renderTrainingDag();
   try { if (document.getElementById('weekplanning-content')) renderWeekplanning(); } catch (e) { console.error(e); }
   try { showToast(t('extra.detail.saved')); } catch (e) { console.error(e); }
+
+  // Kwam je hier via "+ Oefening" op Vandaag/Weekplanning (zie
+  // trainingAddForDay/wpdAddForDay)? Dan weer terugspringen naar dat
+  // tabblad i.p.v. op Losse oefeningen te blijven hangen.
+  if (_returnTab) switchTrainingTab(_returnTab);
 }
 
 function updateTrainingDagBadge() {
@@ -749,7 +780,7 @@ function renderTrainingDag() {
     + '<div style="font-size:13px;color:var(--charcoal)">' + t('training.totalSummary', { items: totalItems, sets: totalSets }) + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:8px;margin-top:8px">'
-    + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
+    + '<button class="btn-sm" style="flex:1" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
     + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
     + '</div>'
     + '<button class="btn-sm" style="width:100%;margin-top:8px" onclick="wpOpenTrainingCopyModal(\'' + _dagToday + '\')">' + t('weekplan.trainingCopy.button') + '</button>'

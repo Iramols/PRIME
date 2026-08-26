@@ -531,6 +531,7 @@ function wpdToggleDag(dateStr) {
 // déze dag iets toe te voegen i.p.v. voor vandaag (zelfde patroon als
 // fwAddForDay() bij Voeding).
 function wpdAddForDay(dateStr) {
+  _trainingReturnTab = 'weekplanning';
   switchTrainingLogDate(dateStr);
   switchTrainingTab('oefeningen');
 }
