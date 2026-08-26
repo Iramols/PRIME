@@ -448,17 +448,30 @@ function edSubmit() {
   saveExerciseDetail();
 }
 
+// Schuift de vooringevulde waarde van een (onzichtbaar) datumveld één dag
+// op, vlak vóór de kalender opengaat -- zelfde als _bumpDatePickerBaseline
+// in food.js (kan hier niet hergebruikt worden: training.js laadt vóór
+// food.js). Nodig omdat een <input type="date"> zijn change-event alleen
+// laat afgaan bij een ECHTE wijziging: stond het veld al op de bedoelde
+// dag (bv. "vandaag", of bij Weekplanning de dag waarvoor je iets
+// inplant) en klikte je in de kalender diezelfde dag opnieuw aan, dan
+// gebeurde er niets. Simpelweg leegmaken loste dat wel op, maar liet de
+// kalender openen op de VERKEERDE maand (altijd de huidige, i.p.v. bv.
+// een maand vooruit bij een Weekplanning-dag) -- dit schuift daarom maar
+// één dag op (dezelfde maand blijft dus gewoon te zien). +1 dag bij de 1e
+// van de maand, anders -1, zodat de schuif nooit een maandgrens oversteekt.
+function _bumpDatePickerBaseline(input) {
+  if (!input.value) return;
+  const [y, m, d] = input.value.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + (d > 1 ? -1 : 1));
+  input.value = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
+
 // Zelfde als openPmDatePicker() bij Voeding, maar voor dit detailscherm.
 function openEdDatePicker() {
   const input = document.getElementById('ed-date');
-  // Eerst leegmaken: het veld staat al standaard op vandaag, en een
-  // <input type="date"> vuurt zijn onchange-event alleen als de
-  // waarde ECHT verandert. Zonder deze reset deed niets het als je in
-  // de kalender gewoon vandaag opnieuw aanklikte (geen wijziging t.o.v.
-  // de al ingevulde waarde -> geen change-event -> addExerciseFromDetailModal()
-  // werd nooit aangeroepen). Door leeg te beginnen is elke keuze, ook
-  // vandaag, altijd een echte wijziging.
-  input.value = '';
+  _bumpDatePickerBaseline(input);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }

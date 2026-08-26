@@ -896,10 +896,7 @@ function openMealPortionModal(dishId) {
 // Zelfde als openPmDatePicker(), maar voor de gerecht-portiemodal.
 function openMpmDatePicker() {
   const input = document.getElementById('mpm-date');
-  // Zelfde reset als openPmDatePicker(): zonder leegmaken vuurt onchange
-  // niet als je in de kalender gewoon vandaag (de al ingevulde waarde)
-  // opnieuw aanklikt.
-  input.value = '';
+  _bumpDatePickerBaseline(input);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -1055,6 +1052,25 @@ function openPortionModal(productId) {
   document.getElementById('portion-modal').classList.add('open');
 }
 
+// Schuift de vooringevulde waarde van een (onzichtbaar) datumveld één dag
+// op, vlak vóór de kalender opengaat. Nodig omdat een <input type="date">
+// zijn change-event alleen laat afgaan bij een ECHTE wijziging: stond het
+// veld al op de bedoelde dag (bv. "vandaag", of bij Weekplanning de dag
+// waarvoor je iets toevoegt) en klikte je in de kalender diezelfde dag
+// opnieuw aan, dan gebeurde er niets. Simpelweg leegmaken loste dat op
+// maar liet de kalender openen op de VERKEERDE maand (altijd de huidige,
+// i.p.v. bv. een maand vooruit bij een Weekplanning-dag) -- dit schuift
+// daarom maar één dag op (dezelfde maand blijft dus gewoon te zien) i.p.v.
+// helemaal leegmaken. +1 dag bij de 1e van de maand, anders -1, zodat de
+// schuif nooit een maandgrens oversteekt.
+function _bumpDatePickerBaseline(input) {
+  if (!input.value) return;
+  const [y, m, d] = input.value.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + (d > 1 ? -1 : 1));
+  input.value = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+}
+
 // Vraagt de browser expliciet om de datumkiezer te tonen (i.p.v. te
 // vertrouwen op een klik die toevallig het onzichtbare date-input raakt --
 // dat bleek in de praktijk niet altijd betrouwbaar). showPicker() moet
@@ -1062,12 +1078,7 @@ function openPortionModal(productId) {
 // knop-klik, niet automatisch bij het openen van de modal zelf.
 function openPmDatePicker() {
   const input = document.getElementById('pm-date');
-  // Leegmaken vóór het openen: het veld staat al standaard op vandaag,
-  // maar een <input type="date"> vuurt onchange alleen bij een ECHTE
-  // wijziging. Zonder deze reset gebeurde er niets als je in de
-  // kalender gewoon vandaag opnieuw aanklikte. Door leeg te beginnen
-  // is elke keuze, ook vandaag, altijd een echte wijziging.
-  input.value = '';
+  _bumpDatePickerBaseline(input);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
