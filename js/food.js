@@ -995,6 +995,11 @@ function addMealToLog() {
     foodDays[targetDate] = [...(foodDays[targetDate] || []), { logId: newLogId(), ...values }];
   }
 
+  // Vóór closeMealPortionModal() vastleggen: die zet _portionReturnTab
+  // zelf ook op null (nodig voor de ×/annuleren-knop, zie daar), dus na
+  // de aanroep zou deze check hieronder altijd false zijn.
+  const _returnTab = _portionReturnTab;
+
   syncSet('prime_food_days', foodDays);
   closeMealPortionModal();
   updateMacroTotals();
@@ -1005,11 +1010,7 @@ function addMealToLog() {
   // Kwam je hier via "+ Gerecht" op Vandaag/Weekplanning (zie
   // foodAddForDay/fwAddForDay)? Dan weer terugspringen naar dat
   // tabblad i.p.v. op Gerechten te blijven hangen.
-  if (_portionReturnTab) {
-    const target = _portionReturnTab;
-    _portionReturnTab = null;
-    switchFoodTab(target);
-  }
+  if (_returnTab) switchFoodTab(_returnTab);
 }
 
 // ========== PORTION MODAL ==========
@@ -1232,6 +1233,11 @@ function addProductToLog() {
     foodDays[targetDate] = [...(foodDays[targetDate] || []), { logId: newLogId(), ...values }];
   }
 
+  // Vóór closePortionModal() vastleggen: die zet _portionReturnTab zelf
+  // ook op null (nodig voor de ×/annuleren-knop, zie daar), dus na de
+  // aanroep zou deze check hieronder altijd false zijn.
+  const _returnTab = _portionReturnTab;
+
   syncSet('prime_food_days', foodDays);
   closePortionModal();
   updateMacroTotals();
@@ -1242,11 +1248,7 @@ function addProductToLog() {
   // Kwam je hier via "+ Product" op Vandaag/Weekplanning (zie
   // foodAddForDay/fwAddForDay)? Dan weer terugspringen naar dat
   // tabblad i.p.v. op Basisproducten te blijven hangen.
-  if (_portionReturnTab) {
-    const target = _portionReturnTab;
-    _portionReturnTab = null;
-    switchFoodTab(target);
-  }
+  if (_returnTab) switchFoodTab(_returnTab);
 }
 
 // Opent de bijpassende portiemodal, voorgevuld met de huidige waarden
