@@ -98,7 +98,20 @@ function renderExtraExercises() {
   if (leftoverCustom.length) {
     groupsData.push({ group: 'Eigen oefeningen', group_en: 'My exercises', icon: '⭐', exercises: leftoverCustom });
   }
-  el.innerHTML = groupsData.map(group => `
+
+  const q = (document.getElementById('exercise-search')?.value || '').toLowerCase();
+  const zichtbareGroups = q
+    ? groupsData
+        .map(group => ({ ...group, exercises: group.exercises.filter(ex => (ex.name || '').toLowerCase().includes(q) || dispName(ex).toLowerCase().includes(q)) }))
+        .filter(group => group.exercises.length)
+    : groupsData;
+
+  if (q && !zichtbareGroups.length) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('common.noSearchResults') + '</div>';
+    return;
+  }
+
+  el.innerHTML = zichtbareGroups.map(group => `
     <div style="margin-bottom:22px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <div style="font-size:20px">${group.icon}</div>

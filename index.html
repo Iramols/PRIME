@@ -236,11 +236,19 @@
 
   <!-- TAB: PRIME PROGRAMMA'S -->
   <div id="ttab-content-primeprog" style="display:none">
+    <div class="search-bar" id="primeprog-search-wrap" style="margin-bottom:16px">
+      <span style="font-size:15px;color:var(--muted)">🔍</span>
+      <input type="text" id="primeprog-search" data-i18n-placeholder="training.search.programPlaceholder" placeholder="Zoek programma..." oninput="renderProgrammas()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+    </div>
     <div id="primeprog-content"></div>
   </div>
 
   <!-- TAB: PROGRAMMA'S -->
   <div id="ttab-content-programmas" style="display:none">
+    <div class="search-bar" id="programma-search-wrap" style="margin-bottom:16px">
+      <span style="font-size:15px;color:var(--muted)">🔍</span>
+      <input type="text" id="programma-search" data-i18n-placeholder="training.search.programPlaceholder" placeholder="Zoek programma..." oninput="renderProgrammas()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+    </div>
     <div id="programmas-content"></div>
   </div>
 
@@ -288,6 +296,10 @@
     <div class="card" style="margin-bottom:16px;padding:14px 16px;display:flex;align-items:center;gap:10px;background:var(--sage-light);border-color:var(--sage-mid)">
       <div style="font-size:20px">💡</div>
       <div style="font-size:13px;color:var(--charcoal)" data-i18n-html="training.exercises.hint">Klik op een oefening om hem toe te voegen aan <strong>Mijn dag</strong>. Je kunt sets en reps aanpassen.</div>
+    </div>
+    <div class="search-bar" style="margin-bottom:16px">
+      <span style="font-size:15px;color:var(--muted)">🔍</span>
+      <input type="text" id="exercise-search" data-i18n-placeholder="training.search.exercisePlaceholder" placeholder="Zoek oefening..." oninput="renderExtraExercises()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
     </div>
     <div id="extra-exercise-list"></div>
   </div>
@@ -473,12 +485,20 @@
 
     <!-- TAB: PRIME GERECHTEN -->
     <div id="foodtab-primemeals" style="display:none">
+      <div class="search-bar" style="margin-bottom:16px">
+        <span style="font-size:15px;color:var(--muted)">🔍</span>
+        <input type="text" id="primemeal-search" data-i18n-placeholder="food.search.mealPlaceholder" placeholder="Zoek gerecht..." oninput="renderPrimeMealPlan()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+      </div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
       <div id="prime-meal-plan"></div>
     </div>
 
     <!-- TAB: MAALTIJDPLAN -->
     <div id="foodtab-plan" style="display:none">
+      <div class="search-bar" style="margin-bottom:16px">
+        <span style="font-size:15px;color:var(--muted)">🔍</span>
+        <input type="text" id="mealplan-search" data-i18n-placeholder="food.search.mealPlaceholder" placeholder="Zoek gerecht..." oninput="renderMealPlan()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
+      </div>
       <div id="meal-count" style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
       <div id="meal-plan"></div>
     </div>

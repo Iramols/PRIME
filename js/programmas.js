@@ -72,11 +72,19 @@ function renderProgrammas() {
   const elId = progMode === 'prime' ? 'primeprog-content' : 'programmas-content';
   const el = document.getElementById(elId);
   if (!el) return;
-  el.innerHTML = progActiefId !== null ? progBouw3ColEditor() : progBouwLijst();
+  const inEditor = progActiefId !== null;
+  // De zoekbalk hoort alleen bij de lijst, niet bij de programma-editor
+  // (dagen/oefeningen van één programma) die dezelfde container hergebruikt.
+  const searchWrap = document.getElementById(progMode === 'prime' ? 'primeprog-search-wrap' : 'programma-search-wrap');
+  if (searchWrap) searchWrap.style.display = inEditor ? 'none' : 'flex';
+  el.innerHTML = inEditor ? progBouw3ColEditor() : progBouwLijst();
 }
 
 // ─── Lijst ───────────────────────────────────────────────────────────────────
 function progBouwLijst() {
+  const q = (document.getElementById(progMode === 'prime' ? 'primeprog-search' : 'programma-search')?.value || '').toLowerCase();
+  const lijst = q ? progLijst.filter(p => (p.naam || '').toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q)) : progLijst;
+
   if (!progLijst.length) {
     const hint = progMode === 'prime' ? t('programmas.prime.emptyHint') : t('programmas.empty.hint');
     return '<div class="card" style="text-align:center;padding:40px 20px">' +
@@ -85,9 +93,12 @@ function progBouwLijst() {
       '<div style="font-size:13px;color:var(--muted)">' + hint + '</div>' +
       '</div>';
   }
+  if (!lijst.length) {
+    return '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('common.noSearchResults') + '</div>';
+  }
 
   const canEdit = progCanEdit();
-  const kaarten = progLijst.map(prog => {
+  const kaarten = lijst.map(prog => {
     const aantalDagen = Object.keys(prog.dagen || {}).length;
     const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
     // Vaste programma's blijven op kalenderweekdagen staan (Ma/Di/...); eigen

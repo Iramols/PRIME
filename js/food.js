@@ -136,8 +136,14 @@ function renderMealPlan() {
       `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.addMeal.noneYet')}</div>`;
     return;
   }
+  const q = (document.getElementById('mealplan-search')?.value || '').toLowerCase();
+  const list = q ? customMeals.filter(m => m.name.toLowerCase().includes(q) || dispName(m).toLowerCase().includes(q)) : customMeals;
+  if (!list.length) {
+    document.getElementById('meal-plan').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">${t('common.noSearchResults')}</div>`;
+    return;
+  }
   document.getElementById('meal-plan').innerHTML = `<div class="product-grid">` +
-    customMeals.map(m => {
+    list.map(m => {
       const tot = mealTotals(m);
       return `
       <div class="product-card" onclick="openMealPortionModal('${m.id}')">
@@ -346,8 +352,14 @@ function renderPrimeMealPlan() {
     el.innerHTML = `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.primeMeals.empty')}</div>`;
     return;
   }
+  const q = (document.getElementById('primemeal-search')?.value || '').toLowerCase();
+  const list = q ? primeMeals.filter(m => m.name.toLowerCase().includes(q) || dispName(m).toLowerCase().includes(q)) : primeMeals;
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">${t('common.noSearchResults')}</div>`;
+    return;
+  }
   el.innerHTML = `<div class="product-grid">` +
-    primeMeals.map(m => {
+    list.map(m => {
       const tot = mealTotals(m);
       return `
       <div class="product-card" onclick="openMealPortionModal('${m.id}')">
