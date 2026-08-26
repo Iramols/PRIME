@@ -897,6 +897,7 @@ function openMealPortionModal(dishId) {
 function openMpmDatePicker() {
   const input = document.getElementById('mpm-date');
   _setDatePickerBaseline(input, currentLogDate);
+  _armDatePickerConfirm(input, 'meal-portion-modal', addMealToLog);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -925,6 +926,11 @@ function closeMealPortionModal() {
   document.getElementById('meal-portion-modal').classList.remove('open');
   _editingLogId = null;
   document.getElementById('mpm-submit-btn').textContent = t('portion.addToDay');
+  // Annuleren (dit is de ×, niet de submit) mag _portionReturnTab niet
+  // laten "hangen": zonder deze reset zou een latere, hélemaal
+  // ongerelateerde add/edit-actie je alsnog naar dit oude tabblad
+  // terugsturen.
+  _portionReturnTab = null;
 }
 
 function addMealToLog() {
@@ -1069,6 +1075,45 @@ function _setDatePickerBaseline(input, baseline) {
   if (baseline) input.value = baseline;
 }
 
+// Zorgt dat toevoegen ook doorgaat als je de kalender sluit ZONDER een
+// andere dag te kiezen dan de al getoonde (juiste) standaarddag. Een
+// <input type="date"> laat zijn change-event namelijk alleen afgaan bij
+// een ECHTE wijziging -- dus zowel "dezelfde dag nog eens expliciet
+// aanklikken" als "de kalender gewoon sluiten omdat de getoonde dag al
+// goed is" (wat de meeste mensen doen) deed tot nu toe niets.
+//
+// Werkwijze: bij openen noteren we of het change-event alsnog afgaat
+// (een ECHTE andere dag gekozen -> de bestaande onchange-koppeling in
+// de HTML doet dan gewoon zijn werk, hier hoeft niets aanvullends te
+// gebeuren). Verliest het veld daarna de focus (blur -- gebeurt zowel
+// bij een succesvolle keuze als bij sluiten zonder keuze) zonder dat er
+// een change was, dan zijn er twee mogelijkheden: (a) de kalender werd
+// gesloten terwijl de getoonde dag al klopte -> alsnog toevoegen met
+// die dag, of (b) ondertussen werd de HELE modal geannuleerd (de ×) --
+// dat sluit de modal al synchroon vóórdat deze blur-check (bewust een
+// tick later, via setTimeout) draait, dus de "staat de modal nog open"-
+// check hieronder voorkomt dan alsnog een ongewenste toevoeging.
+function _armDatePickerConfirm(input, modalId, addFn) {
+  if (input._pickerConfirmCleanup) input._pickerConfirmCleanup();
+  let changed = false;
+  function onChange() { changed = true; }
+  function onBlur() {
+    cleanup();
+    setTimeout(() => {
+      const modal = document.getElementById(modalId);
+      if (!changed && modal && modal.classList.contains('open')) addFn();
+    }, 0);
+  }
+  function cleanup() {
+    input.removeEventListener('change', onChange);
+    input.removeEventListener('blur', onBlur);
+    input._pickerConfirmCleanup = null;
+  }
+  input.addEventListener('change', onChange);
+  input.addEventListener('blur', onBlur);
+  input._pickerConfirmCleanup = cleanup;
+}
+
 // Vraagt de browser expliciet om de datumkiezer te tonen (i.p.v. te
 // vertrouwen op een klik die toevallig het onzichtbare date-input raakt --
 // dat bleek in de praktijk niet altijd betrouwbaar). showPicker() moet
@@ -1077,6 +1122,7 @@ function _setDatePickerBaseline(input, baseline) {
 function openPmDatePicker() {
   const input = document.getElementById('pm-date');
   _setDatePickerBaseline(input, currentLogDate);
+  _armDatePickerConfirm(input, 'portion-modal', addProductToLog);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -1128,6 +1174,11 @@ function closePortionModal() {
   document.getElementById('portion-modal').classList.remove('open');
   _editingLogId = null;
   document.getElementById('pm-submit-btn').textContent = t('portion.addToDay');
+  // Annuleren (dit is de ×, niet de submit) mag _portionReturnTab niet
+  // laten "hangen": zonder deze reset zou een latere, hélemaal
+  // ongerelateerde add/edit-actie je alsnog naar dit oude tabblad
+  // terugsturen.
+  _portionReturnTab = null;
 }
 
 // Zet de actieve maaltijdmoment-knop in één van de twee portiemodals

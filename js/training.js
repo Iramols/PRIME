@@ -462,10 +462,37 @@ function _setDatePickerBaseline(input, baseline) {
   if (baseline) input.value = baseline;
 }
 
+// Zorgt dat toevoegen ook doorgaat als je de kalender sluit ZONDER een
+// andere dag te kiezen dan de al getoonde (juiste) standaarddag -- zelfde
+// als _armDatePickerConfirm in food.js (kan hier niet hergebruikt
+// worden: training.js laadt vóór food.js). Zie de uitgebreide
+// toelichting daar.
+function _armDatePickerConfirm(input, modalId, addFn) {
+  if (input._pickerConfirmCleanup) input._pickerConfirmCleanup();
+  let changed = false;
+  function onChange() { changed = true; }
+  function onBlur() {
+    cleanup();
+    setTimeout(() => {
+      const modal = document.getElementById(modalId);
+      if (!changed && modal && modal.classList.contains('open')) addFn();
+    }, 0);
+  }
+  function cleanup() {
+    input.removeEventListener('change', onChange);
+    input.removeEventListener('blur', onBlur);
+    input._pickerConfirmCleanup = null;
+  }
+  input.addEventListener('change', onChange);
+  input.addEventListener('blur', onBlur);
+  input._pickerConfirmCleanup = cleanup;
+}
+
 // Zelfde als openPmDatePicker() bij Voeding, maar voor dit detailscherm.
 function openEdDatePicker() {
   const input = document.getElementById('ed-date');
   _setDatePickerBaseline(input, currentTrainingDate);
+  _armDatePickerConfirm(input, 'exercise-detail-modal', addExerciseFromDetailModal);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
