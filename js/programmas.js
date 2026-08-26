@@ -73,8 +73,11 @@ function renderProgrammas() {
   const el = document.getElementById(elId);
   if (!el) return;
   const inEditor = progActiefId !== null;
-  // De zoekbalk hoort alleen bij de lijst, niet bij de programma-editor
-  // (dagen/oefeningen van één programma) die dezelfde container hergebruikt.
+  // De hint-kaart en de zoekbalk horen alleen bij de lijst, niet bij de
+  // programma-editor (dagen/oefeningen van één programma) die dezelfde
+  // container hergebruikt.
+  const hintWrap = document.getElementById(progMode === 'prime' ? 'primeprog-hint-wrap' : 'programma-hint-wrap');
+  if (hintWrap) hintWrap.style.display = inEditor ? 'none' : 'flex';
   const searchWrap = document.getElementById(progMode === 'prime' ? 'primeprog-search-wrap' : 'programma-search-wrap');
   if (searchWrap) searchWrap.style.display = inEditor ? 'none' : 'flex';
   el.innerHTML = inEditor ? progBouw3ColEditor() : progBouwLijst();
