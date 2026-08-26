@@ -896,7 +896,7 @@ function openMealPortionModal(dishId) {
 // Zelfde als openPmDatePicker(), maar voor de gerecht-portiemodal.
 function openMpmDatePicker() {
   const input = document.getElementById('mpm-date');
-  _bumpDatePickerBaseline(input, currentLogDate);
+  _setDatePickerBaseline(input, currentLogDate);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
@@ -1052,30 +1052,21 @@ function openPortionModal(productId) {
   document.getElementById('portion-modal').classList.add('open');
 }
 
-// Schuift de vooringevulde waarde van een (onzichtbaar) datumveld één dag
-// op, vlak vóór de kalender opengaat. Nodig omdat een <input type="date">
-// zijn change-event alleen laat afgaan bij een ECHTE wijziging: stond het
-// veld al op de bedoelde dag (bv. "vandaag", of bij Weekplanning de dag
-// waarvoor je iets toevoegt) en klikte je in de kalender diezelfde dag
-// opnieuw aan, dan gebeurde er niets. Simpelweg leegmaken loste dat op
-// maar liet de kalender openen op de VERKEERDE maand (altijd de huidige,
-// i.p.v. bv. een maand vooruit bij een Weekplanning-dag) -- dit schuift
-// daarom maar één dag op (dezelfde maand blijft dus gewoon te zien) i.p.v.
-// helemaal leegmaken. +1 dag bij de 1e van de maand, anders -1, zodat de
-// schuif nooit een maandgrens oversteekt.
-// 'baseline' moet altijd de ECHTE bedoelde dag zijn (bv. currentLogDate),
-// nooit input.value zelf -- anders schuift de datum verder op bij elke
-// volgende druk op "Toevoegen" zonder dat er iets gekozen werd (bv.
-// kalender per ongeluk gesloten, of nogmaals geklikt): dan zou de 2e keer
-// vanaf de AL opgeschoven waarde weer een dag opschuiven, enzovoort. Door
-// steeds opnieuw vanaf dezelfde, ongewijzigde bedoelde dag te schuiven
-// blijft het resultaat elke keer identiek (nooit verder wegdrijvend).
-function _bumpDatePickerBaseline(input, baseline) {
-  if (!baseline) return;
-  const [y, m, d] = baseline.split('-').map(Number);
-  const dt = new Date(y, m - 1, d);
-  dt.setDate(dt.getDate() + (d > 1 ? -1 : 1));
-  input.value = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+// Zet het (onzichtbare) datumveld op de ECHTE bedoelde dag vlak vóór de
+// kalender opengaat -- 'baseline' is bv. currentLogDate, nooit
+// input.value zelf, want dat mag nooit tussentijds afwijken van de dag
+// die je daadwerkelijk aan het bewerken bent.
+//
+// Eerdere pogingen (leegmaken, of één dag opschuiven) waren bedoeld om
+// een vermeende beperking van <input type="date"> te omzeilen: het idee
+// was dat het change-event niet zou afgaan als je in de kalender
+// toevallig weer dezelfde dag aanklikte die er al in stond. Dat gaf
+// zelf weer een zichtbaar fout standaard-datum (bv. "vrijdag" i.p.v.
+// "zaterdag" bij het inplannen vóór zaterdag) -- een duidelijk erger
+// probleem dan het oorspronkelijke, en dus teruggedraaid: de kalender
+// moet altijd gewoon de juiste dag laten zien.
+function _setDatePickerBaseline(input, baseline) {
+  if (baseline) input.value = baseline;
 }
 
 // Vraagt de browser expliciet om de datumkiezer te tonen (i.p.v. te
@@ -1085,7 +1076,7 @@ function _bumpDatePickerBaseline(input, baseline) {
 // knop-klik, niet automatisch bij het openen van de modal zelf.
 function openPmDatePicker() {
   const input = document.getElementById('pm-date');
-  _bumpDatePickerBaseline(input, currentLogDate);
+  _setDatePickerBaseline(input, currentLogDate);
   if (input.showPicker) {
     try { input.showPicker(); return; } catch (e) { /* val door naar de fallback hieronder */ }
   }
