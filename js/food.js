@@ -1321,10 +1321,19 @@ function toggleFoodEaten(dateStr, logId) {
   // vinkje altijd meteen zichtbaar, ook als de opslag hieronder om wat
   // voor reden dan ook misgaat (zelfde "best-effort nazorg"-patroon als
   // fwRemoveItem in foodweek.js).
-  const chk = document.getElementById('food-chk-' + logId);
-  const card = document.getElementById('food-item-' + logId);
-  if (chk) chk.classList.toggle('done', item.eaten);
-  if (card) card.style.opacity = item.eaten ? '0.55' : '1';
+  //
+  // renderLogItemCard() is bewust gedeeld tussen "Vandaag" en een
+  // dag-kaart in Weekplanning (fwBouwDagKaart) -- voor vandaag staat
+  // hetzelfde item dus vaak in BEIDE tabbladen tegelijk in de DOM,
+  // allebei met hetzelfde food-chk-<logId>/food-item-<logId> element-id.
+  // document.getElementById() geeft dan alleen het EERSTE exemplaar
+  // terug (in document-volgorde toevallig de -- op dat moment onzichtbare --
+  // Weekplanning-kaart, vóór "Vandaag" in de HTML), waardoor een klik in
+  // "Vandaag" zelf leek niets te doen: het bolletje van de andere,
+  // onzichtbare kopie werd omgezet, niet die je ziet. Update daarom altijd
+  // ALLE exemplaren met dit id, in welk tabblad ze ook staan.
+  document.querySelectorAll('[id="food-chk-' + logId + '"]').forEach(chk => chk.classList.toggle('done', item.eaten));
+  document.querySelectorAll('[id="food-item-' + logId + '"]').forEach(card => card.style.opacity = item.eaten ? '0.55' : '1');
 
   try {
     foodDays[dateStr] = items;
