@@ -58,6 +58,22 @@ function stripPhotosFromFoodDays() {
   if (changed) syncSet('prime_food_days', foodDays);
 }
 
+// Onthoudt vanuit welk tabblad ("log" = Vandaag, "week" = Weekplanning)
+// de coach op "+ Product"/"+ Gerecht" heeft geklikt, zodat
+// addProductToLog()/addMealToLog() daar na het toevoegen weer naartoe
+// kunnen springen i.p.v. op Basisproducten/Gerechten te blijven hangen.
+// null = niet via zo'n knop hierheen gekomen (bv. rechtstreeks via de
+// tabbladbalk) -- dan blijft het bestaande gedrag (gewoon op dit
+// tabblad blijven) ongewijzigd.
+let _portionReturnTab = null;
+
+// Voor de "+ Product"/"+ Gerecht"-knoppen op "Vandaag" zelf (zie
+// fwAddForDay in foodweek.js voor de Weekplanning-variant).
+function foodAddForDay(tab) {
+  _portionReturnTab = 'log';
+  switchFoodTab(tab);
+}
+
 function switchLogDate(dateStr) {
   currentLogDate = dateStr;
   dayLog = foodDays[dateStr] ? [...foodDays[dateStr]] : [];
@@ -974,6 +990,15 @@ function addMealToLog() {
   updateLogBadge();
   renderDayLog();
   if (document.getElementById('foodweek-content')) renderFoodWeek();
+
+  // Kwam je hier via "+ Gerecht" op Vandaag/Weekplanning (zie
+  // foodAddForDay/fwAddForDay)? Dan weer terugspringen naar dat
+  // tabblad i.p.v. op Gerechten te blijven hangen.
+  if (_portionReturnTab) {
+    const target = _portionReturnTab;
+    _portionReturnTab = null;
+    switchFoodTab(target);
+  }
 }
 
 // ========== PORTION MODAL ==========
@@ -1180,6 +1205,15 @@ function addProductToLog() {
   updateLogBadge();
   renderDayLog();
   if (document.getElementById('foodweek-content')) renderFoodWeek();
+
+  // Kwam je hier via "+ Product" op Vandaag/Weekplanning (zie
+  // foodAddForDay/fwAddForDay)? Dan weer terugspringen naar dat
+  // tabblad i.p.v. op Basisproducten te blijven hangen.
+  if (_portionReturnTab) {
+    const target = _portionReturnTab;
+    _portionReturnTab = null;
+    switchFoodTab(target);
+  }
 }
 
 // Opent de bijpassende portiemodal, voorgevuld met de huidige waarden

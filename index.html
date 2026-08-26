@@ -513,8 +513,8 @@
       <div id="day-log-empty" style="text-align:center;padding:24px 20px;color:var(--muted);font-size:14px">
         <div style="margin-bottom:16px" data-i18n="food.log.empty">Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.</div>
         <div style="display:flex;gap:8px">
-          <button class="btn-sm" style="flex:1" onclick="switchFoodTab('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
-          <button class="btn-sm" style="flex:1" onclick="switchFoodTab('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
+          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
+          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
       </div>
       <div id="day-log-list"></div>
@@ -523,8 +523,8 @@
         <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px" data-i18n="food.log.totalsTitle">Totaal overzicht</div>
         <div id="log-summary"></div>
         <div style="display:flex;gap:8px;margin-top:14px">
-          <button class="btn-sm" style="flex:1" onclick="switchFoodTab('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
-          <button class="btn-sm" style="flex:1" onclick="switchFoodTab('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
+          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
+          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
         <button class="btn-sm" style="width:100%;margin-top:8px" onclick="fwOpenCopyModal(currentLogDate)" data-i18n="foodweek.copy.button">📋 Kopieer maaltijden van deze dag</button>
         <button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"

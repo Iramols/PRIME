@@ -178,6 +178,7 @@ function fwRemoveItem(dateStr, logId) {
 // selectie + portiemodal hergebruikt wordt om voor déze dag iets toe te
 // voegen i.p.v. voor vandaag.
 function fwAddForDay(dateStr, tab) {
+  _portionReturnTab = 'week';
   switchLogDate(dateStr);
   switchFoodTab(tab || 'basis');
 }
