@@ -86,7 +86,7 @@ const EXTRA_EXERCISES = [
     { id:'ex-fpr',  name:'Farm Walk (trap focus)',  icon:'🧳', sets:3, reps:'30m', rest:'90 sec', youtube:'https://www.youtube.com/watch?v=rt17lmnaLSM', photo:'images/oefeningen/farm-walk-trap-focus.jpg'},
   ]},
   { group:'Cardio', group_en:'Cardio', icon:'🏃', color:'#4a7c59', exercises:[
-    { id:'ex-wa',   name:'Wandelen',             name_en:'Walking', icon:'\u{1F6B6}', sets:'', reps:'', rest:'', stappen:'8000-10000 stappen per dag', stappen_en:'8000-10000 steps per day', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'images/oefeningen/wandelen.jpg'},
+    { id:'ex-wa',   name:'Wandelen',             name_en:'Walking', icon:'\u{1F6B6}', sets:'', reps:'', rest:'', stappen:'8.000-10.000 stappen per dag', stappen_en:'8,000-10,000 steps per day', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'images/oefeningen/wandelen.jpg'},
     { id:'ex-fi',   name:'Fietsen',             name_en:'Cycling', icon:'🚴', sets:1, reps:'30 min', rest:'—', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'images/oefeningen/fietsen.jpg'},
     { id:'ex-ri',   name:'Roeien (machine)',     name_en:'Rowing (machine)', icon:'🚣', sets:1, reps:'20 min', rest:'—', youtube:'https://www.youtube.com/watch?v=_kGESn8ArrU', photo:'images/oefeningen/roeien-machine.jpg'},
   ]},
