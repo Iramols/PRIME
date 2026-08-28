@@ -81,7 +81,7 @@ const EXTRA_EXERCISES = [
     { id:'ex-dbs',  name:'Dumbbell Shrugs',        icon:'🤷', sets:3, reps:'15-20', rest:'60 sec', youtube:'https://www.youtube.com/watch?v=g6qbq4Lf1FI', photo:'images/oefeningen/dumbbell-shrugs.jpg'},
     { id:'ex-bbs',  name:'Barbell Shrugs',         icon:'🤷', sets:4, reps:'12-15', rest:'60 sec', youtube:'https://www.youtube.com/watch?v=cJRVVxmytaM', photo:'images/oefeningen/barbell-shrugs.jpg'},
     { id:'ex-uro',  name:'Upright Row',            icon:'⬆️', sets:3, reps:'10-12', rest:'75 sec', youtube:'https://www.youtube.com/watch?v=UBMIAhCpFDk', photo:'images/oefeningen/upright-row.jpg'},
-    { id:'ex-casr', name:'Cable Shrug',            icon:'🔗', sets:3, reps:'15-20', rest:'45 sec', youtube:'https://www.youtube.com/watch?v=e3LTd0gJpGQ', photo:'images/oefeningen/cable-shrug.jpg'},
+    { id:'ex-casr', name:'Cable Shrug',            icon:'🔗', sets:3, reps:'15-20', rest:'45 sec', youtube:'https://www.youtube.com/watch?v=e3LTd0gJpGQ', photo:'images/oefeningen/cable-shrug.png'},
     { id:'ex-curo', name:'Cable Upright Row',       icon:'🔗', sets:3, reps:'12-15', rest:'60 sec', youtube:'https://www.youtube.com/watch?v=UBMIAhCpFDk', photo:'images/oefeningen/cable-upright-row.jpg'},
     { id:'ex-fpr',  name:'Farm Walk (trap focus)',  icon:'🧳', sets:3, reps:'30m', rest:'90 sec', youtube:'https://www.youtube.com/watch?v=rt17lmnaLSM', photo:'images/oefeningen/farm-walk-trap-focus.jpg'},
   ]},
