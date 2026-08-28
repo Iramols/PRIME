@@ -143,10 +143,16 @@ function progBouwLijst() {
   return '<div style="margin-bottom:4px">' + kaarten + '</div>';
 }
 
-// ─── Programma editor: dagen | oefeningen | detail naast elkaar ──────────────
+// ─── Programma editor: dagen | oefeningen naast elkaar ───────────────────────
 // Dagen zijn een vrije, oplopende reeks ('Dag 1', 'Dag 2', ...) i.p.v. vast
 // gekoppeld aan kalenderweekdagen -- een programma kan zo een trainingscyclus
 // van elke gewenste lengte zijn (bv. een 4-daagse split of een 11-daags blok).
+//
+// Oefeningen tonen als kaartjes (foto + naam + sets/rust, "Sets & notities"
+// + "Verwijder") -- zelfde stijl als een Weekplanning-dagkaart, i.p.v. de
+// vroegere aparte "detail"-kolom met een altijd-open sets-tabel ernaast.
+// Bewerken gaat nu via hetzelfde sets/notities-scherm (openExerciseDetailGeneric,
+// training.js) als overal elders in de app -- zie progOefBewerken() hieronder.
 function progBouw3ColEditor() {
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) { progActiefId = null; return progBouwLijst(); }
@@ -156,14 +162,9 @@ function progBouw3ColEditor() {
   const dagIndexen = Object.keys(prog.dagen).map(Number).sort((a,b) => a-b);
   if (progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) {
     progActiefDagIdx = dagIndexen.length ? dagIndexen[0] : null;
-    progSelectedOefIdx = null;
   }
   const geselecteerdeDag = progActiefDagIdx !== null ? prog.dagen[progActiefDagIdx] : null;
   const oefeningen = geselecteerdeDag ? (geselecteerdeDag.oefeningen || []) : [];
-  if (progSelectedOefIdx === null || progSelectedOefIdx >= oefeningen.length) {
-    progSelectedOefIdx = oefeningen.length ? 0 : null;
-  }
-  const geselecteerdeOef = progSelectedOefIdx !== null ? oefeningen[progSelectedOefIdx] : null;
 
   // Kolom 1: dagen
   const dagRijenHtml = dagIndexen.map(i => {
@@ -176,7 +177,7 @@ function progBouw3ColEditor() {
       '</div>';
   }).join('');
 
-  // Kolom 2: oefeningen van de geselecteerde dag
+  // Kolom 2: oefeningen van de geselecteerde dag, als kaartjes
   let oefRijenHtml;
   if (!geselecteerdeDag) {
     oefRijenHtml = '<div class="prog-list-empty">' + t('programmas.selectDayHint') + '</div>';
@@ -186,22 +187,25 @@ function progBouw3ColEditor() {
     oefRijenHtml = oefeningen.map((oef, i) => {
       const canonical = findCanonicalExercise(oef.naam);
       const photo = canonical ? canonical.photo : null;
-      const isActief = i === progSelectedOefIdx;
-      const meta = oef.stappen ? oef.stappen : (oef.sets ? oef.sets + '\xD7 ' + (oef.reps || '') : (oef.reps || ''));
-      return '<div class="prog-list-row prog-oef-row' + (isActief ? ' active' : '') + '" onclick="progSelectOef(' + i + ')">' +
-        (photo
-          ? '<div class="prog-oef-thumb" style="background-image:url(\'' + photo + '\')"></div>'
-          : '<div class="prog-oef-thumb prog-oef-thumb-icon">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>') +
-        '<div class="prog-oef-info"><div class="prog-oef-name">' + (oef.naam || t('programmas.exercisePlaceholder')) + '</div><div class="prog-oef-meta">' + meta + '</div></div>' +
-        (canEdit ? '<button class="prog-list-row-remove" onclick="event.stopPropagation();progOefVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' : '') +
+      const meta = oef.stappen ? oef.stappen : (oef.sets ? oef.sets + '\xD7' + (oef.reps || '') + (oef.rust ? ' \xB7 ' + oef.rust : '') : (oef.reps || ''));
+      const photoDiv = photo
+        ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;background-image:url(\'' + photo + '\');background-size:cover;background-position:center"></div>'
+        : '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>';
+      return '<div style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:8px 6px;border-bottom:0.5px solid var(--sand-dark)">' +
+        photoDiv +
+        '<div style="flex:1;min-width:120px">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--charcoal)">' + (oef.naam || t('programmas.exercisePlaceholder')) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted)">' + meta + '</div>' +
+        '</div>' +
+        (canEdit
+          ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
+            '<button class="ex-detail-btn" onclick="progOefBewerken(' + i + ')"><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>' +
+            '<div class="ex-check-wrap" onclick="progOefVerwijder(' + i + ')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>' +
+            '</div>'
+          : '') +
         '</div>';
     }).join('');
   }
-
-  // Kolom 3: sets/notities-detail van de geselecteerde oefening
-  const detailHtml = geselecteerdeOef
-    ? progBouwOefDetail(geselecteerdeOef, canEdit)
-    : '<div class="prog-list-empty" style="padding:60px 10px">' + t('programmas.selectExerciseHint') + '</div>';
 
   return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">' +
     '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
@@ -209,7 +213,7 @@ function progBouw3ColEditor() {
     (progMode === 'prime' ? '<span class="prog-prime-badge">' + t('programmas.prime.badge') + '</span>' : '') +
     '</div>' +
     progBouwInfoKaart(prog, canEdit) +
-    '<div class="prog-3col">' +
+    '<div class="prog-2col">' +
 
     '<div class="prog-col">' +
     '<div class="prog-col-head"><span>' + t('programmas.trainingDays') + '</span></div>' +
@@ -232,8 +236,6 @@ function progBouw3ColEditor() {
       : '') +
     '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
     '</div>' +
-
-    '<div class="prog-col prog-col-detail">' + detailHtml + '</div>' +
 
     '</div>';
 }
@@ -318,47 +320,47 @@ function handleProgPhoto(event) {
   reader.readAsDataURL(file);
 }
 
-// Detailpaneel (kolom 3): naam, foto, per-set herhalingen/rust, notities.
-// Stappen-oefeningen (Wandelen e.d.) krijgen i.p.v. de sets-tabel één
-// stappen-veld, net als voorheen in de tabelweergave.
-function progBouwOefDetail(oef, canEdit) {
+// Sets/reps/rust/notities aanpassen voor een programma-oefening -- zelfde
+// generieke sets/notities-scherm (openExerciseDetailGeneric, training.js)
+// als overal elders in de app (bv. openWpExerciseDetail() voor een
+// ingeplande programma-oefening in Weekplanning). Bewust GEEN aparte
+// stappen-editor voor Wandelen-achtige oefeningen: dat blijft de
+// standaardwaarde uit de bibliotheek, aanpassen kan (nog) niet per
+// programmadag.
+function progOefBewerken(oefIdx) {
+  if (!progCanEdit()) return;
+  const prog = progLijst.find(p => p.id === progActiefId) || primeProgLijst.find(p => p.id === progActiefId);
+  if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
+  const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
+  if (!oef) return;
   const canonical = findCanonicalExercise(oef.naam);
-  const photo = canonical ? canonical.photo : null;
-  const photoHtml = '<div class="ed-photo-wrap">' +
-    (photo ? '<img src="' + photo + '" alt="">' : '<div style="font-size:48px;text-align:center;padding:40px 0">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>') +
-    '</div>';
-  const dis = canEdit ? '' : ' disabled';
-  const naamInput = '<input type="text" class="prog-detail-title-input" value="' + (oef.naam || '').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.exercisePlaceholder') + '" onchange="progOefDetailUpdateName(this.value)"' + dis + '>';
-  const notesHtml = '<div class="divider" style="margin:20px 0"></div>' +
-    '<div class="ed-field-label">' + t('extra.detail.notesLabel') + '</div>' +
-    '<textarea class="ed-notes" placeholder="' + t('extra.detail.notesPlaceholder') + '" onchange="progOefDetailUpdateNotes(this.value)"' + dis + '>' + (oef.notities || '').replace(/</g,'&lt;') + '</textarea>';
+  const sets = (oef.setsDetail && oef.setsDetail.length) ? oef.setsDetail.map(s => ({ ...s })) : progOefAfgeleidesSets(oef);
+  openExerciseDetailGeneric({
+    name: oef.naam || t('programmas.exercisePlaceholder'),
+    photo: canonical ? canonical.photo : null,
+    icon: canonical ? canonical.icon : '🏋️',
+    sets: sets,
+    notes: oef.notities || '',
+    onSave: function(newSets, newNotes) {
+      progOefBewerkenOpslaan(oefIdx, newSets, newNotes);
+    }
+  });
+}
 
-  const isStappen = oef.naam === 'Wandelen' || oef.naam === 'Walking' || (oef.stappen !== undefined && oef.stappen !== '');
-  if (isStappen) {
-    return naamInput + photoHtml +
-      '<div class="ed-field-label">' + t('programmas.stepsPerDay') + '</div>' +
-      '<input type="text" class="ed-set-input" style="width:100%;box-sizing:border-box;text-align:left" value="' + (oef.stappen || '8000-10000').replace(/"/g,'&quot;') + '" placeholder="' + t('programmas.stepsPlaceholder') + '" onchange="progOefDetailUpdateStappen(this.value)"' + dis + '>' +
-      notesHtml;
-  }
-
-  const sets = (oef.setsDetail && oef.setsDetail.length) ? oef.setsDetail : progOefAfgeleidesSets(oef);
-  const setsRowsHtml = sets.map((s, i) => (
-    '<div class="ed-set-row">' +
-    '<div class="ed-set-grid" style="flex:1">' +
-    '<div class="ed-set-num">' + (i + 1) + '</div>' +
-    '<input class="ed-set-input" type="text" value="' + (s.reps || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'reps\',this.value)"' + dis + '>' +
-    '<input class="ed-set-input" type="text" value="' + (s.rest || '').replace(/"/g,'&quot;') + '" onchange="progOefDetailUpdateSet(' + i + ',\'rest\',this.value)"' + dis + '>' +
-    '</div>' +
-    (sets.length > 1 && canEdit ? '<button class="ed-rm-btn" onclick="progOefDetailRemoveSet(' + i + ')" title="' + t('extra.detail.removeSet') + '">×</button>' : '<span style="width:20px;flex-shrink:0"></span>') +
-    '</div>'
-  )).join('');
-
-  return naamInput + photoHtml +
-    '<div class="ed-field-label">' + t('extra.detail.setsLabel') + '</div>' +
-    '<div class="ed-set-grid ed-set-head"><span></span><span>' + t('extra.detail.reps') + '</span><span>' + t('extra.detail.rest') + '</span></div>' +
-    setsRowsHtml +
-    (canEdit ? '<button class="ed-add-set" onclick="progOefDetailAddSet()">' + t('extra.detail.addSet') + '</button>' : '') +
-    notesHtml;
+function progOefBewerkenOpslaan(oefIdx, sets, notes) {
+  if (!progCanEdit()) return;
+  const prog = progLijst.find(p => p.id === progActiefId) || primeProgLijst.find(p => p.id === progActiefId);
+  if (!prog || progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) return;
+  const oef = prog.dagen[progActiefDagIdx].oefeningen[oefIdx];
+  if (!oef) return;
+  const laatsteSet = sets[sets.length - 1] || {};
+  oef.sets = String(sets.length);
+  oef.reps = laatsteSet.reps || '';
+  oef.rust = laatsteSet.rest || '';
+  oef.setsDetail = sets;
+  oef.notities = notes || '';
+  progSlaOp();
+  renderProgrammas();
 }
 
 // Leidt een startpunt voor de sets-tabel af uit de simpele sets/reps/rust-
@@ -543,11 +545,6 @@ function progDagVerwijder(dagIdx) {
 }
 
 // ─── Acties: oefeningen binnen de geselecteerde dag ───────────────────────────
-function progSelectOef(oefIdx) {
-  progSelectedOefIdx = oefIdx;
-  renderProgrammas();
-}
-
 // "+ Oefening" stuurt door naar het volledige Losse-oefeningen-scherm
 // (zoeken, foto's, per spiergroep -- zelfde scherm als vanuit Vandaag/
 // Weekplanning) i.p.v. het vroegere kleine, ingeklapte lijstje hier
@@ -617,74 +614,10 @@ function progOefVerwijder(oefIdx) {
   renderProgrammas();
 }
 
-// ─── Acties: detailpaneel (kolom 3) van de geselecteerde oefening ─────────────
-function progGeselecteerdeOef() {
-  const prog = progLijst.find(p => p.id === progActiefId);
-  if (!prog || progActiefDagIdx === null || progSelectedOefIdx === null) return null;
-  const dag = prog.dagen[progActiefDagIdx];
-  if (!dag) return null;
-  return dag.oefeningen[progSelectedOefIdx] || null;
-}
-
-function progOefDetailUpdateName(val) {
-  if (!progCanEdit()) return;
-  const oef = progGeselecteerdeOef();
-  if (!oef) return;
-  oef.naam = val;
-  progSlaOp();
-  renderProgrammas();
-}
-
-function progOefDetailUpdateStappen(val) {
-  if (!progCanEdit()) return;
-  const oef = progGeselecteerdeOef();
-  if (!oef) return;
-  oef.stappen = val;
-  progSlaOp();
-  renderProgrammas();
-}
-
-function progOefDetailUpdateNotes(val) {
-  if (!progCanEdit()) return;
-  const oef = progGeselecteerdeOef();
-  if (!oef) return;
-  oef.notities = val;
-  progSlaOp();
-}
-
-function progOefDetailUpdateSet(setIdx, veld, val) {
-  if (!progCanEdit()) return;
-  const oef = progGeselecteerdeOef();
-  if (!oef) return;
-  if (!oef.setsDetail || !oef.setsDetail.length) oef.setsDetail = progOefAfgeleidesSets(oef);
-  if (!oef.setsDetail[setIdx]) return;
-  oef.setsDetail[setIdx][veld] = val;
-  oef.sets = String(oef.setsDetail.length);
-  progSlaOp();
-  renderProgrammas();
-}
-
-function progOefDetailAddSet() {
-  if (!progCanEdit()) return;
-  const oef = progGeselecteerdeOef();
-  if (!oef) return;
-  if (!oef.setsDetail || !oef.setsDetail.length) oef.setsDetail = progOefAfgeleidesSets(oef);
-  const last = oef.setsDetail[oef.setsDetail.length - 1];
-  oef.setsDetail.push({ reps: last ? last.reps : '', rest: last ? last.rest : '' });
-  oef.sets = String(oef.setsDetail.length);
-  progSlaOp();
-  renderProgrammas();
-}
-
-function progOefDetailRemoveSet(setIdx) {
-  if (!progCanEdit()) return;
-  const oef = progGeselecteerdeOef();
-  if (!oef || !oef.setsDetail) return;
-  oef.setsDetail.splice(setIdx, 1);
-  oef.sets = String(oef.setsDetail.length);
-  progSlaOp();
-  renderProgrammas();
-}
+// (Het vroegere detailpaneel -- progGeselecteerdeOef/progOefDetailUpdate*/
+// progBouwOefDetail -- is vervangen door progOefBewerken()/
+// progOefBewerkenOpslaan() hierboven, die het gedeelde sets/notities-
+// scherm gebruiken i.p.v. een altijd-open kolom ernaast.)
 
 // (De vroegere inline "Bibliotheek"-uitklapper -- progToggleBibliotheek/
 // progBouwBibliotheek/progOefUitBibliotheek -- is vervangen door
