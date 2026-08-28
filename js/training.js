@@ -119,9 +119,7 @@ function renderExtraExercises() {
         <div style="flex:1;height:1px;background:var(--sand-dark);margin-left:8px"></div>
       </div>
       <div>
-        ${group.exercises.map(ex => {
-          const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
-          return `
+        ${group.exercises.map(ex => `
             <div class="ex-extra-card" onclick="openExerciseAddModal('${ex.id}')">
               ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
               <div class="ex-extra-body">
@@ -132,11 +130,7 @@ function renderExtraExercises() {
                 <div class="ex-extra-meta">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
                 ${ex.youtube ? `<a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" class="ex-extra-video">▶ Video</a>` : ''}
               </div>
-              <button class="ex-detail-btn ${hasDetail ? 'has-data' : ''}" onclick="event.stopPropagation();openExerciseDetail('${ex.id}')">
-                <span class="ex-detail-icon">📝</span><span class="ex-detail-label">${t('extra.detail.editBtn')}</span>
-              </button>
-            </div>`;
-        }).join('')}
+            </div>`).join('')}
       </div>
     </div>
   `).join('');
