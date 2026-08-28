@@ -147,6 +147,17 @@ let _edExerciseId = null;
 let _edSets = [];
 let _edMode = 'edit'; // 'edit' (al toegevoegd, "📝 Bewerken") | 'add' (Losse oefeningen, zie openExerciseAddModal())
 
+// True zodra "+ Oefening" in de programma-editor (programmas.js,
+// progOefUitLosseOefeningenKiezen()) naar dit scherm heeft
+// doorgestuurd om een oefening te kiezen VOOR een programmadag i.p.v.
+// voor Vandaag/Weekplanning -- verandert wat edSubmit() bij het
+// bevestigen doet (progOefUitBibliotheekBevestigen() i.p.v.
+// addExerciseFromDetailModal()) en verbergt de (voor een programma
+// zinloze) datumkeuze. Wordt weer op false gezet zodra je terugkeert
+// naar de editor of de losse-oefeningen-flow op de normale manier
+// gebruikt (openExerciseAddModal()).
+let _progPickingForProgram = false;
+
 // Onthoudt vanuit welk tabblad ("dag" = Vandaag, "weekplanning") op
 // "+ Oefening" is geklikt, zodat addExerciseFromDetailModal() daar na
 // het toevoegen weer naartoe kan springen i.p.v. op Losse oefeningen
@@ -429,6 +440,13 @@ function closeExerciseDetail() {
   // zelf al vast VÓÓR het deze functie aanroept, dus deze reset
   // verstoort een geslaagde toevoeging niet.
   _trainingReturnTab = null;
+  // Zelfde reden: annuleren mag _progPickingForProgram niet laten
+  // hangen, anders zou een latere, ongerelateerde oefening-toevoeging
+  // (bv. vanuit Vandaag) alsnog denken dat 'ie voor een programmadag
+  // is. progOefUitBibliotheekBevestigen() zet 'm zelf ook al op false
+  // vóór deze functie aangeroepen wordt, dus dit verstoort een
+  // geslaagde toevoeging niet.
+  _progPickingForProgram = false;
 }
 
 function edRenderSets() {
@@ -516,9 +534,16 @@ function openExerciseAddModal(exId) {
   edRenderSets();
 
   document.getElementById('ed-save-btn').textContent = t('portion.addToDay');
-  document.getElementById('ed-date').value = currentTrainingDate;
-  document.getElementById('ed-date-row').style.display = 'flex';
-  updateEdDateLabel();
+  // Een programmadag is een sjabloon, geen echte kalenderdatum -- de
+  // datumkeuze (die bij Vandaag/Weekplanning bepaalt vóór welke dag je
+  // toevoegt) heeft daar dus geen betekenis en blijft verborgen.
+  if (_progPickingForProgram) {
+    document.getElementById('ed-date-row').style.display = 'none';
+  } else {
+    document.getElementById('ed-date').value = currentTrainingDate;
+    document.getElementById('ed-date-row').style.display = 'flex';
+    updateEdDateLabel();
+  }
   document.getElementById('exercise-detail-modal').classList.add('open');
 }
 
@@ -534,7 +559,18 @@ function openExerciseAddModal(exId) {
 // simpelweg omdat de getoonde standaarddag (meestal vandaag) al klopte
 // -- wat de meeste mensen doen -- dan gebeurde er dus niets.
 function edSubmit() {
-  if (_edMode === 'add') { addExerciseFromDetailModal(); return; }
+  if (_edMode === 'add') {
+    // Vanuit de programma-editor's "+ Oefening" gekomen (zie
+    // progOefUitLosseOefeningenKiezen() in programmas.js)? Dan hoort
+    // de oefening bij de programmadag te komen i.p.v. bij
+    // Vandaag/Weekplanning.
+    if (_progPickingForProgram) {
+      progOefUitBibliotheekBevestigen(_edExerciseId, _edSets.map(s => ({ ...s })), document.getElementById('ed-notes').value.trim());
+      return;
+    }
+    addExerciseFromDetailModal();
+    return;
+  }
   saveExerciseDetail();
 }
 

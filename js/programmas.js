@@ -11,7 +11,6 @@ let progMode = 'normal'; // 'normal' | 'prime'
 let progActiefId = null;
 let progActiefDagIdx = null;   // welke dag is geselecteerd in kolom 1
 let progSelectedOefIdx = null; // welke oefening is geselecteerd in kolom 2 (detail in kolom 3)
-let progBibliotheekOpen = false;
 
 // PRIME-programma's: cache-first (snelle eerste render vanuit localStorage),
 // daarna ververst vanuit de gedeelde Supabase-tabel zodra de tab geopend
@@ -228,12 +227,10 @@ function progBouw3ColEditor() {
       : '') +
     (geselecteerdeDag && canEdit
       ? '<div class="prog-col-actions">' +
-        '<button class="prog-col-add" onclick="progOefToevoegen()">' + t('programmas.addEmptyField') + '</button>' +
-        '<button class="prog-col-add' + (progBibliotheekOpen ? ' active' : '') + '" onclick="progToggleBibliotheek()">' + t('programmas.library') + '</button>' +
+        '<button class="prog-col-add" onclick="progOefUitLosseOefeningenKiezen()">' + t('programmas.addEmptyField') + '</button>' +
         '</div>'
       : '') +
     '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
-    (progBibliotheekOpen && geselecteerdeDag && canEdit ? progBouwBibliotheek(oefeningen) : '') +
     '</div>' +
 
     '<div class="prog-col prog-col-detail">' + detailHtml + '</div>' +
@@ -480,7 +477,6 @@ function progTerugNaarLijst() {
   progActiefId = null;
   progActiefDagIdx = null;
   progSelectedOefIdx = null;
-  progBibliotheekOpen = false;
   renderProgrammas();
 }
 
@@ -552,15 +548,59 @@ function progSelectOef(oefIdx) {
   renderProgrammas();
 }
 
-function progOefToevoegen() {
+// "+ Oefening" stuurt door naar het volledige Losse-oefeningen-scherm
+// (zoeken, foto's, per spiergroep -- zelfde scherm als vanuit Vandaag/
+// Weekplanning) i.p.v. het vroegere kleine, ingeklapte lijstje hier
+// inline te tonen. _progPickingForProgram (training.js) zorgt dat het
+// sets/notities-scherm daarna weet dat de gekozen oefening bij DEZE
+// programmadag moet komen i.p.v. bij Vandaag, en dat de datumkeuze
+// (zinloos voor een programma-sjabloon) verborgen blijft. Zie
+// progOefUitBibliotheekBevestigen() hieronder en edSubmit() in
+// training.js.
+function progOefUitLosseOefeningenKiezen() {
   if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog || progActiefDagIdx === null) return;
-  const idx = progActiefDagIdx;
-  if (!prog.dagen[idx]) prog.dagen[idx] = { naam: '', oefeningen: [] };
-  prog.dagen[idx].oefeningen.push({ naam: '', sets: '3', reps: '10', rust: '60 sec', notities: '' });
-  progSelectedOefIdx = prog.dagen[idx].oefeningen.length - 1;
-  progSlaOp();
+  _progPickingForProgram = true;
+  switchTrainingTab('oefeningen');
+}
+
+// Callback vanuit edSubmit() (training.js) zodra je in de "+ Oefening"-
+// flow hierboven een oefening hebt gekozen en de sets/rust/notities
+// hebt ingevuld -- voegt 'm toe aan de actieve programmadag en stuurt
+// je terug naar de editor van datzelfde programma/dezelfde dag.
+function progOefUitBibliotheekBevestigen(exId, sets, notes) {
+  _progPickingForProgram = false;
+  const savedProgId = progActiefId, savedDagIdx = progActiefDagIdx, savedMode = progMode;
+  if (progCanEdit()) {
+    const prog = progLijst.find(p => p.id === savedProgId) || primeProgLijst.find(p => p.id === savedProgId);
+    const ex = typeof findAnyExtraExercise === 'function' ? findAnyExtraExercise(exId) : null;
+    if (prog && ex && savedDagIdx !== null) {
+      if (!prog.dagen[savedDagIdx]) prog.dagen[savedDagIdx] = { naam: '', oefeningen: [] };
+      const laatsteSet = sets[sets.length - 1] || {};
+      prog.dagen[savedDagIdx].oefeningen.push({
+        naam: dispName(ex),
+        sets: String(sets.length),
+        reps: laatsteSet.reps || '',
+        rust: laatsteSet.rest || '',
+        setsDetail: sets,
+        stappen: ex.stappen || '',
+        notities: notes || ''
+      });
+      progSelectedOefIdx = prog.dagen[savedDagIdx].oefeningen.length - 1;
+      progSlaOp();
+    }
+  }
+  closeExerciseDetail();
+  // switchTrainingTab('programmas'/'primeprog') reset zelf progActiefId/
+  // progActiefDagIdx (voor het geval je rechtstreeks naar de lijst
+  // navigeert) -- daarom hier bewust weer terugzetten zodat je in
+  // dezelfde editor, op dezelfde dag, terechtkomt i.p.v. terug bij de
+  // lijst.
+  switchTrainingTab(savedMode === 'prime' ? 'primeprog' : 'programmas');
+  progMode = savedMode;
+  progActiefId = savedProgId;
+  progActiefDagIdx = savedDagIdx;
   renderProgrammas();
 }
 
@@ -644,77 +684,11 @@ function progOefDetailRemoveSet(setIdx) {
   renderProgrammas();
 }
 
-// ─── Bibliotheek: oefening kiezen uit Losse oefeningen ────────────────────────
-function progToggleBibliotheek() {
-  if (!progCanEdit()) return;
-  progBibliotheekOpen = !progBibliotheekOpen;
-  renderProgrammas();
-}
-
-function progBouwBibliotheek(huidig) {
-  const toegevoegdeNamen = new Set((huidig || []).map(o => (o.naam || '').toLowerCase()));
-
-  const groepen = EXTRA_EXERCISES.map(groep => {
-    const groepNaam = (currentLang === 'en' && groep.group_en) ? groep.group_en : groep.group;
-    const rijen = groep.exercises.map(ex => {
-      const naam = dispName(ex);
-      const alIn = toegevoegdeNamen.has(naam.toLowerCase());
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark)">' +
-        '<div style="font-size:18px;flex-shrink:0;width:26px;text-align:center">' + ex.icon + '</div>' +
-        '<div style="flex:1;min-width:0">' +
-        '<div style="font-size:13px;font-weight:500;color:var(--charcoal)">' + naam + '</div>' +
-        '<div style="font-size:11px;color:var(--muted)">' + (ex.stappen ? ex.stappen : (ex.sets ? ex.sets + ' ' + t('programmas.setsAbbr') + ' \xB7 ' + ex.reps + (ex.rest ? ' \xB7 ' + t('programmas.restAbbr') + ' ' + ex.rest : '') : (ex.reps || ''))) + '</div>' +
-        '</div>' +
-        '<button onclick="progOefUitBibliotheek(\'' + ex.id + '\')" ' +
-        'style="flex-shrink:0;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'DM Sans\',sans-serif;' +
-        (alIn
-          ? 'border:1.5px solid var(--sage);background:var(--sage-light);color:var(--sage)'
-          : 'border:1.5px solid var(--sage);background:var(--sage);color:white') + '">' +
-        (alIn ? t('programmas.inList') : t('programmas.addToList')) +
-        '</button>' +
-        '</div>';
-    }).join('');
-
-    return '<div style="margin-bottom:16px">' +
-      '<div style="font-size:14px;font-weight:700;color:var(--charcoal);margin-bottom:6px;padding-bottom:4px;border-bottom:2px solid var(--sage)">' +
-      groep.icon + ' ' + groepNaam +
-      '</div>' +
-      rijen +
-      '</div>';
-  }).join('');
-
-  return '<div style="padding:14px;border-top:1px solid var(--sand-dark);background:var(--sand)">' +
-    '<div style="font-size:13px;font-weight:600;color:var(--charcoal);margin-bottom:14px">' + t('programmas.chooseFromLibrary') + '</div>' +
-    groepen +
-    '</div>';
-}
-
-function progOefUitBibliotheek(exId) {
-  if (!progCanEdit()) return;
-  const prog = progLijst.find(p => p.id === progActiefId);
-  if (!prog || progActiefDagIdx === null) return;
-  const idx = progActiefDagIdx;
-  if (!prog.dagen[idx]) prog.dagen[idx] = { naam: '', oefeningen: [] };
-
-  let gevonden = null;
-  for (const groep of EXTRA_EXERCISES) {
-    gevonden = groep.exercises.find(e => e.id === exId);
-    if (gevonden) break;
-  }
-  if (!gevonden) return;
-
-  prog.dagen[idx].oefeningen.push({
-    naam: dispName(gevonden),
-    sets: String(gevonden.sets || ''),
-    reps: String(gevonden.reps || ''),
-    rust: gevonden.rest || '',
-    stappen: gevonden.stappen || '',
-    notities: ''
-  });
-  progSelectedOefIdx = prog.dagen[idx].oefeningen.length - 1;
-  progSlaOp();
-  renderProgrammas();
-}
+// (De vroegere inline "Bibliotheek"-uitklapper -- progToggleBibliotheek/
+// progBouwBibliotheek/progOefUitBibliotheek -- is vervangen door
+// progOefUitLosseOefeningenKiezen()/progOefUitBibliotheekBevestigen()
+// hierboven, die het volledige Losse-oefeningen-scherm hergebruiken
+// i.p.v. een eigen, kleinere lijst.)
 
 // ─── Programma inplannen (startdatum + aantal weken + weekdagen) ─────────────
 // "Laden in weekplanning" opent nu een modaal (zelfde opzet als een
