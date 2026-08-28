@@ -571,14 +571,13 @@ function progOefUitLosseOefeningenKiezen() {
 // je terug naar de editor van datzelfde programma/dezelfde dag.
 function progOefUitBibliotheekBevestigen(exId, sets, notes) {
   _progPickingForProgram = false;
-  const savedProgId = progActiefId, savedDagIdx = progActiefDagIdx, savedMode = progMode;
   if (progCanEdit()) {
-    const prog = progLijst.find(p => p.id === savedProgId) || primeProgLijst.find(p => p.id === savedProgId);
+    const prog = progLijst.find(p => p.id === progActiefId) || primeProgLijst.find(p => p.id === progActiefId);
     const ex = typeof findAnyExtraExercise === 'function' ? findAnyExtraExercise(exId) : null;
-    if (prog && ex && savedDagIdx !== null) {
-      if (!prog.dagen[savedDagIdx]) prog.dagen[savedDagIdx] = { naam: '', oefeningen: [] };
+    if (prog && ex && progActiefDagIdx !== null) {
+      if (!prog.dagen[progActiefDagIdx]) prog.dagen[progActiefDagIdx] = { naam: '', oefeningen: [] };
       const laatsteSet = sets[sets.length - 1] || {};
-      prog.dagen[savedDagIdx].oefeningen.push({
+      prog.dagen[progActiefDagIdx].oefeningen.push({
         naam: dispName(ex),
         sets: String(sets.length),
         reps: laatsteSet.reps || '',
@@ -587,20 +586,23 @@ function progOefUitBibliotheekBevestigen(exId, sets, notes) {
         stappen: ex.stappen || '',
         notities: notes || ''
       });
-      progSelectedOefIdx = prog.dagen[savedDagIdx].oefeningen.length - 1;
+      progSelectedOefIdx = prog.dagen[progActiefDagIdx].oefeningen.length - 1;
       progSlaOp();
     }
   }
   closeExerciseDetail();
-  // switchTrainingTab('programmas'/'primeprog') reset zelf progActiefId/
-  // progActiefDagIdx (voor het geval je rechtstreeks naar de lijst
-  // navigeert) -- daarom hier bewust weer terugzetten zodat je in
-  // dezelfde editor, op dezelfde dag, terechtkomt i.p.v. terug bij de
-  // lijst.
-  switchTrainingTab(savedMode === 'prime' ? 'primeprog' : 'programmas');
-  progMode = savedMode;
-  progActiefId = savedProgId;
-  progActiefDagIdx = savedDagIdx;
+  // Rechtstreeks de zichtbare tab bijwerken (_setActiveTrainingTabDom,
+  // training.js) i.p.v. switchTrainingTab(): die laatste reset bij
+  // "primeprog" ook meteen progActiefId/progActiefDagIdx (voor
+  // rechtstreekse navigatie naar de lijst) ÉN triggert een
+  // primeProgRefreshFromCloud() -- die kan de wijziging hierboven
+  // overschrijven met nog-niet-bijgewerkte clouddata als de eigen
+  // upsert (progSlaOp(), hierboven) nog niet klaar is (race condition
+  // -- dit was de oorzaak van "een toegevoegde oefening verdwijnt
+  // weer" bij PRIME-programma's). progMode/progActiefId/
+  // progActiefDagIdx staan hier al goed (nooit aangeraakt), dus is
+  // geen reset/herstel nodig.
+  _setActiveTrainingTabDom(progMode === 'prime' ? 'primeprog' : 'programmas');
   renderProgrammas();
 }
 
