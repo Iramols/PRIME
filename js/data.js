@@ -296,6 +296,20 @@ const MEALS = {
   }
 };
 
+// Bepaalt het dag-doel (kcal/eiwit/koolh/vet) voor het huidige trainingType.
+// Heeft de coach een persoonlijke caloriebehoefte ingevuld in het profiel
+// (profile.calorieBehoefte, zie profile.js), dan vervangt dat getal het
+// kcal-doel VOLLEDIG -- elke dag, ongeacht Herstel/Normaal/Zwaar. Eiwit/
+// koolhydraten/vet blijven wel per dagtype verschillen (komen nog steeds uit
+// MEALS[trainingType].doel). Leeg/0 => ongewijzigd gedrag (kcal-doel via de
+// check-in-presets hierboven). Gebruikt door checkin.js en food.js i.p.v.
+// rechtstreeks MEALS[trainingType]?.doel te lezen.
+function getDagDoel() {
+  const basis = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
+  const kcal = (profile.calorieBehoefte && profile.calorieBehoefte > 0) ? profile.calorieBehoefte : basis.kcal;
+  return { kcal, prot: basis.prot, carb: basis.carb, fat: basis.fat };
+}
+
 
 // ========== CLAUDE SYSTEEM PROMPT ==========
 const SYSTEM = `Je bent coach Ira, een AI lifestyle coach. Direct, nuchter, warm en motiverend. Geen zweverige termen. Je combineert coachende vragen met concreet advies voor duurzame leefstijlverandering. Jij en je vrouw zijn zelf in 2018 volledig overgestapt naar een gezonde leefstijl — van overgewicht en gezondheidsklachten naar een sterk, fit lichaam. Dat maakt je geloofwaardig en menselijk. Antwoord altijd in het Nederlands. Maximaal 120 woorden per antwoord. Geen opsommingslijsten tenzij gevraagd.`;

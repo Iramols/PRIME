@@ -139,7 +139,7 @@ function buildTrainingSummary() {
 
 
 function buildFoodSummary() {
-  const doel = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
+  const doel = getDagDoel();
   const logged = dayLog.length;
 
   // Bereken werkelijke totalen uit daglog

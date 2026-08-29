@@ -1496,7 +1496,7 @@ function renderDayLog() {
 function updateHomeMacros() {
   const el = document.getElementById('home-nutrient-rows');
   if (!el) return;
-  const doel = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
+  const doel = getDagDoel();
   const tot = dayLog.reduce((a,i) => ({
     kcal: a.kcal+i.kcal, prot: a.prot+i.prot, carb: a.carb+i.carb, fat: a.fat+i.fat
   }), { kcal:0, prot:0, carb:0, fat:0 });
@@ -1538,7 +1538,7 @@ function updateHomeMacros() {
 }
 
 function updateMacroTotals() {
-  const doel = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
+  const doel = getDagDoel();
 
   // Doel-range: ±10% marge
   const range = (val) => ({ min: Math.round(val * 0.9), max: Math.round(val * 1.1) });
