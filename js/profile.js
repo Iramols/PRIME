@@ -26,6 +26,11 @@ function saveProfile() {
   };
   syncSet('prime_profile', profile);
   applyTrainingVisibility();
+  // Caloriebehoefte kan het kcal-doel wijzigen (zie getDagDoel() in data.js)
+  // -- de al zichtbare cijfers op Dashboard/Voeding herrekenen zodra je
+  // opslaat, i.p.v. pas bij de volgende tabwissel.
+  if (typeof updateHomeMacros === 'function') updateHomeMacros();
+  if (typeof updateMacroTotals === 'function') updateMacroTotals();
   closeProfile();
 }
 
