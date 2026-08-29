@@ -307,7 +307,7 @@ const SYSTEM_EN = `You are coach Ira, an AI lifestyle coach. Direct, down-to-ear
 const PRODUCTS = [
   // FRUIT
   { id:'p1', name:'Appel', name_en:'Apple', icon:'🍎', cat:'fruit', kcal:48, prot:0, carb:12, fat:0, portie:{ gram:135, label:'1 appel', label_en:'1 apple' }, photo:'images/producten/p1.jpg'},
-  { id:'p2', name:'Banaan', name_en:'Banana', icon:'🍌', cat:'fruit', kcal:87, prot:1.1, carb:20, fat:0.3, portie:{ gram:150, label:'1 banaan', label_en:'1 banana' }, photo:'images/producten/p2.jpg'},
+  { id:'p2', name:'Banaan', name_en:'Banana', icon:'🍌', cat:'fruit', kcal:87, prot:1.1, carb:20, fat:0.3, portie:{ gram:120, label:'1 banaan', label_en:'1 banana' }, photo:'images/producten/p2.jpg'},
   { id:'p3', name:'Aardbei', name_en:'Strawberry', icon:'🍓', cat:'fruit', kcal:32, prot:0.7, carb:8, fat:0.3, photo:'images/producten/p3.jpg'},
   { id:'p4', name:'Bosbes', name_en:'Blueberry', icon:'🫐', cat:'fruit', kcal:57, prot:0.7, carb:14, fat:0.3, photo:'images/producten/p4.jpg'},
   { id:'p5', name:'Sinaasappel', name_en:'Orange', icon:'🍊', cat:'fruit', kcal:47, prot:0.9, carb:12, fat:0.1, photo:'images/producten/p5.jpg'},
