@@ -389,6 +389,7 @@ const PRODUCTS = [
   { id:'z14', name:'Eiwitpoeder (Evou)', name_en:'Protein powder (Evou)', icon:'🥛', cat:'zuivel', kcal:373, prot:77, carb:8.7, fat:3.3, photo:'images/producten/z14.jpg'},
   { id:'z15', name:'Eiwitpoeder (Nutribites)', name_en:'Protein powder (Nutribites)', icon:'🥛', cat:'zuivel', kcal:365, prot:68.7, carb:7.7, fat:6.6, photo:'images/producten/z15.jpg'},
   { id:'z16', name:'Boeren skyr (Weeribben)', name_en:'Farm skyr (Weeribben)', icon:'🥛', cat:'zuivel', kcal:79, prot:10, carb:6.4, fat:1.5, photo:'images/producten/z16.jpg'},
+  { id:'z17', name:'Amandelmelk (Mylky)', name_en:'Almond milk (Mylky)', icon:'🥛', cat:'zuivel', kcal:59, prot:1.9, carb:3.4, fat:4.2, photo:'images/producten/z17.jpg'},
   // GRANEN
   { id:'gr1', name:'Havermout', name_en:'Oatmeal', icon:'🥣', cat:'granen', kcal:368, prot:13, carb:66, fat:7, photo:'images/producten/gr1.jpg'},
   { id:'gr2', name:'Volkoren brood', name_en:'Wholegrain bread', icon:'🍞', cat:'granen', kcal:247, prot:9, carb:41, fat:3, photo:'images/producten/gr2.jpg'},
