@@ -306,8 +306,8 @@ const SYSTEM_EN = `You are coach Ira, an AI lifestyle coach. Direct, down-to-ear
 // Macros per 100g: kcal, prot, carb, fat
 const PRODUCTS = [
   // FRUIT
-  { id:'p1', name:'Appel', name_en:'Apple', icon:'🍎', cat:'fruit', kcal:48, prot:0, carb:12, fat:0, photo:'images/producten/p1.jpg'},
-  { id:'p2', name:'Banaan', name_en:'Banana', icon:'🍌', cat:'fruit', kcal:87, prot:1.1, carb:20, fat:0.3, photo:'images/producten/p2.jpg'},
+  { id:'p1', name:'Appel', name_en:'Apple', icon:'🍎', cat:'fruit', kcal:48, prot:0, carb:12, fat:0, portie:{ gram:135, label:'1 appel', label_en:'1 apple' }, photo:'images/producten/p1.jpg'},
+  { id:'p2', name:'Banaan', name_en:'Banana', icon:'🍌', cat:'fruit', kcal:87, prot:1.1, carb:20, fat:0.3, portie:{ gram:150, label:'1 banaan', label_en:'1 banana' }, photo:'images/producten/p2.jpg'},
   { id:'p3', name:'Aardbei', name_en:'Strawberry', icon:'🍓', cat:'fruit', kcal:32, prot:0.7, carb:8, fat:0.3, photo:'images/producten/p3.jpg'},
   { id:'p4', name:'Bosbes', name_en:'Blueberry', icon:'🫐', cat:'fruit', kcal:57, prot:0.7, carb:14, fat:0.3, photo:'images/producten/p4.jpg'},
   { id:'p5', name:'Sinaasappel', name_en:'Orange', icon:'🍊', cat:'fruit', kcal:47, prot:0.9, carb:12, fat:0.1, photo:'images/producten/p5.jpg'},
@@ -320,7 +320,7 @@ const PRODUCTS = [
   { id:'g1', name:'Broccoli', name_en:'Broccoli', icon:'🥦', cat:'groente', kcal:20, prot:2.7, carb:0.7, fat:0.7, photo:'images/producten/g1.jpg'},
   { id:'g2', name:'Spinazie', name_en:'Spinach', icon:'🥬', cat:'groente', kcal:23, prot:2.9, carb:4, fat:0.4, photo:'images/producten/g2.jpg'},
   { id:'g3', name:'Wortel', name_en:'Carrot', icon:'🥕', cat:'groente', kcal:27, prot:1, carb:5.2, fat:0.2, photo:'images/producten/g3.jpg'},
-  { id:'g4', name:'Komkommer', name_en:'Cucumber', icon:'🥒', cat:'groente', kcal:12, prot:0.7, carb:1.3, fat:0.4, photo:'images/producten/g4.jpg'},
+  { id:'g4', name:'Komkommer', name_en:'Cucumber', icon:'🥒', cat:'groente', kcal:12, prot:0.7, carb:1.3, fat:0.4, portie:{ gram:400, label:'1 komkommer', label_en:'1 cucumber' }, photo:'images/producten/g4.jpg'},
   { id:'g5', name:'Tomaat', name_en:'Tomato', icon:'🍅', cat:'groente', kcal:27, prot:0.9, carb:4, fat:0.8, photo:'images/producten/g5.jpg'},
   { id:'g6', name:'Paprika', name_en:'Bell pepper', icon:'🫑', cat:'groente', kcal:21, prot:0.8, carb:4.1, fat:0.2, photo:'images/producten/g6.jpg'},
   { id:'g7', name:'Zoete aardappel', name_en:'Sweet potato', icon:'🍠', cat:'groente', kcal:92, prot:1.2, carb:21, fat:0.3, photo:'images/producten/g7.jpg'},
