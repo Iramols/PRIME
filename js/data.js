@@ -299,15 +299,36 @@ const MEALS = {
 // Bepaalt het dag-doel (kcal/eiwit/koolh/vet) voor het huidige trainingType.
 // Heeft de coach een persoonlijke caloriebehoefte ingevuld in het profiel
 // (profile.calorieBehoefte, zie profile.js), dan vervangt dat getal het
-// kcal-doel VOLLEDIG -- elke dag, ongeacht Herstel/Normaal/Zwaar. Eiwit/
-// koolhydraten/vet blijven wel per dagtype verschillen (komen nog steeds uit
-// MEALS[trainingType].doel). Leeg/0 => ongewijzigd gedrag (kcal-doel via de
-// check-in-presets hierboven). Gebruikt door checkin.js en food.js i.p.v.
-// rechtstreeks MEALS[trainingType]?.doel te lezen.
+// kcal-doel VOLLEDIG -- elke dag, ongeacht Herstel/Normaal/Zwaar. Leeg/0 =>
+// ongewijzigd gedrag (kcal-doel via de check-in-presets hierboven).
+//
+// Eiwit wordt berekend uit het lichaamsgewicht: 1.6-2.0 g/kg, oplopend met
+// het dagtype (herstel 1.6, normaal 1.8, zwaar 2.0 g/kg) -- niet langer een
+// vast getal, zodat het altijd persoonlijk klopt. Koolhydraten en vet vullen
+// de resterende calorieën aan, in dezelfde onderlinge verhouding als het
+// oorspronkelijke MEALS[trainingType].doel-preset (zwaar behoudt zo relatief
+// iets meer koolhydraten, minder vet, enz.) -- zodat eiwit+koolh+vet altijd
+// exact optellen tot het kcal-doel hierboven, ook als dat via
+// profile.calorieBehoefte is overschreven.
+// Gebruikt door checkin.js en food.js i.p.v. rechtstreeks
+// MEALS[trainingType]?.doel te lezen.
 function getDagDoel() {
   const basis = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
   const kcal = (profile.calorieBehoefte && profile.calorieBehoefte > 0) ? profile.calorieBehoefte : basis.kcal;
-  return { kcal, prot: basis.prot, carb: basis.carb, fat: basis.fat };
+
+  const proteinPerKg = { herstel:1.6, normaal:1.8, zwaar:2.0 }[trainingType] || 1.8;
+  const gewicht = profile.weight > 0 ? profile.weight : 70;
+  const prot = Math.round(gewicht * proteinPerKg);
+
+  const protKcal = prot * 4;
+  const restKcal = Math.max(0, kcal - protKcal);
+  const basisRestKcal = basis.carb * 4 + basis.fat * 9;
+  const carbRatio = basisRestKcal > 0 ? (basis.carb * 4) / basisRestKcal : 0.6;
+
+  const carb = Math.round((restKcal * carbRatio) / 4);
+  const fat = Math.round((restKcal * (1 - carbRatio)) / 9);
+
+  return { kcal, prot, carb, fat };
 }
 
 
