@@ -62,7 +62,7 @@ function renderHome() {
   updateStreak();
 
   // Check if already checked in today
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   if (todayData && todayData.date === today) {
     trainingType = todayData.trainingType;
     checkin = todayData.checkin;

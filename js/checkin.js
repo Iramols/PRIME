@@ -46,7 +46,7 @@ function checkCheckoutReady() {
 
 function buildTrainingSummary() {
   // Weekplanning oefeningen voor vandaag
-  const _btsToday = new Date().toISOString().split('T')[0];
+  const _btsToday = localDateStr();
   // Altijd synchroon houden met trainingDays (zie state.js/training.js)
   trainingDagLog = trainingDays[_btsToday] || [];
   const _btsWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _btsToday) || null;
@@ -286,7 +286,7 @@ async function doCheckin() {
   }
 
   // Save today
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   todayData = { date: today, checkin, trainingType, checkout: null };
   syncSet('prime_today', todayData);
   exerciseDone = [];
@@ -358,7 +358,7 @@ async function doCheckout() {
   }
 
   // Weekplanning context voor vandaag
-  const _coToday = new Date().toISOString().split('T')[0];
+  const _coToday = localDateStr();
   const _coWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coToday) || null;
   const _coWpOef = _coWpEntry ? (wpGetOefeningen(_coWpEntry.schemaId) || []) : [];
   const _coWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_coToday] || [];
@@ -379,7 +379,7 @@ async function doCheckout() {
 
   // Weekplanning morgen
   const _coMorgen = new Date(); _coMorgen.setDate(_coMorgen.getDate() + 1);
-  const _coMorgenStr = _coMorgen.toISOString().split('T')[0];
+  const _coMorgenStr = localDateStr(_coMorgen);
   const _coMorgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coMorgenStr) || null;
   const _coMorgenNaam = _coMorgenWpEntry ? wpGetDisplay(_coMorgenWpEntry.schemaId).naam : null;
 
@@ -460,7 +460,7 @@ function renderTomorrowAdvice(text) {
 
   // Weekplanning voor morgen
   const morgenDate = new Date(); morgenDate.setDate(morgenDate.getDate() + 1);
-  const morgenStr = morgenDate.toISOString().split('T')[0];
+  const morgenStr = localDateStr(morgenDate);
   const morgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === morgenStr; }) || null;
   const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
   const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
@@ -501,7 +501,7 @@ function renderTomorrowAdvice(text) {
 
 function renderTomorrowFallback() {
   const morgenDate = new Date(); morgenDate.setDate(morgenDate.getDate() + 1);
-  const morgenStr = morgenDate.toISOString().split('T')[0];
+  const morgenStr = localDateStr(morgenDate);
   const morgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === morgenStr; }) || null;
   const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
   const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];

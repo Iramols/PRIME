@@ -246,7 +246,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
 function wpdRefreshNaVerwijderen(dateStr) {
   renderWeekplanning();
   try {
-    if (dateStr === new Date().toISOString().split('T')[0] && document.getElementById('training-dag-list')) {
+    if (dateStr === localDateStr() && document.getElementById('training-dag-list')) {
       renderTrainingDag();
       updateTrainingDagBadge();
     }

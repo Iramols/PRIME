@@ -4,7 +4,7 @@
 // als bij Voeding per dag bewaard blijven en dus ook (net als foodDays)
 // naar andere datums gekopieerd kunnen worden (zie wpConfirmTrainingCopy
 // in weekplanning.js).
-function _trainingToday() { return new Date().toISOString().split('T')[0]; }
+function _trainingToday() { return localDateStr(); }
 function persistTrainingDag() {
   trainingDays[currentTrainingDate] = trainingDagLog;
   syncSet('prime_training_days', trainingDays);
@@ -644,7 +644,7 @@ function addExerciseFromDetailModal() {
 function updateTrainingDagBadge() {
   const tab = document.getElementById('ttab-dag');
   if (!tab) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
   const wpVerwijderd = wpGetRemoved(today);
   const wpCount = wpEntry ? (wpGetOefeningen(wpEntry.schemaId) || []).filter(function(_, i) { return !wpVerwijderd.includes(i); }).length : 0;
@@ -689,7 +689,7 @@ function renderTrainingDag() {
   trainingDagLog = trainingDays[currentTrainingDate] || [];
 
   // Weekplanning oefeningen voor vandaag
-  const _dagToday = new Date().toISOString().split('T')[0];
+  const _dagToday = localDateStr();
   const _dagWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _dagToday) || null;
   const _dagWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_dagToday] || [];
   const _dagWpOef = _dagWpEntry ? (wpGetOefeningen(_dagWpEntry.schemaId) || []) : [];

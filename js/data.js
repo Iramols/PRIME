@@ -1,4 +1,20 @@
 
+// Lokale kalenderdag als "YYYY-MM-DD" -- NIET hetzelfde als
+// date.toISOString().split('T')[0], die geeft de UTC-dag. Voor gebruikers
+// ten oosten van UTC (o.a. Nederland, UTC+1/+2) loopt de kalenderdag lokaal
+// al door terwijl het in UTC nog de vorige dag is (bv. tussen 00:00-02:00
+// zomertijd) -- toISOString() gaf dan bv. "zaterdag" terwijl het lokaal al
+// zondag was, met precies dat effect op alle "vandaag"/"morgen"-datumsleutels
+// door de hele app (trainingDays, foodDays, prime_today, streak, enz.). Deze
+// functie schuift het tijdzone-verschil eerst weg zodat de datumstring wél
+// de lokale kalenderdag geeft. Gebruikt i.p.v. rechtstreeks
+// date.toISOString().split('T')[0] overal waar een datum als sleutel wordt
+// opgeslagen of vergeleken.
+function localDateStr(d) {
+  d = d || new Date();
+  const tzOffsetMs = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffsetMs).toISOString().split('T')[0];
+}
 
 // ========== EXTRA OEFENINGEN ==========
 const EXTRA_EXERCISES = [

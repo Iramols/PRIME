@@ -343,7 +343,7 @@ function renderProgrammaVoortgang() {
     return;
   }
 
-  const vandaag = new Date().toISOString().split('T')[0];
+  const vandaag = localDateStr();
 
   // ── Stats ──
   const verleden = geplanning.filter(p => p.date < vandaag);
@@ -379,7 +379,7 @@ function renderProgrammaVoortgang() {
     const wd = d.getDay();
     const mon = new Date(d);
     mon.setDate(d.getDate() - (wd === 0 ? 6 : wd - 1));
-    const key = mon.toISOString().split('T')[0];
+    const key = localDateStr(mon);
     if (!weken.has(key)) weken.set(key, []);
     weken.get(key).push(item);
   });
@@ -440,14 +440,14 @@ function renderProgrammaVoortgang() {
 function calcStreak() {
   if (!history.length) return 0;
   let streak = 0;
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const dates = history.map(h => h.date);
   let check = today;
   for (let i = 0; i < 60; i++) {
     if (dates.includes(check)) { streak++; }
     else if (i > 0) break;
-    const d = new Date(check); d.setDate(d.getDate() - 1);
-    check = d.toISOString().split('T')[0];
+    const d = new Date(check + 'T00:00:00'); d.setDate(d.getDate() - 1);
+    check = localDateStr(d);
   }
   return streak;
 }

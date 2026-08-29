@@ -24,8 +24,7 @@ function getAllProducts() {
 // dat vandaag ("Mijn dag"); vanuit Weekplanning kan een andere datum
 // tijdelijk actief gezet worden om voor die dag voeding toe te voegen.
 function fdTodayStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  return localDateStr();
 }
 
 function persistDayLog() {
