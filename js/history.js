@@ -31,7 +31,8 @@ function renderHistory() {
     const sig = document.getElementById('h-signals'); if (sig) sig.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('history.noData') + '</div>';
     const ec = document.getElementById('energy-chart'); if (ec) ec.innerHTML = '';
     const wc = document.getElementById('weight-chart'); if (wc) wc.innerHTML = '';
-    document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:14px">' + t('history.noDataYet') + '</div>';
+    const cc = document.getElementById('calorie-trend-chart'); if (cc) cc.innerHTML = '';
+    const ct = document.getElementById('calorie-trend-toggles'); if (ct) ct.innerHTML = '';
     return;
   }
 
@@ -130,26 +131,8 @@ function renderHistory() {
   // ── Gewicht grafiek ──
   renderWeightChart();
 
-  // ── Dag-voor-dag lijst ──
-  document.getElementById('history-list').innerHTML = history.slice(0,30).map(function(h) {
-    const d = new Date(h.date);
-    const dateStr = d.toLocaleDateString(dateLocale(), { weekday:'short', day:'numeric', month:'short' });
-    const co = h.checkout;
-    const ci = h.checkin;
-    return '<div class="history-item" style="padding:12px 0;border-bottom:0.5px solid var(--sand-dark);display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:start">'
-      + '<div style="font-size:12px;font-weight:500">' + dateStr + '</div>'
-      + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">'
-      + (co ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;background:' + (co.training===3?'var(--sage)':co.training===2?'#f39c12':'#e74c3c') + ';color:white" title="' + t('history.title.training') + '">' + (co.training===3?t('history.trainingBadge.full'):co.training===2?t('history.trainingBadge.partial'):t('history.trainingBadge.none')) + '</span>' : '')
-      + (co ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;background:' + (co.food===3?'var(--sage)':co.food===4?'#e74c3c':co.food===2?'#f39c12':'#e74c3c') + ';color:white" title="' + t('history.title.food') + '">' + (co.food===3?t('history.foodBadge.onTarget'):co.food===4?t('history.foodBadge.over'):co.food===2?t('history.foodBadge.under'):t('history.foodBadge.none')) + '</span>' : '')
-      + '</div>'
-      + '<div style="font-size:12px;color:var(--muted)">'
-      + (ci ? '<span title="' + t('history.title.sleep') + '">😴' + ci.sleep + '</span> <span title="' + t('history.title.energy') + '">⚡' + ci.energy + '</span> <span title="' + t('history.title.stress') + '">🧘' + ci.stress + '</span>' + (ci.weight ? ' <span style="color:var(--sage)">⚖️ ' + ci.weight + 'kg</span>' : '') : '')
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--muted);text-align:right">'
-      + (co ? '<span>' + (['🪴','😑','⚡','🔥'][co.energy-1]||'') + ' ' + t('history.energyEodSuffix') + '</span>' : '<span style="color:var(--sand-dark)">' + t('history.noCheckout') + '</span>')
-      + '</div>'
-      + '</div>';
-  }).join('');
+  // ── Calorietrend grafiek (eiwit/vet/koolhydraten) ──
+  renderCalorieTrendChart();
 }
 
 function renderEnergyChart() {
@@ -283,6 +266,103 @@ function renderWeightChart() {
       ${grid}
       <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
+      ${xLabels}
+    </svg>`;
+}
+
+// Zichtbaarheid van de drie macro-lijnen in de calorietrend-grafiek
+// (Statistieken). Op module-niveau onthouden zodat aan/uitvinken alleen de
+// grafiek zelf herrendert, niet de hele Voortgang-pagina.
+let calorieTrendVisible = { prot: true, fat: true, carb: true };
+
+function toggleCalorieTrendSeries(key) {
+  calorieTrendVisible[key] = !calorieTrendVisible[key];
+  renderCalorieTrendChart();
+}
+
+// Calorietrend-grafiek: eiwit/vet/koolhydraten per dag (in gram), elk apart
+// aan/uit te vinken. Bron is foodDays (state.js) -- de daadwerkelijk gelogde
+// producten/gerechten per datum -- in plaats van de grove ✓/½/✗-indicatie uit
+// checkout.food, zodat de trend de echte hoeveelheden toont.
+function renderCalorieTrendChart() {
+  const toggleEl = document.getElementById('calorie-trend-toggles');
+  const chartEl = document.getElementById('calorie-trend-chart');
+  if (!chartEl) return;
+
+  const SERIES = [
+    { key:'prot', label:'E', color:'#2196F3' },
+    { key:'fat',  label:'V', color:'#FF5722' },
+    { key:'carb', label:'K', color:'#E91E8C' },
+  ];
+
+  if (toggleEl) {
+    toggleEl.innerHTML = SERIES.map(s => `
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${calorieTrendVisible[s.key] ? s.color : 'var(--muted)'};cursor:pointer">
+        <input type="checkbox" ${calorieTrendVisible[s.key] ? 'checked' : ''} onchange="toggleCalorieTrendSeries('${s.key}')" style="accent-color:${s.color};width:14px;height:14px;cursor:pointer">${s.label}
+      </label>`).join('');
+  }
+
+  const data = Object.keys(foodDays)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length)
+    .sort()
+    .slice(-30)
+    .map(dateStr => {
+      const tot = foodDays[dateStr].reduce((a,i) => ({
+        prot: a.prot + (i.prot||0), carb: a.carb + (i.carb||0), fat: a.fat + (i.fat||0)
+      }), { prot:0, carb:0, fat:0 });
+      return { date: dateStr, prot: Math.round(tot.prot), carb: Math.round(tot.carb), fat: Math.round(tot.fat) };
+    });
+
+  if (data.length < 2) {
+    chartEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.calorieChartHint') + '</div>';
+    return;
+  }
+
+  const actieveSeries = SERIES.filter(s => calorieTrendVisible[s.key]);
+  if (!actieveSeries.length) {
+    chartEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.calorieChartNoneSelected') + '</div>';
+    return;
+  }
+
+  const alleWaarden = data.flatMap(d => actieveSeries.map(s => d[s.key]));
+  const maxV = Math.max(...alleWaarden, 1);
+
+  const W = 300, H = 130;
+  const padL = 30, padR = 10, padT = 10, padB = 22;
+  const cW = W - padL - padR;
+  const cH = H - padT - padB;
+  const n = data.length;
+
+  const yMax = Math.max(Math.ceil(maxV * 1.15 / 20) * 20, 20);
+  const xPos = i => padL + (n === 1 ? cW / 2 : i * cW / (n - 1));
+  const yPos = v => padT + cH - (v / yMax) * cH;
+
+  const stepSize = yMax <= 100 ? 20 : yMax <= 300 ? 50 : 100;
+  const gridLines = [];
+  for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
+
+  const grid = gridLines.map(v => `
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
+  `).join('');
+
+  const lijnen = actieveSeries.map(s => {
+    const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
+    const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yPos(d[s.key])}" r="3" fill="${s.color}" stroke="white" stroke-width="1"/>`).join('');
+    return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
+  }).join('');
+
+  const step = Math.max(1, Math.floor(n / 6));
+  const xLabels = data.map((d, i) => {
+    if (i % step !== 0 && i !== n - 1) return '';
+    const dt = new Date(d.date + 'T00:00:00');
+    return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${dt.getDate()}/${dt.getMonth() + 1}</text>`;
+  }).join('');
+
+  chartEl.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      ${grid}
+      ${lijnen}
       ${xLabels}
     </svg>`;
 }

@@ -807,6 +807,18 @@
     <div id="weight-chart"></div>
   </div>
 
+  <!-- CALORIETREND GRAFIEK (Eiwit/Vet/Koolhydraten) -->
+  <div class="card" style="margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:2px">
+      <div>
+        <div class="card-label" style="margin-bottom:2px" data-i18n="history.calorieTrendTitle">Calorietrend</div>
+        <div style="font-size:12px;color:var(--muted)" data-i18n="history.calorieTrendSub">Eiwit / vet / koolhydraten per dag, in gram (max. 30 dagen)</div>
+      </div>
+      <div id="calorie-trend-toggles" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+    </div>
+    <div id="calorie-trend-chart" style="margin-top:12px"></div>
+  </div>
+
   <!-- VOEDING -->
   <div class="card" style="margin-bottom:18px">
     <div class="card-label" style="margin-bottom:14px" data-i18n="history.nutritionTitle">Voeding</div>
@@ -838,12 +850,6 @@
     <div id="h-signals">
       <div style="font-size:14px;color:var(--muted)" data-i18n="history.noData">Nog geen data beschikbaar.</div>
     </div>
-  </div>
-
-  <!-- DAGELIJKSE GESCHIEDENIS -->
-  <div class="card">
-    <div class="card-label" style="margin-bottom:14px" data-i18n="history.dayByDay">Dag-voor-dag overzicht</div>
-    <div id="history-list"></div>
   </div>
 
   </div><!-- /hstab-content-stats -->
