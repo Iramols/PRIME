@@ -270,29 +270,37 @@ function renderWeightChart() {
     </svg>`;
 }
 
-// Zichtbaarheid van de drie macro-lijnen in de calorietrend-grafiek
-// (Statistieken). Op module-niveau onthouden zodat aan/uitvinken alleen de
-// grafiek zelf herrendert, niet de hele Voortgang-pagina.
-let calorieTrendVisible = { prot: true, fat: true, carb: true };
+// Zichtbaarheid van de vier lijnen in de calorietrend-grafiek (Statistieken).
+// Op module-niveau onthouden zodat aan/uitvinken alleen de grafiek zelf
+// herrendert, niet de hele Voortgang-pagina.
+let calorieTrendVisible = { kcal: true, prot: true, fat: true, carb: true };
 
 function toggleCalorieTrendSeries(key) {
   calorieTrendVisible[key] = !calorieTrendVisible[key];
   renderCalorieTrendChart();
 }
 
-// Calorietrend-grafiek: eiwit/vet/koolhydraten per dag (in gram), elk apart
-// aan/uit te vinken. Bron is foodDays (state.js) -- de daadwerkelijk gelogde
-// producten/gerechten per datum -- in plaats van de grove ✓/½/✗-indicatie uit
-// checkout.food, zodat de trend de echte hoeveelheden toont.
+// Calorietrend-grafiek: calorieën (kcal) + eiwit/vet/koolhydraten (gram) per
+// dag, elk apart aan/uit te vinken. Bron is foodDays (state.js) -- de
+// daadwerkelijk gelogde producten/gerechten per datum -- in plaats van de
+// grove ✓/½/✗-indicatie uit checkout.food, zodat de trend de echte
+// hoeveelheden toont.
+//
+// Kcal staat op een heel andere schaal dan grammen (duizenden vs. tientallen),
+// dus die krijgt een eigen rechter y-as (dubbele as, zelfde raster/hoogte
+// gedeeld met de linker gram-as, maar elke kant met zijn eigen schaal/
+// labels). Staat alleen kcal aan (geen enkele gram-lijn), dan wordt kcal
+// gewoon de linker (enige) as -- geen dode rechter as tonen.
 function renderCalorieTrendChart() {
   const toggleEl = document.getElementById('calorie-trend-toggles');
   const chartEl = document.getElementById('calorie-trend-chart');
   if (!chartEl) return;
 
   const SERIES = [
-    { key:'prot', label:'E', color:'#2196F3' },
-    { key:'fat',  label:'V', color:'#FF5722' },
-    { key:'carb', label:'K', color:'#E91E8C' },
+    { key:'kcal', label:'Kcal', color:'#4CAF50', gram:false },
+    { key:'prot', label:'E',    color:'#2196F3', gram:true },
+    { key:'fat',  label:'V',    color:'#FF5722', gram:true },
+    { key:'carb', label:'K',    color:'#E91E8C', gram:true },
   ];
 
   if (toggleEl) {
@@ -308,9 +316,9 @@ function renderCalorieTrendChart() {
     .slice(-30)
     .map(dateStr => {
       const tot = foodDays[dateStr].reduce((a,i) => ({
-        prot: a.prot + (i.prot||0), carb: a.carb + (i.carb||0), fat: a.fat + (i.fat||0)
-      }), { prot:0, carb:0, fat:0 });
-      return { date: dateStr, prot: Math.round(tot.prot), carb: Math.round(tot.carb), fat: Math.round(tot.fat) };
+        kcal: a.kcal + (i.kcal||0), prot: a.prot + (i.prot||0), carb: a.carb + (i.carb||0), fat: a.fat + (i.fat||0)
+      }), { kcal:0, prot:0, carb:0, fat:0 });
+      return { date: dateStr, kcal: Math.round(tot.kcal), prot: Math.round(tot.prot), carb: Math.round(tot.carb), fat: Math.round(tot.fat) };
     });
 
   if (data.length < 2) {
@@ -324,31 +332,50 @@ function renderCalorieTrendChart() {
     return;
   }
 
-  const alleWaarden = data.flatMap(d => actieveSeries.map(s => d[s.key]));
-  const maxV = Math.max(...alleWaarden, 1);
+  const actieveGram = actieveSeries.filter(s => s.gram);
+  const kcalActief = calorieTrendVisible.kcal;
+  // Dubbele as alleen als kcal ÉN minstens één gram-lijn tegelijk aan staan.
+  const dubbeleAs = kcalActief && actieveGram.length > 0;
 
   const W = 300, H = 130;
-  const padL = 30, padR = 10, padT = 10, padB = 22;
+  const padL = 32, padR = dubbeleAs ? 32 : 10, padT = 10, padB = 22;
   const cW = W - padL - padR;
   const cH = H - padT - padB;
   const n = data.length;
-
-  const yMax = Math.max(Math.ceil(maxV * 1.15 / 20) * 20, 20);
   const xPos = i => padL + (n === 1 ? cW / 2 : i * cW / (n - 1));
-  const yPos = v => padT + cH - (v / yMax) * cH;
 
-  const stepSize = yMax <= 100 ? 20 : yMax <= 300 ? 50 : 100;
+  const rond = (max, stap) => Math.max(Math.ceil(max * 1.15 / stap) * stap, stap);
+
+  // Linker as: grammen als er gram-lijnen actief zijn, anders (alleen kcal
+  // aan) kcal zelf als enige as.
+  const gramMax = actieveGram.length ? Math.max(...data.flatMap(d => actieveGram.map(s => d[s.key])), 1) : 0;
+  const kcalMax = kcalActief ? Math.max(...data.map(d => d.kcal), 1) : 0;
+
+  const linksMax = actieveGram.length ? rond(gramMax, 20) : rond(kcalMax, 100);
+  const linksStap = actieveGram.length ? (linksMax <= 100 ? 20 : linksMax <= 300 ? 50 : 100) : (linksMax <= 1000 ? 100 : 500);
+  const rechtsMax = dubbeleAs ? rond(kcalMax, 100) : 0;
+
+  const yPosLinks = v => padT + cH - (v / linksMax) * cH;
+  // yPos voor een reeks: kcal gebruikt de rechter as als er een dubbele as is,
+  // anders (kcal is dan de enige/linker as) gewoon de linker as.
+  const yPos = s => v => (s.key === 'kcal' && dubbeleAs) ? (padT + cH - (v / rechtsMax) * cH) : yPosLinks(v);
+
   const gridLines = [];
-  for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
+  for (let v = 0; v <= linksMax; v += linksStap) gridLines.push(v);
 
-  const grid = gridLines.map(v => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
-    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
-  `).join('');
+  const grid = gridLines.map(v => {
+    const frac = v / linksMax;
+    const rechtsLabel = dubbeleAs ? `<text x="${W - padR + 4}" y="${yPosLinks(v) + 4}" text-anchor="start" font-size="9" fill="#aaa">${Math.round(frac * rechtsMax)}</text>` : '';
+    return `
+    <line x1="${padL}" y1="${yPosLinks(v)}" x2="${W - padR}" y2="${yPosLinks(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <text x="${padL - 4}" y="${yPosLinks(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
+    ${rechtsLabel}`;
+  }).join('');
 
   const lijnen = actieveSeries.map(s => {
-    const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
-    const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yPos(d[s.key])}" r="3" fill="${s.color}" stroke="white" stroke-width="1"/>`).join('');
+    const yp = yPos(s);
+    const pts = data.map((d, i) => `${xPos(i)},${yp(d[s.key])}`).join(' ');
+    const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yp(d[s.key])}" r="3" fill="${s.color}" stroke="white" stroke-width="1"/>`).join('');
     return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
   }).join('');
 
