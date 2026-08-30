@@ -116,13 +116,8 @@ function newLogId() {
 // testmaaltijden bestaat die aanbeveling niet meer — dus geen reset meer,
 // anders verdwijnen zelf toegevoegde gerechten bij elke home-render.
 function renderFood() {
-  document.getElementById('no-checkin-food').style.display = 'none';
   document.getElementById('food-content').style.display = 'block';
-  document.getElementById('food-subtitle').textContent = {
-    herstel:t('food.subtitle.recovery'),
-    normaal:t('food.subtitle.normal'),
-    zwaar:t('food.subtitle.heavy')
-  }[trainingType];
+  document.getElementById('food-subtitle').textContent = t('food.subtitle');
   renderMealPlan();
   updateMacroTotals();
 }

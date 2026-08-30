@@ -33,6 +33,10 @@ function go(screen) {
   if (screen === 'training') switchTrainingTab('dag');
   if (screen === 'beheer') { switchBeheerTab('training'); }
   if (screen === 'voeding') {
+    // Voeding is altijd direct toegankelijk, ook zonder dat de dagelijkse
+    // check-in is gedaan -- renderFood() toont het scherm zelf (geen
+    // "eerst check-in doen"-blokkade meer) en zet o.a. het kcal-doel.
+    renderFood();
     // Herbouw welke Voeding-tab nu ook actief is (bv. bij taalwissel),
     // i.p.v. altijd terug te springen naar de eerste tab.
     if (document.getElementById('foodtab-plan')?.style.display !== 'none') renderMealPlan();

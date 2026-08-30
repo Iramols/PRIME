@@ -146,10 +146,7 @@ const I18N = {
 
     // Voeding
     'food.title': 'Maaltijdplanner',
-    'food.subtitle': 'Afgestemd op jouw check-in en doelen',
-    'food.noCheckin.title': 'Doe eerst je check-in',
-    'food.noCheckin.hint': 'Je maaltijdplan wordt afgestemd op jouw energie en doelen.',
-    'food.noCheckin.cta': 'Naar check-in →',
+    'food.subtitle': 'Jouw persoonlijke voedingsdoel',
     'food.nutrients.title': 'Calorie en nutriënten inname',
     'food.nutrient.calories': 'Calorieën',
     'food.nutrient.carbs': 'Koolhydraten',
@@ -224,7 +221,7 @@ const I18N = {
     'history.weightTitle': '⚖️ Gewicht',
     'history.weightSub': 'Trend over tijd (max. 30 metingen)',
     'history.calorieTrendTitle': 'Calorietrend',
-    'history.calorieTrendSub': 'Gelogde calorieën per dag (max. 30 dagen)',
+    'history.calorieTrendSub': 'Gelogde calorieën per dag · stippellijn = min/max-doel (max. 30 dagen)',
     'history.macroTrendTitle': 'Macrotrend',
     'history.macroTrendSub': 'Eiwit / vet / koolhydraten per dag, in gram (max. 30 dagen)',
     'history.nutritionTitle': 'Voeding',
@@ -532,9 +529,6 @@ const I18N = {
     'training.restLabel': 'Rust:',
 
     // Voeding (food.js)
-    'food.subtitle.recovery': 'Hersteldag — licht & eiwitrijk',
-    'food.subtitle.normal': 'Normale dag — gebalanceerd',
-    'food.subtitle.heavy': 'Zware trainingsdag — energie geladen',
     'food.mealName.avond': 'Avondeten',
     'food.per100': 'per 100g',
     'portion.choiceLabel': 'Keuze',
@@ -776,10 +770,7 @@ const I18N = {
     'training.progress': 'Progress',
 
     'food.title': 'Meal planner',
-    'food.subtitle': 'Tailored to your check-in and goals',
-    'food.noCheckin.title': 'Do your check-in first',
-    'food.noCheckin.hint': 'Your meal plan will be tailored to your energy and goals.',
-    'food.noCheckin.cta': 'Go to check-in →',
+    'food.subtitle': 'Your personal nutrition goal',
     'food.nutrients.title': 'Calorie and nutrient intake',
     'food.nutrient.calories': 'Calories',
     'food.nutrient.carbs': 'Carbohydrates',
@@ -852,7 +843,7 @@ const I18N = {
     'history.weightTitle': '⚖️ Weight',
     'history.weightSub': 'Trend over time (max. 30 measurements)',
     'history.calorieTrendTitle': 'Calorie trend',
-    'history.calorieTrendSub': 'Logged calories per day (max. 30 days)',
+    'history.calorieTrendSub': 'Logged calories per day · dashed line = min/max target (max. 30 days)',
     'history.macroTrendTitle': 'Macro trend',
     'history.macroTrendSub': 'Protein / fat / carbs per day, in grams (max. 30 days)',
     'history.nutritionTitle': 'Nutrition',
@@ -1157,9 +1148,6 @@ const I18N = {
     'training.restLabel': 'Rest:',
 
     // Voeding (food.js)
-    'food.subtitle.recovery': 'Recovery day — light & protein-rich',
-    'food.subtitle.normal': 'Normal day — balanced',
-    'food.subtitle.heavy': 'Heavy training day — energy loaded',
     'food.mealName.avond': 'Dinner',
     'food.per100': 'per 100g',
     'portion.choiceLabel': 'Choice',

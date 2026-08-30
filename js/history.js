@@ -276,7 +276,10 @@ function renderWeightChart() {
 
 // Calorietrend-grafiek: totaal gelogde kcal per dag. Bron is foodDays
 // (state.js) -- de daadwerkelijk gelogde producten/gerechten per datum --
-// zelfde inline-SVG-stijl als de Energie-/Gewichtgrafiek hierboven.
+// zelfde inline-SVG-stijl als de Energie-/Gewichtgrafiek hierboven. Toont
+// ook het kcal-doel (getDagDoel()) als min/max-band met stippellijnen
+// (±10%, dezelfde marge als de "Doel: X–Y kcal"-weergave bij Voeding), zodat
+// in één oogopslag te zien is welke dagen binnen of buiten die band vielen.
 function renderKcalTrendChart() {
   const el = document.getElementById('kcal-trend-chart');
   if (!el) return;
@@ -295,13 +298,19 @@ function renderKcalTrendChart() {
     return;
   }
 
+  const doel = getDagDoel();
+  const minLimiet = Math.round(doel.kcal * 0.9);
+  const maxLimiet = Math.round(doel.kcal * 1.1);
+
   const W = 300, H = 110;
   const padL = 34, padR = 10, padT = 10, padB = 22;
   const cW = W - padL - padR;
   const cH = H - padT - padB;
   const n = data.length;
 
-  const maxKcal = Math.max(...data.map(d => d.kcal), 1);
+  // yMax houdt ook rekening met de limietlijnen, anders vallen die buiten
+  // beeld als alle gelogde dagen (ver) onder het doel zaten.
+  const maxKcal = Math.max(...data.map(d => d.kcal), maxLimiet, 1);
   const yMax = Math.max(Math.ceil(maxKcal * 1.15 / 500) * 500, 500);
   const stepSize = yMax <= 2000 ? 500 : 1000;
 
@@ -314,6 +323,11 @@ function renderKcalTrendChart() {
   const grid = gridLines.map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
+  `).join('');
+
+  const limietLijnen = [minLimiet, maxLimiet].map(v => `
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#f39c12" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="${W - padR}" y="${yPos(v) - 3}" text-anchor="end" font-size="8" fill="#f39c12">${v}</text>
   `).join('');
 
   const pts = data.map((d, i) => `${xPos(i)},${yPos(d.kcal)}`).join(' ');
@@ -329,6 +343,7 @@ function renderKcalTrendChart() {
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
       ${grid}
+      ${limietLijnen}
       <polyline points="${pts}" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
       ${xLabels}
