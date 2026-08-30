@@ -1369,7 +1369,7 @@ function renderLogItemCard(dateStr, item) {
         <div style="flex:1;min-width:120px">
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)}</div>
           <div style="font-size:11px;color:var(--muted)">
-            ${item.type === 'meal' ? t('food.log.mealTag') : item.gram + 'g'} · ${item.kcal} kcal
+            ${item.type === 'meal' ? t('food.log.mealTag') + ' · ' : ''}${item.gram}g · ${item.kcal} kcal
           </div>
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
