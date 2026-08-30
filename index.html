@@ -807,16 +807,23 @@
     <div id="weight-chart"></div>
   </div>
 
-  <!-- CALORIETREND GRAFIEK (Eiwit/Vet/Koolhydraten) -->
+  <!-- CALORIETREND GRAFIEK (kcal) -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-label" style="margin-bottom:2px" data-i18n="history.calorieTrendTitle">Calorietrend</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px" data-i18n="history.calorieTrendSub">Gelogde calorieën per dag (max. 30 dagen)</div>
+    <div id="kcal-trend-chart"></div>
+  </div>
+
+  <!-- MACROTREND GRAFIEK (Eiwit/Vet/Koolhydraten) -->
   <div class="card" style="margin-bottom:18px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:2px">
       <div>
-        <div class="card-label" style="margin-bottom:2px" data-i18n="history.calorieTrendTitle">Calorietrend</div>
-        <div style="font-size:12px;color:var(--muted)" data-i18n="history.calorieTrendSub">Calorieën, eiwit, vet en koolhydraten per dag (max. 30 dagen)</div>
+        <div class="card-label" style="margin-bottom:2px" data-i18n="history.macroTrendTitle">Macrotrend</div>
+        <div style="font-size:12px;color:var(--muted)" data-i18n="history.macroTrendSub">Eiwit / vet / koolhydraten per dag, in gram (max. 30 dagen)</div>
       </div>
-      <div id="calorie-trend-toggles" style="display:flex;gap:12px;flex-wrap:wrap"></div>
+      <div id="macro-trend-toggles" style="display:flex;gap:12px;flex-wrap:wrap"></div>
     </div>
-    <div id="calorie-trend-chart" style="margin-top:12px"></div>
+    <div id="macro-trend-chart" style="margin-top:12px"></div>
   </div>
 
   <!-- VOEDING -->

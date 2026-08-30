@@ -31,8 +31,9 @@ function renderHistory() {
     const sig = document.getElementById('h-signals'); if (sig) sig.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('history.noData') + '</div>';
     const ec = document.getElementById('energy-chart'); if (ec) ec.innerHTML = '';
     const wc = document.getElementById('weight-chart'); if (wc) wc.innerHTML = '';
-    const cc = document.getElementById('calorie-trend-chart'); if (cc) cc.innerHTML = '';
-    const ct = document.getElementById('calorie-trend-toggles'); if (ct) ct.innerHTML = '';
+    const kc = document.getElementById('kcal-trend-chart'); if (kc) kc.innerHTML = '';
+    const mc = document.getElementById('macro-trend-chart'); if (mc) mc.innerHTML = '';
+    const mt = document.getElementById('macro-trend-toggles'); if (mt) mt.innerHTML = '';
     return;
   }
 
@@ -131,8 +132,11 @@ function renderHistory() {
   // ── Gewicht grafiek ──
   renderWeightChart();
 
-  // ── Calorietrend grafiek (eiwit/vet/koolhydraten) ──
-  renderCalorieTrendChart();
+  // ── Calorietrend grafiek (kcal) ──
+  renderKcalTrendChart();
+
+  // ── Macrotrend grafiek (eiwit/vet/koolhydraten) ──
+  renderMacroTrendChart();
 }
 
 function renderEnergyChart() {
@@ -270,43 +274,96 @@ function renderWeightChart() {
     </svg>`;
 }
 
-// Zichtbaarheid van de vier lijnen in de calorietrend-grafiek (Statistieken).
-// Op module-niveau onthouden zodat aan/uitvinken alleen de grafiek zelf
-// herrendert, niet de hele Voortgang-pagina.
-let calorieTrendVisible = { kcal: true, prot: true, fat: true, carb: true };
+// Calorietrend-grafiek: totaal gelogde kcal per dag. Bron is foodDays
+// (state.js) -- de daadwerkelijk gelogde producten/gerechten per datum --
+// zelfde inline-SVG-stijl als de Energie-/Gewichtgrafiek hierboven.
+function renderKcalTrendChart() {
+  const el = document.getElementById('kcal-trend-chart');
+  if (!el) return;
 
-function toggleCalorieTrendSeries(key) {
-  calorieTrendVisible[key] = !calorieTrendVisible[key];
-  renderCalorieTrendChart();
+  const data = Object.keys(foodDays)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length)
+    .sort()
+    .slice(-30)
+    .map(dateStr => ({
+      date: dateStr,
+      kcal: Math.round(foodDays[dateStr].reduce((a,i) => a + (i.kcal||0), 0))
+    }));
+
+  if (data.length < 2) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.calorieChartHint') + '</div>';
+    return;
+  }
+
+  const W = 300, H = 110;
+  const padL = 34, padR = 10, padT = 10, padB = 22;
+  const cW = W - padL - padR;
+  const cH = H - padT - padB;
+  const n = data.length;
+
+  const maxKcal = Math.max(...data.map(d => d.kcal), 1);
+  const yMax = Math.max(Math.ceil(maxKcal * 1.15 / 500) * 500, 500);
+  const stepSize = yMax <= 2000 ? 500 : 1000;
+
+  const xPos = i => padL + (n === 1 ? cW / 2 : i * cW / (n - 1));
+  const yPos = v => padT + cH - (v / yMax) * cH;
+
+  const gridLines = [];
+  for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
+
+  const grid = gridLines.map(v => `
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
+  `).join('');
+
+  const pts = data.map((d, i) => `${xPos(i)},${yPos(d.kcal)}`).join(' ');
+  const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yPos(d.kcal)}" r="3.5" fill="#4CAF50" stroke="white" stroke-width="1.2"/>`).join('');
+
+  const step = Math.max(1, Math.floor(n / 6));
+  const xLabels = data.map((d, i) => {
+    if (i % step !== 0 && i !== n - 1) return '';
+    const dt = new Date(d.date + 'T00:00:00');
+    return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${dt.getDate()}/${dt.getMonth() + 1}</text>`;
+  }).join('');
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      ${grid}
+      <polyline points="${pts}" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+      ${xLabels}
+    </svg>`;
 }
 
-// Calorietrend-grafiek: calorieën (kcal) + eiwit/vet/koolhydraten (gram) per
-// dag, elk apart aan/uit te vinken. Bron is foodDays (state.js) -- de
-// daadwerkelijk gelogde producten/gerechten per datum -- in plaats van de
-// grove ✓/½/✗-indicatie uit checkout.food, zodat de trend de echte
-// hoeveelheden toont.
-//
-// Kcal staat op een heel andere schaal dan grammen (duizenden vs. tientallen),
-// dus die krijgt een eigen rechter y-as (dubbele as, zelfde raster/hoogte
-// gedeeld met de linker gram-as, maar elke kant met zijn eigen schaal/
-// labels). Staat alleen kcal aan (geen enkele gram-lijn), dan wordt kcal
-// gewoon de linker (enige) as -- geen dode rechter as tonen.
-function renderCalorieTrendChart() {
-  const toggleEl = document.getElementById('calorie-trend-toggles');
-  const chartEl = document.getElementById('calorie-trend-chart');
+// Zichtbaarheid van de drie macro-lijnen in de macrotrend-grafiek
+// (Statistieken). Op module-niveau onthouden zodat aan/uitvinken alleen de
+// grafiek zelf herrendert, niet de hele Voortgang-pagina.
+let macroTrendVisible = { prot: true, fat: true, carb: true };
+
+function toggleMacroTrendSeries(key) {
+  macroTrendVisible[key] = !macroTrendVisible[key];
+  renderMacroTrendChart();
+}
+
+// Macrotrend-grafiek: eiwit/vet/koolhydraten per dag (in gram), elk apart
+// aan/uit te vinken. Zelfde bron (foodDays) als de calorietrend hierboven,
+// los getrokken in een eigen grafiek omdat gram en kcal te ver uit elkaar
+// liggen om leesbaar samen op één as te tonen.
+function renderMacroTrendChart() {
+  const toggleEl = document.getElementById('macro-trend-toggles');
+  const chartEl = document.getElementById('macro-trend-chart');
   if (!chartEl) return;
 
   const SERIES = [
-    { key:'kcal', label:'Kcal', color:'#4CAF50', gram:false },
-    { key:'prot', label:'E',    color:'#2196F3', gram:true },
-    { key:'fat',  label:'V',    color:'#FF5722', gram:true },
-    { key:'carb', label:'K',    color:'#E91E8C', gram:true },
+    { key:'prot', label:'E', color:'#2196F3' },
+    { key:'fat',  label:'V', color:'#FF5722' },
+    { key:'carb', label:'K', color:'#E91E8C' },
   ];
 
   if (toggleEl) {
     toggleEl.innerHTML = SERIES.map(s => `
-      <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${calorieTrendVisible[s.key] ? s.color : 'var(--muted)'};cursor:pointer">
-        <input type="checkbox" ${calorieTrendVisible[s.key] ? 'checked' : ''} onchange="toggleCalorieTrendSeries('${s.key}')" style="accent-color:${s.color};width:14px;height:14px;cursor:pointer">${s.label}
+      <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${macroTrendVisible[s.key] ? s.color : 'var(--muted)'};cursor:pointer">
+        <input type="checkbox" ${macroTrendVisible[s.key] ? 'checked' : ''} onchange="toggleMacroTrendSeries('${s.key}')" style="accent-color:${s.color};width:14px;height:14px;cursor:pointer">${s.label}
       </label>`).join('');
   }
 
@@ -316,9 +373,9 @@ function renderCalorieTrendChart() {
     .slice(-30)
     .map(dateStr => {
       const tot = foodDays[dateStr].reduce((a,i) => ({
-        kcal: a.kcal + (i.kcal||0), prot: a.prot + (i.prot||0), carb: a.carb + (i.carb||0), fat: a.fat + (i.fat||0)
-      }), { kcal:0, prot:0, carb:0, fat:0 });
-      return { date: dateStr, kcal: Math.round(tot.kcal), prot: Math.round(tot.prot), carb: Math.round(tot.carb), fat: Math.round(tot.fat) };
+        prot: a.prot + (i.prot||0), carb: a.carb + (i.carb||0), fat: a.fat + (i.fat||0)
+      }), { prot:0, carb:0, fat:0 });
+      return { date: dateStr, prot: Math.round(tot.prot), carb: Math.round(tot.carb), fat: Math.round(tot.fat) };
     });
 
   if (data.length < 2) {
@@ -326,56 +383,37 @@ function renderCalorieTrendChart() {
     return;
   }
 
-  const actieveSeries = SERIES.filter(s => calorieTrendVisible[s.key]);
+  const actieveSeries = SERIES.filter(s => macroTrendVisible[s.key]);
   if (!actieveSeries.length) {
     chartEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.calorieChartNoneSelected') + '</div>';
     return;
   }
 
-  const actieveGram = actieveSeries.filter(s => s.gram);
-  const kcalActief = calorieTrendVisible.kcal;
-  // Dubbele as alleen als kcal ÉN minstens één gram-lijn tegelijk aan staan.
-  const dubbeleAs = kcalActief && actieveGram.length > 0;
+  const alleWaarden = data.flatMap(d => actieveSeries.map(s => d[s.key]));
+  const maxV = Math.max(...alleWaarden, 1);
 
   const W = 300, H = 130;
-  const padL = 32, padR = dubbeleAs ? 32 : 10, padT = 10, padB = 22;
+  const padL = 30, padR = 10, padT = 10, padB = 22;
   const cW = W - padL - padR;
   const cH = H - padT - padB;
   const n = data.length;
+
+  const yMax = Math.max(Math.ceil(maxV * 1.15 / 20) * 20, 20);
   const xPos = i => padL + (n === 1 ? cW / 2 : i * cW / (n - 1));
+  const yPos = v => padT + cH - (v / yMax) * cH;
 
-  const rond = (max, stap) => Math.max(Math.ceil(max * 1.15 / stap) * stap, stap);
-
-  // Linker as: grammen als er gram-lijnen actief zijn, anders (alleen kcal
-  // aan) kcal zelf als enige as.
-  const gramMax = actieveGram.length ? Math.max(...data.flatMap(d => actieveGram.map(s => d[s.key])), 1) : 0;
-  const kcalMax = kcalActief ? Math.max(...data.map(d => d.kcal), 1) : 0;
-
-  const linksMax = actieveGram.length ? rond(gramMax, 20) : rond(kcalMax, 100);
-  const linksStap = actieveGram.length ? (linksMax <= 100 ? 20 : linksMax <= 300 ? 50 : 100) : (linksMax <= 1000 ? 100 : 500);
-  const rechtsMax = dubbeleAs ? rond(kcalMax, 100) : 0;
-
-  const yPosLinks = v => padT + cH - (v / linksMax) * cH;
-  // yPos voor een reeks: kcal gebruikt de rechter as als er een dubbele as is,
-  // anders (kcal is dan de enige/linker as) gewoon de linker as.
-  const yPos = s => v => (s.key === 'kcal' && dubbeleAs) ? (padT + cH - (v / rechtsMax) * cH) : yPosLinks(v);
-
+  const stepSize = yMax <= 100 ? 20 : yMax <= 300 ? 50 : 100;
   const gridLines = [];
-  for (let v = 0; v <= linksMax; v += linksStap) gridLines.push(v);
+  for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
 
-  const grid = gridLines.map(v => {
-    const frac = v / linksMax;
-    const rechtsLabel = dubbeleAs ? `<text x="${W - padR + 4}" y="${yPosLinks(v) + 4}" text-anchor="start" font-size="9" fill="#aaa">${Math.round(frac * rechtsMax)}</text>` : '';
-    return `
-    <line x1="${padL}" y1="${yPosLinks(v)}" x2="${W - padR}" y2="${yPosLinks(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
-    <text x="${padL - 4}" y="${yPosLinks(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
-    ${rechtsLabel}`;
-  }).join('');
+  const grid = gridLines.map(v => `
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
+  `).join('');
 
   const lijnen = actieveSeries.map(s => {
-    const yp = yPos(s);
-    const pts = data.map((d, i) => `${xPos(i)},${yp(d[s.key])}`).join(' ');
-    const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yp(d[s.key])}" r="3" fill="${s.color}" stroke="white" stroke-width="1"/>`).join('');
+    const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
+    const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yPos(d[s.key])}" r="3" fill="${s.color}" stroke="white" stroke-width="1"/>`).join('');
     return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
   }).join('');
 
