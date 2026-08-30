@@ -355,6 +355,13 @@ async function doCheckout() {
     if (history.length > 60) history.pop();
     syncSet('prime_history', history);
     syncRemove('prime_today');
+    // Ook de in-memory referentie leegmaken -- syncRemove() haalt 'm alleen
+    // uit de opslag. Zonder dit bleef todayData.date === vandaag nog gewoon
+    // waar staan, waardoor een latere renderHome() (bv. bij taalwissel) de
+    // check-out-kaart weer vers/onbeantwoord opbouwde en de dag dus
+    // meermaals afgesloten kon worden. Zie ook de history[0].date-check in
+    // renderHome() (app.js), die dit ook afvangt na een paginaherlaad.
+    todayData = null;
   }
 
   // Weekplanning context voor vandaag

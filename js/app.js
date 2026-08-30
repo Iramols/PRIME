@@ -61,13 +61,24 @@ function renderHome() {
   // Stats
   updateStreak();
 
-  // Check if already checked in today
+  // Check of vandaag al volledig is afgesloten (checkout gedaan, dus als
+  // laatste/eerste item in history staat) -- dan check-in/checkout niet
+  // opnieuw tonen, ook niet als renderHome() om wat voor reden dan ook
+  // opnieuw draait (bv. bij taalwissel, zie i18n.js). Los van de
+  // todayData-check hieronder: die alleen dekte de lopende dag (nog niet
+  // afgesloten) en werd voorheen ten onrechte ook hergebruikt ná checkout,
+  // waardoor je een dag meermaals kon afsluiten.
   const today = localDateStr();
-  if (todayData && todayData.date === today) {
+  const alDagAfgesloten = history.length > 0 && history[0].date === today;
+  const isVandaagActief = !alDagAfgesloten && todayData && todayData.date === today;
+
+  document.getElementById('already-done-section').style.display = alDagAfgesloten ? 'block' : 'none';
+  document.getElementById('day-section').style.display = isVandaagActief ? 'block' : 'none';
+  document.getElementById('checkin-section').style.display = (alDagAfgesloten || isVandaagActief) ? 'none' : 'block';
+
+  if (isVandaagActief) {
     trainingType = todayData.trainingType;
     checkin = todayData.checkin;
-    document.getElementById('checkin-section').style.display = 'none';
-    document.getElementById('day-section').style.display = 'block';
     const _wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
     if (_wpEntry) {
       const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
