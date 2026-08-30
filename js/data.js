@@ -292,54 +292,36 @@ const EXERCISES = {
 
 
 // ========== MAALTIJDPLAN ==========
-// Vaste dagdoelen per energieniveau (kcal/eiwit/koolh/vet) - deze worden
-// overal in de app gebruikt voor voedingsdoelen, ONGEACHT welke gerechten
-// er in de ontbijt/lunch/avond/snack-lijsten staan. De testmaaltijden die
-// hier eerder stonden zijn verwijderd; de coach voegt nu eigen gerechten
-// toe via de "+ Gerecht toevoegen"-tab (zie customMeals in state.js).
+// De ontbijt/lunch/avond/snack-lijsten per type bestaan nog voor een paar
+// legacy plekken (o.a. beheer.js foto-overzicht), maar zijn altijd leeg --
+// de coach voegt gerechten nu toe via de "+ Gerecht toevoegen"-tab (zie
+// customMeals in state.js). Er is GEEN dagdoel meer per type: zie
+// getDagDoel() hieronder, dat volledig losstaat van Herstel/Normaal/Zwaar.
 const MEALS = {
-  herstel: {
-    doel: { kcal:1800, prot:130, carb:170, fat:60 },
-    ontbijt: [], lunch: [], avond: [], snack: []
-  },
-  normaal: {
-    doel: { kcal:2200, prot:160, carb:240, fat:70 },
-    ontbijt: [], lunch: [], avond: [], snack: []
-  },
-  zwaar: {
-    doel: { kcal:2800, prot:200, carb:320, fat:80 },
-    ontbijt: [], lunch: [], avond: [], snack: []
-  }
+  herstel: { ontbijt: [], lunch: [], avond: [], snack: [] },
+  normaal: { ontbijt: [], lunch: [], avond: [], snack: [] },
+  zwaar:   { ontbijt: [], lunch: [], avond: [], snack: [] }
 };
 
-// Bepaalt het dag-doel (kcal/eiwit/koolh/vet) voor het huidige trainingType.
-// Heeft de coach een persoonlijke caloriebehoefte ingevuld in het profiel
-// (profile.calorieBehoefte, zie profile.js), dan vervangt dat getal het
-// kcal-doel VOLLEDIG -- elke dag, ongeacht Herstel/Normaal/Zwaar. Leeg/0 =>
-// ongewijzigd gedrag (kcal-doel via de check-in-presets hierboven).
+// Bepaalt het dag-doel (kcal/eiwit/koolh/vet) -- één vast doel per klant,
+// losstaand van het dagtype (Herstel/Normaal/Zwaar) uit de check-in. Dat
+// dagtype bepaalt nog wél de trainingsintensiteit/oefeningkeuze elders in de
+// app, maar heeft GEEN invloed meer op voedingsdoelen.
 //
-// Eiwit wordt berekend uit het lichaamsgewicht: 1.6-2.0 g/kg, oplopend met
-// het dagtype (herstel 1.6, normaal 1.8, zwaar 2.0 g/kg) -- niet langer een
-// vast getal, zodat het altijd persoonlijk klopt. Koolhydraten en vet vullen
-// de resterende calorieën aan, in dezelfde onderlinge verhouding als het
-// oorspronkelijke MEALS[trainingType].doel-preset (zwaar behoudt zo relatief
-// iets meer koolhydraten, minder vet, enz.) -- zodat eiwit+koolh+vet altijd
-// exact optellen tot het kcal-doel hierboven, ook als dat via
-// profile.calorieBehoefte is overschreven.
-// Gebruikt door checkin.js en food.js i.p.v. rechtstreeks
-// MEALS[trainingType]?.doel te lezen.
+// Kcal: profile.calorieBehoefte (ingevuld in Profiel), of 2000 als die nog
+// leeg staat. Eiwit: vast 1.8 g/kg lichaamsgewicht (profile.weight, of 70kg
+// als dat ontbreekt). Koolhydraten en vet vullen de resterende calorieën
+// aan in een vaste 60/40-verhouding -- zodat eiwit+koolh+vet altijd exact
+// optellen tot het kcal-doel. Gebruikt door checkin.js en food.js.
 function getDagDoel() {
-  const basis = MEALS[trainingType]?.doel || { kcal:2000, prot:150, carb:200, fat:65 };
-  const kcal = (profile.calorieBehoefte && profile.calorieBehoefte > 0) ? profile.calorieBehoefte : basis.kcal;
+  const kcal = (profile.calorieBehoefte && profile.calorieBehoefte > 0) ? profile.calorieBehoefte : 2000;
 
-  const proteinPerKg = { herstel:1.6, normaal:1.8, zwaar:2.0 }[trainingType] || 1.8;
   const gewicht = profile.weight > 0 ? profile.weight : 70;
-  const prot = Math.round(gewicht * proteinPerKg);
+  const prot = Math.round(gewicht * 1.8);
 
   const protKcal = prot * 4;
   const restKcal = Math.max(0, kcal - protKcal);
-  const basisRestKcal = basis.carb * 4 + basis.fat * 9;
-  const carbRatio = basisRestKcal > 0 ? (basis.carb * 4) / basisRestKcal : 0.6;
+  const carbRatio = 0.6;
 
   const carb = Math.round((restKcal * carbRatio) / 4);
   const fat = Math.round((restKcal * (1 - carbRatio)) / 9);
