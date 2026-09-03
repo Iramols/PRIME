@@ -491,8 +491,6 @@ function renderProgrammaVoortgang() {
 
   let geplanning = [];
   try { geplanning = JSON.parse(localStorage.getItem('prime_planning') || '[]'); } catch(e) {}
-  let wpDone = {};
-  try { wpDone = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); } catch(e) {}
 
   if (!geplanning.length) {
     el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
@@ -506,22 +504,19 @@ function renderProgrammaVoortgang() {
   const vandaag = localDateStr();
 
   // Eenmalige reparatie voor dagen die al afgesloten waren vóórdat we
-  // oefSnapshot gingen bijhouden (zie wpToggleOefDone() in weekplanning.js):
-  // elke dag in het verleden zonder snapshot maar met wél iets afgevinkt
-  // krijgt alsnog een snapshot, gebaseerd op wat er toen daadwerkelijk was
-  // afgevinkt. Bij een mismatch (minder afgevinkt dan het huidige, mogelijk
-  // sindsdien gegroeide programma) gaan we ervan uit dat het afgevinkte
-  // aantal toen de volledige lijst was, zodat zo'n dag niet met
-  // terugwerkende kracht als "onvolledig" blijft tellen. Bij een dag die al
-  // wél volledig matcht, legt dit gewoon het huidige aantal vast zodat die
-  // dag ook tegen een latere uitbreiding beschermd is.
+  // oefSnapshotKeys gingen bijhouden (zie wpToggleOefDone() in
+  // weekplanning.js): elke dag in het verleden zonder snapshot maar met wél
+  // iets afgevinkt krijgt alsnog een snapshot -- de op dit moment afgevinkte
+  // sleutels worden bevroren als "de volledige lijst van toen". Dit lost
+  // zowel een gegroeid/ingekrompen aantal oefeningen op als een verschoven
+  // volgorde (de sleutel is de oefeningnaam, geen array-positie), zonder
+  // dat we de precieze historie hoeven te kennen.
   let reparatieNodig = false;
   geplanning.forEach(item => {
-    if (item.date < vandaag && item.oefSnapshot == null) {
-      const oefsNu = wpGetOefeningen(item.schemaId);
-      const doneNu = (wpDone[item.date] || []).filter(i => i < oefsNu.length);
+    if (item.date < vandaag && item.oefSnapshotKeys == null) {
+      const doneNu = wpGetDone(item.date); // migreert oude numerieke data indien nodig
       if (doneNu.length > 0) {
-        item.oefSnapshot = doneNu.length;
+        item.oefSnapshotKeys = doneNu.slice();
         reparatieNodig = true;
       }
     }
@@ -532,9 +527,11 @@ function renderProgrammaVoortgang() {
   const verleden = geplanning.filter(p => p.date < vandaag);
   let totaalOef = 0, gedaanOef = 0, volledigDagen = 0;
   verleden.forEach(p => {
-    const oefs  = wpGetOefeningen(p.schemaId);
-    const total = p.oefSnapshot != null ? p.oefSnapshot : oefs.length;
-    const done  = (wpDone[p.date] || []).filter(i => i < total);
+    const oefsNu       = wpGetOefeningen(p.schemaId);
+    const snapshotKeys = p.oefSnapshotKeys != null ? p.oefSnapshotKeys : oefsNu.map(wpOefKey);
+    const doneRaw      = wpGetDone(p.date);
+    const done         = doneRaw.filter(k => snapshotKeys.includes(k));
+    const total        = snapshotKeys.length;
     totaalOef  += total;
     gedaanOef  += done.length;
     if (total > 0 && done.length >= total) volledigDagen++;
@@ -577,12 +574,14 @@ function renderProgrammaVoortgang() {
     const rijen = items.map(item => {
       const d         = new Date(item.date + 'T00:00:00');
       const disp      = wpGetDisplay(item.schemaId);
-      const oefs      = wpGetOefeningen(item.schemaId);
-      // Bevroren aantal (oefSnapshot) voor dagen waar al afgevinkt is, anders
-      // gewoon het actuele aantal uit het programma -- zie de toelichting
-      // hierboven bij de eenmalige reparatiepas.
-      const total     = item.oefSnapshot != null ? item.oefSnapshot : oefs.length;
-      const done      = (wpDone[item.date] || []).filter(i => i < total);
+      // Bevroren lijst (oefSnapshotKeys) voor dagen waar al afgevinkt is,
+      // anders gewoon de actuele oefeningen uit het programma -- zie de
+      // toelichting hierboven bij de eenmalige reparatiepas.
+      const oefsNu       = wpGetOefeningen(item.schemaId);
+      const snapshotKeys = item.oefSnapshotKeys != null ? item.oefSnapshotKeys : oefsNu.map(wpOefKey);
+      const doneRaw      = wpGetDone(item.date);
+      const done         = doneRaw.filter(k => snapshotKeys.includes(k));
+      const total        = snapshotKeys.length;
       const isVandaag = item.date === vandaag;
       const isVerleden= item.date < vandaag;
 

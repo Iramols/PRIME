@@ -659,14 +659,17 @@ function toggleDagDone(id) {
   updateDagProgress();
 }
 
-function toggleWpMijnDag(dateStr, idx) {
-  // Update prime_wp_done (syncs met weekplanning overzicht)
-  wpToggleOefDone(dateStr, idx);
+function toggleWpMijnDag(dateStr, doneKey, domIdx) {
+  // Update prime_wp_done (syncs met weekplanning overzicht) -- doneKey is de
+  // stabiele naam-sleutel (wpOefKey), domIdx alleen voor de lokale
+  // dagDone/DOM-id-boekhouding hieronder (puur voor de voortgangsbalk op
+  // "Vandaag", niet gebruikt als identiteit).
+  wpToggleOefDone(dateStr, doneKey);
   // Spiegel in dagDone zodat voortgangsbalk klopt
-  const done = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[dateStr] || [];
-  dagDone['wp-dag-' + idx] = done.includes(idx);
-  const check = document.getElementById('dag-check-wp-dag-' + idx);
-  if (check) check.classList.toggle('done', dagDone['wp-dag-' + idx]);
+  const done = wpGetDone(dateStr);
+  dagDone['wp-dag-' + domIdx] = done.includes(doneKey);
+  const check = document.getElementById('dag-check-wp-dag-' + domIdx);
+  if (check) check.classList.toggle('done', dagDone['wp-dag-' + domIdx]);
   updateDagProgress();
 }
 
@@ -691,7 +694,7 @@ function renderTrainingDag() {
   // Weekplanning oefeningen voor vandaag
   const _dagToday = localDateStr();
   const _dagWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _dagToday) || null;
-  const _dagWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_dagToday] || [];
+  const _dagWpDoneArr = wpGetDone(_dagToday); // migreert oude numerieke data indien nodig, zie weekplanning.js
   const _dagWpOef = _dagWpEntry ? (wpGetOefeningen(_dagWpEntry.schemaId) || []) : [];
   const _dagWpDisp = _dagWpEntry ? wpGetDisplay(_dagWpEntry.schemaId) : null;
   // Voor vandaag verwijderde weekplanning-oefeningen (blijven in het
@@ -715,11 +718,13 @@ function renderTrainingDag() {
 
   // Init dagDone voor losse oefeningen
   trainingDagLog.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
-  // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done) --
-  // alleen de zichtbare (niet-verwijderde) indices tellen mee in de voortgang.
-  _dagWpOef.forEach(function(_, i) {
+  // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done,
+  // gematcht op de stabiele naam-sleutel i.p.v. array-positie, zie
+  // wpOefKey() in weekplanning.js) -- alleen de zichtbare (niet-
+  // verwijderde) indices tellen mee in de voortgang.
+  _dagWpOef.forEach(function(oef, i) {
     if (_dagWpVerwijderd.includes(i)) { delete dagDone['wp-dag-' + i]; return; }
-    dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(i);
+    dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(wpOefKey(oef));
   });
 
   function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId, cardClickFn) {
@@ -762,6 +767,7 @@ function renderTrainingDag() {
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
     _dagWpZichtbaar.forEach(function(entry) {
       const oef = entry.oef, i = entry.i;
+      const key = wpOefKey(oef), keyEsc = key.replace(/'/g, "\\'");
       // Per-dag aanpassing (sets/reps/rust/notities) overschrijft de
       // programma-waarden alleen voor de weergave van vandaag -- het
       // programma zelf blijft ongewijzigd. Zie openWpExerciseDetail().
@@ -782,7 +788,7 @@ function renderTrainingDag() {
         '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + _dagToday + '\',' + i + ')">'
         + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
         + '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
-        _dagWpDoneArr.includes(i), "toggleWpMijnDag('" + _dagToday + "'," + i + ")",
+        _dagWpDoneArr.includes(key), "toggleWpMijnDag('" + _dagToday + "','" + keyEsc + "'," + i + ")",
         undefined, "openWpExerciseDetail('" + _dagToday + "'," + i + ")");
     });
     html += '</div>';

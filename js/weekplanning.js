@@ -119,9 +119,48 @@ function wpBouwOefeningenLijst(oefeningen) {
   }).join('');
 }
 
+// Stabiele sleutel voor een programma-oefening, gebaseerd op de naam
+// (het canonieke .naam/.name-veld, nooit de vertaalde dispName() -- zelfde
+// regel als elders in de app: alleen .naam/.name zijn identiteits-stabiel).
+// Gebruikt voor prime_wp_done i.p.v. de array-positie, zodat afgevinkt-status
+// niet verschuift/breekt als het programma later wordt aangepast (oefening
+// toegevoegd/verwijderd/verplaatst).
+function wpOefKey(oef) { return 'n:' + (oef.naam || oef.name || ''); }
+
+// Oude, vóór deze wijziging opgeslagen prime_wp_done-datums bevatten nog
+// numerieke array-posities i.p.v. sleutels. Migreert die eenmalig (per
+// datum) naar sleutels, op basis van de op dát migratiemoment actuele
+// programma-/adhoc-oefeningen -- best effort, zelfde beperking als de
+// eenmalige reparatiepas in renderProgrammaVoortgang() (history.js).
+function wpMigreerDoneNaarKeys(dateStr, doneArr) {
+  if (!doneArr.length || typeof doneArr[0] !== 'number') return doneArr;
+  const entry = geplanning.find(p => p.date === dateStr) || null;
+  const geplandeOefeningen = entry ? wpGetOefeningen(entry.schemaId) : [];
+  const adhocOefeningen = trainingDays[dateStr] || [];
+  const gemigreerd = doneArr.map(function(idx) {
+    if (idx < geplandeOefeningen.length) return wpOefKey(geplandeOefeningen[idx]);
+    const adhocIdx = idx - geplandeOefeningen.length;
+    const o = adhocOefeningen[adhocIdx];
+    return o ? 'a:' + o.id : null;
+  }).filter(Boolean);
+  // Duplicaten kunnen ontstaan als twee oude indices toevallig op dezelfde
+  // (huidige) naam uitkomen -- ontdubbelen.
+  return [...new Set(gemigreerd)];
+}
+
 function wpGetDone(dateStr) {
-  try { return JSON.parse(localStorage.getItem('prime_wp_done') || '{}')[dateStr] || []; }
+  let all;
+  try { all = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); }
   catch(e) { return []; }
+  const raw = all[dateStr] || [];
+  if (raw.length && typeof raw[0] === 'number') {
+    if (!geplanning.length) wpLaadData();
+    const gemigreerd = wpMigreerDoneNaarKeys(dateStr, raw);
+    all[dateStr] = gemigreerd;
+    syncSet('prime_wp_done', all);
+    return gemigreerd;
+  }
+  return raw;
 }
 
 // Verwijderde (voor deze dag verborgen) oefening-indices van een
@@ -162,42 +201,44 @@ function wpSetExerciseOverride(dateStr, oefIdx, sets, notes) {
   syncSet('prime_wp_ex_overrides', all);
 }
 
-function wpToggleOefDone(dateStr, oefIdx) {
+function wpToggleOefDone(dateStr, doneKey) {
+  const done = wpGetDone(dateStr); // migreert oude numerieke data indien nodig (en persisteert dat alvast)
+  const pos  = done.indexOf(doneKey);
+  const wordtGedaan = pos === -1; // wordt nu aangevinkt (was nog niet gedaan)
+  if (wordtGedaan) done.push(doneKey); else done.splice(pos, 1);
+
   let all;
   try { all = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); }
   catch(e) { all = {}; }
-  const done = all[dateStr] || [];
-  const pos  = done.indexOf(oefIdx);
-  const wordtGedaan = pos === -1; // wordt nu aangevinkt (was nog niet gedaan)
-  if (wordtGedaan) done.push(oefIdx); else done.splice(pos, 1);
   all[dateStr] = done;
   syncSet('prime_wp_done', all);
 
-  // Bevries het aantal programma-oefeningen voor deze dag zodra iemand voor
-  // het eerst iets afvinkt (zie renderProgrammaVoortgang() in history.js) --
-  // zo blijft "voortgang" voor deze specifieke dag altijd kloppen met wat er
-  // toen daadwerkelijk gepland stond, ook als het programma later wordt
-  // uitgebreid/ingekort. Alleen bij het eerste keer afvinken (nog geen
-  // snapshot) en alleen als er ook echt een programmadag aan hangt.
+  // Bevries de lijst met programma-oefeningen (als sleutels, zie wpOefKey())
+  // voor deze dag zodra iemand voor het eerst iets afvinkt (zie
+  // renderProgrammaVoortgang() in history.js) -- zo blijft "voortgang" voor
+  // deze specifieke dag altijd kloppen met wat er toen daadwerkelijk
+  // gepland stond, ook als het programma later wordt uitgebreid/ingekort/
+  // verplaatst. Alleen bij het eerste keer afvinken (nog geen snapshot) en
+  // alleen als er ook echt een programmadag aan hangt.
   if (wordtGedaan) {
     if (!geplanning.length) wpLaadData();
     const entry = geplanning.find(p => p.date === dateStr);
-    if (entry && entry.oefSnapshot == null && entry.schemaId) {
-      entry.oefSnapshot = wpGetOefeningen(entry.schemaId).length;
+    if (entry && entry.oefSnapshotKeys == null && entry.schemaId) {
+      entry.oefSnapshotKeys = wpGetOefeningen(entry.schemaId).map(wpOefKey);
       wpSlaPlanningOp();
     }
   }
 
-  const isDone = done.includes(oefIdx);
-  const chk = document.getElementById('wp-chk-' + dateStr + '-' + oefIdx);
-  const row = document.getElementById('wp-oef-' + dateStr + '-' + oefIdx);
+  const isDone = done.includes(doneKey);
+  const chk = document.getElementById('wp-chk-' + dateStr + '-' + doneKey);
+  const row = document.getElementById('wp-oef-' + dateStr + '-' + doneKey);
   if (chk) chk.classList.toggle('done', isDone);
   if (row) row.style.opacity = isDone ? '0.45' : '1';
 }
 
 // Zelfde kaart-opzet als een oefening bij Vandaag (exCard in training.js):
 // fotominiatuur + naam/sets-rust links, afvinken + verwijderen rechts met
-// tekstlabel. 'rows' is een array van { oef, doneIdx, kind, verwijderIdx?,
+// tekstlabel. 'rows' is een array van { oef, doneKey, kind, verwijderIdx?,
 // exId? } (zie wpdBouwDagKaart), niet de kale oefening-objecten -- zo
 // blijft het afvink-/verwijder-doel kloppen ook als een deel van de lijst
 // voor deze dag verborgen is (verwijderde programma-oefeningen).
@@ -205,9 +246,10 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
   if (!rows.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   const done = wpGetDone(dateStr);
   return rows.map(function(row) {
-    const o = row.oef, i = row.doneIdx;
+    const o = row.oef, key = row.doneKey;
+    const keyEsc = key.replace(/'/g, "\\'"); // voor gebruik in onclick-string
     const naam = dispName(o);
-    const isDone = done.includes(i);
+    const isDone = done.includes(key);
 
     // Voor een programma-oefening telt een per-dag aanpassing (sets/
     // reps/rust, zie openWpExerciseDetail()) mee in wat hier getoond
@@ -241,14 +283,14 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
       delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     }
 
-    return '<div id="wp-oef-' + dateStr + '-' + i + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
+    return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
       photoDiv +
       '<div style="flex:1;min-width:120px">' +
         '<div style="font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
         '<div style="font-size:11px;color:var(--muted)">' + detail + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
-        '<div class="ex-check-wrap" onclick="wpToggleOefDone(\'' + dateStr + '\',' + i + ')" style="cursor:pointer"><div id="wp-chk-' + dateStr + '-' + i + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+        '<div class="ex-check-wrap" onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" style="cursor:pointer"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
         editBtn +
         delBtn +
       '</div>' +
@@ -329,7 +371,7 @@ function wpBouwOverzicht() {
       const arrowId    = 'wp-arrow-' + item.date;
       // Ongebruikte weergave (zie comment bij wpBouwOverzicht) -- geen
       // verwijderknop nodig, dus platte 'legacy'-rijen zonder kind.
-      const oefRows = oefeningen.map(function(oef, i) { return { oef: oef, doneIdx: i, kind: 'legacy' }; });
+      const oefRows = oefeningen.map(function(oef) { return { oef: oef, doneKey: wpOefKey(oef), kind: 'legacy' }; });
       const detailHtml = oefeningen.length
         ? '<div id="' + detailId + '" style="display:none;padding:6px 0 4px 90px">' +
           wpBouwOefeningenAfvinken(oefRows, item.date) + '</div>'
@@ -494,11 +536,11 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
   // ook gebruikt bij Vandaag) overslaan; het programma zelf blijft intact.
   const wpVerwijderd = wpGetRemoved(dateStr);
   const geplandeRows = geplandeOefeningen
-    .map(function(oef, i) { return { oef: oef, doneIdx: i, verwijderIdx: i, kind: 'prog' }; })
+    .map(function(oef, i) { return { oef: oef, doneKey: wpOefKey(oef), verwijderIdx: i, kind: 'prog' }; })
     .filter(function(x) { return !wpVerwijderd.includes(x.verwijderIdx); });
   const adhocOefeningen = trainingDays[dateStr] || [];
   const adhocRows = adhocOefeningen.map(function(oef, i) {
-    return { oef: oef, doneIdx: geplandeOefeningen.length + i, kind: 'adhoc', exId: oef.id };
+    return { oef: oef, doneKey: 'a:' + oef.id, kind: 'adhoc', exId: oef.id };
   });
   const alleRows = [...geplandeRows, ...adhocRows];
   const hasData = alleRows.length > 0;

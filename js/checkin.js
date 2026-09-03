@@ -50,21 +50,22 @@ function buildTrainingSummary() {
   // Altijd synchroon houden met trainingDays (zie state.js/training.js)
   trainingDagLog = trainingDays[_btsToday] || [];
   const _btsWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _btsToday) || null;
-  const _btsWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_btsToday] || [];
+  const _btsWpDoneArr = wpGetDone(_btsToday); // migreert oude numerieke data indien nodig, zie weekplanning.js
   const _btsWpOef = _btsWpEntry ? wpGetOefeningen(_btsWpEntry.schemaId) : [];
   const wpItems = _btsWpOef.map(function(ex, i) {
-    return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)) };
+    return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)), _wpKey: wpOefKey(ex) };
   });
 
   const allItems = wpItems.concat(trainingDagLog);
   const total = allItems.length;
 
-  // Tel afgevinkte: dagDone voor schema-tab en losse, prime_wp_done voor weekplanning
+  // Tel afgevinkte: dagDone voor schema-tab en losse, prime_wp_done voor
+  // weekplanning (gematcht op de stabiele naam-sleutel, zie wpOefKey()).
   let done = 0;
   allItems.forEach(function(ex) {
     let isDone = dagDone[ex.id];
     if (!isDone && ex.id.startsWith('wp-')) {
-      isDone = _btsWpDoneArr.includes(parseInt(ex.id.replace('wp-', '')));
+      isDone = _btsWpDoneArr.includes(ex._wpKey);
     }
     if (isDone) done++;
   });
@@ -368,7 +369,7 @@ async function doCheckout() {
   const _coToday = localDateStr();
   const _coWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _coToday) || null;
   const _coWpOef = _coWpEntry ? (wpGetOefeningen(_coWpEntry.schemaId) || []) : [];
-  const _coWpDoneArr = (JSON.parse(localStorage.getItem('prime_wp_done') || '{}'))[_coToday] || [];
+  const _coWpDoneArr = wpGetDone(_coToday); // migreert oude numerieke data indien nodig, zie weekplanning.js
   const _coWpNaam = _coWpEntry ? wpGetDisplay(_coWpEntry.schemaId).naam : t('checkin.noTraining');
   const total = _coWpOef.length;
   const done = _coWpDoneArr.length;
