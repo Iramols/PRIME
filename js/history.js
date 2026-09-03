@@ -505,15 +505,39 @@ function renderProgrammaVoortgang() {
 
   const vandaag = localDateStr();
 
+  // Eenmalige reparatie voor dagen die al afgesloten waren vóórdat we
+  // oefSnapshot gingen bijhouden (zie wpToggleOefDone() in weekplanning.js):
+  // elke dag in het verleden zonder snapshot maar met wél iets afgevinkt
+  // krijgt alsnog een snapshot, gebaseerd op wat er toen daadwerkelijk was
+  // afgevinkt. Bij een mismatch (minder afgevinkt dan het huidige, mogelijk
+  // sindsdien gegroeide programma) gaan we ervan uit dat het afgevinkte
+  // aantal toen de volledige lijst was, zodat zo'n dag niet met
+  // terugwerkende kracht als "onvolledig" blijft tellen. Bij een dag die al
+  // wél volledig matcht, legt dit gewoon het huidige aantal vast zodat die
+  // dag ook tegen een latere uitbreiding beschermd is.
+  let reparatieNodig = false;
+  geplanning.forEach(item => {
+    if (item.date < vandaag && item.oefSnapshot == null) {
+      const oefsNu = wpGetOefeningen(item.schemaId);
+      const doneNu = (wpDone[item.date] || []).filter(i => i < oefsNu.length);
+      if (doneNu.length > 0) {
+        item.oefSnapshot = doneNu.length;
+        reparatieNodig = true;
+      }
+    }
+  });
+  if (reparatieNodig) syncSet('prime_planning', geplanning);
+
   // ── Stats ──
   const verleden = geplanning.filter(p => p.date < vandaag);
   let totaalOef = 0, gedaanOef = 0, volledigDagen = 0;
   verleden.forEach(p => {
-    const oefs = wpGetOefeningen(p.schemaId);
-    const done = (wpDone[p.date] || []).filter(i => i < oefs.length);
-    totaalOef  += oefs.length;
+    const oefs  = wpGetOefeningen(p.schemaId);
+    const total = p.oefSnapshot != null ? p.oefSnapshot : oefs.length;
+    const done  = (wpDone[p.date] || []).filter(i => i < total);
+    totaalOef  += total;
     gedaanOef  += done.length;
-    if (oefs.length > 0 && done.length >= oefs.length) volledigDagen++;
+    if (total > 0 && done.length >= total) volledigDagen++;
   });
   const pct = totaalOef > 0 ? Math.round(gedaanOef / totaalOef * 100) : 0;
   const toekomst = geplanning.filter(p => p.date >= vandaag).length;
@@ -554,21 +578,25 @@ function renderProgrammaVoortgang() {
       const d         = new Date(item.date + 'T00:00:00');
       const disp      = wpGetDisplay(item.schemaId);
       const oefs      = wpGetOefeningen(item.schemaId);
-      const done      = (wpDone[item.date] || []).filter(i => i < oefs.length);
+      // Bevroren aantal (oefSnapshot) voor dagen waar al afgevinkt is, anders
+      // gewoon het actuele aantal uit het programma -- zie de toelichting
+      // hierboven bij de eenmalige reparatiepas.
+      const total     = item.oefSnapshot != null ? item.oefSnapshot : oefs.length;
+      const done      = (wpDone[item.date] || []).filter(i => i < total);
       const isVandaag = item.date === vandaag;
       const isVerleden= item.date < vandaag;
 
       let badge = '';
-      if (oefs.length > 0) {
+      if (total > 0) {
         if (isVerleden || isVandaag) {
-          const allDone  = done.length >= oefs.length;
+          const allDone  = done.length >= total;
           const noneDone = done.length === 0;
           const bg = allDone ? 'var(--sage)' : noneDone ? 'var(--sand-dark)' : '#f39c12';
           const fg = (allDone || !noneDone) ? 'white' : 'var(--muted)';
           badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:' + fg + ';flex-shrink:0">' +
-            (allDone ? '✓ ' : '') + done.length + '/' + oefs.length + '</span>';
+            (allDone ? '✓ ' : '') + done.length + '/' + total + '</span>';
         } else {
-          badge = '<span style="font-size:11px;color:var(--muted);flex-shrink:0">' + t('history.exercisesShort', { n: oefs.length }) + '</span>';
+          badge = '<span style="font-size:11px;color:var(--muted);flex-shrink:0">' + t('history.exercisesShort', { n: total }) + '</span>';
         }
       }
 

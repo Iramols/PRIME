@@ -168,9 +168,26 @@ function wpToggleOefDone(dateStr, oefIdx) {
   catch(e) { all = {}; }
   const done = all[dateStr] || [];
   const pos  = done.indexOf(oefIdx);
-  if (pos === -1) done.push(oefIdx); else done.splice(pos, 1);
+  const wordtGedaan = pos === -1; // wordt nu aangevinkt (was nog niet gedaan)
+  if (wordtGedaan) done.push(oefIdx); else done.splice(pos, 1);
   all[dateStr] = done;
   syncSet('prime_wp_done', all);
+
+  // Bevries het aantal programma-oefeningen voor deze dag zodra iemand voor
+  // het eerst iets afvinkt (zie renderProgrammaVoortgang() in history.js) --
+  // zo blijft "voortgang" voor deze specifieke dag altijd kloppen met wat er
+  // toen daadwerkelijk gepland stond, ook als het programma later wordt
+  // uitgebreid/ingekort. Alleen bij het eerste keer afvinken (nog geen
+  // snapshot) en alleen als er ook echt een programmadag aan hangt.
+  if (wordtGedaan) {
+    if (!geplanning.length) wpLaadData();
+    const entry = geplanning.find(p => p.date === dateStr);
+    if (entry && entry.oefSnapshot == null && entry.schemaId) {
+      entry.oefSnapshot = wpGetOefeningen(entry.schemaId).length;
+      wpSlaPlanningOp();
+    }
+  }
+
   const isDone = done.includes(oefIdx);
   const chk = document.getElementById('wp-chk-' + dateStr + '-' + oefIdx);
   const row = document.getElementById('wp-oef-' + dateStr + '-' + oefIdx);
