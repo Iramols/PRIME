@@ -79,6 +79,15 @@ function renderHome() {
   document.getElementById('already-done-section').style.display = alDagAfgesloten ? 'block' : 'none';
   document.getElementById('day-section').style.display = isVandaagActief ? 'block' : 'none';
   document.getElementById('checkin-section').style.display = (alDagAfgesloten || isVandaagActief) ? 'none' : 'block';
+  // De ondertitel in de hero-banner ("Doe je check-in...") is anders
+  // statische tekst die nooit meebeweegt met de staat van de dag -- klopte
+  // dan niet meer zodra de dag al ingecheckt/afgesloten was (zie de kaart
+  // eronder, die dat wél goed toont). Hergebruikt dezelfde teksten als die
+  // kaarten, zodat banner en kaart nooit tegenstrijdig zijn.
+  document.getElementById('hero-sub').textContent =
+    alDagAfgesloten ? t('home.alreadyDone.sub') :
+    isVandaagActief ? t('day.summary.default') :
+    t('home.sub');
 
   if (isVandaagActief) {
     trainingType = todayData.trainingType;
