@@ -512,9 +512,13 @@ function renderProgrammaVoortgang() {
   // waren). We wissen daarom eenmalig alle bestaande snapshots, zodat ze
   // hieronder opnieuw bevroren worden volgens de juiste regel: pas zodra
   // de datum definitief in het verleden ligt, niet bij de eerste afvinking.
-  if (!localStorage.getItem('prime_wp_snapshot_reset_v1')) {
+  // (v2: de eerste reset filterde nog niet de per-dag-verwijderde
+  // oefeningen mee, zie hieronder -- daardoor bleven dagen met zo'n
+  // verwijdering toch het volle sjabloonaantal tonen. Nieuwe vlag zodat
+  // deze reset ook voor wie v1 al draaide nog één keer opnieuw gebeurt.)
+  if (!localStorage.getItem('prime_wp_snapshot_reset_v2')) {
     geplanning.forEach(item => { delete item.oefSnapshotKeys; });
-    localStorage.setItem('prime_wp_snapshot_reset_v1', '1');
+    localStorage.setItem('prime_wp_snapshot_reset_v2', '1');
     syncSet('prime_planning', geplanning);
   }
 
@@ -523,11 +527,13 @@ function renderProgrammaVoortgang() {
   // (oefeningen doorschuiven/naar voren halen naar een andere dag) en moet
   // "voortgang" dus gewoon de actuele (nog niet bevroren) lijst volgen.
   // Eenmaal bevroren blijft dit staan, ook als het programma zelf later
-  // nog wordt aangepast.
+  // nog wordt aangepast. Gebruikt de per-dag ZICHTBARE lijst (dus mét een
+  // eventuele "voor deze dag verwijderd"-oefening eruit gefilterd, zie
+  // wpGetZichtbareOefeningen()) -- niet het kale, ongefilterde sjabloon.
   let reparatieNodig = false;
   geplanning.forEach(item => {
     if (item.date < vandaag && item.oefSnapshotKeys == null) {
-      item.oefSnapshotKeys = wpGetOefeningen(item.schemaId).map(wpOefKey);
+      item.oefSnapshotKeys = wpGetZichtbareOefeningen(item.date, item.schemaId).map(wpOefKey);
       reparatieNodig = true;
     }
   });
@@ -537,7 +543,7 @@ function renderProgrammaVoortgang() {
   const verleden = geplanning.filter(p => p.date < vandaag);
   let totaalOef = 0, gedaanOef = 0, volledigDagen = 0;
   verleden.forEach(p => {
-    const oefsNu       = wpGetOefeningen(p.schemaId);
+    const oefsNu       = wpGetZichtbareOefeningen(p.date, p.schemaId);
     const snapshotKeys = p.oefSnapshotKeys != null ? p.oefSnapshotKeys : oefsNu.map(wpOefKey);
     const doneRaw      = wpGetDone(p.date);
     const done         = doneRaw.filter(k => snapshotKeys.includes(k));
@@ -585,9 +591,10 @@ function renderProgrammaVoortgang() {
       const d         = new Date(item.date + 'T00:00:00');
       const disp      = wpGetDisplay(item.schemaId);
       // Bevroren lijst (oefSnapshotKeys) voor dagen waar al afgevinkt is,
-      // anders gewoon de actuele oefeningen uit het programma -- zie de
-      // toelichting hierboven bij de eenmalige reparatiepas.
-      const oefsNu       = wpGetOefeningen(item.schemaId);
+      // anders gewoon de actuele (per-dag zichtbare) oefeningen uit het
+      // programma -- zie de toelichting hierboven bij de eenmalige
+      // reparatiepas.
+      const oefsNu       = wpGetZichtbareOefeningen(item.date, item.schemaId);
       const snapshotKeys = item.oefSnapshotKeys != null ? item.oefSnapshotKeys : oefsNu.map(wpOefKey);
       const doneRaw      = wpGetDone(item.date);
       const done         = doneRaw.filter(k => snapshotKeys.includes(k));

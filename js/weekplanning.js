@@ -171,6 +171,19 @@ function wpGetRemoved(dateStr) {
   catch (e) { return []; }
 }
 
+// Het programma-sjabloon (wpGetOefeningen) minus de oefeningen die specifiek
+// vóór déze datum verwijderd zijn (wpGetRemoved) -- dus wat er op DIE dag
+// daadwerkelijk (nog) staat, i.p.v. het volledige, ongefilterde sjabloon.
+// Gebruikt door renderProgrammaVoortgang() (history.js) zodat "voortgang"
+// niet nog steeds het oorspronkelijke aantal telt nadat een oefening voor
+// een specifieke dag is verwijderd.
+function wpGetZichtbareOefeningen(dateStr, sid) {
+  const alle = wpGetOefeningen(sid);
+  const verwijderd = wpGetRemoved(dateStr);
+  if (!verwijderd.length) return alle;
+  return alle.filter(function(_, i) { return !verwijderd.includes(i); });
+}
+
 function wpRemoveOefForDay(dateStr, oefIdx) {
   let all;
   try { all = JSON.parse(localStorage.getItem('prime_wp_removed') || '{}'); }
