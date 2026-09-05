@@ -82,12 +82,15 @@ function renderHome() {
   // De ondertitel in de hero-banner ("Doe je check-in...") is anders
   // statische tekst die nooit meebeweegt met de staat van de dag -- klopte
   // dan niet meer zodra de dag al ingecheckt/afgesloten was (zie de kaart
-  // eronder, die dat wél goed toont). Hergebruikt dezelfde teksten als die
-  // kaarten, zodat banner en kaart nooit tegenstrijdig zijn.
-  document.getElementById('hero-sub').textContent =
-    alDagAfgesloten ? t('home.alreadyDone.sub') :
-    isVandaagActief ? t('day.summary.default') :
-    t('home.sub');
+  // eronder, die dat wél goed toont). Voor de "ingecheckt"-staat wordt hij
+  // hieronder, samen met #day-summary, pas gezet zodra we weten of er ook
+  // écht een training gepland staat -- anders beweert de tekst ten onrechte
+  // dat alles al klaarstaat (zie #day-summary hieronder).
+  if (alDagAfgesloten) {
+    document.getElementById('hero-sub').textContent = t('home.alreadyDone.sub');
+  } else if (!isVandaagActief) {
+    document.getElementById('hero-sub').textContent = t('home.sub');
+  }
 
   if (isVandaagActief) {
     trainingType = todayData.trainingType;
@@ -99,10 +102,16 @@ function renderHome() {
       document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + dispName(_wpDisp) + '</div>';
       const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
       document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');
+      document.getElementById('day-summary').textContent = t('day.summary.default');
+      document.getElementById('hero-sub').textContent = t('day.summary.default');
     } else {
       document.getElementById('day-title').textContent = t('home.noTrainingSelected');
       document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
       document.getElementById('home-training-preview').innerHTML = t('home.noTrainingToday');
+      // Geen training gepland -- claim niet dat "de dag klaarstaat", want
+      // dat moet de klant dan nog zelf doen (zie bugmelding).
+      document.getElementById('day-summary').textContent = t('day.summary.noTraining');
+      document.getElementById('hero-sub').textContent = t('day.summary.noTraining');
     }
     renderTraining();
     renderFood();
