@@ -213,21 +213,13 @@ function wpToggleOefDone(dateStr, doneKey) {
   all[dateStr] = done;
   syncSet('prime_wp_done', all);
 
-  // Bevries de lijst met programma-oefeningen (als sleutels, zie wpOefKey())
-  // voor deze dag zodra iemand voor het eerst iets afvinkt (zie
-  // renderProgrammaVoortgang() in history.js) -- zo blijft "voortgang" voor
-  // deze specifieke dag altijd kloppen met wat er toen daadwerkelijk
-  // gepland stond, ook als het programma later wordt uitgebreid/ingekort/
-  // verplaatst. Alleen bij het eerste keer afvinken (nog geen snapshot) en
-  // alleen als er ook echt een programmadag aan hangt.
-  if (wordtGedaan) {
-    if (!geplanning.length) wpLaadData();
-    const entry = geplanning.find(p => p.date === dateStr);
-    if (entry && entry.oefSnapshotKeys == null && entry.schemaId) {
-      entry.oefSnapshotKeys = wpGetOefeningen(entry.schemaId).map(wpOefKey);
-      wpSlaPlanningOp();
-    }
-  }
+  // Let op: het aantal oefeningen voor deze dag wordt HIER niet bevroren --
+  // dat gebeurt pas in renderProgrammaVoortgang() (history.js), zodra de
+  // datum definitief in het verleden ligt. Reden: oefeningen kunnen nog
+  // doorgeschoven/naar voren gehaald worden naar een andere dag, ook nadat
+  // je al iets hebt afgevinkt op de dag zelf -- bevriezen bij de eerste
+  // afvinking (zoals een eerdere versie deed) gaf dan een verkeerd,
+  // voortijdig bevroren totaal.
 
   const isDone = done.includes(doneKey);
   const chk = document.getElementById('wp-chk-' + dateStr + '-' + doneKey);

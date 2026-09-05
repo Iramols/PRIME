@@ -503,22 +503,32 @@ function renderProgrammaVoortgang() {
 
   const vandaag = localDateStr();
 
-  // Eenmalige reparatie voor dagen die al afgesloten waren vóórdat we
-  // oefSnapshotKeys gingen bijhouden (zie wpToggleOefDone() in
-  // weekplanning.js): elke dag in het verleden zonder snapshot maar met wél
-  // iets afgevinkt krijgt alsnog een snapshot -- de op dit moment afgevinkte
-  // sleutels worden bevroren als "de volledige lijst van toen". Dit lost
-  // zowel een gegroeid/ingekrompen aantal oefeningen op als een verschoven
-  // volgorde (de sleutel is de oefeningnaam, geen array-positie), zonder
-  // dat we de precieze historie hoeven te kennen.
+  // Eenmalige reset (2026-09-05): een eerdere versie bevroor het aantal
+  // oefeningen al bij de EERSTE keer afvinken op een dag. Dat bleek te
+  // vroeg: oefeningen kunnen nog doorgeschoven/naar voren gehaald worden
+  // naar een andere dag, ook nadat je er op de dag zelf al één hebt
+  // afgevinkt (bugmelding: vrijdag 4 sept toonde 4/6 i.p.v. 4/4, omdat 2
+  // oefeningen ná de eerste afvinking naar een andere dag verplaatst
+  // waren). We wissen daarom eenmalig alle bestaande snapshots, zodat ze
+  // hieronder opnieuw bevroren worden volgens de juiste regel: pas zodra
+  // de datum definitief in het verleden ligt, niet bij de eerste afvinking.
+  if (!localStorage.getItem('prime_wp_snapshot_reset_v1')) {
+    geplanning.forEach(item => { delete item.oefSnapshotKeys; });
+    localStorage.setItem('prime_wp_snapshot_reset_v1', '1');
+    syncSet('prime_planning', geplanning);
+  }
+
+  // Bevries het aantal oefeningen voor een dag pas zodra die dag definitief
+  // in het verleden ligt -- daarvoor kan de oefeningenlijst nog wijzigen
+  // (oefeningen doorschuiven/naar voren halen naar een andere dag) en moet
+  // "voortgang" dus gewoon de actuele (nog niet bevroren) lijst volgen.
+  // Eenmaal bevroren blijft dit staan, ook als het programma zelf later
+  // nog wordt aangepast.
   let reparatieNodig = false;
   geplanning.forEach(item => {
     if (item.date < vandaag && item.oefSnapshotKeys == null) {
-      const doneNu = wpGetDone(item.date); // migreert oude numerieke data indien nodig
-      if (doneNu.length > 0) {
-        item.oefSnapshotKeys = doneNu.slice();
-        reparatieNodig = true;
-      }
+      item.oefSnapshotKeys = wpGetOefeningen(item.schemaId).map(wpOefKey);
+      reparatieNodig = true;
     }
   });
   if (reparatieNodig) syncSet('prime_planning', geplanning);
