@@ -705,6 +705,10 @@ function wpConfirmTrainingCopyInner() {
 
   let count = 0;
   let trainingDaysGewijzigd = false;
+  let wpDoneGewijzigd = false;
+  let alleWpDone;
+  try { alleWpDone = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); } catch(e) { alleWpDone = {}; }
+
   targets.forEach(dateStr => {
     if (dateStr === wpTrainingCopySourceDate) return; // niet naar zichzelf kopiëren
 
@@ -713,6 +717,16 @@ function wpConfirmTrainingCopyInner() {
     if (bron) {
       geplanning = geplanning.filter(p => p.date !== dateStr);
       geplanning.push({ date: dateStr, schemaId: bron.schemaId });
+      // Een (opnieuw) toegewezen programmadag begint altijd volledig
+      // onafgevinkt -- oefeningen worden pas afgevinkt bij daadwerkelijke
+      // uitvoering, niet door te kopiëren. Zonder dit konden eventuele
+      // achtergebleven afgevinkte oefeningen van een eerdere toewijzing op
+      // deze datum (bv. gelijknamige oefeningen in een ander programma)
+      // meteen als "al gedaan" blijven meetellen.
+      if (alleWpDone[dateStr] && alleWpDone[dateStr].length) {
+        delete alleWpDone[dateStr];
+        wpDoneGewijzigd = true;
+      }
     }
 
     // Losse, ad-hoc oefeningen: net als bij Voeding's kopieerfunctie
@@ -730,6 +744,7 @@ function wpConfirmTrainingCopyInner() {
 
   if (bron) wpSlaPlanningOp();
   if (trainingDaysGewijzigd) syncSet('prime_training_days', trainingDays);
+  if (wpDoneGewijzigd) syncSet('prime_wp_done', alleWpDone);
   wpCloseTrainingCopyModal();
 
   const toastMsg = count === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: count });

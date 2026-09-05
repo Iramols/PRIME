@@ -295,7 +295,9 @@ function fwConfirmCopyInner() {
   let count = 0;
   targets.forEach(dateStr => {
     if (dateStr === fwCopySourceDate) return; // niet naar zichzelf kopiëren
-    const copies = source.map(item => ({ ...item, logId: newLogId() }));
+    // eaten:false expliciet meegeven -- een gekopieerd item is nog niet
+    // gegeten op de nieuwe dag, ook al was het brongerecht wel afgevinkt.
+    const copies = source.map(item => ({ ...item, logId: newLogId(), eaten: false }));
     const existing = foodDays[dateStr] || [];
     foodDays[dateStr] = [...existing, ...copies];
     count++;
