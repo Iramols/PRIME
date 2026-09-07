@@ -354,7 +354,7 @@ function renderAddProductTab() {
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(p)}</div>
           <div style="font-size:11px;color:var(--muted)">${t('cat.' + p.cat)} · ${p.kcal} kcal · ${t('food.macroAbbr.protein')}${p.prot}g ${t('food.macroAbbr.carbs')}${p.carb}g ${t('food.macroAbbr.fat')}${p.fat}g</div>
         </div>
-        <button onclick="editCustomProduct('${p.id}')" style="font-size:15px;padding:4px 8px;border:none;background:none;color:var(--sage);cursor:pointer;flex-shrink:0">✏️</button>
+        <button onclick="editCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
         <button onclick="removeCustomProduct('${p.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
       </div>
     </div>`).join('');
