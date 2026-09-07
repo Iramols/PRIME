@@ -215,6 +215,7 @@ function renderProducts() {
 
 // ========== EIGEN PRODUCT TOEVOEGEN ==========
 let _apPhotoData = null;
+let _apEditingId = null; // id van het product dat bewerkt wordt, null = nieuw product
 
 function updateAddProductKcal() {
   const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
@@ -253,32 +254,80 @@ function addCustomProduct() {
   errorEl.textContent = '';
 
   const kcal = updateAddProductKcal();
-  const product = {
-    id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
+  const velden = {
     name: name,
-    icon: '🍽️',
     cat: document.getElementById('ap-cat').value,
     kcal: kcal,
     prot: parseFloat(document.getElementById('ap-prot').value) || 0,
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
-    photo: _apPhotoData || null,
-    custom: true
+    photo: _apPhotoData || null
   };
-  customProducts.push(product);
+
+  if (_apEditingId) {
+    // Bewerken: bestaand product bijwerken, id/custom-vlag blijven staan.
+    const product = customProducts.find(p => p.id === _apEditingId);
+    if (product) Object.assign(product, velden);
+  } else {
+    customProducts.push({
+      id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
+      icon: '🍽️',
+      custom: true,
+      ...velden
+    });
+  }
   syncSet('prime_custom_products', customProducts);
 
-  // Formulier resetten
-  nameInput.value = '';
+  resetAddProductForm();
+  renderAddProductTab();
+  renderProducts();
+}
+
+// Zelfde patroon als resetMealForm(): leegt het formulier en zet het terug
+// in "nieuw product toevoegen"-stand -- gebruikt na een succesvolle
+// toevoeging/wijziging én door de "Annuleren"-knop tijdens het bewerken.
+function resetAddProductForm() {
+  document.getElementById('ap-name').value = '';
   document.getElementById('ap-cat').value = 'overig';
   document.getElementById('ap-prot').value = 0;
   document.getElementById('ap-carb').value = 0;
   document.getElementById('ap-fat').value = 0;
   document.getElementById('ap-kcal-display').textContent = '0 kcal';
   document.getElementById('ap-photo-preview').innerHTML = '🍽️';
+  document.getElementById('ap-error').textContent = '';
   _apPhotoData = null;
+  _apEditingId = null;
 
-  renderAddProductTab();
+  document.getElementById('ap-form-title').textContent = t('food.add.formTitle');
+  document.getElementById('ap-submit-btn').textContent = t('food.add.submit');
+  document.getElementById('ap-cancel-btn').style.display = 'none';
+}
+
+// Vult het "+ Basisproduct toevoegen"-formulier met de gegevens van een
+// bestaand eigen product -- zelfde opzet als editCustomMeal() bij Gerechten.
+function editCustomProduct(id) {
+  const product = customProducts.find(p => p.id === id);
+  if (!product) return;
+  _apEditingId = id;
+
+  document.getElementById('ap-name').value = product.name;
+  document.getElementById('ap-cat').value = product.cat || 'overig';
+  document.getElementById('ap-prot').value = product.prot || 0;
+  document.getElementById('ap-carb').value = product.carb || 0;
+  document.getElementById('ap-fat').value = product.fat || 0;
+  updateAddProductKcal();
+  _apPhotoData = product.photo || null;
+  document.getElementById('ap-photo-preview').innerHTML = product.photo
+    ? '<img src="' + product.photo + '" style="width:100%;height:100%;object-fit:cover">'
+    : '🍽️';
+  document.getElementById('ap-error').textContent = '';
+
+  document.getElementById('ap-form-title').textContent = t('food.add.editTitle');
+  document.getElementById('ap-submit-btn').textContent = t('food.add.update');
+  document.getElementById('ap-cancel-btn').style.display = 'inline-block';
+
+  switchFoodTab('add');
+  document.getElementById('ap-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function removeCustomProduct(id) {
@@ -305,6 +354,7 @@ function renderAddProductTab() {
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(p)}</div>
           <div style="font-size:11px;color:var(--muted)">${t('cat.' + p.cat)} · ${p.kcal} kcal · ${t('food.macroAbbr.protein')}${p.prot}g ${t('food.macroAbbr.carbs')}${p.carb}g ${t('food.macroAbbr.fat')}${p.fat}g</div>
         </div>
+        <button onclick="editCustomProduct('${p.id}')" style="font-size:15px;padding:4px 8px;border:none;background:none;color:var(--sage);cursor:pointer;flex-shrink:0">✏️</button>
         <button onclick="removeCustomProduct('${p.id}')" style="font-size:16px;padding:4px 8px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0">×</button>
       </div>
     </div>`).join('');
