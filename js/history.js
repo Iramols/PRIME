@@ -284,8 +284,9 @@ function renderKcalTrendChart() {
   const el = document.getElementById('kcal-trend-chart');
   if (!el) return;
 
+  const _tmVandaag = localDateStr();
   const data = Object.keys(foodDays)
-    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag)
     .sort()
     .slice(-30)
     .map(dateStr => ({
@@ -382,8 +383,9 @@ function renderMacroTrendChart() {
       </label>`).join('');
   }
 
+  const _tmVandaag = localDateStr();
   const data = Object.keys(foodDays)
-    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag)
     .sort()
     .slice(-30)
     .map(dateStr => {
