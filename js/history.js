@@ -170,18 +170,22 @@ function renderEnergyChart() {
     { v: 4, emoji: '🔥' },
   ];
   const grid = levels.map(({ v, emoji }) => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${emoji}</text>
   `).join('');
 
-  // Polyline
+  // Polyline + subtel verloop-vlak eronder (zelfde sage als de lijn, zie
+  // toelichting bij de nieuwe look van de Voortgang-grafieken hieronder).
   const pts = data.map((h, i) => `${xPos(i)},${yPos(h.checkout.energy)}`).join(' ');
+  const vlak = `${padL},${yPos(1)} ` + pts + ` ${xPos(n - 1)},${yPos(1)}`;
 
-  // Dots
+  // Dots -- kleur blijft het betekenisvolle niveau (goed/matig/laag) volgen,
+  // alleen het laatste (huidige) punt krijgt een groter, geaccentueerd stipje.
   const dotColor = v => v >= 3.5 ? '#4a7c59' : v >= 2.5 ? '#5a7cc8' : v >= 1.5 ? '#f39c12' : '#e74c3c';
   const dots = data.map((h, i) => {
     const e = h.checkout.energy;
-    return `<circle cx="${xPos(i)}" cy="${yPos(e)}" r="3.5" fill="${dotColor(e)}" stroke="white" stroke-width="1.2"/>`;
+    const isLast = i === n - 1;
+    return `<circle cx="${xPos(i)}" cy="${yPos(e)}" r="${isLast ? 4.5 : 3}" fill="${dotColor(e)}" stroke="white" stroke-width="${isLast ? 2 : 1.2}"/>`;
   }).join('');
 
   // X-labels: toon max 6 datums
@@ -194,7 +198,12 @@ function renderEnergyChart() {
 
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      <defs><linearGradient id="egyFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4a7c59" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#4a7c59" stop-opacity="0"/>
+      </linearGradient></defs>
       ${grid}
+      <polygon points="${vlak}" fill="url(#egyFill)"/>
       <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
       ${xLabels}
@@ -238,15 +247,17 @@ function renderWeightChart() {
   for (let v = gridStart; v <= yMax; v += stepSize) gridLines.push(v);
 
   const grid = gridLines.map(v => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
   `).join('');
 
   const pts = data.map((h, i) => `${xPos(i)},${yPos(h.checkin.weight)}`).join(' ');
+  const vlak = `${padL},${yPos(yMin)} ` + pts + ` ${xPos(n - 1)},${yPos(yMin)}`;
 
   const dots = data.map((h, i) => {
     const w = h.checkin.weight;
-    return `<circle cx="${xPos(i)}" cy="${yPos(w)}" r="3.5" fill="#4a7c59" stroke="white" stroke-width="1.2"/>`;
+    const isLast = i === n - 1;
+    return `<circle cx="${xPos(i)}" cy="${yPos(w)}" r="${isLast ? 4.5 : 3}" fill="#4a7c59" stroke="white" stroke-width="${isLast ? 2 : 1.2}"/>`;
   }).join('');
 
   const step = Math.max(1, Math.floor(n / 6));
@@ -267,7 +278,12 @@ function renderWeightChart() {
       ${diffStr ? `&nbsp;<span style="color:${diffColor};font-weight:600">${diffStr} kg</span> ${t('history.vsFirstMeasurement')}` : ''}
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      <defs><linearGradient id="wgtFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4a7c59" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#4a7c59" stop-opacity="0"/>
+      </linearGradient></defs>
       ${grid}
+      <polygon points="${vlak}" fill="url(#wgtFill)"/>
       <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
       ${xLabels}
@@ -322,17 +338,21 @@ function renderKcalTrendChart() {
   for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
 
   const grid = gridLines.map(v => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
   `).join('');
 
   const limietLijnen = [minLimiet, maxLimiet].map(v => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#f39c12" stroke-width="1" stroke-dasharray="4,3"/>
-    <text x="${W - padR}" y="${yPos(v) - 3}" text-anchor="end" font-size="8" fill="#f39c12">${v}</text>
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#c8855a" stroke-width="1" stroke-dasharray="4,3"/>
+    <text x="${W - padR}" y="${yPos(v) - 3}" text-anchor="end" font-size="8" fill="#c8855a">${v}</text>
   `).join('');
 
   const pts = data.map((d, i) => `${xPos(i)},${yPos(d.kcal)}`).join(' ');
-  const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yPos(d.kcal)}" r="3.5" fill="#4CAF50" stroke="white" stroke-width="1.2"/>`).join('');
+  const vlak = `${padL},${yPos(0)} ` + pts + ` ${xPos(n - 1)},${yPos(0)}`;
+  const dots = data.map((d, i) => {
+    const isLast = i === n - 1;
+    return `<circle cx="${xPos(i)}" cy="${yPos(d.kcal)}" r="${isLast ? 4.5 : 3}" fill="#4a7c59" stroke="white" stroke-width="${isLast ? 2 : 1.2}"/>`;
+  }).join('');
 
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((d, i) => {
@@ -343,9 +363,14 @@ function renderKcalTrendChart() {
 
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+      <defs><linearGradient id="kcalFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#4a7c59" stop-opacity="0.14"/>
+        <stop offset="100%" stop-color="#4a7c59" stop-opacity="0"/>
+      </linearGradient></defs>
       ${grid}
       ${limietLijnen}
-      <polyline points="${pts}" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <polygon points="${vlak}" fill="url(#kcalFill)"/>
+      <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
       ${dots}
       ${xLabels}
     </svg>`;
@@ -370,17 +395,26 @@ function renderMacroTrendChart() {
   const chartEl = document.getElementById('macro-trend-chart');
   if (!chartEl) return;
 
+  // Gedempte, volwassen kleuren i.p.v. de felle basiskleuren van hiervoor --
+  // zelfde reden als bij de andere Voortgang-grafieken (zie geschiedenis).
   const SERIES = [
-    { key:'prot', label:'E', color:'#2196F3' },
-    { key:'fat',  label:'V', color:'#FF5722' },
-    { key:'carb', label:'K', color:'#E91E8C' },
+    { key:'prot', label:'E', color:'#1B7FA8', bg:'#e5f0f5' },
+    { key:'fat',  label:'V', color:'#B8823D', bg:'#f5ece0' },
+    { key:'carb', label:'K', color:'#9C4F6E', bg:'#f2e5ea' },
   ];
 
   if (toggleEl) {
-    toggleEl.innerHTML = SERIES.map(s => `
-      <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:${macroTrendVisible[s.key] ? s.color : 'var(--muted)'};cursor:pointer">
-        <input type="checkbox" ${macroTrendVisible[s.key] ? 'checked' : ''} onchange="toggleMacroTrendSeries('${s.key}')" style="accent-color:${s.color};width:14px;height:14px;cursor:pointer">${s.label}
-      </label>`).join('');
+    // Chip-achtige knopjes i.p.v. kale checkboxjes: actief = gekleurd
+    // vlakje, uit = grijs -- de checkbox zelf blijft functioneel maar
+    // onzichtbaar (visually-hidden, niet display:none, zodat toetsenbord-
+    // focus/labeltoegankelijkheid behouden blijft).
+    toggleEl.innerHTML = SERIES.map(s => {
+      const actief = macroTrendVisible[s.key];
+      return `
+      <label style="display:inline-flex;align-items:center;font-size:11px;font-weight:600;padding:4px 11px;border-radius:10px;cursor:pointer;background:${actief ? s.bg : 'var(--sand)'};color:${actief ? s.color : 'var(--muted)'}">
+        <input type="checkbox" ${actief ? 'checked' : ''} onchange="toggleMacroTrendSeries('${s.key}')" style="position:absolute;opacity:0;width:1px;height:1px">${s.label}
+      </label>`;
+    }).join('');
   }
 
   const _tmVandaag = localDateStr();
@@ -424,13 +458,16 @@ function renderMacroTrendChart() {
   for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
 
   const grid = gridLines.map(v => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#e8e2d8" stroke-width="0.5"/>
+    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
   `).join('');
 
   const lijnen = actieveSeries.map(s => {
     const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
-    const dots = data.map((d, i) => `<circle cx="${xPos(i)}" cy="${yPos(d[s.key])}" r="3" fill="${s.color}" stroke="white" stroke-width="1"/>`).join('');
+    const dots = data.map((d, i) => {
+      const isLast = i === n - 1;
+      return `<circle cx="${xPos(i)}" cy="${yPos(d[s.key])}" r="${isLast ? 4.5 : 3}" fill="${s.color}" stroke="white" stroke-width="${isLast ? 2 : 1}"/>`;
+    }).join('');
     return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
   }).join('');
 
