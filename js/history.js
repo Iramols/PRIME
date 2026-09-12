@@ -22,7 +22,7 @@ function renderHistory() {
     ['h-streak','h-best-streak','h-total','h-trainings'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.textContent = '0';
     });
-    ['h-pct-training','h-pct-partial','h-avg-energy','h-avg-sleep','h-avg-stress','h-avg-energy-out','h-food-ondoel','h-food-teveel','h-food-teweinig'].forEach(function(id) {
+    ['h-avg-energy','h-avg-sleep','h-avg-stress','h-avg-energy-out','h-food-ondoel','h-food-teveel','h-food-teweinig'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.textContent = '—';
     });
     const trend = document.getElementById('h-energy-trend'); if (trend) trend.textContent = '';
@@ -56,10 +56,7 @@ function renderHistory() {
   // ── Training ──
   const metCheckout = history.filter(h => h.checkout);
   const volledig = metCheckout.filter(h => h.checkout.training === 3).length;
-  const gedeeltelijk = metCheckout.filter(h => h.checkout.training === 2).length;
   document.getElementById('h-trainings').textContent = volledig;
-  document.getElementById('h-pct-training').textContent = metCheckout.length > 0 ? Math.round(volledig/metCheckout.length*100) + '%' : '—';
-  document.getElementById('h-pct-partial').textContent = metCheckout.length > 0 ? Math.round(gedeeltelijk/metCheckout.length*100) + '%' : '—';
 
   // ── Energie, slaap, stress (gem. 7 dgn) ──
   const recent7 = history.slice(0, 7);

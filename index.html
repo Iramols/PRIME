@@ -75,7 +75,7 @@
   <div class="stats-row">
     <div class="stat-card"><div class="stat-val" id="s-streak">0</div><div class="stat-lbl" data-i18n="home.stat.streak">🔥 Streak (check in/out)</div></div>
     <div class="stat-card"><div class="stat-val" id="s-checkins">0</div><div class="stat-lbl" data-i18n="home.stat.checkins">Check-ins</div></div>
-    <div class="stat-card"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl" data-i18n="home.stat.avgEnergy">Gem. energie</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-avg">—</div><div class="stat-lbl" data-i18n="home.stat.avgEnergy">Gem. energie (avond)</div></div>
   </div>
 
   <!-- CHECK-IN -->
@@ -138,7 +138,7 @@
   <div id="day-section" style="display:none">
     <div class="success-banner">
       <h3 id="day-title" data-i18n="day.title.default">Je dag is klaar ✓</h3>
-      <p id="day-summary" data-i18n="day.summary.default">Coach Ira heeft je dag afgestemd op jouw check-in.</p>
+      <p id="day-summary" data-i18n="day.summary.default">Log vandaag gedurende de dag je voeding en training zo goed mogelijk. Sluit je dag uiteindelijk af met de avond check-out.</p>
     </div>
 
     <div id="coach-message-home" class="card" style="margin-bottom:18px;display:none">
@@ -759,42 +759,26 @@
   </div>
 
   <!-- ENERGIE & SLAAP -->
-  <div class="two-col" style="margin-bottom:18px">
-    <div class="card" style="margin-bottom:0">
-      <div class="card-label" style="margin-bottom:14px" data-i18n="history.energySleep">Energie & Slaap (7 dagen gem.)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-        <div style="text-align:center">
-          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-avg-energy">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.energyMorning">Energie ochtend</div>
-          <div style="font-size:10px;color:var(--muted)" id="h-energy-trend"></div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-avg-sleep">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.sleep">Slaap</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)" id="h-avg-stress">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.stress">Stress</div>
-        </div>
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-label" style="margin-bottom:14px" data-i18n="history.energySleep">Energie & Slaap (7 dagen gem.)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div style="text-align:center">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-avg-energy">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.energyMorning">Energie ochtend</div>
+        <div style="font-size:10px;color:var(--muted)" id="h-energy-trend"></div>
       </div>
-      <div class="divider" style="margin:14px 0"></div>
-      <div style="font-size:12px;color:var(--muted)" data-i18n="history.energyEod">Energie einde van de dag (gem. 7 dgn)</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--sage);margin-top:4px" id="h-avg-energy-out">—</div>
-    </div>
-
-    <div class="card" id="training-total-card" style="margin-bottom:0">
-      <div class="card-label" style="margin-bottom:14px" data-i18n="history.trainingTotal">Training (totaal)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div style="text-align:center">
-          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--sage)" id="h-pct-training">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctComplete">% volledig</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-pct-partial">—</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.pctPartial">% gedeeltelijk</div>
-        </div>
+      <div style="text-align:center">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#5a7cc8" id="h-avg-sleep">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.sleep">Slaap</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)" id="h-avg-stress">—</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="history.stress">Stress</div>
       </div>
     </div>
+    <div class="divider" style="margin:14px 0"></div>
+    <div style="font-size:12px;color:var(--muted)" data-i18n="history.energyEod">Energie einde van de dag (gem. 7 dgn)</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--sage);margin-top:4px" id="h-avg-energy-out">—</div>
   </div>
 
   <!-- ENERGIE TREND GRAFIEK -->

@@ -160,8 +160,6 @@ function applyTrainingVisibility() {
   if (hTrainingsCard) hTrainingsCard.style.display = enabled ? '' : 'none';
   const historyStats = document.getElementById('history-main-stats');
   if (historyStats) historyStats.style.gridTemplateColumns = enabled ? 'repeat(4,1fr)' : 'repeat(3,1fr)';
-  const trainingTotalCard = document.getElementById('training-total-card');
-  if (trainingTotalCard) trainingTotalCard.style.display = enabled ? '' : 'none';
 
   const progTabBtn = document.getElementById('htab-programma');
   if (progTabBtn) progTabBtn.style.display = enabled ? '' : 'none';
