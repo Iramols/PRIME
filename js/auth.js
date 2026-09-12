@@ -144,6 +144,7 @@ async function bootApp(clientId, isCoach) {
   hideClientPicker();
   document.getElementById('app-shell').style.display = '';
   if (isCoach) document.getElementById('switch-client-btn').style.display = '';
+  if (isCoach) document.getElementById('reset-voortgang-btn').style.display = '';
   loadAppScripts();
 }
 
