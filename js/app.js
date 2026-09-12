@@ -60,7 +60,8 @@ function renderHome() {
   const h = new Date().getHours();
   const greetKey = h < 12 ? 'greeting.morning' : h < 17 ? 'greeting.afternoon' : 'greeting.evening';
   document.getElementById('hero-date').textContent = dayName(new Date().getDay()) + ' · ' + new Date().toLocaleDateString(dateLocale(), { day:'numeric', month:'long', year:'numeric' });
-  document.getElementById('hero-greeting').textContent = t(greetKey) + '! 👋';
+  const _voornaam = profile.name ? profile.name.trim().split(' ')[0] : '';
+  document.getElementById('hero-greeting').textContent = t(greetKey) + (_voornaam ? ', ' + _voornaam : '') + '! 👋';
 
   // Stats
   updateStreak();
