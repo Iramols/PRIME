@@ -106,7 +106,7 @@ function renderHome() {
       document.getElementById('day-summary').innerHTML = t('day.summary.default');
       document.getElementById('hero-sub').innerHTML = t('day.summary.default');
     } else {
-      document.getElementById('day-title').textContent = t('home.noTrainingSelected');
+      document.getElementById('day-title').textContent = t('home.pilotThanks');
       document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
       document.getElementById('home-training-preview').innerHTML = t('home.noTrainingToday');
       // Geen training gepland -- claim niet dat "de dag klaarstaat", want
