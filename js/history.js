@@ -53,9 +53,12 @@ function renderHistory() {
   document.getElementById('h-best-streak').textContent = bestStreak;
   document.getElementById('h-total').textContent = total;
 
-  // ── Training ──
+  // ── Training ── ("Trainingen voltooid" = zelfde telling als "Volledig"
+  // op Programma voortgang: dagen waarvan ALLE oefeningen zijn afgevinkt,
+  // i.p.v. het losse zelf-gerapporteerde antwoord bij de avond check-out.)
   const metCheckout = history.filter(h => h.checkout);
-  const volledig = metCheckout.filter(h => h.checkout.training === 3).length;
+  const { verledenCount, volledigDagen } = wpVoortgangStats();
+  const volledig = volledigDagen;
   document.getElementById('h-trainings').textContent = volledig;
 
   // ── Energie, slaap, stress (gem. 7 dgn) ──
@@ -109,7 +112,7 @@ function renderHistory() {
   if (dagenWeg >= 2) signals.push({ kleur:'#E24B4A', tekst:t('history.signal.daysNoCheckin', { n: dagenWeg }) });
   if (parseFloat(avg(recent7, 'energy')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowEnergy') });
   if (parseFloat(avg(recent7, 'stress')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.highStress') });
-  if (metCheckout.length >= 3 && volledig / metCheckout.length < 0.4) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowTrainingCompletion') });
+  if (verledenCount >= 3 && volledig / verledenCount < 0.4) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowTrainingCompletion') });
   if (pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodRarelyLogged') });
   if (bestStreak >= 7) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.bestStreak', { n: bestStreak }) });
   if (volledig >= 5) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.trainingsCompleted', { n: volledig }) });
@@ -590,19 +593,9 @@ function renderProgrammaVoortgang() {
   });
   if (reparatieNodig) syncSet('prime_planning', geplanning);
 
-  // ── Stats ──
-  const verleden = geplanning.filter(p => p.date < vandaag);
-  let totaalOef = 0, gedaanOef = 0, volledigDagen = 0;
-  verleden.forEach(p => {
-    const oefsNu       = wpGetZichtbareOefeningen(p.date, p.schemaId);
-    const snapshotKeys = p.oefSnapshotKeys != null ? p.oefSnapshotKeys : oefsNu.map(wpOefKey);
-    const doneRaw      = wpGetDone(p.date);
-    const done         = doneRaw.filter(k => snapshotKeys.includes(k));
-    const total        = snapshotKeys.length;
-    totaalOef  += total;
-    gedaanOef  += done.length;
-    if (total > 0 && done.length >= total) volledigDagen++;
-  });
+  // ── Stats ── (gedeelde telling met "Trainingen voltooid" op de
+  // Statistieken-tab, zie wpVoortgangStats() in weekplanning.js)
+  const { verledenCount, volledigDagen, totaalOef, gedaanOef } = wpVoortgangStats();
   const pct = totaalOef > 0 ? Math.round(gedaanOef / totaalOef * 100) : 0;
   const toekomst = geplanning.filter(p => p.date >= vandaag).length;
 
@@ -610,7 +603,7 @@ function renderProgrammaVoortgang() {
     '<div class="card" style="margin-bottom:14px">' +
     '<div class="card-label" style="margin-bottom:14px">' + t('history.programOverview') + '</div>' +
     '<div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + verleden.length + '</div><div class="stat-lbl">' + t('history.stat.past') + '</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + verledenCount + '</div><div class="stat-lbl">' + t('history.stat.past') + '</div></div>' +
       '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + volledigDagen + '</div><div class="stat-lbl">' + t('history.stat.complete') + '</div></div>' +
       '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + toekomst + '</div><div class="stat-lbl">' + t('history.stat.upcoming') + '</div></div>' +
     '</div>' +

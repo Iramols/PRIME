@@ -201,6 +201,36 @@ function wpGetZichtbareOefeningen(dateStr, sid) {
   return alle.filter(function(_, i) { return !verwijderd.includes(i); });
 }
 
+// Telt, over alle reeds verstreken geplande dagen, hoeveel daarvan
+// VOLLEDIG zijn afgevinkt (alle zichtbare oefeningen gedaan). Gedeeld
+// tussen "Programma voortgang" (history.js, renderProgrammaVoortgang) en
+// de "Trainingen voltooid"-stat op de Statistieken-tab (renderHistory),
+// zodat beide altijd exact dezelfde telling gebruiken i.p.v. twee losse
+// bronnen die uiteen kunnen lopen -- "Trainingen voltooid" liet voorheen
+// zien hoe vaak je bij de avond check-out zelf "ja, getraind" had
+// aangeklikt, los van welke oefeningen je daadwerkelijk had afgevinkt;
+// op verzoek moet dit nu uit het echte afvinken komen. Puur lezend --
+// schrijft zelf niets weg (het bevriezen van oefSnapshotKeys gebeurt nog
+// steeds alleen in renderProgrammaVoortgang() zelf).
+function wpVoortgangStats() {
+  let geplanning = [];
+  try { geplanning = JSON.parse(localStorage.getItem('prime_planning') || '[]'); } catch(e) {}
+  const vandaag = localDateStr();
+  const verleden = geplanning.filter(p => p.date < vandaag);
+  let totaalOef = 0, gedaanOef = 0, volledigDagen = 0;
+  verleden.forEach(p => {
+    const oefsNu       = wpGetZichtbareOefeningen(p.date, p.schemaId);
+    const snapshotKeys = p.oefSnapshotKeys != null ? p.oefSnapshotKeys : oefsNu.map(wpOefKey);
+    const doneRaw      = wpGetDone(p.date);
+    const done         = doneRaw.filter(k => snapshotKeys.includes(k));
+    const total        = snapshotKeys.length;
+    totaalOef += total;
+    gedaanOef += done.length;
+    if (total > 0 && done.length >= total) volledigDagen++;
+  });
+  return { verledenCount: verleden.length, volledigDagen, totaalOef, gedaanOef };
+}
+
 function wpRemoveOefForDay(dateStr, oefIdx) {
   let all;
   try { all = JSON.parse(localStorage.getItem('prime_wp_removed') || '{}'); }
