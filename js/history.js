@@ -625,13 +625,18 @@ function renderProgrammaVoortgang() {
     weken.get(key).push(item);
   });
 
-  const wekenHtml = [...weken.entries()].map(([monStr, items]) => {
+  // Op datum sorteren i.p.v. op toevoegvolgorde in prime_planning -- die
+  // volgorde klopt niet altijd (bv. een dag die later alsnog is toegevoegd,
+  // zoals bij een handmatige correctie, staat dan achteraan in de array en
+  // zou anders ook als laatste week/rij getoond worden, ook al ligt hij
+  // chronologisch veel eerder).
+  const wekenHtml = [...weken.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([monStr, items]) => {
     const mon = new Date(monStr + 'T00:00:00');
     const zo  = new Date(mon); zo.setDate(mon.getDate() + 6);
     const label = mon.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' – ' +
                   zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
 
-    const rijen = items.map(item => {
+    const rijen = [...items].sort((a, b) => a.date.localeCompare(b.date)).map(item => {
       const d         = new Date(item.date + 'T00:00:00');
       const disp      = wpGetDisplay(item.schemaId);
       // Bevroren lijst (oefSnapshotKeys) voor dagen waar al afgevinkt is,
