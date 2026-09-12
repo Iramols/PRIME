@@ -107,10 +107,14 @@ function progBouwLijst() {
     // en PRIME-programma's hebben een vrije dagreeks, dus die tonen 'Dag 1 · Dag 2 · ...'.
     const dagIcons    = Object.keys(prog.dagen || {}).sort((a,b) => Number(a)-Number(b))
       .map(i => prog.builtin ? progDagKort(Number(i)) : (Number(i) + 1)).join(' \xB7 ');
+    // Bewerken/verwijderen is hier alleen coach-exclusief in de PRIME-tab --
+    // in de eigen (normale) programmalijst kan elke klant zijn/haar eigen
+    // programma's net zo bewerken, dus daar géén oranje coach-only-styling.
+    const coachOnlyBtn = progMode === 'prime' ? ' coach-only-btn' : '';
     let knoppen = '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>';
     if (!prog.builtin && canEdit) {
-      knoppen += '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
-        '<button class="btn-sm" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">' + t('common.delete') + '</button>';
+      knoppen += '<button class="btn-sm' + coachOnlyBtn + '" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
+        '<button class="btn-sm' + coachOnlyBtn + '" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">' + t('common.delete') + '</button>';
     } else if (!prog.builtin) {
       knoppen += '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('programmas.view') + '</button>';
     }
@@ -158,6 +162,10 @@ function progBouw3ColEditor() {
   if (!prog) { progActiefId = null; return progBouwLijst(); }
   if (!prog.dagen) prog.dagen = {};
   const canEdit = progCanEdit();
+  // Bewerken van een PRIME-programma kan alleen de coach -- in de eigen
+  // (normale) programma's is canEdit ook true voor de klant zelf, dus daar
+  // géén oranje coach-only-styling.
+  const coachOnlyBtn = progMode === 'prime' ? ' coach-only-btn' : '';
 
   const dagIndexen = Object.keys(prog.dagen).map(Number).sort((a,b) => a-b);
   if (progActiefDagIdx === null || !prog.dagen[progActiefDagIdx]) {
@@ -173,7 +181,7 @@ function progBouw3ColEditor() {
     const isActief = i === progActiefDagIdx;
     return '<div class="prog-list-row' + (isActief ? ' active' : '') + '" onclick="progDagSelecteer(' + i + ')">' +
       '<span>' + t('programmas.dayLabel', { n: i + 1 }) + (naam ? ' – ' + naam : '') + '</span>' +
-      (canEdit ? '<button class="prog-list-row-remove" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' : '') +
+      (canEdit ? '<button class="prog-list-row-remove' + coachOnlyBtn + '" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' : '') +
       '</div>';
   }).join('');
 
@@ -199,8 +207,8 @@ function progBouw3ColEditor() {
         '</div>' +
         (canEdit
           ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
-            '<button class="ex-detail-btn" onclick="progOefBewerken(' + i + ')"><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>' +
-            '<div class="ex-check-wrap" onclick="progOefVerwijder(' + i + ')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>' +
+            '<button class="ex-detail-btn' + coachOnlyBtn + '" onclick="progOefBewerken(' + i + ')"><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>' +
+            '<div class="ex-check-wrap' + coachOnlyBtn + '" onclick="progOefVerwijder(' + i + ')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>' +
             '</div>'
           : '') +
         '</div>';
@@ -217,7 +225,7 @@ function progBouw3ColEditor() {
 
     '<div class="prog-col">' +
     '<div class="prog-col-head"><span>' + t('programmas.trainingDays') + '</span></div>' +
-    (canEdit ? '<div class="prog-col-actions"><button class="prog-col-add" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button></div>' : '') +
+    (canEdit ? '<div class="prog-col-actions"><button class="prog-col-add' + coachOnlyBtn + '" onclick="progDagToevoegen()">' + t('programmas.addDay') + '</button></div>' : '') +
     '<div class="prog-col-body">' + dagRijenHtml + '</div>' +
     '</div>' +
 
@@ -231,7 +239,7 @@ function progBouw3ColEditor() {
       : '') +
     (geselecteerdeDag && canEdit
       ? '<div class="prog-col-actions">' +
-        '<button class="prog-col-add" onclick="progOefUitLosseOefeningenKiezen()">' + t('programmas.addEmptyField') + '</button>' +
+        '<button class="prog-col-add' + coachOnlyBtn + '" onclick="progOefUitLosseOefeningenKiezen()">' + t('programmas.addEmptyField') + '</button>' +
         '</div>'
       : '') +
     '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
@@ -247,10 +255,11 @@ function progBouw3ColEditor() {
 // (niet-PRIME) programma's, een knop rechts om het huidige programma als
 // nieuw PRIME-programma op te slaan.
 function progBouwInfoKaart(prog, canEdit) {
+  const coachOnlyBtn = progMode === 'prime' ? ' coach-only-btn' : '';
   const primeActie = (progMode === 'normal' && isPrimeCoach())
     ? '<div class="prog-info-side">' +
       '<div class="prog-info-side-label">' + t('programmas.prime.sideLabel') + '</div>' +
-      '<button class="btn-sm" style="width:100%" onclick="progOpenPrimeSaveModal()">' + t('programmas.prime.saveAs') + '</button>' +
+      '<button class="btn-sm coach-only-btn" style="width:100%" onclick="progOpenPrimeSaveModal()">' + t('programmas.prime.saveAs') + '</button>' +
       '</div>'
     : '';
   const dis = canEdit ? '' : ' disabled';
@@ -264,7 +273,7 @@ function progBouwInfoKaart(prog, canEdit) {
     (canEdit
       ? '<label style="cursor:pointer">' +
         '<input type="file" accept="image/*" style="display:none" onchange="handleProgPhoto(event)">' +
-        '<span style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600">' + t('beheer.upload') + '</span>' +
+        '<span class="' + coachOnlyBtn.trim() + '" style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600">' + t('beheer.upload') + '</span>' +
         '</label>'
       : '') +
     '</div>' +

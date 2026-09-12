@@ -416,8 +416,8 @@ function renderPrimeMealPlan() {
         </div>
         <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
           ${canEdit ? `
-          <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('common.edit')}</button>
-          <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">${t('common.delete')}</button>
+          <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('common.edit')}</button>
+          <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">${t('common.delete')}</button>
           ` : `
           <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('programmas.view')}</button>
           `}
@@ -759,6 +759,16 @@ function _populateMealForm(dish, isPrime) {
   _amEditingIsPrime = !!isPrime;
   _amFormReadOnly = _amEditingIsPrime && !isPrimeCoach();
 
+  // Kun je deze knoppen hier ZIEN en ze zijn ook actief bewerkbaar, terwijl
+  // het om een PRIME-gerecht gaat -- dan kan dat alleen de coach zijn
+  // (_amFormReadOnly verbergt alles al voor iedereen anders). Oranje
+  // coach-only-styling dus alleen in dat geval, niet bij een eigen gerecht.
+  const coachOnly = _amEditingIsPrime && !_amFormReadOnly;
+  document.getElementById('am-submit-btn').classList.toggle('coach-only-btn', coachOnly);
+  document.querySelectorAll('#am-ingredient-actions button').forEach(btn => btn.classList.toggle('coach-only-btn', coachOnly));
+  const uploadSpan = document.querySelector('#am-photo-upload-label span');
+  if (uploadSpan) uploadSpan.classList.toggle('coach-only-btn', coachOnly);
+
   const nameInput = document.getElementById('am-name');
   nameInput.value = dish.name;
   nameInput.disabled = _amFormReadOnly;
@@ -836,6 +846,13 @@ function resetMealForm() {
   document.getElementById('am-photo-preview').innerHTML = '🍽️';
   document.getElementById('am-photo-upload-label').style.display = '';
   document.getElementById('am-ingredient-actions').style.display = '';
+  // Coach-only-styling (zie _populateMealForm) hoort alleen bij het
+  // bewerken van een PRIME-gerecht -- terug naar een gewoon "nieuw
+  // gerecht"-formulier is nooit coach-exclusief.
+  document.getElementById('am-submit-btn').classList.remove('coach-only-btn');
+  document.querySelectorAll('#am-ingredient-actions button').forEach(btn => btn.classList.remove('coach-only-btn'));
+  const _amUploadSpan = document.querySelector('#am-photo-upload-label span');
+  if (_amUploadSpan) _amUploadSpan.classList.remove('coach-only-btn');
   document.getElementById('am-own-meals-section').style.display = '';
   document.getElementById('am-ingredients-body').innerHTML = '';
   addIngredientRow();

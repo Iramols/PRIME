@@ -9,6 +9,8 @@
   --white: #ffffff;
   --accent: #c8855a;
   --accent-light: #f5e8df;
+  --coach-only: #e67e22;
+  --coach-only-light: #fdf0e4;
   --radius: 16px;
   --radius-sm: 10px;
   --shadow: 0 2px 16px rgba(0,0,0,0.07);
@@ -111,6 +113,24 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
 }
 .btn-sm:hover { background: var(--sage-mid); }
+
+/* COACH-ONLY: knoppen/besturingen die alleen zichtbaar zijn voor de coach
+   (ira.mols@hotmail.com) -- oranje, zodat meteen duidelijk is welke
+   bediening klant-onzichtbaar is (wisselen van klant, PRIME-programma's/
+   -gerechten bewerken, enz.). Werkt samen met zowel .btn-primary/.btn-sm
+   als de losse icon-achtige knopjes elders in de app. */
+.coach-only-btn,
+.coach-only-btn.btn-sm {
+  background: var(--coach-only-light) !important;
+  color: var(--coach-only) !important;
+  border-color: var(--coach-only) !important;
+}
+.coach-only-btn.btn-primary {
+  background: var(--coach-only) !important;
+  color: var(--white) !important;
+}
+.coach-only-btn.btn-primary:hover { background: #c96c14 !important; }
+.coach-only-btn:hover { background: #fbe4ca !important; }
 .lang-toggle { display: flex; border: 1px solid var(--sage-mid); border-radius: 8px; overflow: hidden; }
 .lang-btn {
   background: var(--white); color: var(--muted); border: none; padding: 8px 12px;
