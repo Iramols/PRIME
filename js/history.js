@@ -488,13 +488,19 @@ function renderMacroTrendChart() {
 
 function calcBestStreak() {
   if (!history.length) return 0;
+  // Ontdubbel eerst op datum -- een dag kon (vóór de fix die dubbel
+  // afsluiten voorkwam, zie eerdere commit) meerdere keren in history
+  // terechtkomen. Zo'n duplicaat gaf hier een dagverschil van 0 tussen
+  // twee identieke datums, wat de opeenvolgende-dagenteller ten onrechte
+  // liet resetten en de beste streak te laag liet uitkomen (bv. 13 i.p.v.
+  // de daadwerkelijke, langere streak die calcStreak() wél correct telt).
+  const datums = [...new Set(history.map(h => h.date))].sort();
   let best = 0, current = 0;
-  const sorted = [...history].sort((a,b) => new Date(a.date) - new Date(b.date));
-  for (let i = 0; i < sorted.length; i++) {
+  for (let i = 0; i < datums.length; i++) {
     if (i === 0) { current = 1; }
     else {
-      const prev = new Date(sorted[i-1].date);
-      const curr = new Date(sorted[i].date);
+      const prev = new Date(datums[i-1] + 'T00:00:00');
+      const curr = new Date(datums[i] + 'T00:00:00');
       const diff = Math.round((curr - prev) / (1000*60*60*24));
       current = diff === 1 ? current + 1 : 1;
     }
