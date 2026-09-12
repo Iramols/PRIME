@@ -99,7 +99,7 @@ function renderHome() {
     const _wpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === today) || null;
     if (_wpEntry) {
       const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
-      document.getElementById('day-title').textContent = dispName(_wpDisp) + t('home.readySuffix');
+      document.getElementById('day-title').textContent = t('home.pilotThanks');
       document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + dispName(_wpDisp) + '</div>';
       const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
       document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');

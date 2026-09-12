@@ -336,10 +336,10 @@ async function doCheckin() {
     const r = await callClaude(prompt, []);
     document.getElementById('coach-msg-text').textContent = r;
     document.getElementById('coach-message-home').style.display = 'block';
-    document.getElementById('day-title').textContent = _trainLabel + t('home.readySuffix');
-    document.getElementById('day-summary').textContent = t('day.summary.default');
+    document.getElementById('day-title').textContent = t('home.pilotThanks');
+    document.getElementById('day-summary').innerHTML = t('day.summary.default');
   } catch {
-    document.getElementById('day-title').textContent = _trainLabel + t('home.readySuffix');
+    document.getElementById('day-title').textContent = t('home.pilotThanks');
     document.getElementById('day-summary').textContent = t('checkin.daySummaryFallback');
   }
 }
