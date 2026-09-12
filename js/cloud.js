@@ -43,6 +43,32 @@ function getSupabase() {
   return _sb;
 }
 
+// ── Lokale "laatst zelf geschreven"-tijdstippen per sleutel ──
+// Bugmelding: afgevinkte oefeningen (en andere voortgang) "resetten"
+// soms vanzelf, zonder dat er iets in Training is aangepast. Oorzaak:
+// syncSet() hieronder stuurt de cloud-upsert async en zonder wachten
+// weg; als de pagina kort daarna herlaadt (bv. om een nieuwe versie te
+// zien, of gewoon een normale refresh) VOORDAT die upsert de server
+// heeft bereikt, werd dat verzoek door de paginanavigatie afgebroken --
+// en haalde hydrateFromCloud() bij het opnieuw opstarten gewoon de oude
+// (nog niet bijgewerkte) rij weer op en overschreef daarmee domweg de
+// lokale, net gemaakte wijziging. Met een per-sleutel tijdstip van de
+// laatste LOKALE schrijfactie kan hydrateFromCloud() zo'n lokaal-nog-
+// niet-bevestigde wijziging herkennen en met rust laten i.p.v. hem te
+// verliezen. Per klant-id genamespaced, want switchClient() herlaadt de
+// pagina met een andere clientId -- zonder die scheiding zou het
+// tijdstip van klant A anders ten onrechte klant B's cloud-data kunnen
+// blokkeren (of, erger, klant A's lokale rommel naar klant B pushen).
+function _syncTsKey(key, clientId) { return key + '__synctime__' + clientId; }
+function _localSyncTs(key, clientId) {
+  const v = localStorage.getItem(_syncTsKey(key, clientId));
+  const n = v ? parseInt(v, 10) : 0;
+  return isNaN(n) ? 0 : n;
+}
+function _markLocalSyncTs(key, clientId, ts) {
+  try { localStorage.setItem(_syncTsKey(key, clientId), String(ts)); } catch (e) {}
+}
+
 // Haalt alle client_state-rijen van de opgegeven klant op en zet ze in
 // localStorage onder dezelfde prime_*-sleutel, zodat de bestaande
 // state.js/init()-flow ongewijzigd kan blijven werken.
@@ -51,19 +77,49 @@ async function hydrateFromCloud(clientId) {
   const sb = getSupabase();
   const { data, error } = await sb
     .from('client_state')
-    .select('key, value')
+    .select('key, value, updated_at')
     .eq('client_id', clientId);
 
   if (error) throw error;
 
-  // Eerst alle cloud-sleutels leegmaken zodat een klant zonder data
-  // (nieuw account) niet de vorige klant se lokale resten meekrijgt.
-  CLOUD_KEYS.forEach(key => localStorage.removeItem(key));
+  const serverKeys = new Set();
+  const teHerpushen = []; // sleutels waar de lokale versie "wint" en dus nog naar de cloud moet
 
   (data || []).forEach(row => {
-    if (CLOUD_KEYS.includes(row.key)) {
-      localStorage.setItem(row.key, JSON.stringify(row.value));
+    if (!CLOUD_KEYS.includes(row.key)) return;
+    serverKeys.add(row.key);
+    const serverTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
+    const localTs  = _localSyncTs(row.key, clientId);
+    if (localTs > serverTs && localStorage.getItem(row.key) != null) {
+      // Deze pagina heeft zelf recenter (mogelijk nog niet aangekomen)
+      // lokaal geschreven dan wat er nu in de cloud staat -- niet
+      // overschrijven, straks opnieuw proberen te versturen.
+      teHerpushen.push(row.key);
+      return;
     }
+    localStorage.setItem(row.key, JSON.stringify(row.value));
+    _markLocalSyncTs(row.key, clientId, serverTs);
+  });
+
+  // Sleutels zonder cloud-rij: alleen leegmaken als er ook geen "eigen,
+  // nog te versturen" lokale claim op staat (dus een écht nieuw/leeg
+  // account voor DEZE klant-id, geen slachtoffer van dezelfde race).
+  CLOUD_KEYS.forEach(key => {
+    if (serverKeys.has(key)) return;
+    if (_localSyncTs(key, clientId) > 0 && localStorage.getItem(key) != null) {
+      teHerpushen.push(key);
+      return;
+    }
+    localStorage.removeItem(key);
+  });
+
+  // Alsnog versturen wat lokaal won, zodat de cloud niet blijvend
+  // achterloopt op wat deze pagina al lokaal heeft.
+  teHerpushen.forEach(key => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) syncSet(key, JSON.parse(raw));
+    } catch (e) { console.error('hydrateFromCloud: herstel-push mislukt voor ' + key + ':', e); }
   });
 }
 
@@ -83,6 +139,11 @@ function syncSet(key, value) {
 
   if (!CLOUD_KEYS.includes(key)) return;
   if (!activeClientId) return; // nog niet ingelogd/gehydrateerd
+
+  // Meteen (synchroon, dus ook als de pagina vlak hierna herlaadt vóórdat
+  // de upsert hieronder is aangekomen) vastleggen dat DEZE klant-sessie
+  // deze sleutel zojuist lokaal heeft bijgewerkt -- zie hydrateFromCloud().
+  _markLocalSyncTs(key, activeClientId, Date.now());
 
   // De cloud-sync hieronder mag NOOIT de aanroeper laten crashen: syncSet()
   // wordt overal aangeroepen vlak vóór een DOM-update (bv. toggleFoodEaten,
