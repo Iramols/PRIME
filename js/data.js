@@ -16,6 +16,16 @@ function localDateStr(d) {
   return new Date(d.getTime() - tzOffsetMs).toISOString().split('T')[0];
 }
 
+// Is deze datum al (volledig) afgesloten via de dagelijkse check-out? Zodra
+// dat zo is, staat de datum in history -- en mogen vinkjes/verwijderknoppen
+// voor die dag niet meer aangepast kunnen worden (het overzicht van wat er
+// die dag gebeurd is ligt dan vast). Gebruikt door renderLogItemCard()
+// (food.js) en wpBouwOefeningenAfvinken()/exCard() (weekplanning.js/
+// training.js) om die besturingen uit te schakelen voor afgesloten dagen.
+function isDagAfgesloten(dateStr) {
+  return history.some(h => h.date === dateStr);
+}
+
 // ========== EXTRA OEFENINGEN ==========
 const EXTRA_EXERCISES = [
   { group:'Borst', group_en:'Chest', icon:'💪', color:'#744210', exercises:[

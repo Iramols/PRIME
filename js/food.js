@@ -1422,8 +1422,16 @@ function logItemPhoto(item) {
 function renderLogItemCard(dateStr, item) {
   const photo = logItemPhoto(item);
   const isEaten = !!item.eaten;
+  // Een dag die al is afgesloten (check-out gedaan, staat in history) ligt
+  // vast -- gram/gegeten-status/verwijderen kan dan niet meer aangepast
+  // worden. De vinkjes/knoppen blijven wel zichtbaar (ze tonen nog steeds
+  // wat er die dag is gebeurd), alleen niet meer klikbaar.
+  const afgesloten = isDagAfgesloten(dateStr);
+  const cardClick = afgesloten ? '' : ` onclick="editLogItem('${dateStr}', ${item.logId})"`;
+  const eatenClick = afgesloten ? '' : `onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" `;
+  const delClick = afgesloten ? '' : `onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" `;
   return `
-    <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:pointer;opacity:${isEaten ? '0.55' : '1'}" onclick="editLogItem('${dateStr}', ${item.logId})">
+    <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:${afgesloten ? 'default' : 'pointer'};opacity:${isEaten ? '0.55' : '1'}"${cardClick}>
       ${photo
         ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
         : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
@@ -1435,12 +1443,12 @@ function renderLogItemCard(dateStr, item) {
           </div>
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">
-          <div class="ex-check-wrap" onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" style="cursor:pointer">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;opacity:${afgesloten ? '0.5' : '1'}">
+          <div class="ex-check-wrap" ${eatenClick}style="cursor:${afgesloten ? 'default' : 'pointer'}">
             <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" title="${t('food.log.markEaten')}">✓</div>
             <span class="ex-check-label">${t('food.log.markEaten')}</span>
           </div>
-          <div class="ex-check-wrap" onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" style="cursor:pointer">
+          <div class="ex-check-wrap" ${delClick}style="cursor:${afgesloten ? 'default' : 'pointer'}">
             <span style="font-size:16px;color:var(--muted);line-height:1">×</span>
             <span class="ex-check-label">${t('common.delete')}</span>
           </div>

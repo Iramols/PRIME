@@ -693,6 +693,11 @@ function renderTrainingDag() {
 
   // Weekplanning oefeningen voor vandaag
   const _dagToday = localDateStr();
+  // "Vandaag" is altijd de datum van vandaag, maar die kan ondertussen al
+  // wel afgesloten zijn (check-out gedaan) als je na het afsluiten alsnog
+  // rechtstreeks naar Training navigeert -- dan mag er niks meer aangepast
+  // worden, zie isDagAfgesloten() (data.js).
+  const _dagAfgesloten = isDagAfgesloten(_dagToday);
   const _dagWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _dagToday) || null;
   const _dagWpDoneArr = wpGetDone(_dagToday); // migreert oude numerieke data indien nodig, zie weekplanning.js
   const _dagWpOef = _dagWpEntry ? (wpGetOefeningen(_dagWpEntry.schemaId) || []) : [];
@@ -729,9 +734,9 @@ function renderTrainingDag() {
 
   function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId, cardClickFn) {
     const isDone = isDoneOverride !== undefined ? isDoneOverride : dagDone[ex.id];
-    const clickable = !!(cardClickFn || openDetailId);
-    const checkClick = (clickable ? 'event.stopPropagation();' : '') + (checkClickOverride || "toggleDagDone('" + ex.id + "')");
-    const cardClick = cardClickFn ? (' onclick="' + cardClickFn + '"') : (openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\"" : '');
+    const clickable = !!(cardClickFn || openDetailId) && !_dagAfgesloten;
+    const checkClick = _dagAfgesloten ? '' : (clickable ? 'event.stopPropagation();' : '') + (checkClickOverride || "toggleDagDone('" + ex.id + "')");
+    const cardClick = _dagAfgesloten ? '' : (cardClickFn ? (' onclick="' + cardClickFn + '"') : (openDetailId ? " onclick=\"openExerciseDetail('" + openDetailId + "')\"" : ''));
     let _photo = ex.photo;
     if (!_photo) {
       const _f = findCanonicalExercise(ex.name || ex.naam);
@@ -752,8 +757,8 @@ function renderTrainingDag() {
         })() + '</div>'
       + (ex.youtube ? '<a href="' + ex.youtube + '" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;font-weight:600;color:#ff0000;text-decoration:none">▶ Video</a>' : '')
       + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">'
-      + '<div class="ex-check-wrap" onclick="' + checkClick + '" style="cursor:pointer"><div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;' + (_dagAfgesloten ? 'opacity:0.55' : '') + '">'
+      + '<div class="ex-check-wrap"' + (_dagAfgesloten ? '' : ' onclick="' + checkClick + '"') + ' style="cursor:' + (_dagAfgesloten ? 'default' : 'pointer') + '"><div id="dag-check-' + ex.id + '" class="exercise-check ' + (isDone ? 'done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
       + onRemove
       + '</div>'
       + '</div></div>';
@@ -784,10 +789,14 @@ function renderTrainingDag() {
         photo: oef.photo || ''
       };
       const hasDetail = !!(override && (override.notes || (override.sets && override.sets.length)));
-      html += exCard(norm,
-        '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + _dagToday + '\',' + i + ')">'
-        + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
-        + '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
+      const wpEditBtn = _dagAfgesloten
+        ? '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" disabled><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+        : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + _dagToday + '\',' + i + ')">'
+          + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
+      const wpDelBtn = _dagAfgesloten
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+      html += exCard(norm, wpEditBtn + wpDelBtn,
         _dagWpDoneArr.includes(key), "toggleWpMijnDag('" + _dagToday + "','" + keyEsc + "'," + i + ")",
         undefined, "openWpExerciseDetail('" + _dagToday + "'," + i + ")");
     });
@@ -808,10 +817,14 @@ function renderTrainingDag() {
       html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">💪 ' + groupLabel + '</div>';
       groups[group].forEach(function(ex) {
         const hasDetail = exerciseNotes[ex.id] && (exerciseNotes[ex.id].notes || (exerciseNotes[ex.id].sets && exerciseNotes[ex.id].sets.length));
-        html += exCard(ex,
-          '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')">'
-          + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
-          + '<div class="ex-check-wrap" onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>',
+        const losEditBtn = _dagAfgesloten
+          ? '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" disabled><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+          : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')">'
+            + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
+        const losDelBtn = _dagAfgesloten
+          ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+          : '<div class="ex-check-wrap" onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+        html += exCard(ex, losEditBtn + losDelBtn,
           undefined, undefined, ex.id
         );
       });

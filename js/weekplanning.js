@@ -250,6 +250,9 @@ function wpToggleOefDone(dateStr, doneKey) {
 function wpBouwOefeningenAfvinken(rows, dateStr) {
   if (!rows.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   const done = wpGetDone(dateStr);
+  // Een dag die al is afgesloten (check-out gedaan) ligt vast -- afvinken/
+  // bewerken/verwijderen kan dan niet meer, zie isDagAfgesloten() (data.js).
+  const afgesloten = isDagAfgesloten(dateStr);
   return rows.map(function(row) {
     const o = row.oef, key = row.doneKey;
     const keyEsc = key.replace(/'/g, "\\'"); // voor gebruik in onclick-string
@@ -278,15 +281,25 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
     let delBtn = '';
     if (row.kind === 'prog') {
       const hasDetail = !!(override && (override.notes || (override.sets && override.sets.length)));
-      editBtn = '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + dateStr + '\',' + row.verwijderIdx + ')">'
-        + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
-      delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + dateStr + '\',' + row.verwijderIdx + ');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+      editBtn = afgesloten
+        ? '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" disabled><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+        : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + dateStr + '\',' + row.verwijderIdx + ')">'
+          + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
+      delBtn = afgesloten
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + dateStr + '\',' + row.verwijderIdx + ');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     } else if (row.kind === 'adhoc') {
       const hasDetail = !!(exerciseNotes[row.exId] && (exerciseNotes[row.exId].notes || (exerciseNotes[row.exId].sets && exerciseNotes[row.exId].sets.length)));
-      editBtn = '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + row.exId + '\')">'
-        + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
-      delBtn = '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+      editBtn = afgesloten
+        ? '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" disabled><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+        : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + row.exId + '\')">'
+          + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
+      delBtn = afgesloten
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     }
+
+    const doneClick = afgesloten ? '' : 'onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" ';
 
     return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
       photoDiv +
@@ -294,8 +307,8 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         '<div style="font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
         '<div style="font-size:11px;color:var(--muted)">' + detail + '</div>' +
       '</div>' +
-      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
-        '<div class="ex-check-wrap" onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" style="cursor:pointer"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;' + (afgesloten ? 'opacity:0.55' : '') + '">' +
+        '<div class="ex-check-wrap" ' + doneClick + 'style="cursor:' + (afgesloten ? 'default' : 'pointer') + '"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
         editBtn +
         delBtn +
       '</div>' +

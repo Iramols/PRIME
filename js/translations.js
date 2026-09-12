@@ -148,7 +148,7 @@ const I18N = {
     // Voeding
     'food.title': 'Maaltijdplanner',
     'food.subtitle': 'Jouw persoonlijke voedingsdoel',
-    'food.nutrients.title': 'Calorie en nutriënten inname',
+    'food.nutrients.title': 'Calorie en nutriënten inname (vandaag)',
     'food.nutrient.calories': 'Calorieën',
     'food.nutrient.carbs': 'Koolhydraten',
     'food.nutrient.protein': 'Eiwitten',
@@ -775,7 +775,7 @@ const I18N = {
 
     'food.title': 'Meal planner',
     'food.subtitle': 'Your personal nutrition goal',
-    'food.nutrients.title': 'Calorie and nutrient intake',
+    'food.nutrients.title': 'Calorie and nutrient intake (today)',
     'food.nutrient.calories': 'Calories',
     'food.nutrient.carbs': 'Carbohydrates',
     'food.nutrient.protein': 'Protein',
