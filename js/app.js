@@ -111,8 +111,8 @@ function renderHome() {
       document.getElementById('home-training-preview').innerHTML = t('home.noTrainingToday');
       // Geen training gepland -- claim niet dat "de dag klaarstaat", want
       // dat moet de klant dan nog zelf doen (zie bugmelding).
-      document.getElementById('day-summary').innerHTML = t('day.summary.noTraining');
-      document.getElementById('hero-sub').innerHTML = t('day.summary.noTraining');
+      document.getElementById('day-summary').innerHTML = t('day.summary.noTraining') + '<br>' + t('day.summary.default');
+      document.getElementById('hero-sub').innerHTML = t('day.summary.noTraining') + '<br>' + t('day.summary.default');
     }
     renderTraining();
     renderFood();

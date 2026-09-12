@@ -336,12 +336,15 @@ async function doCheckin() {
     const r = await callClaude(prompt, []);
     document.getElementById('coach-msg-text').textContent = r;
     document.getElementById('coach-message-home').style.display = 'block';
-    document.getElementById('day-title').textContent = t('home.pilotThanks');
-    document.getElementById('day-summary').innerHTML = t('day.summary.default');
   } catch {
-    document.getElementById('day-title').textContent = t('home.pilotThanks');
-    document.getElementById('day-summary').textContent = t('checkin.daySummaryFallback');
+    // AI-samenvatting is optioneel -- #coach-message-home blijft dan
+    // verborgen, maar de titel/tekst hieronder komen sowieso uit de echte
+    // planningsdata, niet uit de AI-respons.
   }
+  document.getElementById('day-title').textContent = t('home.pilotThanks');
+  const _dagTekst = _wpEntry ? t('day.summary.default') : t('day.summary.noTraining') + '<br>' + t('day.summary.default');
+  document.getElementById('day-summary').innerHTML = _dagTekst;
+  document.getElementById('hero-sub').innerHTML = _dagTekst;
 }
 
 async function doCheckout() {
