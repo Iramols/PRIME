@@ -53,7 +53,7 @@ function buildTrainingSummary() {
   const _btsWpDoneArr = wpGetDone(_btsToday); // migreert oude numerieke data indien nodig, zie weekplanning.js
   const _btsWpOef = _btsWpEntry ? wpGetOefeningen(_btsWpEntry.schemaId) : [];
   const wpItems = _btsWpOef.map(function(ex, i) {
-    return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)), _wpKey: wpOefKey(ex) };
+    return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)), _wpKey: wpOefKey(ex, i, _btsWpOef) };
   });
 
   const allItems = wpItems.concat(trainingDagLog);

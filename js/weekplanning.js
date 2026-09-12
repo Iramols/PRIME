@@ -125,7 +125,24 @@ function wpBouwOefeningenLijst(oefeningen) {
 // Gebruikt voor prime_wp_done i.p.v. de array-positie, zodat afgevinkt-status
 // niet verschuift/breekt als het programma later wordt aangepast (oefening
 // toegevoegd/verwijderd/verplaatst).
-function wpOefKey(oef) { return 'n:' + (oef.naam || oef.name || ''); }
+//
+// idx/arr (optioneel, meestal automatisch aanwezig via .map(wpOefKey)):
+// staan er twee (of meer) oefeningen met dezelfde naam op dezelfde dag (bv.
+// "Squat" tweemaal), dan zouden ze zonder onderscheid dezelfde sleutel delen
+// en dus elkaars afvink-status overschrijven -- de tweede keer afvinken vinkt
+// dan de eerste weer UIT in plaats van dat beide als gedaan tellen. Met
+// idx/arr krijgt elke volgende gelijknamige oefening een eigen '#n'-suffix;
+// zonder array-context (enkel oef) blijft de sleutel zoals voorheen.
+function wpOefKey(oef, idx, arr) {
+  const naam = oef.naam || oef.name || '';
+  if (idx == null || !arr) return 'n:' + naam;
+  let rang = 0;
+  for (let i = 0; i < idx; i++) {
+    const n2 = arr[i].naam || arr[i].name || '';
+    if (n2 === naam) rang++;
+  }
+  return rang > 0 ? 'n:' + naam + '#' + rang : 'n:' + naam;
+}
 
 // Oude, vóór deze wijziging opgeslagen prime_wp_done-datums bevatten nog
 // numerieke array-posities i.p.v. sleutels. Migreert die eenmalig (per
@@ -138,7 +155,7 @@ function wpMigreerDoneNaarKeys(dateStr, doneArr) {
   const geplandeOefeningen = entry ? wpGetOefeningen(entry.schemaId) : [];
   const adhocOefeningen = trainingDays[dateStr] || [];
   const gemigreerd = doneArr.map(function(idx) {
-    if (idx < geplandeOefeningen.length) return wpOefKey(geplandeOefeningen[idx]);
+    if (idx < geplandeOefeningen.length) return wpOefKey(geplandeOefeningen[idx], idx, geplandeOefeningen);
     const adhocIdx = idx - geplandeOefeningen.length;
     const o = adhocOefeningen[adhocIdx];
     return o ? 'a:' + o.id : null;
@@ -389,7 +406,7 @@ function wpBouwOverzicht() {
       const arrowId    = 'wp-arrow-' + item.date;
       // Ongebruikte weergave (zie comment bij wpBouwOverzicht) -- geen
       // verwijderknop nodig, dus platte 'legacy'-rijen zonder kind.
-      const oefRows = oefeningen.map(function(oef) { return { oef: oef, doneKey: wpOefKey(oef), kind: 'legacy' }; });
+      const oefRows = oefeningen.map(function(oef, i, arr) { return { oef: oef, doneKey: wpOefKey(oef, i, arr), kind: 'legacy' }; });
       const detailHtml = oefeningen.length
         ? '<div id="' + detailId + '" style="display:none;padding:6px 0 4px 90px">' +
           wpBouwOefeningenAfvinken(oefRows, item.date) + '</div>'
@@ -554,7 +571,7 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
   // ook gebruikt bij Vandaag) overslaan; het programma zelf blijft intact.
   const wpVerwijderd = wpGetRemoved(dateStr);
   const geplandeRows = geplandeOefeningen
-    .map(function(oef, i) { return { oef: oef, doneKey: wpOefKey(oef), verwijderIdx: i, kind: 'prog' }; })
+    .map(function(oef, i) { return { oef: oef, doneKey: wpOefKey(oef, i, geplandeOefeningen), verwijderIdx: i, kind: 'prog' }; })
     .filter(function(x) { return !wpVerwijderd.includes(x.verwijderIdx); });
   const adhocOefeningen = trainingDays[dateStr] || [];
   const adhocRows = adhocOefeningen.map(function(oef, i) {

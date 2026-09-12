@@ -559,11 +559,20 @@ function renderProgrammaVoortgang() {
   // de datum definitief in het verleden ligt, niet bij de eerste afvinking.
   // (v2: de eerste reset filterde nog niet de per-dag-verwijderde
   // oefeningen mee, zie hieronder -- daardoor bleven dagen met zo'n
-  // verwijdering toch het volle sjabloonaantal tonen. Nieuwe vlag zodat
-  // deze reset ook voor wie v1 al draaide nog één keer opnieuw gebeurt.)
-  if (!localStorage.getItem('prime_wp_snapshot_reset_v2')) {
+  // verwijdering toch het volle sjabloonaantal tonen.
+  // v3: wpOefKey() gaf twee gelijknamige oefeningen op dezelfde dag (bv.
+  // "Squat" tweemaal) voorheen dezelfde sleutel -- ze deelden daardoor
+  // dezelfde afvink-status en het totaal telde ze wel apart, wat het
+  // percentage blijvend onder 100% hield ook als alles was afgevinkt. Nu
+  // krijgt elke volgende gelijknamige oefening een eigen '#n'-suffix. Een
+  // dag met zo'n botsing moet je de eerder ontoegankelijke oefening nog wel
+  // één keer opnieuw afvinken -- de knop deed daarvoor niets omdat hij de
+  // andere, gelijknamige oefening ontvinkte.
+  // Elke vlag zorgt dat de reset voor wie een eerdere versie al draaide nog
+  // één keer opnieuw gebeurt.)
+  if (!localStorage.getItem('prime_wp_snapshot_reset_v3')) {
     geplanning.forEach(item => { delete item.oefSnapshotKeys; });
-    localStorage.setItem('prime_wp_snapshot_reset_v2', '1');
+    localStorage.setItem('prime_wp_snapshot_reset_v3', '1');
     syncSet('prime_planning', geplanning);
   }
 

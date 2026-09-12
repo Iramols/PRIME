@@ -729,7 +729,7 @@ function renderTrainingDag() {
   // verwijderde) indices tellen mee in de voortgang.
   _dagWpOef.forEach(function(oef, i) {
     if (_dagWpVerwijderd.includes(i)) { delete dagDone['wp-dag-' + i]; return; }
-    dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(wpOefKey(oef));
+    dagDone['wp-dag-' + i] = _dagWpDoneArr.includes(wpOefKey(oef, i, _dagWpOef));
   });
 
   function exCard(ex, onRemove, isDoneOverride, checkClickOverride, openDetailId, cardClickFn) {
@@ -772,7 +772,7 @@ function renderTrainingDag() {
     html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + wpLabel + '</div>';
     _dagWpZichtbaar.forEach(function(entry) {
       const oef = entry.oef, i = entry.i;
-      const key = wpOefKey(oef), keyEsc = key.replace(/'/g, "\\'");
+      const key = wpOefKey(oef, i, _dagWpOef), keyEsc = key.replace(/'/g, "\\'");
       // Per-dag aanpassing (sets/reps/rust/notities) overschrijft de
       // programma-waarden alleen voor de weergave van vandaag -- het
       // programma zelf blijft ongewijzigd. Zie openWpExerciseDetail().
