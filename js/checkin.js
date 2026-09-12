@@ -342,9 +342,8 @@ async function doCheckin() {
     // planningsdata, niet uit de AI-respons.
   }
   document.getElementById('day-title').textContent = t('home.pilotThanks');
-  const _dagTekst = _wpEntry ? t('day.summary.default') : t('day.summary.noTraining') + '<br>' + t('day.summary.default');
-  document.getElementById('day-summary').innerHTML = _dagTekst;
-  document.getElementById('hero-sub').innerHTML = _dagTekst;
+  document.getElementById('day-summary').innerHTML = t('day.summary.default');
+  document.getElementById('hero-sub').innerHTML = t('day.summary.default');
 }
 
 async function doCheckout() {
