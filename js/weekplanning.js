@@ -727,6 +727,14 @@ function wpConfirmTrainingCopy() {
 
 function wpConfirmTrainingCopyInner() {
   if (!wpTrainingCopySourceDate) return;
+  // Ververs eerst vanuit localStorage -- geplanning is een module-brede
+  // cache die vanaf paginalading kan blijven hangen; zonder deze refresh
+  // zou een wijziging die buiten deze pagina-sessie om is gebeurd (bv. een
+  // eenmalig correctiescript in de console, of gewoon een andere/oudere
+  // tab) hier straks gewoon overschreven worden door deze verouderde
+  // momentopname (zie bugmelding: "trainingsstatistieken zijn weer
+  // gereset" na een correctie die buiten deze functie om was toegepast).
+  wpLaadData();
   const bron = geplanning.find(p => p.date === wpTrainingCopySourceDate);
   const bronOefeningen = trainingDays[wpTrainingCopySourceDate] || [];
   if (!bron && !bronOefeningen.length) { alert(t('foodweek.copy.emptySource')); return; }

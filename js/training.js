@@ -860,6 +860,11 @@ function renderTrainingDag() {
 function clearTrainingDag(dateStr) {
   const target = dateStr || _trainingToday();
   const isVandaag = target === _trainingToday();
+  // Ververs geplanning eerst vanuit localStorage (zie toelichting bij
+  // wpConfirmTrainingCopyInner in weekplanning.js) -- anders zou het
+  // hieronder opslaan van een gefilterde, maar verder verouderde,
+  // momentopname elders gemaakte wijzigingen ongedaan kunnen maken.
+  wpLaadData();
   const heeftIets = (trainingDays[target] || []).length > 0 || geplanning.some(p => p.date === target);
   if (!heeftIets) return;
   if (!confirm(t('training.clearDay.confirm'))) return;

@@ -677,6 +677,10 @@ function progCloseScheduleModal() {
 function progConfirmSchedule() {
   if (!progScheduleProgId) return;
   progLaadData();
+  // Ook geplanning verversen vanuit localStorage vóórdat we er hieronder
+  // op verder bouwen en het geheel terugschrijven (zie toelichting bij
+  // wpConfirmTrainingCopyInner in weekplanning.js).
+  wpLaadData();
   let prog = progLijst.find(p => p.id === progScheduleProgId);
   if (!prog) prog = primeProgLijst.find(p => p.id === progScheduleProgId);
   if (!prog) { progCloseScheduleModal(); return; }
