@@ -233,14 +233,17 @@
   </div>
 
   <!-- TABS -->
-  <div class="food-tabs" style="margin-bottom:18px">
-    <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')" data-i18n="training.tab.day">Vandaag</button>
-    <button class="food-tab"        id="ttab-weekplanning" onclick="switchTrainingTab('weekplanning')" data-i18n="training.tab.weekplanning">Weekplanning</button>
-    <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')" data-i18n="training.tab.exercises">Losse oefeningen</button>
-    <button class="food-tab"        id="ttab-primeprog"    onclick="switchTrainingTab('primeprog')" data-i18n="training.tab.primeProgramas">PRIME programma's</button>
-    <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Programma's</button>
-    <button class="food-tab"        id="ttab-addprogram"   onclick="switchTrainingTab('addprogram')" data-i18n="training.tab.addProgram">+ Programma toevoegen</button>
-    <button class="food-tab"        id="ttab-addexercise"  onclick="switchTrainingTab('addexercise')" data-i18n="training.tab.addExercise">+ Oefening toevoegen</button>
+  <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:18px">
+    <div class="food-tabs" style="margin-bottom:0;flex:1;min-width:0">
+      <button class="food-tab active" id="ttab-dag"          onclick="switchTrainingTab('dag')" data-i18n="training.tab.day">Vandaag</button>
+      <button class="food-tab"        id="ttab-weekplanning" onclick="switchTrainingTab('weekplanning')" data-i18n="training.tab.weekplanning">Weekplanning</button>
+      <button class="food-tab"        id="ttab-oefeningen"   onclick="switchTrainingTab('oefeningen')" data-i18n="training.tab.exercises">Losse oefeningen</button>
+      <button class="food-tab"        id="ttab-primeprog"    onclick="switchTrainingTab('primeprog')" data-i18n="training.tab.primeProgramas">PRIME programma's</button>
+      <button class="food-tab"        id="ttab-programmas"   onclick="switchTrainingTab('programmas')" data-i18n="training.tab.programs">Programma's</button>
+      <button class="food-tab"        id="ttab-addprogram"   onclick="switchTrainingTab('addprogram')" data-i18n="training.tab.addProgram">+ Programma toevoegen</button>
+      <button class="food-tab"        id="ttab-addexercise"  onclick="switchTrainingTab('addexercise')" data-i18n="training.tab.addExercise">+ Oefening toevoegen</button>
+    </div>
+    <button class="btn-sm coach-only-btn" id="wis-training-btn" style="display:none;flex-shrink:0;white-space:nowrap" onclick="wpVerwijder()" data-i18n="weekplan.clearAllTraining">Wis training compleet</button>
   </div>
 
   <!-- TAB: PRIME PROGRAMMA'S -->

@@ -597,9 +597,6 @@ function wpdBuildWeekHtml() {
       ${wpdWeekOffset !== 0 ? `<div style="text-align:center;margin-top:10px">
         <button class="btn-sm" onclick="wpdGoToday()">${t('foodweek.backToThisWeek')}</button>
       </div>` : ''}
-      ${typeof isPrimeCoach === 'function' && isPrimeCoach() ? `<div style="text-align:center;margin-top:10px">
-        <button class="btn-sm coach-only-btn" onclick="wpVerwijder()">${t('weekplan.removePlanning')}</button>
-      </div>` : ''}
     </div>`;
 
     html += '<div style="display:flex;flex-direction:column;gap:10px">';
