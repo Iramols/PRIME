@@ -179,15 +179,6 @@ function renderEnergyChart() {
   const pts = data.map((h, i) => `${xPos(i)},${yPos(h.checkout.energy)}`).join(' ');
   const vlak = `${padL},${yPos(1)} ` + pts + ` ${xPos(n - 1)},${yPos(1)}`;
 
-  // Dots -- kleur blijft het betekenisvolle niveau (goed/matig/laag) volgen,
-  // alleen het laatste (huidige) punt krijgt een groter, geaccentueerd stipje.
-  const dotColor = v => v >= 3.5 ? '#4a7c59' : v >= 2.5 ? '#5a7cc8' : v >= 1.5 ? '#f39c12' : '#e74c3c';
-  const dots = data.map((h, i) => {
-    const e = h.checkout.energy;
-    const isLast = i === n - 1;
-    return `<circle cx="${xPos(i)}" cy="${yPos(e)}" r="${isLast ? 4.5 : 3}" fill="${dotColor(e)}" stroke="white" stroke-width="${isLast ? 2 : 1.2}"/>`;
-  }).join('');
-
   // X-labels: toon max 6 datums
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((h, i) => {
@@ -205,7 +196,6 @@ function renderEnergyChart() {
       ${grid}
       <polygon points="${vlak}" fill="url(#egyFill)"/>
       <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}
       ${xLabels}
     </svg>`;
 }
@@ -254,12 +244,6 @@ function renderWeightChart() {
   const pts = data.map((h, i) => `${xPos(i)},${yPos(h.checkin.weight)}`).join(' ');
   const vlak = `${padL},${yPos(yMin)} ` + pts + ` ${xPos(n - 1)},${yPos(yMin)}`;
 
-  const dots = data.map((h, i) => {
-    const w = h.checkin.weight;
-    const isLast = i === n - 1;
-    return `<circle cx="${xPos(i)}" cy="${yPos(w)}" r="${isLast ? 4.5 : 3}" fill="#4a7c59" stroke="white" stroke-width="${isLast ? 2 : 1.2}"/>`;
-  }).join('');
-
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((h, i) => {
     if (i % step !== 0 && i !== n - 1) return '';
@@ -285,7 +269,6 @@ function renderWeightChart() {
       ${grid}
       <polygon points="${vlak}" fill="url(#wgtFill)"/>
       <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}
       ${xLabels}
     </svg>`;
 }
@@ -349,10 +332,6 @@ function renderKcalTrendChart() {
 
   const pts = data.map((d, i) => `${xPos(i)},${yPos(d.kcal)}`).join(' ');
   const vlak = `${padL},${yPos(0)} ` + pts + ` ${xPos(n - 1)},${yPos(0)}`;
-  const dots = data.map((d, i) => {
-    const isLast = i === n - 1;
-    return `<circle cx="${xPos(i)}" cy="${yPos(d.kcal)}" r="${isLast ? 4.5 : 3}" fill="#4a7c59" stroke="white" stroke-width="${isLast ? 2 : 1.2}"/>`;
-  }).join('');
 
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((d, i) => {
@@ -371,7 +350,6 @@ function renderKcalTrendChart() {
       ${limietLijnen}
       <polygon points="${vlak}" fill="url(#kcalFill)"/>
       <polyline points="${pts}" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-      ${dots}
       ${xLabels}
     </svg>`;
 }
@@ -464,11 +442,7 @@ function renderMacroTrendChart() {
 
   const lijnen = actieveSeries.map(s => {
     const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
-    const dots = data.map((d, i) => {
-      const isLast = i === n - 1;
-      return `<circle cx="${xPos(i)}" cy="${yPos(d[s.key])}" r="${isLast ? 4.5 : 3}" fill="${s.color}" stroke="white" stroke-width="${isLast ? 2 : 1}"/>`;
-    }).join('');
-    return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
+    return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
   }).join('');
 
   const step = Math.max(1, Math.floor(n / 6));
