@@ -114,7 +114,12 @@ function renderHistory() {
   if (parseFloat(avg(recent7, 'stress')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.highStress') });
   if (verledenCount >= 3 && volledig / verledenCount < 0.4) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowTrainingCompletion') });
   if (pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodRarelyLogged') });
-  if (foodDays.length >= 3 && (teveel + teweinig) / foodDays.length >= 0.6) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodOffTarget') });
+  if (foodDays.length >= 3) {
+    const pctOpDoel = opDoel / foodDays.length * 100;
+    if (pctOpDoel < 65) signals.push({ kleur:'#E24B4A', tekst:t('history.signal.foodOnTargetLow') });
+    else if (pctOpDoel <= 80) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodOnTargetMid') });
+    else signals.push({ kleur:'var(--sage)', tekst:t('history.signal.foodOnTargetHigh') });
+  }
   if (bestStreak >= 7) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.bestStreak', { n: bestStreak }) });
   if (volledig >= 5) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.trainingsCompleted', { n: volledig }) });
   if (streak >= 7) signals.push({ kleur:'var(--sage)', tekst:t('history.signal.activeStreak', { n: streak }) });
