@@ -312,7 +312,7 @@ function renderKcalTrendChart() {
   const maxLimiet = Math.round(doel.kcal * 1.1);
 
   const W = 300, H = 110;
-  const padL = 34, padR = 10, padT = 10, padB = 22;
+  const padL = 46, padR = 10, padT = 10, padB = 22;
   const cW = W - padL - padR;
   const cH = H - padT - padB;
   const n = data.length;
@@ -329,10 +329,13 @@ function renderKcalTrendChart() {
   const gridLines = [];
   for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
 
+  // Eenheid ("kcal") achter elk getal i.p.v. kaal -- behalve bij 0, dat
+  // blijft gewoon "0". Iets kleiner lettertype (8 i.p.v. 9) zodat dit
+  // past zonder de linkerkant van de grafiek te laten overlappen.
   const grid = gridLines.map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
-    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
-  `).join('') + `<text x="${padL - 4}" y="${padT - 2}" text-anchor="end" font-size="8" fill="#aaa">kcal</text>`;
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="8" fill="#aaa">${v === 0 ? '0' : v + ' kcal'}</text>
+  `).join('');
 
   const limietLijnen = [minLimiet, maxLimiet].map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#c8855a" stroke-width="1" stroke-dasharray="4,3"/>
@@ -431,7 +434,7 @@ function renderMacroTrendChart() {
   const maxV = Math.max(...alleWaarden, 1);
 
   const W = 300, H = 130;
-  const padL = 30, padR = 10, padT = 10, padB = 22;
+  const padL = 40, padR = 10, padT = 10, padB = 22;
   const cW = W - padL - padR;
   const cH = H - padT - padB;
   const n = data.length;
@@ -444,10 +447,12 @@ function renderMacroTrendChart() {
   const gridLines = [];
   for (let v = 0; v <= yMax; v += stepSize) gridLines.push(v);
 
+  // Eenheid ("gr") achter elk getal i.p.v. kaal -- behalve bij 0. Iets
+  // kleiner lettertype (8 i.p.v. 9) zodat dit past.
   const grid = gridLines.map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
-    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
-  `).join('') + `<text x="${padL - 4}" y="${padT - 2}" text-anchor="end" font-size="8" fill="#aaa">gr</text>`;
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="8" fill="#aaa">${v === 0 ? '0' : v + ' gr'}</text>
+  `).join('');
 
   const lijnen = actieveSeries.map(s => {
     const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
