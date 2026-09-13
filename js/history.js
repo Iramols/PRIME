@@ -71,12 +71,15 @@ function renderHistory() {
     const vals = arr.map(h => h.checkout?.[key]).filter(v => v > 0);
     return vals.length > 0 ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '—';
   };
+  // "/4" erbij -- energie/slaap/stress worden op een schaal van 1-4
+  // ingevuld, en zonder die schaal erbij is een los getal als "3.0"
+  // moeilijk te duiden.
   const fmtScore = v => {
     if (v === '—') return '—';
     const n = parseFloat(v);
-    if (n < 1.8) return `${v} 🔴`;
-    if (n < 2.5) return `${v} 🟡`;
-    return `${v} 🟢`;
+    if (n < 1.8) return `${v}/4 🔴`;
+    if (n < 2.5) return `${v}/4 🟡`;
+    return `${v}/4 🟢`;
   };
   document.getElementById('h-avg-energy').textContent = fmtScore(avg(recent7, 'energy'));
   document.getElementById('h-avg-sleep').textContent = fmtScore(avg(recent7, 'sleep'));
@@ -244,7 +247,7 @@ function renderWeightChart() {
 
   const grid = gridLines.map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
-    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
+    <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v} kg</text>
   `).join('');
 
   const pts = data.map((h, i) => `${xPos(i)},${yPos(h.checkin.weight)}`).join(' ');
@@ -329,7 +332,7 @@ function renderKcalTrendChart() {
   const grid = gridLines.map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
-  `).join('');
+  `).join('') + `<text x="${padL - 4}" y="${padT - 2}" text-anchor="end" font-size="8" fill="#aaa">kcal</text>`;
 
   const limietLijnen = [minLimiet, maxLimiet].map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#c8855a" stroke-width="1" stroke-dasharray="4,3"/>
@@ -444,7 +447,7 @@ function renderMacroTrendChart() {
   const grid = gridLines.map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#efece4" stroke-width="0.5"/>
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="9" fill="#aaa">${v}</text>
-  `).join('');
+  `).join('') + `<text x="${padL - 4}" y="${padT - 2}" text-anchor="end" font-size="8" fill="#aaa">gr</text>`;
 
   const lijnen = actieveSeries.map(s => {
     const pts = data.map((d, i) => `${xPos(i)},${yPos(d[s.key])}`).join(' ');
