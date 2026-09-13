@@ -549,7 +549,12 @@ function wpVerwijder() {
   syncRemove('prime_wp_done');
   syncRemove('prime_wp_removed');
   dagDone = {};
+  trainingDagLog = [];
   renderWeekplanning();
+  // Ook meteen de "Vandaag"-tab bijwerken als die op dit moment open
+  // staat -- anders bleef daar nog een oefening staan totdat je naar een
+  // andere tab en terug klikte.
+  try { renderTrainingDag(); updateTrainingDagBadge(); } catch (e) { console.error('herrenderen na wpVerwijder:', e); }
 }
 
 // ─── Weekdoorblader-kaarten (zelfde look als Voeding's Weekplanning) ─────────
