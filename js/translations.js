@@ -203,7 +203,7 @@ const I18N = {
     // Voortgang / historie
     'history.cardLabel': 'Voortgang',
     'history.defaultTitle': 'Statistieken',
-    'history.clearBtn': 'Wis voortgang',
+    'history.clearBtn': 'Wis voortgang compleet',
     'history.tab.stats': 'Statistieken',
     'history.tab.program': 'Training programma voortgang',
     'history.streak': '🔥 Huidige streak (check in/out)',
@@ -834,7 +834,7 @@ const I18N = {
 
     'history.cardLabel': 'Progress',
     'history.defaultTitle': 'Statistics',
-    'history.clearBtn': 'Clear progress',
+    'history.clearBtn': 'Clear progress completely',
     'history.tab.stats': 'Statistics',
     'history.tab.program': 'Training program progress',
     'history.streak': '🔥 Current streak (check in/out)',
