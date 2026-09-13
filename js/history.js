@@ -572,14 +572,18 @@ function renderProgrammaVoortgang() {
   // nog wordt aangepast. Gebruikt de per-dag ZICHTBARE lijst (dus mét een
   // eventuele "voor deze dag verwijderd"-oefening eruit gefilterd, zie
   // wpGetZichtbareOefeningen()) -- niet het kale, ongefilterde sjabloon.
-  let reparatieNodig = false;
+  // Toegepast via wpFreezeSnapshotKeys() (weekplanning.js), die vlak vóór
+  // het opslaan zelf altijd eerst vers vanuit localStorage ververst --
+  // zie die functie voor waarom (voorkomt dat een verouderde/andere
+  // sessie een net elders bevroren snapshot overschrijft).
+  const teBevriezen = [];
   geplanning.forEach(item => {
     if (item.date < vandaag && item.oefSnapshotKeys == null) {
       item.oefSnapshotKeys = wpGetZichtbareOefeningen(item.date, item.schemaId).map(wpOefKey);
-      reparatieNodig = true;
+      teBevriezen.push({ date: item.date, oefSnapshotKeys: item.oefSnapshotKeys });
     }
   });
-  if (reparatieNodig) syncSet('prime_planning', geplanning);
+  if (teBevriezen.length) wpFreezeSnapshotKeys(teBevriezen);
 
   // ── Stats ── (gedeelde telling met "Trainingen voltooid" op de
   // Statistieken-tab, zie wpVoortgangStats() in weekplanning.js)

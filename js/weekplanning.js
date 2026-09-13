@@ -63,6 +63,31 @@ function wpApplyPlanningChanges(changes) {
   wpSlaPlanningOp();
 }
 
+// Zelfde "altijd eerst vers vanuit localStorage"-principe, maar dan voor
+// het BEVRIEZEN van oefSnapshotKeys (renderProgrammaVoortgang in
+// history.js) -- dat las en schreef voorheen ook nog gewoon de complete
+// module-brede `geplanning` in één moeite door, zonder vlak vóór het
+// opslaan te verversen. Bugmelding: "afgevinkte trainingen veranderen
+// af en toe, alleen bij verstreken dagen, na herladen" -- precies het
+// patroon van een verouderde volledige-array-overschrijving die een
+// bevriezing van een ANDERE sessie/apparaat ongedaan maakt.
+// `freezes` = [{date, oefSnapshotKeys}]; slaat een datum alleen op als
+// die nog niet elders bevroren is (oefSnapshotKeys == null) -- wie het
+// eerst bevriest, wint, in plaats van dat de laatste render een
+// mogelijk net iets andere berekening overschrijft.
+function wpFreezeSnapshotKeys(freezes) {
+  wpLaadData();
+  let gewijzigd = false;
+  freezes.forEach(function(f) {
+    const item = geplanning.find(function(p) { return p.date === f.date; });
+    if (item && item.oefSnapshotKeys == null) {
+      item.oefSnapshotKeys = f.oefSnapshotKeys;
+      gewijzigd = true;
+    }
+  });
+  if (gewijzigd) wpSlaPlanningOp();
+}
+
 // ─── Helper: vertaal schemaId (ook prog:ID:DAG) naar display ─────────────────
 // 'sid' is tegenwoordig altijd 'prog:ID:DAG' (een programmadag) of leeg
 // (rustdag) -- de losse dagschema's (TRAINING_SCHEMAS) zijn verwijderd. De
