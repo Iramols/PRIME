@@ -117,6 +117,8 @@ function newLogId() {
 // anders verdwijnen zelf toegevoegde gerechten bij elke home-render.
 function renderFood() {
   document.getElementById('food-content').style.display = 'block';
+  // Vaste titel ({naam} — Maaltijdplanner), zelfde reden als bij Training.
+  document.getElementById('food-screen-title').textContent = t('food.plannerTitle', { name: profile.name || t('history.defaultUserName') });
   document.getElementById('food-subtitle').textContent = t('food.subtitle');
   renderMealPlan();
   updateMacroTotals();

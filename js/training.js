@@ -67,6 +67,11 @@ function _setActiveTrainingTabDom(tab) {
 }
 
 function switchTrainingTab(tab) {
+  // Vaste titel ({naam} — Trainingsplanner), ongeacht welke subtab open
+  // staat -- zodat de coach altijd in één oogopslag ziet bij welke klant
+  // hij/zij zit (belangrijk sinds het wisselen van klant meermaals tot
+  // verwarring leidde).
+  document.getElementById('training-screen-title').textContent = t('training.plannerTitle', { name: profile.name || t('history.defaultUserName') });
   _setActiveTrainingTabDom(tab);
   if (tab === 'programmas') { progMode = 'normal'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null; renderProgrammas(); }
   if (tab === 'primeprog') {
@@ -921,9 +926,6 @@ function renderTraining() {
   if (!noMsg || !content) return;
   noMsg.style.display = 'none';
   content.style.display = 'block';
-  document.getElementById('training-screen-title').textContent = {
-    herstel:t('training.screenTitle.recovery'), normaal:t('training.screenTitle.normal'), zwaar:t('training.screenTitle.heavy')
-  }[trainingType];
   document.getElementById('training-screen-badge').innerHTML = badgeHTML(trainingType);
 
   initSchemaEx();
