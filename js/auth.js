@@ -145,6 +145,7 @@ async function bootApp(clientId, isCoach) {
   document.getElementById('app-shell').style.display = '';
   if (isCoach) document.getElementById('switch-client-btn').style.display = '';
   if (isCoach) document.getElementById('reset-voortgang-btn').style.display = '';
+  if (isCoach) document.getElementById('signalen-coach-card').style.display = '';
   loadAppScripts();
 }
 
