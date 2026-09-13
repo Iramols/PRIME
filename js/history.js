@@ -536,33 +536,18 @@ function renderProgrammaVoortgang() {
 
   const vandaag = localDateStr();
 
-  // Eenmalige reset (2026-09-05): een eerdere versie bevroor het aantal
-  // oefeningen al bij de EERSTE keer afvinken op een dag. Dat bleek te
-  // vroeg: oefeningen kunnen nog doorgeschoven/naar voren gehaald worden
-  // naar een andere dag, ook nadat je er op de dag zelf al één hebt
-  // afgevinkt (bugmelding: vrijdag 4 sept toonde 4/6 i.p.v. 4/4, omdat 2
-  // oefeningen ná de eerste afvinking naar een andere dag verplaatst
-  // waren). We wissen daarom eenmalig alle bestaande snapshots, zodat ze
-  // hieronder opnieuw bevroren worden volgens de juiste regel: pas zodra
-  // de datum definitief in het verleden ligt, niet bij de eerste afvinking.
-  // (v2: de eerste reset filterde nog niet de per-dag-verwijderde
-  // oefeningen mee, zie hieronder -- daardoor bleven dagen met zo'n
-  // verwijdering toch het volle sjabloonaantal tonen.
-  // v3: wpOefKey() gaf twee gelijknamige oefeningen op dezelfde dag (bv.
-  // "Squat" tweemaal) voorheen dezelfde sleutel -- ze deelden daardoor
-  // dezelfde afvink-status en het totaal telde ze wel apart, wat het
-  // percentage blijvend onder 100% hield ook als alles was afgevinkt. Nu
-  // krijgt elke volgende gelijknamige oefening een eigen '#n'-suffix. Een
-  // dag met zo'n botsing moet je de eerder ontoegankelijke oefening nog wel
-  // één keer opnieuw afvinken -- de knop deed daarvoor niets omdat hij de
-  // andere, gelijknamige oefening ontvinkte.
-  // Elke vlag zorgt dat de reset voor wie een eerdere versie al draaide nog
-  // één keer opnieuw gebeurt.)
-  if (!localStorage.getItem('prime_wp_snapshot_reset_v3')) {
-    geplanning.forEach(item => { delete item.oefSnapshotKeys; });
-    localStorage.setItem('prime_wp_snapshot_reset_v3', '1');
-    syncSet('prime_planning', geplanning);
-  }
+  // (De eenmalige v1/v2/v3-snapshot-resets die hier stonden zijn
+  // verwijderd: ze dienden om oude, inmiddels allang gerepareerde bugs
+  // (premature bevriezing, per-dag-verwijderde oefeningen niet gefilterd,
+  // gelijknamige-oefeningen-botsing) één keer per apparaat recht te
+  // trekken. Die migratie is intussen overal handmatig/via de app zelf al
+  // gebeurd. Het bleek zelf een risico geworden: op een browser/apparaat
+  // dat de lokale vlag nog nooit had gezet (bv. na het wissen van
+  // browserdata, of gewoon een nieuw apparaat) wiste dit blok alsnog ALLE
+  // bevroren tellingen en schreef dat direct, ongebeveiligd terug --
+  // precies het "trainingen zijn weer gereset"-patroon. Zie
+  // wpFreezeSnapshotKeys()/wpApplyPlanningChanges() (weekplanning.js) voor
+  // hoe bevriezen/wijzigen nu wél veilig gebeurt.)
 
   // Bevries het aantal oefeningen voor een dag pas zodra die dag definitief
   // in het verleden ligt -- daarvoor kan de oefeningenlijst nog wijzigen
