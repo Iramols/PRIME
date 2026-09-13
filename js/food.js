@@ -1578,7 +1578,11 @@ function updateHomeMacros() {
   ];
 
   el.innerHTML = macros.map(m => {
-    const pct = Math.min(100, Math.round(m.val / m.doel * 100));
+    // pct = exacte percentage (ook boven 100%, voor de weergegeven tekst);
+    // de balk zelf blijft wel op 100% breedte gekapt (anders loopt hij
+    // buiten de kaart) via een aparte pctBar-variabele.
+    const pct = Math.round(m.val / m.doel * 100);
+    const pctBar = Math.min(100, pct);
     const ratio = m.val / m.doel;
     // Elke balk toont z'n eigen vaste kleur, ongeacht voortgang — alleen
     // duidelijk over-doel (>110%) krijgt de rode waarschuwingskleur.
@@ -1596,7 +1600,7 @@ function updateHomeMacros() {
         <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${m.val} ${m.unit}</div>
         <div style="display:flex;align-items:center;gap:6px">
           <div style="flex:1;height:12px;background:var(--sand-dark);border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${fillColor};border-radius:4px;transition:width 0.4s"></div>
+            <div style="height:100%;width:${pctBar}%;background:${fillColor};border-radius:4px;transition:width 0.4s"></div>
           </div>
           <div style="font-size:11px;font-weight:600;color:var(--muted);min-width:28px;text-align:right">${pct}%</div>
         </div>
@@ -1638,7 +1642,11 @@ function updateMacroTotals() {
 
   macros.forEach(m => {
     const r = range(m.doel);
-    const pct = Math.min(100, Math.round(m.val / m.doel * 100));
+    // pct = exacte percentage (ook boven 100%, voor de weergegeven tekst);
+    // de balk zelf blijft wel op 100% breedte gekapt (anders loopt hij
+    // buiten de kaart) via een aparte pctBar-variabele.
+    const pct = Math.round(m.val / m.doel * 100);
+    const pctBar = Math.min(100, pct);
     const ratio = m.val / m.doel;
 
     // Elke balk toont z'n eigen vaste kleur, ongeacht voortgang — alleen
@@ -1648,7 +1656,7 @@ function updateMacroTotals() {
     const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
 
     document.getElementById(m.valId).textContent = `${m.val} ${m.unit}`;
-    document.getElementById(m.barId).style.width = pct + '%';
+    document.getElementById(m.barId).style.width = pctBar + '%';
     document.getElementById(m.barId).style.background = fillColor;
     document.getElementById(m.pctId).textContent = pct + '%';
     document.getElementById(m.doelId).textContent = t('food.goalRange', { min: r.min, max: r.max, unit: m.unit });
