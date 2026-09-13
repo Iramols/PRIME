@@ -116,6 +116,14 @@ function switchClient() {
   location.reload();
 }
 
+// Rechtstreeks naar een specifieke klant wisselen (bv. vanuit de
+// Signalen-tab, waar op een klant-kaart geklikt wordt) -- zelfde
+// "onthouden + herladen"-mechanisme als de klantkiezer zelf gebruikt.
+function switchToClient(clientId) {
+  sessionStorage.setItem('prime_active_client', clientId);
+  location.reload();
+}
+
 // Laadt de app-scripts één voor één in vaste volgorde (elk pas nadat
 // de vorige klaar is), zodat de bestaande laadvolgorde/afhankelijkheden
 // intact blijven — en toont daarna de app.
@@ -146,6 +154,7 @@ async function bootApp(clientId, isCoach) {
   if (isCoach) document.getElementById('switch-client-btn').style.display = '';
   if (isCoach) document.getElementById('reset-voortgang-btn').style.display = '';
   if (isCoach) document.getElementById('signalen-coach-card').style.display = '';
+  if (isCoach) document.getElementById('nav-btn-signalen').style.display = '';
   loadAppScripts();
 }
 

@@ -27,9 +27,10 @@ function go(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach((b, i) => {
-    b.classList.toggle('active', ['home','voeding','training','coach','history','beheer'][i] === screen);
+    b.classList.toggle('active', ['home','voeding','training','coach','history','signalen','beheer'][i] === screen);
   });
   if (screen === 'history') renderHistory();
+  if (screen === 'signalen') renderSignalenTab();
   if (screen === 'training') switchTrainingTab('dag');
   if (screen === 'beheer') { switchBeheerTab('training'); }
   if (screen === 'voeding') {

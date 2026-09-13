@@ -193,6 +193,24 @@ async function fetchClientList() {
   return data || [];
 }
 
+// Coach-only: haalt een paar specifieke client_state-sleutels op van EEN
+// ANDERE klant dan de actieve, voor de Signalen-tab (overzicht over alle
+// klanten heen). Schrijft NERGENS naar localStorage of activeClientId --
+// alleen lezen, dus de lokale staat van de huidige (actieve) klant blijft
+// volledig ongemoeid.
+async function fetchClientStateFor(clientId, keys) {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from('client_state')
+    .select('key, value')
+    .eq('client_id', clientId)
+    .in('key', keys);
+  if (error) { console.error('fetchClientStateFor faalde voor ' + clientId + ':', error); return {}; }
+  const result = {};
+  (data || []).forEach(row => { result[row.key] = row.value; });
+  return result;
+}
+
 // ========== PRIME-PROGRAMMA'S (gedeeld, coach-only bewerkbaar) ==========
 // Deze lopen bewust NIET via CLOUD_KEYS/syncSet (dat is per-klant-scoped in
 // client_state), maar via een eigen, voor iedereen leesbare Supabase-tabel

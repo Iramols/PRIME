@@ -698,3 +698,132 @@ function updateStats() {
   document.getElementById('s-streak').textContent = streak;
   document.getElementById('s-checkins').textContent = history.length;
 }
+
+// ========== SIGNALEN-TAB (coach-only, overzicht over alle klanten) ==========
+// Zelfde berekeningen als de "Signalen voor coach"-kaart in renderHistory()
+// hierboven, maar hier bewust losgetrokken tot pure functies die expliciete
+// data als parameter krijgen (i.p.v. de globale history/foodDays/localStorage
+// van de ACTIEVE klant te lezen) -- zodat we per andere klant kunnen
+// doorrekenen zonder ooit de lokale staat van de huidige klant aan te raken.
+
+// Zelfde formule als wpVoortgangStats() (weekplanning.js), maar dan met
+// meegegeven data i.p.v. rechtstreeks localStorage te lezen. Gebruikt
+// bewust alleen al BEVROREN oefSnapshotKeys (die staan al gewoon in de
+// meegestuurde prime_planning-data van de andere klant) -- zonder bevroren
+// snapshot kunnen we een dag niet narekenen zonder ook de programma's van
+// die andere klant op te halen, dus die tellen we dan simpelweg niet mee.
+function calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj) {
+  const vandaag = localDateStr();
+  const verleden = (geplanningArr || []).filter(p => p.date < vandaag);
+  let volledigDagen = 0;
+  verleden.forEach(p => {
+    if (p.oefSnapshotKeys == null || !p.oefSnapshotKeys.length) return;
+    const doneRaw = (wpDoneObj && wpDoneObj[p.date]) || [];
+    const done = doneRaw.filter(k => p.oefSnapshotKeys.includes(k));
+    if (done.length >= p.oefSnapshotKeys.length) volledigDagen++;
+  });
+  return { verledenCount: verleden.length, volledigDagen };
+}
+
+function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj) {
+  const signals = [];
+  hist = (hist || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+  const total = hist.length;
+  if (!total) return signals;
+  const vandaag = localDateStr();
+
+  let streak = 0;
+  {
+    const dates = hist.map(h => h.date);
+    let check = vandaag;
+    for (let i = 0; i < 60; i++) {
+      if (dates.includes(check)) streak++;
+      else if (i > 0) break;
+      const d = new Date(check + 'T00:00:00'); d.setDate(d.getDate() - 1);
+      check = localDateStr(d);
+    }
+  }
+  if (streak === 0) signals.push({ kleur: '#E24B4A', tekst: t('history.signal.streakBroken') });
+
+  const laatste = new Date(hist[0].date + 'T00:00:00');
+  const vd = new Date(vandaag + 'T00:00:00');
+  const dagenWeg = Math.round((vd - laatste) / (1000 * 60 * 60 * 24));
+  if (dagenWeg >= 2) signals.push({ kleur: '#E24B4A', tekst: t('history.signal.daysNoCheckin', { n: dagenWeg }) });
+
+  const recent7 = hist.slice(0, 7);
+  const avg = key => {
+    const vals = recent7.map(h => h.checkin?.[key]).filter(v => v > 0);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  };
+  const energie = avg('energy'), stress = avg('stress');
+  if (energie !== null && energie < 2.0) signals.push({ kleur: '#f39c12', tekst: t('history.signal.lowEnergy') });
+  if (stress !== null && stress < 2.0) signals.push({ kleur: '#f39c12', tekst: t('history.signal.highStress') });
+
+  const { verledenCount, volledigDagen } = calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj);
+  if (verledenCount >= 3 && volledigDagen / verledenCount < 0.4) signals.push({ kleur: '#f39c12', tekst: t('history.signal.lowTrainingCompletion') });
+
+  const metCheckout = hist.filter(h => h.checkout);
+  const foodDaysArr = metCheckout.filter(h => h.checkout.food > 0);
+  const opDoel = foodDaysArr.filter(h => h.checkout.food === 3).length;
+  const pctLog = total > 0 ? foodDaysArr.length / total * 100 : 0;
+  if (pctLog < 40 && total >= 3) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodRarelyLogged') });
+  if (foodDaysArr.length >= 3) {
+    const pctOpDoel = opDoel / foodDaysArr.length * 100;
+    if (pctOpDoel < 65) signals.push({ kleur: '#E24B4A', tekst: t('history.signal.foodOnTargetLow') });
+    else if (pctOpDoel <= 80) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodOnTargetMid') });
+    else signals.push({ kleur: 'var(--sage)', tekst: t('history.signal.foodOnTargetHigh') });
+  }
+
+  const datums = [...new Set(hist.map(h => h.date))].sort();
+  let bestStreak = 0, cur = 0;
+  for (let i = 0; i < datums.length; i++) {
+    if (i === 0) cur = 1;
+    else {
+      const prev = new Date(datums[i-1] + 'T00:00:00'), curr = new Date(datums[i] + 'T00:00:00');
+      const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
+      cur = diff === 1 ? cur + 1 : 1;
+    }
+    if (cur > bestStreak) bestStreak = cur;
+  }
+  if (bestStreak >= 7) signals.push({ kleur: 'var(--sage)', tekst: t('history.signal.bestStreak', { n: bestStreak }) });
+  if (volledigDagen >= 5) signals.push({ kleur: 'var(--sage)', tekst: t('history.signal.trainingsCompleted', { n: volledigDagen }) });
+  if (streak >= 7) signals.push({ kleur: 'var(--sage)', tekst: t('history.signal.activeStreak', { n: streak }) });
+
+  return signals;
+}
+
+function _signalenErnst(signals) {
+  if (signals.some(s => s.kleur === '#E24B4A')) return 0;
+  if (signals.some(s => s.kleur === '#f39c12')) return 1;
+  return 2;
+}
+
+async function renderSignalenTab() {
+  const el = document.getElementById('signalen-overzicht-content');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loading') + '</div>';
+
+  let clients;
+  try { clients = await fetchClientList(); }
+  catch (e) { console.error('renderSignalenTab, fetchClientList:', e); el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loadError') + '</div>'; return; }
+
+  const resultaten = [];
+  for (const c of clients) {
+    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done']);
+    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {});
+    if (signals.length) resultaten.push({ client: c, signals });
+  }
+  resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
+
+  if (!resultaten.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px;color:var(--muted)">' + t('signalen.none') + '</div>';
+    return;
+  }
+
+  el.innerHTML = resultaten.map(r => `
+    <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
+      <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--charcoal)">${r.client.display_name || r.client.id}</div>
+      ${r.signals.map(s => `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
+    </div>
+  `).join('');
+}

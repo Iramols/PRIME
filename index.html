@@ -50,6 +50,7 @@
     <button class="nav-btn" id="nav-btn-training" onclick="go('training')" data-i18n="nav.training">Training</button>
     <button class="nav-btn nav-btn-wip" onclick="go('coach')" data-i18n="nav.coach">Coach</button>
     <button class="nav-btn" onclick="go('history')" data-i18n="nav.voortgang">Voortgang</button>
+    <button class="nav-btn coach-only-btn" id="nav-btn-signalen" style="display:none" onclick="go('signalen')" data-i18n="nav.signalen">Signalen</button>
     <button class="nav-btn" onclick="go('beheer')" style="font-size:11px" data-i18n="nav.photoManage">📷 Foto beheer</button>
   </nav>
   <div class="lang-toggle">
@@ -854,6 +855,18 @@
     <div id="programma-voortgang-content"></div>
   </div>
 
+</div>
+</div>
+
+<!-- SIGNALEN SCHERM (alleen coach) -->
+<div id="screen-signalen" class="screen">
+<div class="container">
+  <div style="margin-bottom:20px">
+    <div class="card-label" style="margin-bottom:4px;color:var(--coach-only)" data-i18n="signalen.cardLabel">Signalen</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px" data-i18n="signalen.title">Overzicht klanten</h2>
+    <div style="font-size:13px;color:var(--muted)" data-i18n="signalen.subtitle">Klanten met openstaande signalen, gesorteerd op ernst.</div>
+  </div>
+  <div id="signalen-overzicht-content"></div>
 </div>
 </div>
 
