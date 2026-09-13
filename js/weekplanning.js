@@ -534,10 +534,21 @@ function wpToggleDagDetail(dateStr) {
   if (arrowEl) arrowEl.textContent = isOpen ? '▾' : '▴';
 }
 
+// "Wis training compleet": maakt niet alleen de programma-toewijzing
+// (prime_planning) leeg, maar ook de losse/ad-hoc oefeningen per dag
+// (prime_training_days) en alle afvink-/verwijder-status (prime_wp_done,
+// prime_wp_removed) -- anders bleven dagen met alleen losse oefeningen
+// (geen gekoppeld programma) na deze knop nog gewoon oefeningen tonen,
+// wat niet overeenkomt met "compleet" wissen.
 function wpVerwijder() {
   if (!confirm(t('weekplan.confirmRemovePlanning'))) return;
   geplanning = [];
   wpSlaPlanningOp();
+  trainingDays = {};
+  syncSet('prime_training_days', trainingDays);
+  syncRemove('prime_wp_done');
+  syncRemove('prime_wp_removed');
+  dagDone = {};
   renderWeekplanning();
 }
 
