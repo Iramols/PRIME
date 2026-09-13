@@ -677,10 +677,6 @@ function progCloseScheduleModal() {
 function progConfirmSchedule() {
   if (!progScheduleProgId) return;
   progLaadData();
-  // Ook geplanning verversen vanuit localStorage vóórdat we er hieronder
-  // op verder bouwen en het geheel terugschrijven (zie toelichting bij
-  // wpConfirmTrainingCopyInner in weekplanning.js).
-  wpLaadData();
   let prog = progLijst.find(p => p.id === progScheduleProgId);
   if (!prog) prog = primeProgLijst.find(p => p.id === progScheduleProgId);
   if (!prog) { progCloseScheduleModal(); return; }
@@ -710,14 +706,14 @@ function progConfirmSchedule() {
 
   // Cyclisch door de programmadagen heen: eerste gekozen datum krijgt Dag 1,
   // de volgende Dag 2, enzovoort, en begint weer bij Dag 1 zodra het einde
-  // van de programmareeks bereikt is.
-  targets.forEach((dateStr, i) => {
-    const dagIdx = dagIndexen[i % dagIndexen.length];
-    geplanning = geplanning.filter(p => p.date !== dateStr);
-    geplanning.push({ date: dateStr, schemaId: 'prog:' + progScheduleProgId + ':' + dagIdx });
-  });
-
-  wpSlaPlanningOp();
+  // van de programmareeks bereikt is. Toegepast via wpApplyPlanningChanges()
+  // (weekplanning.js), die zelf altijd eerst vers vanuit localStorage
+  // ververst vlak vóór het wegschrijven -- zie die functie voor waarom.
+  const planningChanges = targets.map((dateStr, i) => ({
+    date: dateStr,
+    schemaId: 'prog:' + progScheduleProgId + ':' + dagIndexen[i % dagIndexen.length]
+  }));
+  wpApplyPlanningChanges(planningChanges);
   progCloseScheduleModal();
   try { showToast(t('weekplan.scheduleSuccess', { n: targets.length })); } catch(e) { console.error(e); }
   switchTrainingTab('weekplanning');

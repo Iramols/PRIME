@@ -860,10 +860,10 @@ function renderTrainingDag() {
 function clearTrainingDag(dateStr) {
   const target = dateStr || _trainingToday();
   const isVandaag = target === _trainingToday();
-  // Ververs geplanning eerst vanuit localStorage (zie toelichting bij
-  // wpConfirmTrainingCopyInner in weekplanning.js) -- anders zou het
-  // hieronder opslaan van een gefilterde, maar verder verouderde,
-  // momentopname elders gemaakte wijzigingen ongedaan kunnen maken.
+  // Ververs geplanning eerst vanuit localStorage om te bepalen of er
+  // überhaupt iets te wissen valt (zie toelichting bij
+  // wpApplyPlanningChanges in weekplanning.js voor waarom het ECHTE
+  // wissen hieronder, ná de confirm(), nogmaals ververst).
   wpLaadData();
   const heeftIets = (trainingDays[target] || []).length > 0 || geplanning.some(p => p.date === target);
   if (!heeftIets) return;
@@ -873,9 +873,7 @@ function clearTrainingDag(dateStr) {
   syncSet('prime_training_days', trainingDays);
   if (isVandaag) trainingDagLog = [];
 
-  const voorheen = geplanning.length;
-  geplanning = geplanning.filter(p => p.date !== target);
-  if (geplanning.length !== voorheen) wpSlaPlanningOp();
+  wpApplyPlanningChanges([{ date: target, schemaId: null }]);
 
   let alleWpDone;
   try { alleWpDone = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); } catch(e) { alleWpDone = {}; }

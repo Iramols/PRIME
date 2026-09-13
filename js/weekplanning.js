@@ -40,6 +40,29 @@ function wpLaadData() {
 }
 function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 
+// Structurele fix voor het herhaaldelijke "trainingen zijn weer
+// gereset"-probleem: verschillende plekken (kopieer-training,
+// inroosteren, dag wissen) lazen tot nu toe elk zelf de module-brede
+// `geplanning` en schreven daarna het GEHELE array terug -- als die
+// module-variabele ook maar even niet vers was (bv. nog niet ververst
+// sinds paginalading, of een ander tabblad/script had ondertussen iets
+// aangepast), overschreef dat stilletjes wijzigingen die elders waren
+// gebeurd. Losse wpLaadData()-aanroepen per functie erbovenop plakken
+// werkt, maar is makkelijk te vergeten bij toekomstige nieuwe code.
+// Dit is daarom nu de ENIGE aanbevolen manier om prime_planning te
+// wijzigen: geeft een lijst {date, schemaId} (schemaId null/leeg = deze
+// datum verwijderen) mee, en deze functie ververst zelf altijd EERST
+// vanuit localStorage vlak vóór het toepassen, zodat een verouderde
+// aanroeper de meest recente stand nooit per ongeluk kan overschrijven.
+function wpApplyPlanningChanges(changes) {
+  wpLaadData();
+  changes.forEach(function(c) {
+    geplanning = geplanning.filter(function(p) { return p.date !== c.date; });
+    if (c.schemaId != null && c.schemaId !== '') geplanning.push({ date: c.date, schemaId: c.schemaId });
+  });
+  wpSlaPlanningOp();
+}
+
 // ─── Helper: vertaal schemaId (ook prog:ID:DAG) naar display ─────────────────
 // 'sid' is tegenwoordig altijd 'prog:ID:DAG' (een programmadag) of leeg
 // (rustdag) -- de losse dagschema's (TRAINING_SCHEMAS) zijn verwijderd. De
@@ -781,15 +804,17 @@ function wpConfirmTrainingCopyInner() {
   let wpDoneGewijzigd = false;
   let alleWpDone;
   try { alleWpDone = JSON.parse(localStorage.getItem('prime_wp_done') || '{}'); } catch(e) { alleWpDone = {}; }
+  const planningChanges = [];
 
   targets.forEach(dateStr => {
     if (dateStr === wpTrainingCopySourceDate) return; // niet naar zichzelf kopiëren
 
     // De geplande programmadag (schemaId): één per dag, dus vervangt een
-    // eventueel al geplande dag i.p.v. te stapelen.
+    // eventueel al geplande dag i.p.v. te stapelen. Wordt pas ECHT
+    // toegepast via wpApplyPlanningChanges() hieronder (zie die functie
+    // voor waarom -- verst altijd eerst vers vanuit localStorage).
     if (bron) {
-      geplanning = geplanning.filter(p => p.date !== dateStr);
-      geplanning.push({ date: dateStr, schemaId: bron.schemaId });
+      planningChanges.push({ date: dateStr, schemaId: bron.schemaId });
       // Een (opnieuw) toegewezen programmadag begint altijd volledig
       // onafgevinkt -- oefeningen worden pas afgevinkt bij daadwerkelijke
       // uitvoering, niet door te kopiëren. Zonder dit konden eventuele
@@ -815,7 +840,7 @@ function wpConfirmTrainingCopyInner() {
 
   if (count === 0) { alert(t('foodweek.copy.noMatchingDays')); return; }
 
-  if (bron) wpSlaPlanningOp();
+  if (planningChanges.length) wpApplyPlanningChanges(planningChanges);
   if (trainingDaysGewijzigd) syncSet('prime_training_days', trainingDays);
   if (wpDoneGewijzigd) syncSet('prime_wp_done', alleWpDone);
   wpCloseTrainingCopyModal();
