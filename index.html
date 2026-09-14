@@ -51,7 +51,7 @@
     <button class="nav-btn nav-btn-wip" onclick="go('coach')" data-i18n="nav.coach">Coach</button>
     <button class="nav-btn" onclick="go('history')" data-i18n="nav.voortgang">Voortgang</button>
     <button class="nav-btn coach-only-btn" id="nav-btn-signalen" style="display:none" onclick="go('signalen')" data-i18n="nav.signalen">Signalen</button>
-    <button class="nav-btn" onclick="go('beheer')" style="font-size:11px" data-i18n="nav.photoManage">📷 Foto beheer</button>
+    <button class="nav-btn coach-only-btn" id="nav-btn-beheer" style="display:none;font-size:11px" onclick="go('beheer')" data-i18n="nav.photoManage">📷 Foto beheer</button>
   </nav>
   <div class="lang-toggle">
     <button class="lang-btn" data-lang="nl" onclick="setLang('nl')">NL</button>
@@ -883,6 +883,7 @@
       <div class="card-label" data-i18n="beheer.cardLabel">Coach beheer</div>
       <h2 style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:4px" data-i18n="beheer.title">Foto beheer</h2>
       <div style="font-size:13px;color:var(--muted)" data-i18n="beheer.subtitle">Upload eigen foto's voor oefeningen en maaltijden. Foto's worden lokaal opgeslagen.</div>
+      <div style="font-size:13px;color:var(--charcoal);font-weight:700;margin-top:4px" data-i18n="beheer.pushWarning">Foto's moeten geëxporteerd en gepusht worden voordat ze voor iedereen zichtbaar zijn.</div>
     </div>
 
     <!-- TABS -->
