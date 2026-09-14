@@ -124,6 +124,21 @@ function renderFood() {
   updateMacroTotals();
 }
 
+// Coach-only "Wis voeding compleet" -- zelfde opzet als wpVerwijder()
+// (Training): maakt alle gelogde voeding leeg (prime_food_days, alle
+// datums) en werkt meteen de op dat moment zichtbare Voeding-subtab bij,
+// i.p.v. pas na het wisselen van tab.
+function foodVerwijderAlles() {
+  if (!confirm(t('food.confirmClearAll'))) return;
+  foodDays = {};
+  syncSet('prime_food_days', foodDays);
+  dayLog = [];
+  updateMacroTotals();
+  if (document.getElementById('foodtab-log')?.style.display !== 'none') renderDayLog();
+  if (document.getElementById('foodtab-week')?.style.display !== 'none') renderFoodWeek();
+  try { updateHomeMacros(); } catch (e) { console.error('herrenderen na foodVerwijderAlles:', e); }
+}
+
 // Zelfde opzet als de productengrid in Basisproducten: één platte lijst,
 // klikken opent de portiemodal waarin je gewicht én maaltijdmoment kiest.
 function renderMealPlan() {

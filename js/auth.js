@@ -156,6 +156,7 @@ async function bootApp(clientId, isCoach) {
   if (isCoach) document.getElementById('signalen-coach-card').style.display = '';
   if (isCoach) document.getElementById('nav-btn-signalen').style.display = '';
   if (isCoach) document.getElementById('wis-training-btn').style.display = '';
+  if (isCoach) document.getElementById('wis-voeding-btn').style.display = '';
   loadAppScripts();
 }
 

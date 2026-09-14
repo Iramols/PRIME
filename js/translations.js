@@ -149,6 +149,8 @@ const I18N = {
     // Voeding
     'food.title': 'Maaltijdplanner',
     'food.subtitle': 'Jouw persoonlijke voedingsdoel',
+    'food.clearAllBtn': 'Wis voeding compleet',
+    'food.confirmClearAll': 'Alle gelogde voeding verwijderen?',
     'food.nutrients.title': 'Calorie en nutriënten inname (vandaag)',
     'food.nutrient.calories': 'Calorieën',
     'food.nutrient.carbs': 'Koolhydraten',
@@ -782,6 +784,8 @@ const I18N = {
 
     'food.title': 'Meal planner',
     'food.subtitle': 'Your personal nutrition goal',
+    'food.clearAllBtn': 'Clear nutrition completely',
+    'food.confirmClearAll': 'Delete all logged nutrition?',
     'food.nutrients.title': 'Calorie and nutrient intake (today)',
     'food.nutrient.calories': 'Calories',
     'food.nutrient.carbs': 'Carbohydrates',
