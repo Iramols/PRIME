@@ -49,9 +49,10 @@ function exportCustomPhotosFile() {
 }
 
 function switchBeheerTab(tab) {
-  ['training','maaltijden','producten'].forEach(t => {
+  ['training','producten'].forEach(t => {
     document.getElementById('btab-' + t).classList.toggle('active', t === tab);
     document.getElementById('btab-content-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('btab-footer-' + t).style.display = t === tab ? 'block' : 'none';
   });
   renderBeheerTab(tab);
 }
@@ -81,18 +82,6 @@ function renderBeheerTab(tab) {
       });
     });
     items = items.filter(function(item, idx, self) { return self.findIndex(function(i) { return i.key === item.key; }) === idx; });
-  } else if (tab === 'maaltijden') {
-    var momentLabel = {ontbijt:t('moment.ontbijt'), lunch:t('moment.lunch'), avond:t('moment.avond'), snack:t('moment.snack')};
-    ['herstel','normaal','zwaar'].forEach(function(type) {
-      var data = MEALS[type] || {};
-      ['ontbijt','lunch','avond','snack'].forEach(function(moment) {
-        (data[moment] || []).forEach(function(meal) {
-          if (!items.find(function(i) { return i.key === 'meal-' + meal.name; })) {
-            items.push({ key: 'meal-' + meal.name, label: dispName(meal), group: momentLabel[moment] || moment, currentPhoto: photos['meal-' + meal.name] || meal.photo || '' });
-          }
-        });
-      });
-    });
   } else if (tab === 'producten') {
     var catLabel = {fruit:t('cat.fruit'), groente:t('cat.groente'), vlees:t('cat.vlees'), vis:t('cat.vis'), zuivel:t('cat.zuivel'), granen:t('cat.granen'), noten:t('cat.noten'), overig:t('cat.overig')};
     PRODUCTS.forEach(function(p) {
