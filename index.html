@@ -886,42 +886,25 @@
       <div style="font-size:13px;color:var(--charcoal);font-weight:700;margin-top:4px" data-i18n="beheer.pushWarning">Foto's moeten geëxporteerd en gepusht worden voordat ze voor iedereen zichtbaar zijn.</div>
     </div>
 
+    <div class="card" style="margin-bottom:24px;background:var(--sage-light);border-color:var(--sage-mid)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--sage)" data-i18n="beheer.export.title">📤 Foto's online zetten</div>
+      <div style="font-size:12px;color:var(--charcoal);line-height:1.7;margin-bottom:14px" data-i18n-html="beheer.export.instructions">
+        Geüploade foto's worden lokaal opgeslagen. Om ze online zichtbaar te maken:<br>
+        <strong>1.</strong> Klik op "Exporteer foto's" hieronder<br>
+        <strong>2.</strong> Het bestand wordt gedownload naar je Downloads-map als <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code><br>
+        <strong>3.</strong> Kopieer dat bestand naar de PRIME-projectmap (vervangt het bestaande bestand)<br>
+        <strong>4.</strong> Zeg tegen Claude: <em>"push de foto's naar GitHub"</em>
+      </div>
+      <button onclick="exportCustomPhotosFile()" class="btn-primary" style="margin-bottom:0" data-i18n="beheer.export.btn">📤 Exporteer foto's</button>
+    </div>
+
     <!-- TABS -->
     <div class="food-tabs" style="margin-bottom:18px">
       <button class="food-tab active" id="btab-training" onclick="switchBeheerTab('training')" data-i18n="beheer.tab.training">Training</button>
       <button class="food-tab" id="btab-producten" onclick="switchBeheerTab('producten')" data-i18n="beheer.tab.products">Producten</button>
     </div>
 
-    <div id="btab-footer-training">
-      <div style="font-size:13px;color:var(--charcoal);font-weight:700;margin-bottom:12px" data-i18n="beheer.pushWarning">Foto's moeten geëxporteerd en gepusht worden voordat ze voor iedereen zichtbaar zijn.</div>
-      <div class="card" style="margin-bottom:24px;background:var(--sage-light);border-color:var(--sage-mid)">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--sage)" data-i18n="beheer.export.title">📤 Foto's online zetten</div>
-        <div style="font-size:12px;color:var(--charcoal);line-height:1.7;margin-bottom:14px" data-i18n-html="beheer.export.instructions">
-          Geüploade foto's worden lokaal opgeslagen. Om ze online zichtbaar te maken:<br>
-          <strong>1.</strong> Klik op "Exporteer foto's" hieronder<br>
-          <strong>2.</strong> Het bestand wordt gedownload naar je Downloads-map als <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code><br>
-          <strong>3.</strong> Kopieer dat bestand naar de PRIME-projectmap (vervangt het bestaande bestand)<br>
-          <strong>4.</strong> Zeg tegen Claude: <em>"push de foto's naar GitHub"</em>
-        </div>
-        <button onclick="exportCustomPhotosFile()" class="btn-primary" style="margin-bottom:0" data-i18n="beheer.export.btn">📤 Exporteer foto's</button>
-      </div>
-    </div>
     <div id="btab-content-training"></div>
-
-    <div id="btab-footer-producten" style="display:none">
-      <div style="font-size:13px;color:var(--charcoal);font-weight:700;margin-bottom:12px" data-i18n="beheer.pushWarning">Foto's moeten geëxporteerd en gepusht worden voordat ze voor iedereen zichtbaar zijn.</div>
-      <div class="card" style="margin-bottom:24px;background:var(--sage-light);border-color:var(--sage-mid)">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--sage)" data-i18n="beheer.export.title">📤 Foto's online zetten</div>
-        <div style="font-size:12px;color:var(--charcoal);line-height:1.7;margin-bottom:14px" data-i18n-html="beheer.export.instructions">
-          Geüploade foto's worden lokaal opgeslagen. Om ze online zichtbaar te maken:<br>
-          <strong>1.</strong> Klik op "Exporteer foto's" hieronder<br>
-          <strong>2.</strong> Het bestand wordt gedownload naar je Downloads-map als <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code><br>
-          <strong>3.</strong> Kopieer dat bestand naar de PRIME-projectmap (vervangt het bestaande bestand)<br>
-          <strong>4.</strong> Zeg tegen Claude: <em>"push de foto's naar GitHub"</em>
-        </div>
-        <button onclick="exportCustomPhotosFile()" class="btn-primary" style="margin-bottom:0" data-i18n="beheer.export.btn">📤 Exporteer foto's</button>
-      </div>
-    </div>
     <div id="btab-content-producten" style="display:none"></div>
 
     <div class="card" style="margin-top:24px;background:var(--sand)">

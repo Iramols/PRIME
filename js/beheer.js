@@ -52,7 +52,6 @@ function switchBeheerTab(tab) {
   ['training','producten'].forEach(t => {
     document.getElementById('btab-' + t).classList.toggle('active', t === tab);
     document.getElementById('btab-content-' + t).style.display = t === tab ? 'block' : 'none';
-    document.getElementById('btab-footer-' + t).style.display = t === tab ? 'block' : 'none';
   });
   renderBeheerTab(tab);
 }
