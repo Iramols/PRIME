@@ -237,7 +237,7 @@ const I18N = {
     // Beheer
     'beheer.cardLabel': 'Coach beheer',
     'beheer.title': 'Foto beheer',
-    'beheer.subtitle': "Upload eigen foto's voor oefeningen en maaltijden. Foto's worden lokaal opgeslagen.",
+    'beheer.subtitle': "Upload eigen foto's voor oefeningen en producten. Foto's worden lokaal opgeslagen.",
     'beheer.pushWarning': "Foto's moeten geëxporteerd en gepusht worden voordat ze voor iedereen zichtbaar zijn.",
     'beheer.tab.training': 'Training',
     'beheer.tab.products': 'Producten',
@@ -869,7 +869,7 @@ const I18N = {
 
     'beheer.cardLabel': 'Coach management',
     'beheer.title': 'Photo management',
-    'beheer.subtitle': 'Upload your own photos for exercises and meals. Photos are stored locally.',
+    'beheer.subtitle': 'Upload your own photos for exercises and products. Photos are stored locally.',
     'beheer.pushWarning': 'Photos must be exported and pushed before they become visible to everyone.',
     'beheer.tab.training': 'Training',
     'beheer.tab.products': 'Products',
