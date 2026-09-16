@@ -31,6 +31,18 @@ function isDagAfgesloten(dateStr) {
   return dateStr < localDateStr() || history.some(h => h.date === dateStr);
 }
 
+// Mag een oefening/voedingsitem voor deze datum als "gedaan"/"gegeten"
+// aangevinkt worden? Dat kan ALLEEN voor vandaag, en alleen zolang vandaag
+// nog niet is afgesloten -- een voorbije dag ligt al vast (isDagAfgesloten),
+// en een TOEKOMSTIGE dag kan per definitie nog niet "gedaan" zijn (die moet
+// nog komen). Los van isDagAfgesloten(), die alléén voorbije/afgesloten
+// dagen blokkeert en toekomstige dagen bewust WEL openlaat voor plannen
+// (oefeningen/maaltijden toevoegen, programma inroosteren, kopiëren) --
+// zie wpdBouwDagKaart/fwBouwDagKaart. Afvinken is dus strenger dan plannen.
+function magAfvinken(dateStr) {
+  return dateStr === localDateStr() && !isDagAfgesloten(dateStr);
+}
+
 // ========== EXTRA OEFENINGEN ==========
 const EXTRA_EXERCISES = [
   { group:'Borst', group_en:'Chest', icon:'💪', color:'#744210', exercises:[

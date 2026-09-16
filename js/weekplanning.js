@@ -315,6 +315,7 @@ function wpSetExerciseOverride(dateStr, oefIdx, sets, notes) {
 }
 
 function wpToggleOefDone(dateStr, doneKey) {
+  if (!magAfvinken(dateStr)) return; // alleen vandaag, en alleen als die nog niet is afgesloten
   const done = wpGetDone(dateStr); // migreert oude numerieke data indien nodig (en persisteert dat alvast)
   const pos  = done.indexOf(doneKey);
   const wordtGedaan = pos === -1; // wordt nu aangevinkt (was nog niet gedaan)
@@ -350,9 +351,15 @@ function wpToggleOefDone(dateStr, doneKey) {
 function wpBouwOefeningenAfvinken(rows, dateStr) {
   if (!rows.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">' + t('weekplan.noExercises') + '</div>';
   const done = wpGetDone(dateStr);
-  // Een dag die al is afgesloten (check-out gedaan) ligt vast -- afvinken/
-  // bewerken/verwijderen kan dan niet meer, zie isDagAfgesloten() (data.js).
+  // Een dag die al is afgesloten (check-out gedaan) of al voorbij is ligt
+  // vast -- bewerken/verwijderen kan dan niet meer, zie isDagAfgesloten()
+  // (data.js).
   const afgesloten = isDagAfgesloten(dateStr);
+  // Afvinken ("gedaan") mag ALLEEN voor vandaag, ook al is bewerken/
+  // verwijderen (plannen) voor een toekomstige dag nog gewoon toegestaan --
+  // je kunt een oefening op een dag die nog moet komen niet al "gedaan"
+  // hebben. Zie magAfvinken() (data.js).
+  const kanAfvinken = magAfvinken(dateStr);
   return rows.map(function(row) {
     const o = row.oef, key = row.doneKey;
     const keyEsc = key.replace(/'/g, "\\'"); // voor gebruik in onclick-string
@@ -399,7 +406,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     }
 
-    const doneClick = afgesloten ? '' : 'onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" ';
+    const doneClick = kanAfvinken ? 'onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" ' : '';
 
     return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
       photoDiv +
@@ -408,7 +415,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         '<div style="font-size:11px;color:var(--muted)">' + detail + '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;' + (afgesloten ? 'opacity:0.55' : '') + '">' +
-        '<div class="ex-check-wrap" ' + doneClick + 'style="cursor:' + (afgesloten ? 'default' : 'pointer') + '"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+        '<div class="ex-check-wrap" ' + doneClick + 'style="cursor:' + (kanAfvinken ? 'pointer' : 'default') + (kanAfvinken ? '' : ';opacity:0.55') + '"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
         editBtn +
         delBtn +
       '</div>' +

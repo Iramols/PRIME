@@ -1442,13 +1442,18 @@ function logItemPhoto(item) {
 function renderLogItemCard(dateStr, item) {
   const photo = logItemPhoto(item);
   const isEaten = !!item.eaten;
-  // Een dag die al is afgesloten (check-out gedaan, staat in history) ligt
-  // vast -- gram/gegeten-status/verwijderen kan dan niet meer aangepast
-  // worden. De vinkjes/knoppen blijven wel zichtbaar (ze tonen nog steeds
-  // wat er die dag is gebeurd), alleen niet meer klikbaar.
+  // Een dag die al is afgesloten (check-out gedaan) of al voorbij is ligt
+  // vast -- gram/verwijderen kan dan niet meer aangepast worden. De
+  // vinkjes/knoppen blijven wel zichtbaar (ze tonen nog steeds wat er die
+  // dag is gebeurd), alleen niet meer klikbaar.
   const afgesloten = isDagAfgesloten(dateStr);
+  // "Gegeten" aanvinken mag ALLEEN voor vandaag -- een item op een
+  // toekomstige (nog te plannen) dag kan per definitie nog niet gegeten
+  // zijn, ook al mag je zo'n dag verder nog gewoon bewerken. Zie
+  // magAfvinken() (data.js).
+  const kanAfvinken = magAfvinken(dateStr);
   const cardClick = afgesloten ? '' : ` onclick="editLogItem('${dateStr}', ${item.logId})"`;
-  const eatenClick = afgesloten ? '' : `onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" `;
+  const eatenClick = kanAfvinken ? `onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" ` : '';
   const delClick = afgesloten ? '' : `onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" `;
   return `
     <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:${afgesloten ? 'default' : 'pointer'};opacity:${isEaten ? '0.55' : '1'}"${cardClick}>
@@ -1464,7 +1469,7 @@ function renderLogItemCard(dateStr, item) {
           <div style="font-size:11px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(item.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(item.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(item.fat)}g</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;opacity:${afgesloten ? '0.5' : '1'}">
-          <div class="ex-check-wrap" ${eatenClick}style="cursor:${afgesloten ? 'default' : 'pointer'}">
+          <div class="ex-check-wrap" ${eatenClick}style="cursor:${kanAfvinken ? 'pointer' : 'default'}">
             <div id="food-chk-${item.logId}" class="exercise-check${isEaten ? ' done' : ''}" title="${t('food.log.markEaten')}">✓</div>
             <span class="ex-check-label">${t('food.log.markEaten')}</span>
           </div>
@@ -1482,6 +1487,7 @@ function renderLogItemCard(dateStr, item) {
 // kcal/macro-totalen. Werkt zowel voor "Mijn dag" als voor een
 // willekeurige datum vanuit Weekplanning.
 function toggleFoodEaten(dateStr, logId) {
+  if (!magAfvinken(dateStr)) return; // alleen vandaag, en alleen als die nog niet is afgesloten
   const items = dateStr === currentLogDate ? dayLog : (foodDays[dateStr] || []);
   const item = items.find(i => i.logId === logId);
   if (!item) return;
