@@ -621,6 +621,7 @@ function addExerciseFromDetailModal() {
   };
 
   const targetDate = document.getElementById('ed-date').value || currentTrainingDate;
+  if (isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
   const lijst = trainingDays[targetDate] || [];
   const bestaandIdx = lijst.findIndex(e => e.id === exId);
   if (bestaandIdx !== -1) lijst[bestaandIdx] = entry; else lijst.push(entry);

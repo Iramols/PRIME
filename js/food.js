@@ -1040,6 +1040,7 @@ function addMealToLog() {
   // vrij te kiezen in het "Dag"-veld -- zo kun je meteen hier al voor een
   // andere dag loggen i.p.v. eerst via Weekplanning te moeten wisselen.
   const targetDate = document.getElementById('mpm-date').value || currentLogDate;
+  if (isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
   const f = tot.gram > 0 ? gram / tot.gram : 0;
 
   const values = {
@@ -1283,6 +1284,7 @@ function addProductToLog() {
   // vrij te kiezen in het "Dag"-veld -- zo kun je meteen hier al voor een
   // andere dag loggen i.p.v. eerst via Weekplanning te moeten wisselen.
   const targetDate = document.getElementById('pm-date').value || currentLogDate;
+  if (isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
   const f = gram / 100;
   const values = {
     productId: p.id,
