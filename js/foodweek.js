@@ -138,6 +138,9 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
 
   // Een voorbije of al afgesloten dag ligt vast (zie isDagAfgesloten,
   // data.js) -- zelfde principe als wpdBouwDagKaart in weekplanning.js.
+  // Kopiëren blijft wél mogelijk vanaf een vastliggende dag: dat leest
+  // er alleen van (naar een andere, nog open dag), het wijzigt de
+  // vastliggende dag zelf niet.
   const dagLigtVast = isDagAfgesloten(dateStr);
 
   const detail = `
@@ -148,9 +151,9 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
         : `<div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','basis')">${t('foodweek.addProductForDay')}</button>
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','plan')">${t('foodweek.addMealForDay')}</button>
-      </div>
+      </div>`}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button></div>` : ''}
-      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}`}
+      ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;

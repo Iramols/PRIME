@@ -701,9 +701,12 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
   // Een voorbije of al afgesloten dag ligt vast (zie isDagAfgesloten,
-  // data.js) -- de toevoeg-/kopieer-/wisknoppen hieronder mogen dan niet
-  // meer gebruikt kunnen worden, ook al staan de individuele oefeningen
-  // binnen detailHtml zelf al los als niet-aanpasbaar (wpBouwOefeningenAfvinken).
+  // data.js) -- de toevoeg-/wisknoppen hieronder mogen dan niet meer
+  // gebruikt kunnen worden, ook al staan de individuele oefeningen binnen
+  // detailHtml zelf al los als niet-aanpasbaar (wpBouwOefeningenAfvinken).
+  // Kopiëren blijft wél mogelijk vanaf een vastliggende dag: dat leest er
+  // alleen van (naar een andere, nog open dag), het wijzigt de
+  // vastliggende dag zelf niet.
   const dagLigtVast = isDagAfgesloten(dateStr);
 
   // Zelfde knoppenrij als een uitgeklapte dagkaart bij Voeding
@@ -717,9 +720,9 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
         : `<div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="wpdAddForDay('${dateStr}')">${t('training.dag.addExerciseForDay')}</button>
         <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('programmas')">${t('training.dag.addProgramForDay')}</button>
-      </div>
+      </div>`}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="wpOpenTrainingCopyModal('${dateStr}')">${t('weekplan.trainingCopy.button')}</button></div>` : ''}
-      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}`}
+      ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;
