@@ -57,6 +57,11 @@ function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 function wpApplyPlanningChanges(changes) {
   wpLaadData();
   changes.forEach(function(c) {
+    // Een dag die al voorbij of afgesloten is ligt vast (zie isDagAfgesloten
+    // in data.js) -- door de check hier, op de ENIGE plek die prime_planning
+    // schrijft, kan geen enkele aanroeper (kopiëren, programma inplannen,
+    // dag wissen, ...) daar per ongeluk of expres nog omheen.
+    if (isDagAfgesloten(c.date)) return;
     geplanning = geplanning.filter(function(p) { return p.date !== c.date; });
     if (c.schemaId != null && c.schemaId !== '') geplanning.push({ date: c.date, schemaId: c.schemaId });
   });
@@ -695,18 +700,26 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
     ? wpBouwOefeningenAfvinken(alleRows, dateStr)
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
+  // Een voorbije of al afgesloten dag ligt vast (zie isDagAfgesloten,
+  // data.js) -- de toevoeg-/kopieer-/wisknoppen hieronder mogen dan niet
+  // meer gebruikt kunnen worden, ook al staan de individuele oefeningen
+  // binnen detailHtml zelf al los als niet-aanpasbaar (wpBouwOefeningenAfvinken).
+  const dagLigtVast = isDagAfgesloten(dateStr);
+
   // Zelfde knoppenrij als een uitgeklapte dagkaart bij Voeding
   // (fwBouwDagKaart): toevoegen voor déze dag, en (alleen als er al iets
   // staat) kopiëren/alles verwijderen.
   const detail = `
     <div style="display:${isOpen ? 'block' : 'none'};padding:0 16px 14px">
       ${detailHtml}
-      <div style="display:flex;gap:8px;margin-top:8px">
+      ${dagLigtVast
+        ? `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">${t('weekplan.dayLocked')}</div>`
+        : `<div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="wpdAddForDay('${dateStr}')">${t('training.dag.addExerciseForDay')}</button>
         <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('programmas')">${t('training.dag.addProgramForDay')}</button>
       </div>
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="wpOpenTrainingCopyModal('${dateStr}')">${t('weekplan.trainingCopy.button')}</button></div>` : ''}
-      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
+      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}`}
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;
@@ -849,6 +862,7 @@ function wpConfirmTrainingCopyInner() {
 
   targets.forEach(dateStr => {
     if (dateStr === wpTrainingCopySourceDate) return; // niet naar zichzelf kopiëren
+    if (isDagAfgesloten(dateStr)) return; // voorbije/afgesloten dagen liggen vast
 
     // De geplande programmadag (schemaId): één per dag, dus vervangt een
     // eventueel al geplande dag i.p.v. te stapelen. Wordt pas ECHT

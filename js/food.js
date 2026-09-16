@@ -1377,6 +1377,7 @@ function editLogItem(dateStr, logId) {
 // Verwijdert in één keer alle gelogde voeding van een dag — werkt zowel
 // voor "Vandaag" als voor een willekeurige dag vanuit Weekplanning.
 function clearFoodDay(dateStr) {
+  if (isDagAfgesloten(dateStr)) return; // voorbije/afgesloten dag ligt vast
   const items = dateStr === currentLogDate ? dayLog : (foodDays[dateStr] || []);
   if (!items.length) return;
   if (!confirm(t('food.clearDay.confirm'))) return;

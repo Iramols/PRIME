@@ -16,14 +16,19 @@ function localDateStr(d) {
   return new Date(d.getTime() - tzOffsetMs).toISOString().split('T')[0];
 }
 
-// Is deze datum al (volledig) afgesloten via de dagelijkse check-out? Zodra
-// dat zo is, staat de datum in history -- en mogen vinkjes/verwijderknoppen
-// voor die dag niet meer aangepast kunnen worden (het overzicht van wat er
-// die dag gebeurd is ligt dan vast). Gebruikt door renderLogItemCard()
-// (food.js) en wpBouwOefeningenAfvinken()/exCard() (weekplanning.js/
-// training.js) om die besturingen uit te schakelen voor afgesloten dagen.
+// Ligt deze datum vast -- mag er niets meer aan voeding/training voor die
+// dag gewijzigd worden? Dat geldt in twee gevallen: de dag is al (volledig)
+// afgesloten via de dagelijkse check-out (dan staat de datum in history), Of
+// de dag ligt gewoon al in het verleden (vóór vandaag) -- ook als er nooit
+// een check-out voor is gedaan (bv. een gemiste dag). Zonder die tweede
+// voorwaarde bleven eerdere, nooit-afgesloten dagen in Weekplanning gewoon
+// vrij bewerkbaar, wat een voorbije dag met terugwerkende kracht kon laten
+// veranderen. Gebruikt door renderLogItemCard() (food.js),
+// wpBouwOefeningenAfvinken()/exCard() (weekplanning.js/training.js) om
+// vinkjes/bewerk-/verwijderknoppen uit te schakelen, en door de
+// dagkaart-acties (toevoegen/kopiëren/wissen) in weekplanning.js/foodweek.js.
 function isDagAfgesloten(dateStr) {
-  return history.some(h => h.date === dateStr);
+  return dateStr < localDateStr() || history.some(h => h.date === dateStr);
 }
 
 // ========== EXTRA OEFENINGEN ==========

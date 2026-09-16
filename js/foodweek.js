@@ -136,15 +136,21 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
     ? renderLogItemsHtml(dateStr, items)
     : `<div style="font-size:12px;color:var(--muted);padding:6px 0">${t('foodweek.noItemsYet')}</div>`;
 
+  // Een voorbije of al afgesloten dag ligt vast (zie isDagAfgesloten,
+  // data.js) -- zelfde principe als wpdBouwDagKaart in weekplanning.js.
+  const dagLigtVast = isDagAfgesloten(dateStr);
+
   const detail = `
     <div style="display:${isOpen ? 'block' : 'none'};padding:0 16px 14px">
       ${itemsHtml}
-      <div style="display:flex;gap:8px;margin-top:8px">
+      ${dagLigtVast
+        ? `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">${t('weekplan.dayLocked')}</div>`
+        : `<div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','basis')">${t('foodweek.addProductForDay')}</button>
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','plan')">${t('foodweek.addMealForDay')}</button>
       </div>
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button></div>` : ''}
-      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
+      ${hasData ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}`}
     </div>`;
 
   return `<div class="card" style="padding:0;overflow:hidden;${isToday ? 'border-color:var(--sage)' : ''}">${header}${detail}</div>`;
@@ -295,6 +301,7 @@ function fwConfirmCopyInner() {
   let count = 0;
   targets.forEach(dateStr => {
     if (dateStr === fwCopySourceDate) return; // niet naar zichzelf kopiëren
+    if (isDagAfgesloten(dateStr)) return; // voorbije/afgesloten dagen liggen vast
     // eaten:false expliciet meegeven -- een gekopieerd item is nog niet
     // gegeten op de nieuwe dag, ook al was het brongerecht wel afgevinkt.
     const copies = source.map(item => ({ ...item, logId: newLogId(), eaten: false }));

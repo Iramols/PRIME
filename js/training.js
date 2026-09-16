@@ -864,6 +864,7 @@ function renderTrainingDag() {
 // dag te hoeven "wisselen".
 function clearTrainingDag(dateStr) {
   const target = dateStr || _trainingToday();
+  if (isDagAfgesloten(target)) return; // voorbije/afgesloten dag ligt vast
   const isVandaag = target === _trainingToday();
   // Ververs geplanning eerst vanuit localStorage om te bepalen of er
   // überhaupt iets te wissen valt (zie toelichting bij
