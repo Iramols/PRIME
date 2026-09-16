@@ -378,9 +378,10 @@
         <div class="progress-bg"><div class="progress-fill" id="dag-progress-bar" style="width:0%"></div></div>
       </div>
     </div>
+    <div id="training-dag-locked-banner" style="display:none;text-align:center;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted);background:var(--sand);border-radius:8px" data-i18n="weekplan.dayLocked">Deze dag is voorbij of afgesloten en ligt vast.</div>
     <div id="training-dag-empty" style="text-align:center;padding:24px 20px;color:var(--muted);font-size:14px;display:none">
       <div style="margin-bottom:16px" data-i18n="training.dag.empty.hint">Nog niets gelogd. Voeg oefeningen of een programma toe via de andere tabbladen.</div>
-      <div style="display:flex;gap:8px">
+      <div id="training-dag-empty-addrow" style="display:flex;gap:8px">
         <button class="btn-sm" style="flex:1" onclick="trainingAddForDay('oefeningen')" data-i18n="training.dag.addExerciseForDay">+ Oefening</button>
         <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('weekplanning')" data-i18n="training.dag.addProgramForDay">+ Programma</button>
       </div>
@@ -558,9 +559,10 @@
 
     <!-- TAB: MIJN DAG LOG -->
     <div id="foodtab-log">
+      <div id="day-log-locked-banner" style="display:none;text-align:center;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted);background:var(--sand);border-radius:8px" data-i18n="weekplan.dayLocked">Deze dag is voorbij of afgesloten en ligt vast.</div>
       <div id="day-log-empty" style="text-align:center;padding:24px 20px;color:var(--muted);font-size:14px">
         <div style="margin-bottom:16px" data-i18n="food.log.empty">Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.</div>
-        <div style="display:flex;gap:8px">
+        <div id="day-log-empty-addrow" style="display:flex;gap:8px">
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
@@ -570,12 +572,12 @@
         <div class="divider"></div>
         <div style="font-size:13px;font-weight:500;color:var(--muted);margin-bottom:10px" data-i18n="food.log.totalsTitle">Totaal overzicht</div>
         <div id="log-summary"></div>
-        <div style="display:flex;gap:8px;margin-top:14px">
+        <div id="day-log-totals-addrow" style="display:flex;gap:8px;margin-top:14px">
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
         <button class="btn-sm" style="width:100%;margin-top:8px" onclick="fwOpenCopyModal(currentLogDate)" data-i18n="foodweek.copy.button">📋 Kopieer maaltijden van deze dag</button>
-        <button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
+        <button id="day-log-clear-btn" class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
                 onclick="clearFoodDay(currentLogDate)" data-i18n="food.clearDay.button">🗑️ Alles verwijderen van deze dag</button>
       </div>
     </div>

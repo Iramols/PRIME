@@ -1548,6 +1548,19 @@ function renderDayLog() {
   const list = document.getElementById('day-log-list');
   const totals = document.getElementById('day-log-totals');
 
+  // Zelfde vergrendel-indicatie als een dagkaart in Weekplanning
+  // (fwBouwDagKaart) -- hoorde hier voorheen niet bij, waardoor "Vandaag"
+  // in Voeding geen melding toonde terwijl Weekplanning dat wel deed.
+  const dagLigtVast = isDagAfgesloten(currentLogDate);
+  const lockBanner = document.getElementById('day-log-locked-banner');
+  if (lockBanner) lockBanner.style.display = dagLigtVast ? 'block' : 'none';
+  const emptyAddRow = document.getElementById('day-log-empty-addrow');
+  if (emptyAddRow) emptyAddRow.style.display = dagLigtVast ? 'none' : 'flex';
+  const totalsAddRow = document.getElementById('day-log-totals-addrow');
+  if (totalsAddRow) totalsAddRow.style.display = dagLigtVast ? 'none' : 'flex';
+  const clearBtn = document.getElementById('day-log-clear-btn');
+  if (clearBtn) clearBtn.style.display = dagLigtVast ? 'none' : '';
+
   if (dayLog.length === 0) {
     empty.style.display = 'block';
     list.innerHTML = '';

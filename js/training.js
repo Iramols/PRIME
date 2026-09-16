@@ -694,6 +694,14 @@ function renderTrainingDag() {
   const totalEl = document.getElementById('training-dag-total');
   const progWrap = document.getElementById('dag-progress-wrap');
 
+  // Zelfde vergrendel-indicatie als een dagkaart in Weekplanning
+  // (wpdBouwDagKaart) -- hoorde hier voorheen niet bij, waardoor "Vandaag"
+  // geen melding toonde terwijl Weekplanning dat wel deed.
+  const lockBanner = document.getElementById('training-dag-locked-banner');
+  if (lockBanner) lockBanner.style.display = isDagAfgesloten(localDateStr()) ? 'block' : 'none';
+  const emptyAddRow = document.getElementById('training-dag-empty-addrow');
+  if (emptyAddRow) emptyAddRow.style.display = isDagAfgesloten(localDateStr()) ? 'none' : 'flex';
+
   // Altijd synchroon houden met trainingDays (bv. na kopiëren vanuit Weekplanning)
   trainingDagLog = trainingDays[currentTrainingDate] || [];
 
@@ -847,12 +855,17 @@ function renderTrainingDag() {
     + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('training.totalOverview') + '</div>'
     + '<div style="font-size:13px;color:var(--charcoal)">' + t('training.totalSummary', { items: totalItems, sets: totalSets }) + '</div>'
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:8px">'
-    + '<button class="btn-sm" style="flex:1" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
-    + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
-    + '</div>'
+    + (_dagAfgesloten ? '' :
+      '<div style="display:flex;gap:8px;margin-top:8px">'
+      + '<button class="btn-sm" style="flex:1" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
+      + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
+      + '</div>')
+    // Kopiëren blijft mogelijk vanaf een vastliggende dag (leest er alleen
+    // van, wijzigt de dag zelf niet) -- zelfde principe als in
+    // wpdBouwDagKaart (weekplanning.js).
     + '<button class="btn-sm" style="width:100%;margin-top:8px" onclick="wpOpenTrainingCopyModal(\'' + _dagToday + '\')">' + t('weekplan.trainingCopy.button') + '</button>'
-    + '<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag()">' + t('food.clearDay.button') + '</button>';
+    + (_dagAfgesloten ? '' :
+      '<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag()">' + t('food.clearDay.button') + '</button>');
 }
 
 // Wist de training van vandaag volledig: de losse, ad-hoc oefeningen
