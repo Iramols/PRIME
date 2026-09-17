@@ -768,10 +768,10 @@ async function confirmPrimeSave() {
   closePrimeSaveModal();
   try { showToast(t('programmas.prime.saved')); } catch(e) { console.error(e); }
 
-  // Meteen naar het nieuwe PRIME-programma springen, ter bevestiging.
+  // Naar de PRIME-tab springen en de LIJST van alle PRIME-programma's
+  // tonen (niet meteen de editor van het nieuwe programma openen) --
+  // switchTrainingTab('primeprog') doet dat al (zet progActiefId terug
+  // op null en rendert de lijst), zelfde gedrag als confirmPrimeMealSave()
+  // bij Voeding.
   switchTrainingTab('primeprog');
-  progActiefId = nieuw.id;
-  progActiefDagIdx = null;
-  progSelectedOefIdx = null;
-  renderProgrammas();
 }
