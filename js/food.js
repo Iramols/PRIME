@@ -490,7 +490,7 @@ function closePrimeMealSaveModal() {
   document.getElementById('prime-save-meal-modal').classList.remove('open');
 }
 
-function confirmPrimeMealSave() {
+async function confirmPrimeMealSave() {
   if (!isPrimeCoach() || !_amEditingId || _amEditingIsPrime) return;
   const suffix = document.getElementById('prime-save-meal-suffix').value.trim();
   if (!suffix) {
@@ -520,7 +520,14 @@ function confirmPrimeMealSave() {
   };
   primeMeals.push(nieuw);
   try { localStorage.setItem('prime_prime_meals', JSON.stringify(primeMeals)); } catch(e) { console.error(e); }
-  savePrimeMealToCloud(nieuw);
+  // Wachten tot de upsert echt is aangekomen VOORDAT switchFoodTab()
+  // hieronder primeMealsRefreshFromCloud() triggert -- anders kan die
+  // ververs-aanroep de server nog vóór deze upsert bereiken, dan het
+  // (nog oude) lijstje zonder dit gerecht terugkrijgen, en daarmee het
+  // net-toegevoegde gerecht weer van het scherm laten verdwijnen totdat
+  // je de tab een keer opnieuw opent. Zelfde race als eerder dit seizoen
+  // bij prime_planning (zie wpApplyPlanningChanges in weekplanning.js).
+  await savePrimeMealToCloud(nieuw);
 
   closePrimeMealSaveModal();
   try { showToast(t('food.primeMeals.saved')); } catch(e) { console.error(e); }

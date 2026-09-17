@@ -737,7 +737,7 @@ function closePrimeSaveModal() {
   document.getElementById('prime-save-modal').classList.remove('open');
 }
 
-function confirmPrimeSave() {
+async function confirmPrimeSave() {
   if (!isPrimeCoach() || progMode !== 'normal') return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) return;
@@ -758,7 +758,12 @@ function confirmPrimeSave() {
   };
   primeProgLijst.push(nieuw);
   try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch(e) { console.error(e); }
-  savePrimeProgramToCloud(nieuw);
+  // Wachten tot de upsert echt is aangekomen VOORDAT switchTrainingTab()
+  // hieronder primeProgRefreshFromCloud() triggert -- zelfde race als bij
+  // confirmPrimeMealSave() (food.js): anders kan die ververs-aanroep de
+  // server nog vóór deze upsert bereiken en het net-opgeslagen
+  // PRIME-programma weer laten verdwijnen totdat je de tab opnieuw opent.
+  await savePrimeProgramToCloud(nieuw);
 
   closePrimeSaveModal();
   try { showToast(t('programmas.prime.saved')); } catch(e) { console.error(e); }
