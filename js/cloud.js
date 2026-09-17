@@ -97,8 +97,19 @@ async function hydrateFromCloud(clientId) {
       teHerpushen.push(row.key);
       return;
     }
-    localStorage.setItem(row.key, JSON.stringify(row.value));
-    _markLocalSyncTs(row.key, clientId, serverTs);
+    try {
+      localStorage.setItem(row.key, JSON.stringify(row.value));
+      _markLocalSyncTs(row.key, clientId, serverTs);
+    } catch (e) {
+      // Bv. QuotaExceededError -- zonder deze try/catch brak dit de HELE
+      // hydratie (en dus inloggen/klant kiezen) af zodra ook maar ÉÉN
+      // sleutel te groot was (bv. eigen gerechten met veel foto's), met
+      // een rauwe "Failed to execute 'setItem'"-melding op het
+      // login-scherm tot gevolg. De cloud-waarde blijft intact (dat is de
+      // bron van waarheid); alleen de lokale snelle cache voor DEZE ene
+      // sleutel wordt overgeslagen, de rest van de hydratie gaat door.
+      console.error('hydrateFromCloud: localStorage.setItem faalde voor ' + row.key + ':', e);
+    }
   });
 
   // Sleutels zonder cloud-rij: alleen leegmaken als er ook geen "eigen,
