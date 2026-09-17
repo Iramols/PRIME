@@ -749,14 +749,25 @@ function addCustomMeal() {
     }
     syncSet('prime_custom_meals', customMeals);
   } else {
-    customMeals.push({
+    const nieuw = {
       id: 'custom-meal-' + Date.now() + Math.floor(Math.random() * 1000),
       name: name,
       photo: _amPhotoData || null,
       ingredients: ingredients,
       custom: true
-    });
+    };
+    customMeals.push(nieuw);
     syncSet('prime_custom_meals', customMeals);
+    // In de editor van het zojuist aangemaakte gerecht blijven staan
+    // (i.p.v. resetMealForm() terug naar een leeg formulier) -- zelfde
+    // patroon als een nieuw trainingsprogramma (progOpslaanNieuw in
+    // programmas.js): zo staat de "Ook als PRIME-gerecht opslaan"-knop
+    // (_amEditingId moet gezet zijn, zie updateMealFormPrimeButtonVisibility)
+    // meteen klaar, zonder dat de coach het gerecht weer moet opzoeken.
+    _populateMealForm(nieuw, false);
+    renderOwnMealsList();
+    renderMealPlan();
+    return;
   }
 
   // resetMealForm() navigeert zelf terug naar de PRIME-tab (en ververst
