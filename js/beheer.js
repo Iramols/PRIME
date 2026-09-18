@@ -4,7 +4,19 @@ function getCustomPhotos() {
   try { return JSON.parse(localStorage.getItem('prime_custom_photos') || '{}'); } catch(e) { return {}; }
 }
 function saveCustomPhotos(photos) {
-  localStorage.setItem('prime_custom_photos', JSON.stringify(photos));
+  try {
+    localStorage.setItem('prime_custom_photos', JSON.stringify(photos));
+    return true;
+  } catch (e) {
+    // Bv. QuotaExceededError zodra alle losse foto-overrides samen de
+    // opslaglimiet van de browser raken -- zonder deze try/catch stopte
+    // de aanroepende functie (handlePhotoUpload/resetPhoto) hier stil, met
+    // een niet-bijgewerkt scherm tot gevolg (leek alsof de upload-knop
+    // niets deed). Nu krijgt de coach een duidelijke melding i.p.v. een
+    // hapering, zie de aanroepers hieronder.
+    console.error('saveCustomPhotos: localStorage.setItem faalde:', e);
+    return false;
+  }
 }
 
 // Laad foto's uit custom-photos.json (voor online gebruik) en merge met localStorage
@@ -165,7 +177,7 @@ function handlePhotoUpload(event, key, tab) {
   reader.onload = function(e) {
     const photos = getCustomPhotos();
     photos[key] = e.target.result;
-    saveCustomPhotos(photos);
+    if (!saveCustomPhotos(photos)) { alert(t('beheer.storageFullError')); return; }
     applyCustomPhotos();
     renderBeheerTab(tab);
   };
@@ -175,7 +187,7 @@ function handlePhotoUpload(event, key, tab) {
 function resetPhoto(key, tab) {
   const photos = getCustomPhotos();
   photos[key] = null; // null overschrijft de bestandsversie ook na refresh
-  saveCustomPhotos(photos);
+  if (!saveCustomPhotos(photos)) { alert(t('beheer.storageFullError')); return; }
   applyCustomPhotos();
   renderBeheerTab(tab);
 }
