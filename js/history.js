@@ -23,7 +23,13 @@ function renderHistory() {
       const el = document.getElementById(id); if (el) el.textContent = '0';
     });
     ['h-avg-energy','h-avg-sleep','h-avg-stress','h-avg-energy-out','h-food-ondoel','h-food-teveel','h-food-teweinig'].forEach(function(id) {
-      const el = document.getElementById(id); if (el) el.textContent = '—';
+      const el = document.getElementById(id); if (!el) return;
+      el.textContent = '—';
+      // Score-tegels (energie/slaap/stress) kregen sinds kort een dynamische
+      // rood/geel/groen-kleur i.p.v. een vaste kleur -- zonder deze reset
+      // bleef bij een lege geschiedenis de kleur van de vorige render
+      // (bv. rood) achter op een kale "—".
+      el.style.color = 'var(--muted)';
     });
     const trend = document.getElementById('h-energy-trend'); if (trend) trend.textContent = '';
     const bar = document.getElementById('h-food-log-bar'); if (bar) bar.style.width = '0%';
@@ -71,20 +77,30 @@ function renderHistory() {
     const vals = arr.map(h => h.checkout?.[key]).filter(v => v > 0);
     return vals.length > 0 ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '—';
   };
-  // "/4" erbij -- energie/slaap/stress worden op een schaal van 1-4
-  // ingevuld, en zonder die schaal erbij is een los getal als "3.0"
-  // moeilijk te duiden.
-  const fmtScore = v => {
-    if (v === '—') return '—';
-    const n = parseFloat(v);
-    if (n < 1.8) return `${v}/4 🔴`;
-    if (n < 2.5) return `${v}/4 🟡`;
-    return `${v}/4 🟢`;
+  // Toont een leesbare kwalificatie i.p.v. het kale gemiddelde ("3.9/4") --
+  // en geeft de tekst zelf dezelfde rood/geel/groen-kleur als de bol die
+  // er voorheen los naast stond, i.p.v. steeds de vaste categorie-kleur
+  // (salie/blauw/accent) van die meting. Zo hoeven kleur van tekst en bol
+  // niet meer los van elkaar geïnterpreteerd te worden.
+  const SCORE_KLEUR = { laag: '#E24B4A', midden: '#f39c12', hoog: 'var(--sage)' };
+  const SCORE_LABELS = {
+    energy: { laag: t('history.score.energyLow'), midden: t('history.score.energyMid'), hoog: t('history.score.energyHigh') },
+    sleep:  { laag: t('history.score.sleepLow'),  midden: t('history.score.sleepMid'),  hoog: t('history.score.sleepHigh') },
+    stress: { laag: t('history.score.stressLow'), midden: t('history.score.stressMid'), hoog: t('history.score.stressHigh') },
   };
-  document.getElementById('h-avg-energy').textContent = fmtScore(avg(recent7, 'energy'));
-  document.getElementById('h-avg-sleep').textContent = fmtScore(avg(recent7, 'sleep'));
-  document.getElementById('h-avg-stress').textContent = fmtScore(avg(recent7, 'stress'));
-  document.getElementById('h-avg-energy-out').textContent = fmtScore(avgOut(recent7, 'energy'));
+  const setScoreEl = (id, metric, v) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (v === '—') { el.textContent = '—'; el.style.color = 'var(--muted)'; return; }
+    const n = parseFloat(v);
+    const tier = n < 1.8 ? 'laag' : n < 2.5 ? 'midden' : 'hoog';
+    el.textContent = SCORE_LABELS[metric][tier];
+    el.style.color = SCORE_KLEUR[tier];
+  };
+  setScoreEl('h-avg-energy', 'energy', avg(recent7, 'energy'));
+  setScoreEl('h-avg-sleep', 'sleep', avg(recent7, 'sleep'));
+  setScoreEl('h-avg-stress', 'stress', avg(recent7, 'stress'));
+  setScoreEl('h-avg-energy-out', 'energy', avgOut(recent7, 'energy'));
 
   // Energie trend
   if (recent7.length >= 3) {
