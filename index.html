@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260919-1853';
+window.PRIME_BUILD = '20260919-1858';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -27,11 +27,11 @@ window.PRIME_BUILD = '20260919-1853';
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260919-1853">
+<link rel="stylesheet" href="css/styles.css?v=20260919-1858">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="js/cloud.js?v=20260919-1853"></script>
-<script src="js/translations.js?v=20260919-1853"></script>
-<script src="js/i18n.js?v=20260919-1853"></script>
+<script src="js/cloud.js?v=20260919-1858"></script>
+<script src="js/translations.js?v=20260919-1858"></script>
+<script src="js/i18n.js?v=20260919-1858"></script>
 </head>
 <body>
 
@@ -181,7 +181,7 @@ window.PRIME_BUILD = '20260919-1853';
         <div class="pilot-tips-title" data-i18n="pilotTips.title">Goed om te weten</div>
         <div class="pilot-tip"><span class="pilot-tip-icon">📱</span><span data-i18n="pilotTips.oneDevice">Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.</span></div>
         <div class="pilot-tip"><span class="pilot-tip-icon">📶</span><span data-i18n="pilotTips.internet">Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.</span></div>
-        <div class="pilot-tip"><span class="pilot-tip-icon">🔄</span><span data-i18n="pilotTips.update">Komt er een update? Je krijgt een mail met uitleg. Ververs daarna de pagina: Shift + Ctrl + R op een computer, of sluit de app volledig en open hem opnieuw op je telefoon.</span></div>
+        <div class="pilot-tip"><span class="pilot-tip-icon">🔄</span><span data-i18n="pilotTips.update">Komt er een update? Je krijgt een mail. Sluit PRIME (of het tabblad) en open hem opnieuw: hij werkt zichzelf dan bij.</span></div>
       </div>
     </div>
 
@@ -258,7 +258,7 @@ window.PRIME_BUILD = '20260919-1853';
         <div class="pilot-tips-title" data-i18n="pilotTips.title">Goed om te weten</div>
         <div class="pilot-tip"><span class="pilot-tip-icon">📱</span><span data-i18n="pilotTips.oneDevice">Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.</span></div>
         <div class="pilot-tip"><span class="pilot-tip-icon">📶</span><span data-i18n="pilotTips.internet">Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.</span></div>
-        <div class="pilot-tip"><span class="pilot-tip-icon">🔄</span><span data-i18n="pilotTips.update">Komt er een update? Je krijgt een mail met uitleg. Ververs daarna de pagina: Shift + Ctrl + R op een computer, of sluit de app volledig en open hem opnieuw op je telefoon.</span></div>
+        <div class="pilot-tip"><span class="pilot-tip-icon">🔄</span><span data-i18n="pilotTips.update">Komt er een update? Je krijgt een mail. Sluit PRIME (of het tabblad) en open hem opnieuw: hij werkt zichzelf dan bij.</span></div>
       </div>
     </div>
   </div>
@@ -1330,6 +1330,6 @@ window.PRIME_BUILD = '20260919-1853';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260919-1853"></script>
+<script src="js/auth.js?v=20260919-1858"></script>
 </body>
 </html>
