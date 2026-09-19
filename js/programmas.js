@@ -274,7 +274,8 @@ function progBouwInfoKaart(prog, canEdit) {
       ? '<label style="cursor:pointer">' +
         '<input type="file" accept="image/*" style="display:none" onchange="handleProgPhoto(event)">' +
         '<span class="' + coachOnlyBtn.trim() + '" style="font-size:12px;padding:8px 14px;border-radius:8px;border:1px solid var(--sage);color:var(--sage);font-weight:600">' + t('beheer.upload') + '</span>' +
-        '</label>'
+        '</label>' +
+        '<span style="font-size:11px;color:var(--muted)">' + t('photo.maxHint') + '</span>'
       : '') +
     '</div>' +
     '<div id="prog-photo-error" style="color:#c0392b;font-size:12px;margin-top:6px"></div>' +

@@ -136,8 +136,8 @@ function renderBeheerTab(tab) {
       html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-weight:600;font-size:13px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + item.label + '</div>';
       html += isCustom
-        ? '<div style="font-size:10px;color:var(--sage)">' + t('beheer.customActive') + '</div>'
-        : '<div style="font-size:10px;color:var(--muted)">' + t('beheer.defaultPhoto') + '</div>';
+        ? '<div style="font-size:10px;color:var(--sage)">' + t('beheer.customActive') + ' · ' + t('photo.maxHint') + '</div>'
+        : '<div style="font-size:10px;color:var(--muted)">' + t('beheer.defaultPhoto') + ' · ' + t('photo.maxHint') + '</div>';
       html += '</div>';
 
       // Knoppen

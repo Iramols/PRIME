@@ -254,7 +254,7 @@ const I18N = {
     'beheer.export.instructions': 'Geüploade foto\'s worden lokaal opgeslagen. Om ze online zichtbaar te maken:<br><strong>1.</strong> Klik op "Exporteer foto\'s" hieronder<br><strong>2.</strong> Het bestand wordt gedownload naar je Downloads-map als <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code><br><strong>3.</strong> Kopieer dat bestand naar de PRIME-projectmap (vervangt het bestaande bestand)<br><strong>4.</strong> Zeg tegen Claude: <em>"push de foto\'s naar GitHub"</em>',
     'beheer.export.btn': "📤 Exporteer foto's",
     'beheer.warning.title': '⚠️ Let op',
-    'beheer.warning.text': "Gebruik foto's van max. 1MB voor snelle laadtijden.",
+    'beheer.warning.text': "Foto's van meer dan 200 KB worden geweigerd.",
     'beheer.noCustomPhoto': 'geen foto',
     'beheer.customActive': '✓ Eigen foto actief',
     'beheer.defaultPhoto': 'Standaard foto',
@@ -269,6 +269,7 @@ const I18N = {
     'beheer.photoTooBig': 'Foto is te groot ({kb} KB). Maximaal {max} KB — verklein de foto en probeer het opnieuw. De foto is niet opgeslagen.',
     'beheer.storageFullError': 'De lokale opslag van je browser zit vol. Verwijder een paar foto\'s (Reset) en probeer het opnieuw.',
     'photos.migrated': "{n} foto's naar de opslag verplaatst ✓",
+    'photo.maxHint': 'Max. 200 KB',
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -898,7 +899,7 @@ const I18N = {
     'beheer.export.instructions': 'Uploaded photos are stored locally. To make them visible online:<br><strong>1.</strong> Click "Export photos" below<br><strong>2.</strong> The file downloads to your Downloads folder as <code style="background:var(--sand);padding:1px 5px;border-radius:4px">custom-photos.json</code><br><strong>3.</strong> Copy that file to the PRIME project folder (replacing the existing file)<br><strong>4.</strong> Tell Claude: <em>"push the photos to GitHub"</em>',
     'beheer.export.btn': '📤 Export photos',
     'beheer.warning.title': '⚠️ Note',
-    'beheer.warning.text': 'Use photos of max. 1MB for fast load times.',
+    'beheer.warning.text': 'Photos larger than 200 KB are rejected.',
     'beheer.noCustomPhoto': 'no photo',
     'beheer.customActive': '✓ Custom photo active',
     'beheer.defaultPhoto': 'Default photo',
@@ -913,6 +914,7 @@ const I18N = {
     'beheer.photoTooBig': 'Photo is too large ({kb} KB). Maximum {max} KB — resize the photo and try again. The photo was not saved.',
     'beheer.storageFullError': "Your browser's local storage is full. Remove a few photos (Reset) and try again.",
     'photos.migrated': '{n} photos moved to storage ✓',
+    'photo.maxHint': 'Max. 200 KB',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
