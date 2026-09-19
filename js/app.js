@@ -200,6 +200,15 @@ function init() {
   if (!chat.children.length) {
     addMsg('coach', t('coach.greeting', { name: profile.name ? ' ' + profile.name : '' }));
   }
+
+  // Bestaande base64-foto's op de achtergrond naar Storage verplaatsen
+  // (idempotent, zie migrateBase64PhotosToStorage() in cloud.js). Even
+  // wachten zodat het opstarten zelf niet vertraagd wordt.
+  setTimeout(function() {
+    migrateBase64PhotosToStorage().then(function(n) {
+      if (n > 0 && isPrimeCoach()) { try { showToast(t('photos.migrated', { n: n })); } catch (e) {} }
+    });
+  }, 4000);
 }
 
 loadPhotosFromFile(init);

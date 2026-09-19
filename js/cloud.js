@@ -245,6 +245,83 @@ async function uploadPhotoToStorage(file) {
   }
 }
 
+// Eenmalige, idempotente omzetting van al opgeslagen base64-foto's
+// (data:image/...) naar Storage-URL's, zodat ze bijna geen ruimte meer in
+// de data/lokale opslag innemen. Werkt op de CLOUD-waarde van de sleutels van
+// de actieve klant (niet op de lokale cache, die door een eerdere
+// quota-fout verouderd kan zijn), en schrijft alleen terug als er echt iets
+// vervangen is. Een foto die niet geüpload kan worden blijft gewoon base64.
+// De coach ruimt daarbij ook de gedeelde PRIME-gerechten/-programma's op.
+let _fotoMigratieBezig = false;
+async function migrateBase64PhotosToStorage() {
+  if (_fotoMigratieBezig || !activeClientId) return 0;
+  _fotoMigratieBezig = true;
+  const isData = v => typeof v === 'string' && v.startsWith('data:image/');
+  const cache = {};
+  let aantal = 0;
+  const toUrl = async function(dataUrl) {
+    if (cache[dataUrl] !== undefined) return cache[dataUrl];
+    let url = null;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const ext = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+      url = await uploadPhotoToStorage(new File([blob], 'foto.' + ext, { type: blob.type }));
+    } catch (e) { console.error('foto-migratie: omzetten mislukt:', e); }
+    cache[dataUrl] = url;
+    if (url) aantal++;
+    return url;
+  };
+  // Vervangt in-place; geeft terug of er iets veranderd is.
+  const vervang = async function(node) {
+    let changed = false;
+    if (node && typeof node === 'object') {
+      for (const k of Object.keys(node)) {
+        const v = node[k];
+        if (isData(v)) {
+          const url = await toUrl(v);
+          if (url) { node[k] = url; changed = true; }
+        } else if (v && typeof v === 'object') {
+          if (await vervang(v)) changed = true;
+        }
+      }
+    }
+    return changed;
+  };
+  try {
+    const setters = {
+      prime_custom_products: v => { customProducts = v; },
+      prime_custom_meals: v => { customMeals = v; },
+      prime_custom_exercises: v => { customExercises = v; },
+      prime_training_days: v => { trainingDays = v; trainingDagLog = trainingDays[currentTrainingDate] || []; },
+      prime_programmas: v => {}
+    };
+    const rows = await fetchClientStateFor(activeClientId, Object.keys(setters));
+    for (const key of Object.keys(rows)) {
+      const waarde = rows[key];
+      if (await vervang(waarde)) { syncSet(key, waarde); setters[key](waarde); }
+    }
+    if (typeof isPrimeCoach === 'function' && isPrimeCoach()) {
+      const meals = await fetchPrimeMealsFromCloud();
+      if (meals) {
+        for (const m of meals) { if (await vervang(m)) await savePrimeMealToCloud(m); }
+        primeMeals = meals;
+        try { localStorage.setItem('prime_prime_meals', JSON.stringify(meals)); } catch (e) {}
+      }
+      const progs = await fetchPrimeProgramsFromCloud();
+      if (progs) {
+        for (const p of progs) { if (await vervang(p)) await savePrimeProgramToCloud(p); }
+        primeProgLijst = progs;
+        try { localStorage.setItem('prime_prime_programmas', JSON.stringify(progs)); } catch (e) {}
+      }
+    }
+  } catch (e) {
+    console.error('foto-migratie faalde:', e);
+  }
+  _fotoMigratieBezig = false;
+  if (aantal > 0) console.log('foto-migratie: ' + aantal + " foto('s) naar Storage verplaatst");
+  return aantal;
+}
+
 // ========== PRIME-PROGRAMMA'S (gedeeld, coach-only bewerkbaar) ==========
 // Deze lopen bewust NIET via CLOUD_KEYS/syncSet (dat is per-klant-scoped in
 // client_state), maar via een eigen, voor iedereen leesbare Supabase-tabel

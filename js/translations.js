@@ -268,6 +268,7 @@ const I18N = {
     'beheer.group.alts': ' — alternatieven',
     'beheer.photoTooBig': 'Foto is te groot. Gebruik een foto van maximaal 1.5MB.',
     'beheer.storageFullError': 'De lokale opslag van je browser zit vol. Verwijder een paar foto\'s (Reset) en probeer het opnieuw.',
+    'photos.migrated': "{n} foto's naar de opslag verplaatst ✓",
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -911,6 +912,7 @@ const I18N = {
     'beheer.group.alts': ' — alternatives',
     'beheer.photoTooBig': 'Photo is too large. Use a photo of max. 1.5MB.',
     'beheer.storageFullError': "Your browser's local storage is full. Remove a few photos (Reset) and try again.",
+    'photos.migrated': '{n} photos moved to storage ✓',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
