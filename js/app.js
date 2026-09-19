@@ -180,6 +180,10 @@ function applyTrainingVisibility() {
 
 // ========== INIT ==========
 function init() {
+  try { initInner(); } finally { revealApp(); }
+}
+
+function initInner() {
   // Laad eigen foto's van coach als eerste stap
   applyCustomPhotos();
 

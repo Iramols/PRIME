@@ -27,7 +27,21 @@ function toLoginEmail(input) {
   return input.toLowerCase().replace(/\s+/g, '.') + CLIENT_EMAIL_DOMAIN;
 }
 
+function hideBootLoader() {
+  const l = document.getElementById('boot-loader');
+  if (l) l.style.display = 'none';
+}
+
+// Toont de app pas als init() (app.js) klaar is, zodat je nooit de kale
+// standaard-HTML van het dashboard ("Goedemorgen" + check-in) ziet die daarna
+// alsnog wordt omgezet.
+function revealApp() {
+  document.getElementById('app-shell').style.display = '';
+  hideBootLoader();
+}
+
 function showLogin(message) {
+  hideBootLoader();
   document.getElementById('login-overlay').classList.add('open');
   document.getElementById('client-picker-overlay').classList.remove('open');
   document.getElementById('login-error').textContent = message || '';
@@ -38,6 +52,7 @@ function hideLogin() {
 }
 
 function showClientPicker(clients) {
+  hideBootLoader();
   const list = document.getElementById('client-picker-list');
   list.innerHTML = '';
   if (!clients.length) {
@@ -147,10 +162,11 @@ function loadAppScripts(index) {
 }
 
 async function bootApp(clientId, isCoach) {
+  const _l = document.getElementById('boot-loader');
+  if (_l) _l.style.display = 'flex';
   await hydrateFromCloud(clientId);
   hideLogin();
   hideClientPicker();
-  document.getElementById('app-shell').style.display = '';
   if (isCoach) document.getElementById('switch-client-btn').style.display = '';
   if (isCoach) document.getElementById('reset-voortgang-btn').style.display = '';
   if (isCoach) document.getElementById('signalen-coach-card').style.display = '';
@@ -159,6 +175,8 @@ async function bootApp(clientId, isCoach) {
   if (isCoach) document.getElementById('wis-voeding-btn').style.display = '';
   if (isCoach) document.getElementById('nav-btn-beheer').style.display = '';
   loadAppScripts();
+  // Vangnet: lukt init() om welke reden ook niet, toon de app dan toch.
+  setTimeout(revealApp, 12000);
 }
 
 async function resolveSession() {
