@@ -530,7 +530,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .success-banner h3 { font-family: 'DM Serif Display', serif; font-size: 19px; color: var(--sage); margin-bottom: 6px; }
 .success-banner p { font-size: 14px; color: #3d6649; line-height: 1.6; }
 .pilot-tips { border-top: 1px solid var(--sage-mid); margin-top: 14px; padding-top: 10px; }
-.pilot-tips-title { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage); margin-bottom: 8px; }
+.pilot-tips-title { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage); margin-bottom: 8px; }
 .pilot-tip { display: flex; gap: 9px; font-size: 13px; line-height: 1.5; color: #2f5a3c; margin-bottom: 7px; }
 .pilot-tip:last-child { margin-bottom: 0; }
 .pilot-tip-icon { flex-shrink: 0; }
