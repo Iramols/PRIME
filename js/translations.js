@@ -266,7 +266,7 @@ const I18N = {
     'beheer.group.normal': 'Normale training',
     'beheer.group.heavy': 'Zware training',
     'beheer.group.alts': ' — alternatieven',
-    'beheer.photoTooBig': 'Foto is te groot. Gebruik een foto van maximaal 1.5MB.',
+    'beheer.photoTooBig': 'Foto is te groot ({kb} KB). Maximaal {max} KB — verklein de foto en probeer het opnieuw. De foto is niet opgeslagen.',
     'beheer.storageFullError': 'De lokale opslag van je browser zit vol. Verwijder een paar foto\'s (Reset) en probeer het opnieuw.',
     'photos.migrated': "{n} foto's naar de opslag verplaatst ✓",
 
@@ -582,7 +582,7 @@ const I18N = {
     'food.add.myProducts': 'Mijn eigen producten',
     'food.add.noOwnProducts': 'Je hebt nog geen eigen producten toegevoegd.',
     'food.add.nameRequired': 'Vul een naam in voor het product.',
-    'food.add.photoTooBig': 'Foto is te groot. Gebruik een foto van maximaal 1.5MB.',
+    'food.add.photoTooBig': 'Foto is te groot ({kb} KB). Maximaal {max} KB — verklein de foto en probeer het opnieuw. De foto is niet opgeslagen.',
     'food.add.confirmDelete': 'Dit product verwijderen?',
     'food.add.own': 'eigen',
 
@@ -910,7 +910,7 @@ const I18N = {
     'beheer.group.normal': 'Normal training',
     'beheer.group.heavy': 'Heavy training',
     'beheer.group.alts': ' — alternatives',
-    'beheer.photoTooBig': 'Photo is too large. Use a photo of max. 1.5MB.',
+    'beheer.photoTooBig': 'Photo is too large ({kb} KB). Maximum {max} KB — resize the photo and try again. The photo was not saved.',
     'beheer.storageFullError': "Your browser's local storage is full. Remove a few photos (Reset) and try again.",
     'photos.migrated': '{n} photos moved to storage ✓',
 
@@ -1224,7 +1224,7 @@ const I18N = {
     'food.add.myProducts': 'My own products',
     'food.add.noOwnProducts': "You haven't added any own products yet.",
     'food.add.nameRequired': 'Enter a name for the product.',
-    'food.add.photoTooBig': 'Photo is too large. Use a photo of max. 1.5MB.',
+    'food.add.photoTooBig': 'Photo is too large ({kb} KB). Maximum {max} KB — resize the photo and try again. The photo was not saved.',
     'food.add.confirmDelete': 'Delete this product?',
     'food.add.own': 'own',
 

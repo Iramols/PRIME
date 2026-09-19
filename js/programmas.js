@@ -313,8 +313,8 @@ function handleProgPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
   const errorEl = document.getElementById('prog-photo-error');
-  if (file.size > 1.5 * 1024 * 1024) {
-    errorEl.textContent = t('food.add.photoTooBig');
+  if (file.size > MAX_PHOTO_BYTES) {
+    errorEl.textContent = t('food.add.photoTooBig', { kb: Math.round(file.size / 1024), max: MAX_PHOTO_BYTES / 1024 });
     return;
   }
   errorEl.textContent = '';
@@ -414,8 +414,8 @@ function handleNewProgramPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
   const errorEl = document.getElementById('apr-error');
-  if (file.size > 1.5 * 1024 * 1024) {
-    errorEl.textContent = t('food.add.photoTooBig');
+  if (file.size > MAX_PHOTO_BYTES) {
+    errorEl.textContent = t('food.add.photoTooBig', { kb: Math.round(file.size / 1024), max: MAX_PHOTO_BYTES / 1024 });
     return;
   }
   errorEl.textContent = '';

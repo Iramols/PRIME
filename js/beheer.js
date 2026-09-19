@@ -169,8 +169,8 @@ function renderBeheerTab(tab) {
 function handlePhotoUpload(event, key, tab) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 1.5 * 1024 * 1024) {
-    alert(t('beheer.photoTooBig'));
+  if (file.size > MAX_PHOTO_BYTES) {
+    alert(t('beheer.photoTooBig', { kb: Math.round(file.size / 1024), max: MAX_PHOTO_BYTES / 1024 }));
     return;
   }
   const reader = new FileReader();

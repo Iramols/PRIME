@@ -222,6 +222,10 @@ async function fetchClientStateFor(clientId, keys) {
   return result;
 }
 
+// Maximale bestandsgrootte van een geüploade foto (alle uploadplekken
+// controleren hierop en tonen anders een melding zonder op te slaan).
+const MAX_PHOTO_BYTES = 200 * 1024;
+
 // ========== FOTO-OPSLAG (Supabase Storage) ==========
 // Foto's van eigen producten/gerechten/oefeningen/programma's staan als los
 // bestand in de bucket 'prime-photos' (zie supabase/photo_storage.sql); in

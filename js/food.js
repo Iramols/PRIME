@@ -247,8 +247,8 @@ function updateAddProductKcal() {
 function handleAddProductPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 1.5 * 1024 * 1024) {
-    document.getElementById('ap-error').textContent = t('food.add.photoTooBig');
+  if (file.size > MAX_PHOTO_BYTES) {
+    document.getElementById('ap-error').textContent = t('food.add.photoTooBig', { kb: Math.round(file.size / 1024), max: MAX_PHOTO_BYTES / 1024 });
     return;
   }
   document.getElementById('ap-error').textContent = '';
@@ -680,8 +680,8 @@ function handleAddMealPhoto(event) {
   if (_amFormReadOnly) return; // defense-in-depth: upload-knop is toch al verborgen
   const file = event.target.files[0];
   if (!file) return;
-  if (file.size > 1.5 * 1024 * 1024) {
-    document.getElementById('am-error').textContent = t('food.add.photoTooBig');
+  if (file.size > MAX_PHOTO_BYTES) {
+    document.getElementById('am-error').textContent = t('food.add.photoTooBig', { kb: Math.round(file.size / 1024), max: MAX_PHOTO_BYTES / 1024 });
     return;
   }
   document.getElementById('am-error').textContent = '';
