@@ -174,6 +174,7 @@ async function bootApp(clientId, isCoach) {
   if (isCoach) document.getElementById('wis-training-btn').style.display = '';
   if (isCoach) document.getElementById('wis-voeding-btn').style.display = '';
   if (isCoach) document.getElementById('nav-btn-beheer').style.display = '';
+  if (isCoach) document.getElementById('bnav-more').style.display = '';
   loadAppScripts();
   // Vangnet: lukt init() om welke reden ook niet, toon de app dan toch.
   setTimeout(revealApp, 12000);

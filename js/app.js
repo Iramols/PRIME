@@ -29,6 +29,10 @@ function go(screen) {
   document.querySelectorAll('.nav-btn').forEach((b, i) => {
     b.classList.toggle('active', ['home','voeding','training','coach','history','signalen','beheer'][i] === screen);
   });
+  document.querySelectorAll('.bnav-btn[data-screen]').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  const _bnavMore = document.getElementById('bnav-more');
+  if (_bnavMore) _bnavMore.classList.toggle('active', screen === 'signalen' || screen === 'beheer');
+  closeMoreMenu();
   if (screen === 'history') renderHistory();
   if (screen === 'signalen') renderSignalenTab();
   if (screen === 'training') switchTrainingTab('dag');
@@ -50,6 +54,18 @@ function go(screen) {
   }
 }
 
+
+// Coach-menu "Meer" van de onderbalk (telefoon).
+function toggleMoreMenu() {
+  const open = document.getElementById('more-menu').style.display === 'block';
+  document.getElementById('more-menu').style.display = open ? 'none' : 'block';
+  document.getElementById('more-backdrop').style.display = open ? 'none' : 'block';
+}
+function closeMoreMenu() {
+  const m = document.getElementById('more-menu'), b = document.getElementById('more-backdrop');
+  if (m) m.style.display = 'none';
+  if (b) b.style.display = 'none';
+}
 
 // ========== HOMESCHERM ==========
 // Losgetrokken uit init() zodat een taalwissel (setLang() -> rerenderCurrentScreen())
@@ -151,6 +167,8 @@ function applyTrainingVisibility() {
 
   const navBtn = document.getElementById('nav-btn-training');
   if (navBtn) navBtn.style.display = enabled ? '' : 'none';
+  const bnavTraining = document.getElementById('bnav-training');
+  if (bnavTraining) bnavTraining.style.display = enabled ? '' : 'none';
 
   const homeCard = document.getElementById('home-training-card');
   if (homeCard) homeCard.style.display = enabled ? '' : 'none';

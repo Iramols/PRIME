@@ -616,3 +616,41 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .history-date { font-size: 12px; color: var(--muted); min-width: 90px; }
 .history-dots { display: flex; gap: 6px; }
 .hdot { width: 10px; height: 10px; border-radius: 50%; }
+
+
+/* ONDERBALK (telefoon): vervangt het bovenmenu (.nav) op <=600px */
+.bottom-nav, .more-menu, .more-backdrop { display: none; }
+@media(max-width:600px){
+  #app-shell { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .bottom-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+    background: var(--white); border-top: 1px solid var(--sand-dark);
+    padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
+  }
+  .bnav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    font-size: 11px; color: var(--muted); padding: 2px 0;
+  }
+  .bnav-icon { font-size: 20px; line-height: 1; padding: 3px 14px; border-radius: 14px; }
+  .bnav-btn.active { color: var(--sage); font-weight: 600; }
+  .bnav-btn.active .bnav-icon { background: var(--sage-light); }
+  .bnav-btn.bnav-coach { color: var(--coach-only); }
+  .bnav-btn.bnav-coach.active .bnav-icon { background: var(--coach-only-light); }
+  .more-backdrop { display: block; position: fixed; inset: 0; z-index: 155; background: rgba(0,0,0,0.25); }
+  .more-menu {
+    display: block; position: fixed; left: 12px; right: 12px; z-index: 160;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    background: var(--coach-only-light); border: 1px solid var(--coach-only);
+    border-radius: 14px; overflow: hidden;
+  }
+  .more-menu-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--coach-only); padding: 10px 14px 6px; }
+  .more-item {
+    display: block; width: 100%; text-align: left; background: none; border: none;
+    border-top: 1px solid rgba(230,126,34,0.25); padding: 12px 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--coach-only); cursor: pointer;
+  }
+  .header #switch-client-btn { display: none !important; }
+  /* Ruimte in de kop: de ondertitel weghalen zodat NL/EN, Profiel en Uit passen */
+  .header .logo span { display: none; }
+}

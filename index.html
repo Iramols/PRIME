@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>PRIME by Anneke</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
@@ -1280,6 +1280,23 @@
       <button class="btn-primary" style="flex:1" onclick="progConfirmSchedule()" data-i18n="weekplan.planButton">Plan</button>
     </div>
   </div>
+</div>
+
+
+<!-- ONDERBALK (alleen op telefoonbreedte zichtbaar, zie .bottom-nav in styles.css) -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bnav-btn active" data-screen="home" onclick="go('home')"><span class="bnav-icon">🏠</span><span data-i18n="nav.dashboard">Dashboard</span></button>
+  <button class="bnav-btn" data-screen="voeding" onclick="go('voeding')"><span class="bnav-icon">🥗</span><span data-i18n="nav.voeding">Voeding</span></button>
+  <button class="bnav-btn" id="bnav-training" data-screen="training" onclick="go('training')"><span class="bnav-icon">🏋️</span><span data-i18n="nav.training">Training</span></button>
+  <button class="bnav-btn" data-screen="history" onclick="go('history')"><span class="bnav-icon">📈</span><span data-i18n="nav.voortgang">Voortgang</span></button>
+  <button class="bnav-btn bnav-coach" id="bnav-more" style="display:none" onclick="toggleMoreMenu()"><span class="bnav-icon">⋯</span><span data-i18n="nav.more">Meer</span></button>
+</nav>
+<div class="more-backdrop" id="more-backdrop" style="display:none" onclick="closeMoreMenu()"></div>
+<div class="more-menu" id="more-menu" style="display:none">
+  <div class="more-menu-label">Coach</div>
+  <button class="more-item" onclick="go('signalen')" data-i18n="nav.signalen">Signalen</button>
+  <button class="more-item" onclick="go('beheer')" data-i18n="nav.photoManage">📷 Foto beheer</button>
+  <button class="more-item" onclick="closeMoreMenu();switchClient()" data-i18n="header.switchClient">🔁 Wissel klant</button>
 </div>
 
 </div><!-- /app-shell -->
