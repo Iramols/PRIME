@@ -222,6 +222,29 @@ async function fetchClientStateFor(clientId, keys) {
   return result;
 }
 
+// ========== FOTO-OPSLAG (Supabase Storage) ==========
+// Foto's van eigen producten/gerechten/oefeningen/programma's staan als los
+// bestand in de bucket 'prime-photos' (zie supabase/photo_storage.sql); in
+// de app-data komt alleen de publieke URL. Geeft die URL terug, of null als
+// uploaden niet lukt (geen sessie, bucket nog niet aangemaakt, offline...) --
+// aanroepers houden dan gewoon hun lokale base64-voorbeeld als terugval,
+// dus een mislukte upload breekt nooit het opslaan zelf.
+async function uploadPhotoToStorage(file) {
+  try {
+    const sb = getSupabase();
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return null;
+    const ext = ((file.name || '').split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = session.user.id + '/' + Date.now() + '-' + Math.floor(Math.random() * 1e6) + '.' + ext;
+    const { error } = await sb.storage.from('prime-photos').upload(path, file, { contentType: file.type || undefined, cacheControl: '31536000' });
+    if (error) { console.error('uploadPhotoToStorage:', error); return null; }
+    return sb.storage.from('prime-photos').getPublicUrl(path).data.publicUrl;
+  } catch (e) {
+    console.error('uploadPhotoToStorage faalde:', e);
+    return null;
+  }
+}
+
 // ========== PRIME-PROGRAMMA'S (gedeeld, coach-only bewerkbaar) ==========
 // Deze lopen bewust NIET via CLOUD_KEYS/syncSet (dat is per-klant-scoped in
 // client_state), maar via een eigen, voor iedereen leesbare Supabase-tabel

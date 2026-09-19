@@ -254,8 +254,13 @@ function handleAddProductPhoto(event) {
   document.getElementById('ap-error').textContent = '';
   const reader = new FileReader();
   reader.onload = function(e) {
-    _apPhotoData = e.target.result;
-    document.getElementById('ap-photo-preview').innerHTML = '<img src="' + _apPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+    const preview = e.target.result;
+    _apPhotoData = preview;
+    document.getElementById('ap-photo-preview').innerHTML = '<img src="' + preview + '" style="width:100%;height:100%;object-fit:cover">';
+    // Op de achtergrond naar Storage uploaden en de base64 vervangen door de
+    // URL; lukt dat niet (of is er inmiddels een andere foto gekozen), dan
+    // blijft de base64 gewoon staan.
+    uploadPhotoToStorage(file).then(function(url) { if (url && _apPhotoData === preview) _apPhotoData = url; });
   };
   reader.readAsDataURL(file);
 }
@@ -682,8 +687,10 @@ function handleAddMealPhoto(event) {
   document.getElementById('am-error').textContent = '';
   const reader = new FileReader();
   reader.onload = function(e) {
-    _amPhotoData = e.target.result;
-    document.getElementById('am-photo-preview').innerHTML = '<img src="' + _amPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+    const preview = e.target.result;
+    _amPhotoData = preview;
+    document.getElementById('am-photo-preview').innerHTML = '<img src="' + preview + '" style="width:100%;height:100%;object-fit:cover">';
+    uploadPhotoToStorage(file).then(function(url) { if (url && _amPhotoData === preview) _amPhotoData = url; });
   };
   reader.readAsDataURL(file);
 }

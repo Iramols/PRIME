@@ -193,8 +193,10 @@ function handleAddExercisePhoto(event) {
   document.getElementById('ae-error').textContent = '';
   const reader = new FileReader();
   reader.onload = function(e) {
-    _aePhotoData = e.target.result;
-    document.getElementById('ae-photo-preview').innerHTML = '<img src="' + _aePhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+    const preview = e.target.result;
+    _aePhotoData = preview;
+    document.getElementById('ae-photo-preview').innerHTML = '<img src="' + preview + '" style="width:100%;height:100%;object-fit:cover">';
+    uploadPhotoToStorage(file).then(function(url) { if (url && _aePhotoData === preview) _aePhotoData = url; });
   };
   reader.readAsDataURL(file);
 }

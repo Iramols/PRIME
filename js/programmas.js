@@ -322,9 +322,15 @@ function handleProgPhoto(event) {
   reader.onload = function(e) {
     const prog = progLijst.find(p => p.id === progActiefId);
     if (!prog) return;
-    prog.foto = e.target.result;
+    const preview = e.target.result;
+    prog.foto = preview;
     progSlaOp();
-    document.getElementById('prog-photo-preview').innerHTML = '<img src="' + prog.foto + '" style="width:100%;height:100%;object-fit:cover">';
+    document.getElementById('prog-photo-preview').innerHTML = '<img src="' + preview + '" style="width:100%;height:100%;object-fit:cover">';
+    // Daarna base64 vervangen door de Storage-URL (mits deze foto nog de
+    // huidige is), en dat opnieuw opslaan.
+    uploadPhotoToStorage(file).then(function(url) {
+      if (url && prog.foto === preview) { prog.foto = url; progSlaOp(); }
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -415,8 +421,10 @@ function handleNewProgramPhoto(event) {
   errorEl.textContent = '';
   const reader = new FileReader();
   reader.onload = function(e) {
-    _aprPhotoData = e.target.result;
-    document.getElementById('apr-photo-preview').innerHTML = '<img src="' + _aprPhotoData + '" style="width:100%;height:100%;object-fit:cover">';
+    const preview = e.target.result;
+    _aprPhotoData = preview;
+    document.getElementById('apr-photo-preview').innerHTML = '<img src="' + preview + '" style="width:100%;height:100%;object-fit:cover">';
+    uploadPhotoToStorage(file).then(function(url) { if (url && _aprPhotoData === preview) _aprPhotoData = url; });
   };
   reader.readAsDataURL(file);
 }
