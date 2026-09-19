@@ -273,7 +273,7 @@ const I18N = {
     'pilotTips.title': 'Goed om te weten',
     'pilotTips.oneDevice': 'Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.',
     'pilotTips.internet': 'Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.',
-    'pilotTips.update': 'Komt er een update? Je krijgt een mail met uitleg. Ververs daarna de pagina zoals beschreven.',
+    'pilotTips.update': 'Komt er een update? Je krijgt een mail met uitleg. Ververs daarna de pagina zoals beschreven (Shift + Ctrl + R).',
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -922,7 +922,7 @@ const I18N = {
     'pilotTips.title': 'Good to know',
     'pilotTips.oneDevice': 'Use PRIME on one device at a time (phone or computer), otherwise changes may get lost.',
     'pilotTips.internet': 'You need an internet connection to use PRIME. Without one you cannot log in or save.',
-    'pilotTips.update': 'Is there an update? You will get an email with instructions. Then refresh the page as described.',
+    'pilotTips.update': 'Is there an update? You will get an email with instructions. Then refresh the page as described (Shift + Ctrl + R).',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
