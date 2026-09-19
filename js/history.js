@@ -310,12 +310,12 @@ function renderKcalTrendChart() {
 
   const _tmVandaag = localDateStr();
   const data = Object.keys(foodDays)
-    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag && sumItems(foodDays[dateStr].filter(isEatenItem)).kcal > 0)
     .sort()
     .slice(-30)
     .map(dateStr => ({
       date: dateStr,
-      kcal: Math.round(foodDays[dateStr].reduce((a,i) => a + (i.kcal||0), 0))
+      kcal: Math.round(sumItems(foodDays[dateStr].filter(isEatenItem)).kcal)
     }));
 
   if (data.length < 2) {

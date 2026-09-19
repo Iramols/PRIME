@@ -1084,7 +1084,8 @@ function addMealToLog() {
     prot: Math.round(tot.prot * f * 10) / 10,
     carb: Math.round(tot.carb * f * 10) / 10,
     fat:  Math.round(tot.fat  * f * 10) / 10,
-    type: 'meal'
+    type: 'meal',
+    eaten: false
   };
 
   if (_editingLogId !== null) {
@@ -1096,7 +1097,7 @@ function addMealToLog() {
     const logId = bestaand ? bestaand.logId : newLogId();
     dayLog = dayLog.filter(i => i.logId !== _editingLogId);
     foodDays[currentLogDate] = dayLog;
-    const nieuwItem = { logId, ...values };
+    const nieuwItem = { logId, ...values, eaten: bestaand ? bestaand.eaten : false };
     if (targetDate === currentLogDate) {
       dayLog.push(nieuwItem);
       foodDays[currentLogDate] = dayLog;
@@ -1323,7 +1324,8 @@ function addProductToLog() {
     prot: Math.round(p.prot * f * 10) / 10,
     carb: Math.round(p.carb * f * 10) / 10,
     fat:  Math.round(p.fat  * f * 10) / 10,
-    type: 'product'
+    type: 'product',
+    eaten: false
   };
 
   if (_editingLogId !== null) {
@@ -1335,7 +1337,7 @@ function addProductToLog() {
     const logId = bestaand ? bestaand.logId : newLogId();
     dayLog = dayLog.filter(i => i.logId !== _editingLogId);
     foodDays[currentLogDate] = dayLog;
-    const nieuwItem = { logId, ...values };
+    const nieuwItem = { logId, ...values, eaten: bestaand ? bestaand.eaten : false };
     if (targetDate === currentLogDate) {
       dayLog.push(nieuwItem);
       foodDays[currentLogDate] = dayLog;
@@ -1466,7 +1468,7 @@ function logItemPhoto(item) {
 // (fwBouwDagKaart in foodweek.js), zodat ze er identiek uitzien.
 function renderLogItemCard(dateStr, item) {
   const photo = logItemPhoto(item);
-  const isEaten = !!item.eaten;
+  const isEaten = isEatenItem(item);
   // Een dag die al is afgesloten (check-out gedaan) of al voorbij is ligt
   // vast -- gram/verwijderen kan dan niet meer aangepast worden. De
   // vinkjes/knoppen blijven wel zichtbaar (ze tonen nog steeds wat er die
@@ -1481,13 +1483,13 @@ function renderLogItemCard(dateStr, item) {
   const eatenClick = kanAfvinken ? `onclick="event.stopPropagation();toggleFoodEaten('${dateStr}', ${item.logId})" ` : '';
   const delClick = afgesloten ? '' : `onclick="event.stopPropagation(); fwRemoveItem('${dateStr}', ${item.logId})" `;
   return `
-    <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:${afgesloten ? 'default' : 'pointer'};opacity:${isEaten ? '0.55' : '1'}"${cardClick}>
+    <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:${afgesloten ? 'default' : 'pointer'};opacity:${isEaten ? '1' : '0.75'}"${cardClick}>
       ${photo
         ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
         : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
       <div style="flex:1;min-width:0;padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">
         <div style="flex:1;min-width:120px">
-          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)}</div>
+          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${logItemDisplayName(item)} <span id="food-tag-${item.logId}" style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:10px;vertical-align:middle;${isEaten ? 'background:var(--sage-light);color:var(--sage)' : 'background:var(--sand);color:var(--muted)'}">${isEaten ? t('food.eatenTag') : t('food.plannedTag')}</span></div>
           <div style="font-size:11px;color:var(--muted)">
             ${item.type === 'meal' ? t('food.log.mealTag') + ' · ' : ''}${item.gram}g · ${item.kcal} kcal
           </div>
@@ -1516,7 +1518,7 @@ function toggleFoodEaten(dateStr, logId) {
   const items = dateStr === currentLogDate ? dayLog : (foodDays[dateStr] || []);
   const item = items.find(i => i.logId === logId);
   if (!item) return;
-  item.eaten = !item.eaten;
+  item.eaten = !isEatenItem(item);
 
   // Het bolletje omzetten gebeurt EERST, vóór het opslaan -- zo is het
   // vinkje altijd meteen zichtbaar, ook als de opslag hieronder om wat
@@ -1534,12 +1536,20 @@ function toggleFoodEaten(dateStr, logId) {
   // onzichtbare kopie werd omgezet, niet die je ziet. Update daarom altijd
   // ALLE exemplaren met dit id, in welk tabblad ze ook staan.
   document.querySelectorAll('[id="food-chk-' + logId + '"]').forEach(chk => chk.classList.toggle('done', item.eaten));
-  document.querySelectorAll('[id="food-item-' + logId + '"]').forEach(card => card.style.opacity = item.eaten ? '0.55' : '1');
+  document.querySelectorAll('[id="food-item-' + logId + '"]').forEach(card => card.style.opacity = item.eaten ? '1' : '0.75');
 
   try {
     foodDays[dateStr] = items;
     syncSet('prime_food_days', foodDays);
   } catch (e) { console.error('toggleFoodEaten opslaan mislukt:', e); }
+
+  // Afvinken verandert nu wat als inname telt: totalen/balken bijwerken.
+  if (dateStr === currentLogDate) {
+    try { updateMacroTotals(); } catch (e) { console.error(e); }
+    try { updateHomeMacros(); } catch (e) { console.error(e); }
+    try { if (document.getElementById('foodtab-log')?.style.display !== 'none') renderDayLog(); } catch (e) { console.error(e); }
+  }
+  try { if (document.getElementById('foodweek-content')) renderFoodWeek(); } catch (e) { console.error(e); }
 }
 
 // Groepeert een lijst logitems per moment en bouwt daar de kaartenlijst
@@ -1603,7 +1613,10 @@ function renderDayLog() {
   totals.style.display = 'block';
   list.innerHTML = renderLogItemsHtml(currentLogDate, dayLog);
 
-  const tot = dayLog.reduce((a,i) => ({ kcal:a.kcal+i.kcal, prot:a.prot+i.prot, carb:a.carb+i.carb, fat:a.fat+i.fat }), {kcal:0,prot:0,carb:0,fat:0});
+  const _dlSplit = splitTotals(dayLog);
+  const tot = _dlSplit.eaten;
+  const _dlPlanNote = _dlSplit.planned.kcal > 0
+    ? '<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px">' + plannedText(_dlSplit.planned.kcal, 'kcal') + '</div>' : '';
   document.getElementById('log-summary').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
       <div style="background:var(--sand);border-radius:10px;padding:12px">
@@ -1622,23 +1635,39 @@ function renderDayLog() {
         <div style="font-family:'DM Serif Display',serif;font-size:20px;color:#c8a85a">${Math.round(tot.fat*10)/10}g</div>
         <div style="font-size:11px;color:var(--muted)">${t('portion.fat')}</div>
       </div>
-    </div>`;
+    </div>` + _dlPlanNote;
 }
+
+// ========== GEGETEN vs. GEPLAND ==========
+// Alleen wat is AFGEVINKT (gegeten) telt mee als echte inname. Nieuwe items
+// starten bewust op "gepland" (eaten:false) -- ook wat je vandaag zelf
+// toevoegt -- zodat je bewust aanvinkt wat je echt hebt gegeten. Oudere items
+// van vóór deze regel hebben geen eaten-veld (undefined) en tellen als
+// gegeten, zodat bestaande dagen niet ineens leeg lijken.
+function isEatenItem(i) { return i.eaten !== false; }
+function sumItems(items) {
+  return items.reduce((a, i) => ({ kcal: a.kcal + (i.kcal || 0), prot: a.prot + (i.prot || 0), carb: a.carb + (i.carb || 0), fat: a.fat + (i.fat || 0) }), { kcal: 0, prot: 0, carb: 0, fat: 0 });
+}
+function splitTotals(items) {
+  return { eaten: sumItems(items.filter(isEatenItem)), planned: sumItems(items.filter(i => !isEatenItem(i))) };
+}
+// Lichte tint van een balkkleur voor het geplande (nog niet gegeten) deel.
+function plannedTint(color) { return 'color-mix(in srgb, ' + color + ' 30%, white)'; }
+function plannedText(n, unit) { return n > 0 ? t('food.plannedSuffix', { n: Math.round(n) + (unit ? ' ' + unit : '') }) : ''; }
 
 // ========== MACRO TOTALS (combined: meals + log) ==========
 function updateHomeMacros() {
   const el = document.getElementById('home-nutrient-rows');
   if (!el) return;
   const doel = getDagDoel();
-  const tot = dayLog.reduce((a,i) => ({
-    kcal: a.kcal+i.kcal, prot: a.prot+i.prot, carb: a.carb+i.carb, fat: a.fat+i.fat
-  }), { kcal:0, prot:0, carb:0, fat:0 });
+  const _split = splitTotals(dayLog);
+  const tot = _split.eaten, planned = _split.planned;
 
   const macros = [
-    { label:t('food.nutrient.calories'), val:Math.round(tot.kcal), doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
-    { label:t('food.nutrient.protein'), val:Math.round(tot.prot), doel:doel.prot, unit:'g.', color:'#2196F3' },
-    { label:t('food.nutrient.carbs'), val:Math.round(tot.carb), doel:doel.carb, unit:'g.', color:'#E91E8C' },
-    { label:t('food.nutrient.fat'), val:Math.round(tot.fat), doel:doel.fat, unit:'g.', color:'#FF5722' },
+    { label:t('food.nutrient.calories'), val:Math.round(tot.kcal), plan:planned.kcal, doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
+    { label:t('food.nutrient.protein'), val:Math.round(tot.prot), plan:planned.prot, doel:doel.prot, unit:'g.', color:'#2196F3' },
+    { label:t('food.nutrient.carbs'), val:Math.round(tot.carb), plan:planned.carb, doel:doel.carb, unit:'g.', color:'#E91E8C' },
+    { label:t('food.nutrient.fat'), val:Math.round(tot.fat), plan:planned.fat, doel:doel.fat, unit:'g.', color:'#FF5722' },
   ];
 
   el.innerHTML = macros.map(m => {
@@ -1661,9 +1690,9 @@ function updateHomeMacros() {
           <div style="font-size:12px;font-weight:600;color:var(--charcoal)">${m.label}</div>
           <div style="font-size:10px;color:var(--muted)">${t('food.goalRange', { min: rmin, max: rmax, unit: m.unit })}</div>
         </div>
-        <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${m.val} ${m.unit}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${m.val} ${m.unit}${m.plan > 0 ? '<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">' + plannedText(m.plan) + '</span>' : ''}</div>
         <div style="display:flex;align-items:center;gap:6px">
-          <div style="flex:1;height:12px;background:var(--sand-dark);border-radius:4px;overflow:hidden">
+          <div style="flex:1;height:12px;background:${m.plan > 0 ? 'linear-gradient(to right,' + plannedTint(m.color) + ' ' + Math.min(100, Math.round((m.val + m.plan) / m.doel * 100)) + '%,var(--sand-dark) ' + Math.min(100, Math.round((m.val + m.plan) / m.doel * 100)) + '%)' : 'var(--sand-dark)'};border-radius:4px;overflow:hidden">
             <div style="height:100%;width:${pctBar}%;background:${fillColor};border-radius:4px;transition:width 0.4s"></div>
           </div>
           <div style="font-size:11px;font-weight:600;color:var(--muted);min-width:28px;text-align:right">${pct}%</div>
@@ -1680,13 +1709,11 @@ function updateMacroTotals() {
   // Doel-range: ±10% marge
   const range = (val) => ({ min: Math.round(val * 0.9), max: Math.round(val * 1.1) });
 
-  // dayLog is de enige bron van waarheid
-  const tot = dayLog.reduce((a,i) => ({
-    kcal: a.kcal + i.kcal,
-    prot: a.prot + i.prot,
-    carb: a.carb + i.carb,
-    fat:  a.fat  + i.fat
-  }), { kcal:0, prot:0, carb:0, fat:0 });
+  // dayLog is de enige bron van waarheid; alleen gegeten items tellen als
+  // inname, het gepland-maar-niet-afgevinkte deel wordt apart getoond.
+  const _split = splitTotals(dayLog);
+  const tot = { ..._split.eaten };
+  const planned = _split.planned;
 
   tot.kcal = Math.round(tot.kcal);
   tot.prot = Math.round(tot.prot);
@@ -1695,13 +1722,13 @@ function updateMacroTotals() {
 
   const macros = [
     { valId:'f-kcal', barId:'bar-kcal', pctId:'pct-kcal', doelId:'doel-kcal',
-      val: tot.kcal, doel: doel.kcal, unit:'kcal', color:'#4CAF50' },
+      val: tot.kcal, plan: planned.kcal, doel: doel.kcal, unit:'kcal', color:'#4CAF50' },
     { valId:'f-prot', barId:'bar-prot', pctId:'pct-prot', doelId:'doel-prot',
-      val: tot.prot, doel: doel.prot, unit:'g.', color:'#2196F3' },
+      val: tot.prot, plan: planned.prot, doel: doel.prot, unit:'g.', color:'#2196F3' },
     { valId:'f-carb', barId:'bar-carb', pctId:'pct-carb', doelId:'doel-carb',
-      val: tot.carb, doel: doel.carb, unit:'g.', color:'#E91E8C' },
+      val: tot.carb, plan: planned.carb, doel: doel.carb, unit:'g.', color:'#E91E8C' },
     { valId:'f-fat',  barId:'bar-fat',  pctId:'pct-fat',  doelId:'doel-fat',
-      val: tot.fat,  doel: doel.fat,  unit:'g.', color:'#FF5722' },
+      val: tot.fat,  plan: planned.fat,  doel: doel.fat,  unit:'g.', color:'#FF5722' },
   ];
 
   macros.forEach(m => {
@@ -1719,7 +1746,11 @@ function updateMacroTotals() {
     // niet meer van elkaar te onderscheiden waren.
     const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
 
-    document.getElementById(m.valId).textContent = `${m.val} ${m.unit}`;
+    const _planRounded = Math.round(m.plan);
+    document.getElementById(m.valId).innerHTML = `${m.val} ${m.unit}` + (_planRounded > 0 ? '<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">' + plannedText(_planRounded) + '</span>' : '');
+    const _allBar = Math.min(100, Math.round((m.val + m.plan) / m.doel * 100));
+    const _track = document.getElementById(m.barId).parentElement;
+    if (_track) _track.style.background = m.plan > 0 ? 'linear-gradient(to right,' + plannedTint(m.color) + ' ' + _allBar + '%,var(--sand-dark) ' + _allBar + '%)' : '';
     document.getElementById(m.barId).style.width = pctBar + '%';
     document.getElementById(m.barId).style.background = fillColor;
     document.getElementById(m.pctId).textContent = pct + '%';

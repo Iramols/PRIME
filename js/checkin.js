@@ -141,15 +141,11 @@ function buildTrainingSummary() {
 
 function buildFoodSummary() {
   const doel = getDagDoel();
-  const logged = dayLog.length;
-
-  // Bereken werkelijke totalen uit daglog
-  const tot = dayLog.reduce((a, i) => ({
-    kcal: a.kcal + i.kcal,
-    prot: a.prot + i.prot,
-    carb: a.carb + i.carb,
-    fat:  a.fat  + i.fat
-  }), { kcal:0, prot:0, carb:0, fat:0 });
+  // Alleen wat is afgevinkt (gegeten) telt als echte inname; het geplande maar
+  // niet afgevinkte deel wordt onderaan apart genoemd.
+  const _split = splitTotals(dayLog);
+  const logged = dayLog.filter(isEatenItem).length;
+  const tot = _split.eaten;
 
   const kcalPct = doel.kcal > 0 ? Math.round(tot.kcal / doel.kcal * 100) : 0;
   const protPct = doel.prot > 0 ? Math.round(tot.prot / doel.prot * 100) : 0;
@@ -234,7 +230,8 @@ function buildFoodSummary() {
         <div class="training-status-sub">${t('checkin.itemsLoggedSummary', { n: logged, item: t('checkin.item') + (logged !== 1 ? 's' : ''), kcal: doel.kcal })}</div>
       </div>
     </div>
-    ${macroHTML}`;
+    ${macroHTML}
+    ${_split.planned.kcal > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:10px">' + t('checkin.food.plannedNote', { kcal: Math.round(_split.planned.kcal) }) + '</div>' : ''}`;
 
   // Coach bevestigingsvraag
   const qEl = document.getElementById('food-confirm-question');
@@ -377,7 +374,7 @@ async function doCheckout() {
   const done = _coWpDoneArr.length;
 
   const doel = { kcal:2000, prot:150, carb:200, fat:65 };
-  const totFood = dayLog.reduce((a,i) => ({ kcal:a.kcal+i.kcal, prot:a.prot+i.prot, carb:a.carb+i.carb, fat:a.fat+i.fat }), { kcal:0, prot:0, carb:0, fat:0 });
+  const totFood = splitTotals(dayLog).eaten;
 
   const energyLabel = ['', t('checkin.energy.low'), t('checkin.energy.mid'), t('checkin.energy.high'), t('checkin.energy.veryhigh')][checkout.energy];
   const trainingLabel = checkout.training === 3 ? t('checkin.trainingLabel.full', { done, total }) :

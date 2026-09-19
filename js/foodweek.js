@@ -23,11 +23,11 @@ function fwWeekNumber(d) {
   return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
 }
 
+// Totalen van wat GEGETEN is (afgevinkt); het gepland-maar-niet-gegeten deel
+// zit apart in .plan, zie isEatenItem() in food.js.
 function fwDayTotals(dateStr) {
-  const items = foodDays[dateStr] || [];
-  return items.reduce((a, i) => ({
-    kcal: a.kcal + i.kcal, prot: a.prot + i.prot, carb: a.carb + i.carb, fat: a.fat + i.fat
-  }), { kcal: 0, prot: 0, carb: 0, fat: 0 });
+  const s = splitTotals(foodDays[dateStr] || []);
+  return { ...s.eaten, plan: s.planned };
 }
 
 // Vangnet: renderFoodWeek() zelf mag nooit een leeg/wit scherm opleveren.
@@ -111,6 +111,15 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
   const dagNaam = wpDagLang(dayIdx);
   const dateLabel = d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' });
 
+  // Alleen gegeten telt als inname; staat er nog niets afgevinkt maar wel iets
+  // gepland (bv. een vooruit geplande of gekopieerde dag), toon dan het geplande
+  // deel, duidelijk als 'gepland' gemarkeerd.
+  const _plan = tot.plan || { kcal: 0, prot: 0, carb: 0, fat: 0 };
+  const onlyPlan = !(tot.kcal > 0) && _plan.kcal > 0;
+  const useTot = onlyPlan ? _plan : tot;
+  const planWord = onlyPlan ? ' <span style="font-family:DM Sans,sans-serif;font-size:11px;color:var(--muted)">' + t('food.plannedTag').toLowerCase() + '</span>' : '';
+  const planExtra = (!onlyPlan && _plan.kcal > 0) ? '<div style="font-size:10px;color:var(--muted)">' + plannedText(_plan.kcal, 'kcal') + '</div>' : '';
+
   const header = `
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="fwToggleDag('${dateStr}')">
       <div style="width:76px;flex-shrink:0">
@@ -121,8 +130,8 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
       <div style="flex:1"></div>
       ${hasData
         ? `<div style="text-align:right">
-             <div style="font-family:'DM Serif Display',serif;font-size:16px">${Math.round(tot.kcal)} kcal</div>
-             <div style="font-size:10px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(tot.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(tot.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(tot.fat)}g</div>
+             <div style="font-family:'DM Serif Display',serif;font-size:16px">${Math.round(useTot.kcal)} kcal${planWord}</div>
+             <div style="font-size:10px;color:var(--muted)">${t('food.macroFull.protein')}: ${Math.round(useTot.prot)}g · ${t('food.macroFull.carbs')}: ${Math.round(useTot.carb)}g · ${t('food.macroFull.fat')}: ${Math.round(useTot.fat)}g</div>${planExtra}
            </div>`
         : `<div style="font-size:12px;color:var(--muted)">${t('foodweek.notFilledIn')}</div>`}
       <span style="font-size:11px;color:var(--muted);margin-left:8px;flex-shrink:0">${isOpen ? '▴' : '▾'}</span>
