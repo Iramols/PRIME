@@ -654,3 +654,27 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   /* Ruimte in de kop: de ondertitel weghalen zodat NL/EN, Profiel en Uit passen */
   .header .logo span { display: none; }
 }
+
+
+/* DRAAI-MELDING: PRIME is voor staand gemaakt. Op een telefoon (aanraakscherm,
+   weinig hoogte) in liggende stand tonen we alleen een melding. Tablets en
+   computers hebben te veel hoogte / een muis en krijgen 'm nooit. */
+#rotate-hint { display: none; }
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+  #rotate-hint {
+    display: flex; position: fixed; inset: 0; z-index: 9999; background: var(--sand);
+    flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; padding: 20px;
+  }
+  .rotate-phone { font-size: 44px; line-height: 1; animation: rotate-upright 2.4s ease-in-out infinite; }
+  .rotate-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--sage); }
+  .rotate-sub { font-size: 14px; color: var(--muted); }
+}
+@keyframes rotate-upright { 0%, 25% { transform: rotate(-90deg); } 60%, 100% { transform: rotate(0deg); } }
+@media (prefers-reduced-motion: reduce) { .rotate-phone { animation: none !important; } }
+
+/* Coach-knoppen 'Wis training/voeding compleet': op een telefoon mag de tekst
+   over twee regels lopen (zoals 'Wis voortgang compleet'), zodat de knop
+   binnen het scherm past. */
+@media(max-width:600px){
+  #wis-training-btn, #wis-voeding-btn { white-space: normal !important; flex-shrink: 1 !important; max-width: 118px; text-align: center; line-height: 1.25; }
+}
