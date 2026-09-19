@@ -270,6 +270,10 @@ const I18N = {
     'beheer.storageFullError': 'De lokale opslag van je browser zit vol. Verwijder een paar foto\'s (Reset) en probeer het opnieuw.',
     'photos.migrated': "{n} foto's naar de opslag verplaatst ✓",
     'photo.maxHint': 'Max. 200 KB',
+    'pilotTips.title': 'Goed om te weten',
+    'pilotTips.oneDevice': 'Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.',
+    'pilotTips.internet': 'Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.',
+    'pilotTips.update': 'Komt er een update? Je krijgt een mail met uitleg. Ververs daarna de pagina zoals beschreven.',
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -915,6 +919,10 @@ const I18N = {
     'beheer.storageFullError': "Your browser's local storage is full. Remove a few photos (Reset) and try again.",
     'photos.migrated': '{n} photos moved to storage ✓',
     'photo.maxHint': 'Max. 200 KB',
+    'pilotTips.title': 'Good to know',
+    'pilotTips.oneDevice': 'Use PRIME on one device at a time (phone or computer), otherwise changes may get lost.',
+    'pilotTips.internet': 'You need an internet connection to use PRIME. Without one you cannot log in or save.',
+    'pilotTips.update': 'Is there an update? You will get an email with instructions. Then refresh the page as described.',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
