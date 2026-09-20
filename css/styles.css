@@ -632,7 +632,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
     background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
     font-size: 11px; color: var(--muted); padding: 2px 0;
   }
-  .bnav-icon { font-size: 20px; line-height: 1; padding: 3px 14px; border-radius: 14px; }
+  .bnav-icon { font-size: 20px; line-height: 1; height: 30px; min-width: 54px; padding: 0 12px; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
   .bnav-btn.active { color: var(--sage); font-weight: 600; }
   .bnav-btn.active .bnav-icon { background: var(--sage-light); }
   .bnav-btn.bnav-coach { color: var(--coach-only); }
