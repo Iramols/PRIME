@@ -207,7 +207,7 @@ function renderEnergyChart() {
   // X-labels: toon max 6 datums
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((h, i) => {
-    if (i % step !== 0 && i !== n - 1) return '';
+    if (i !== n - 1 && (i % step !== 0 || n - 1 - i < step)) return ''; // laatste datum altijd; een stapdatum vlak ervoor overslaan
     const d = new Date(h.date);
     return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${d.getDate()}/${d.getMonth() + 1}</text>`;
   }).join('');
@@ -271,7 +271,7 @@ function renderWeightChart() {
 
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((h, i) => {
-    if (i % step !== 0 && i !== n - 1) return '';
+    if (i !== n - 1 && (i % step !== 0 || n - 1 - i < step)) return ''; // laatste datum altijd; een stapdatum vlak ervoor overslaan
     const d = new Date(h.date);
     return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${d.getDate()}/${d.getMonth() + 1}</text>`;
   }).join('');
@@ -363,7 +363,7 @@ function renderKcalTrendChart() {
 
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((d, i) => {
-    if (i % step !== 0 && i !== n - 1) return '';
+    if (i !== n - 1 && (i % step !== 0 || n - 1 - i < step)) return ''; // laatste datum altijd; een stapdatum vlak ervoor overslaan
     const dt = new Date(d.date + 'T00:00:00');
     return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${dt.getDate()}/${dt.getMonth() + 1}</text>`;
   }).join('');
@@ -477,7 +477,7 @@ function renderMacroTrendChart() {
 
   const step = Math.max(1, Math.floor(n / 6));
   const xLabels = data.map((d, i) => {
-    if (i % step !== 0 && i !== n - 1) return '';
+    if (i !== n - 1 && (i % step !== 0 || n - 1 - i < step)) return ''; // laatste datum altijd; een stapdatum vlak ervoor overslaan
     const dt = new Date(d.date + 'T00:00:00');
     return `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="8" fill="#aaa">${dt.getDate()}/${dt.getMonth() + 1}</text>`;
   }).join('');
