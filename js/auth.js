@@ -60,7 +60,10 @@ function acceptConsent() {
   if (l) l.style.display = 'flex';
   if (_consentResolve) { const r = _consentResolve; _consentResolve = null; r(); }
 }
-// Alleen-lezen weergave vanuit Profiel > Privacy.
+// Niet akkoord: geen gegevens vastleggen, gewoon uitloggen (terug naar het inlogscherm).
+function declineConsent() { doLogout(); }
+
+// Alleen-lezen weergave vanuit Profiel > Hulp en privacy.
 function openConsentView() {
   document.getElementById('consent-agree-block').style.display = 'none';
   document.getElementById('consent-close').style.display = '';
