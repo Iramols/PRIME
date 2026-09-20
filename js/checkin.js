@@ -398,13 +398,10 @@ async function doCheckout() {
   // Prompt 1: afsluitend bericht
   const promptAfsluiting = context + t('checkin.promptAfsluiting');
 
-  // Prompt 2: advies voor morgen — gestructureerd
-  const promptMorgen = context + t('checkin.promptMorgen');
-
   btn.textContent = t('checkin.dayDoneBtn');
   btn.style.background = 'var(--sage)';
 
-  // Render lege tomorrow card meteen zodat gebruiker feedback ziet
+  // Render meteen het "dag afgerond"-blok zodat de gebruiker feedback ziet
   const container = btn.parentElement;
   const tomorrowDiv = document.createElement('div');
   tomorrowDiv.id = 'tomorrow-card';
@@ -412,24 +409,8 @@ async function doCheckout() {
     <div class="success-banner" style="margin-top:16px">
       <h3>${t('checkin.dayDone')}</h3>
       <p id="afsluiting-text" style="color:#3d6649;font-size:14px;line-height:1.7">${t('checkin.loading')}</p>
-    </div>
-    <div class="card" style="margin-top:16px;padding:0;overflow:hidden">
-      <div style="background:var(--charcoal);padding:16px 20px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:20px">🌙</span>
-        <div>
-          <div style="font-family:'DM Serif Display',serif;font-size:17px;color:white">${t('checkin.tomorrowReady')}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px" id="tomorrow-date"></div>
-        </div>
-      </div>
-      <div id="tomorrow-content" style="padding:20px">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">${t('checkin.compilingAdvice')}</div>
-      </div>
     </div>`;
   container.appendChild(tomorrowDiv);
-
-  // Zet morgen datum
-  const morgen = new Date(); morgen.setDate(morgen.getDate() + 1);
-  document.getElementById('tomorrow-date').textContent = morgen.toLocaleDateString(dateLocale(), { weekday:'long', day:'numeric', month:'long' });
 
   // Call 1: afsluitend bericht (kort)
   try {
@@ -440,111 +421,9 @@ async function doCheckout() {
     document.getElementById('afsluiting-text').textContent = t('checkin.closingFallback');
   }
 
-  // Call 2: advies voor morgen (meer tokens nodig voor gestructureerde output)
-  try {
-    const morgenAdvies = await callClaude(promptMorgen, [], 600);
-    console.log('Morgen advies response:', morgenAdvies);
-    renderTomorrowAdvice(morgenAdvies);
-  } catch(e) {
-    console.error('Morgen advies fout:', e);
-    // Fallback: render een basis advies zonder AI
-    renderTomorrowFallback();
-  }
-
   updateStats();
 }
 
-function renderTomorrowAdvice(text) {
-  const lines = text.split('\n').filter(function(l) { return l.trim(); });
-  const parsed = {};
-  lines.forEach(function(line) {
-    const match = line.match(/^(TRAINING|VOEDING|SLAAP|TIP|NUTRITION|SLEEP):\s*(.+)$/);
-    if (match) {
-      const key = { NUTRITION:'VOEDING', SLEEP:'SLAAP' }[match[1]] || match[1];
-      parsed[key] = match[2].trim();
-    }
-  });
-
-  // Weekplanning voor morgen
-  const morgenDate = new Date(); morgenDate.setDate(morgenDate.getDate() + 1);
-  const morgenStr = localDateStr(morgenDate);
-  const morgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === morgenStr; }) || null;
-  const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
-  const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
-
-  const sections = [
-    { key:'TRAINING', icon:'\u{1F3CB}', label:t('checkin.section.trainingNotes') },
-    { key:'VOEDING',  icon:'\u{1F957}', label:t('checkin.section.food') },
-    { key:'SLAAP',    icon:'\u{1F634}', label:t('checkin.section.sleep') },
-    { key:'TIP',      icon:'\u{1F4A1}', label:t('checkin.section.coachTip') },
-  ];
-
-  let badgeHtml = '';
-  if (morgenDisp) {
-    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-normal" style="display:inline-flex">'
-      + morgenDisp.icon + ' ' + morgenDisp.naam + '</div>'
-      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return dispName(o); }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + t('home.more') : '') + '</div>' : '')
-      + '</div>';
-  } else {
-    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">' + t('checkin.noTrainingTomorrow') + '</div></div>';
-  }
-
-  let sectionsHtml = sections.map(function(s) {
-    if (!parsed[s.key]) return '';
-    return '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">'
-      + '<div style="width:32px;height:32px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">' + s.icon + '</div>'
-      + '<div>'
-      + '<div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">' + s.label + '</div>'
-      + '<div style="font-size:14px;line-height:1.6;color:var(--charcoal)">' + parsed[s.key] + '</div>'
-      + '</div></div>';
-  }).join('');
-
-  document.getElementById('tomorrow-content').innerHTML = badgeHtml + sectionsHtml
-    + '<div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">'
-    + '<div style="font-size:12px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('checkin.dontForget') + '</div>'
-    + '<div style="font-size:13px;color:#3d6649">' + t('checkin.checkTomorrow') + '</div>'
-    + '</div>';
-}
-
-function renderTomorrowFallback() {
-  const morgenDate = new Date(); morgenDate.setDate(morgenDate.getDate() + 1);
-  const morgenStr = localDateStr(morgenDate);
-  const morgenWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === morgenStr; }) || null;
-  const morgenDisp = morgenWpEntry ? wpGetDisplay(morgenWpEntry.schemaId) : null;
-  const morgenOef = morgenWpEntry ? (wpGetOefeningen(morgenWpEntry.schemaId) || []) : [];
-
-  const tip = checkout.training < 3 ? t('checkin.tip.smallSteps') : t('checkin.tip.consistency');
-
-  let badgeHtml = '';
-  if (morgenDisp) {
-    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-normal" style="display:inline-flex">'
-      + morgenDisp.icon + ' ' + morgenDisp.naam + '</div>'
-      + (morgenOef.length > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:6px">' + morgenOef.slice(0,3).map(function(o){ return dispName(o); }).join(' \xB7 ') + (morgenOef.length > 3 ? ' +' + (morgenOef.length-3) + t('home.more') : '') + '</div>' : '')
-      + '</div>';
-  } else {
-    badgeHtml = '<div style="margin-bottom:16px"><div class="training-type-badge badge-light" style="display:inline-flex">' + t('checkin.noTrainingTomorrow') + '</div></div>';
-  }
-
-  const items = [
-    { icon:'\u{1F957}', label:t('checkin.section.food'), text:t('checkin.fallback.foodText') },
-    { icon:'\u{1F634}', label:t('checkin.section.sleep'), text:t('checkin.fallback.sleepText') },
-    { icon:'\u{1F4A1}', label:t('checkin.section.coachTip'), text: tip },
-  ];
-
-  const sectionsHtml = items.map(function(s) {
-    return '<div style="display:flex;gap:12px;margin-bottom:14px;align-items:flex-start">'
-      + '<div style="width:32px;height:32px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">' + s.icon + '</div>'
-      + '<div>'
-      + '<div style="font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:3px">' + s.label + '</div>'
-      + '<div style="font-size:14px;line-height:1.6;color:var(--charcoal)">' + s.text + '</div>'
-      + '</div></div>';
-  }).join('');
-
-  document.getElementById('tomorrow-content').innerHTML = badgeHtml + sectionsHtml
-    + '<div style="margin-top:16px;padding:12px 16px;background:var(--sage-light);border-radius:10px;border-left:3px solid var(--sage)">'
-    + '<div style="font-size:13px;color:#3d6649">' + t('checkin.checkTomorrow') + '</div>'
-    + '</div>';
-}
 function badgeHTML(type) {
   const cfg = {
     herstel: ['badge-light', t('checkin.badge.recovery')],
