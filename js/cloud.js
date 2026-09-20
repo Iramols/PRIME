@@ -32,6 +32,14 @@ const CLOUD_KEYS = [
   'prime_onboarding'
 ];
 
+// Sleutels waarvoor de SERVER altijd gelijk heeft: een lokale kopie mag hier nooit
+// naar de cloud teruggeduwd worden. Toestemming en uitleg-gezien horen bij wat
+// de coach/de database vastlegt: haalt de coach een akkoord weg (bv. om opnieuw
+// te laten geven), dan moet dat ook op een apparaat gelden dat het lokaal nog
+// onthoudt. Verschil met gewone data, waar een lokaal nog niet aangekomen
+// wijziging juist beschermd wordt (zie hydrateFromCloud).
+const SERVER_LEIDEND_KEYS = ['prime_consent', 'prime_onboarding'];
+
 let _sb = null;
 let activeClientId = null;
 
@@ -92,7 +100,7 @@ async function hydrateFromCloud(clientId) {
     serverKeys.add(row.key);
     const serverTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
     const localTs  = _localSyncTs(row.key, clientId);
-    if (localTs > serverTs && localStorage.getItem(row.key) != null) {
+    if (!SERVER_LEIDEND_KEYS.includes(row.key) && localTs > serverTs && localStorage.getItem(row.key) != null) {
       // Deze pagina heeft zelf recenter (mogelijk nog niet aangekomen)
       // lokaal geschreven dan wat er nu in de cloud staat -- niet
       // overschrijven, straks opnieuw proberen te versturen.
@@ -119,7 +127,7 @@ async function hydrateFromCloud(clientId) {
   // account voor DEZE klant-id, geen slachtoffer van dezelfde race).
   CLOUD_KEYS.forEach(key => {
     if (serverKeys.has(key)) return;
-    if (_localSyncTs(key, clientId) > 0 && localStorage.getItem(key) != null) {
+    if (!SERVER_LEIDEND_KEYS.includes(key) && _localSyncTs(key, clientId) > 0 && localStorage.getItem(key) != null) {
       teHerpushen.push(key);
       return;
     }
