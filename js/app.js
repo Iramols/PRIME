@@ -31,7 +31,7 @@ function go(screen) {
   });
   document.querySelectorAll('.bnav-btn[data-screen]').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
   const _bnavMore = document.getElementById('bnav-more');
-  if (_bnavMore) _bnavMore.classList.toggle('active', screen === 'signalen' || screen === 'beheer');
+  if (_bnavMore) _bnavMore.classList.toggle('active', screen === 'signalen' || screen === 'beheer' || screen === 'coach');
   closeMoreMenu();
   if (screen === 'history') renderHistory();
   if (screen === 'signalen') renderSignalenTab();
