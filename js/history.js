@@ -831,9 +831,10 @@ async function renderFeedbackList() {
     el.innerHTML = head + '<div class="card" style="text-align:center;color:var(--muted);padding:24px">' + t('feedback.coach.none') + '</div>';
     return;
   }
-  let clients = [];
+  let clients = [], namen = {};
   try { clients = await fetchClientList(); } catch (e) {}
-  const nameOf = id => (clients.find(c => c.id === id) || {}).display_name || 'Coach';
+  try { namen = await fetchProfileNames(); } catch (e) {}
+  const nameOf = id => namen[id] || (clients.find(c => c.id === id) || {}).display_name || 'Coach';
   const kindLabel = { bug: t('feedback.kind.bug'), idea: t('feedback.kind.idea'), other: t('feedback.kind.other'), delete_request: t('feedback.kind.delete_request') };
   el.innerHTML = head + '<div class="card">' + res.data.map(f => {
     const d = new Date(f.created_at);
@@ -872,6 +873,8 @@ async function renderSignalenTab() {
   try { clients = await fetchClientList(); }
   catch (e) { console.error('renderSignalenTab, fetchClientList:', e); el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loadError') + '</div>'; return; }
 
+  let namen = {};
+  try { namen = await fetchProfileNames(); } catch (e) {}
   const resultaten = [];
   for (const c of clients) {
     const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done']);
@@ -887,7 +890,7 @@ async function renderSignalenTab() {
 
   el.innerHTML = resultaten.map(r => `
     <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
-      <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--charcoal)">${r.client.display_name || r.client.id}</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div>
       ${r.signals.map(s => `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
     </div>
   `).join('');

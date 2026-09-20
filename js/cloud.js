@@ -242,6 +242,18 @@ async function sendFeedback(kind, message) {
   });
   return { error: error || null };
 }
+// Coach-only: de naam die elke deelnemer zelf in Profiel heeft ingevuld
+// (prime_profile.name), voor alle klanten in één vraag. Geeft {client_id: naam}.
+// De inlognaam (profiles.display_name, bv. miep.tiep@client.local) blijft de
+// terugval als iemand nog geen naam heeft ingevuld.
+async function fetchProfileNames() {
+  const { data, error } = await getSupabase().from('client_state').select('client_id, value').eq('key', 'prime_profile');
+  if (error) { console.error('fetchProfileNames:', error); return {}; }
+  const map = {};
+  (data || []).forEach(r => { if (r.value && r.value.name && String(r.value.name).trim()) map[r.client_id] = String(r.value.name).trim(); });
+  return map;
+}
+
 async function fetchFeedbackList() {
   const sb = getSupabase();
   const { data, error } = await sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(100);
