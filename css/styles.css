@@ -697,6 +697,16 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   #wis-training-btn, #wis-voeding-btn { white-space: normal !important; flex-shrink: 1 !important; max-width: 118px; text-align: center; line-height: 1.25; }
 }
 
+/* 'Binnenkort'-label en banner: de AI-coach is een toekomstige functie. */
+.soon-badge { background: var(--coach-only); color: #fff; border-radius: 6px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
+.future-banner { display: flex; gap: 10px; align-items: flex-start; background: var(--coach-only-light); border: 1px solid var(--coach-only); color: #b25e12; border-radius: 10px; padding: 11px 14px; margin-bottom: 14px; font-size: 13px; line-height: 1.5; }
+.future-banner .future-icon { font-size: 20px; line-height: 1.2; }
+.future-banner span { color: #8a4a0e; }
+#screen-coach .chat-in:disabled { border-style: dashed; background: #faf8f4; cursor: not-allowed; }
+#screen-coach .send-btn:disabled { background: var(--sand-dark); cursor: not-allowed; }
+#screen-coach .quick-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#screen-coach .quick-btn:disabled:hover { border-color: var(--sand-dark); color: inherit; background: none; }
+
 /* AI-coach-scherm: alleen zichtbaar voor de coach, dus in de coach-kleur (oranje). */
 #screen-coach .card-label { color: var(--coach-only); }
 #screen-coach .send-btn { background: var(--coach-only); }

@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260920-1704';
+window.PRIME_BUILD = '20260920-1758';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -32,11 +32,11 @@ window.PRIME_BUILD = '20260920-1704';
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260920-1704">
+<link rel="stylesheet" href="css/styles.css?v=20260920-1758">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="js/cloud.js?v=20260920-1704"></script>
-<script src="js/translations.js?v=20260920-1704"></script>
-<script src="js/i18n.js?v=20260920-1704"></script>
+<script src="js/cloud.js?v=20260920-1758"></script>
+<script src="js/translations.js?v=20260920-1758"></script>
+<script src="js/i18n.js?v=20260920-1758"></script>
 </head>
 <body>
 
@@ -156,7 +156,7 @@ window.PRIME_BUILD = '20260920-1704';
     <button class="nav-btn active" onclick="go('home')" data-i18n="nav.dashboard">Dashboard</button>
     <button class="nav-btn" onclick="go('voeding')" data-i18n="nav.voeding">Voeding</button>
     <button class="nav-btn" id="nav-btn-training" onclick="go('training')" data-i18n="nav.training">Training</button>
-    <button class="nav-btn coach-only-btn" id="nav-btn-coach" style="display:none" onclick="go('coach')" data-i18n="nav.coach">Coach</button>
+    <button class="nav-btn coach-only-btn" id="nav-btn-coach" style="display:none" onclick="go('coach')"><span data-i18n="nav.coach">Coach</span> <span class="soon-badge" data-i18n="nav.soon">Binnenkort</span></button>
     <button class="nav-btn" onclick="go('history')" data-i18n="nav.voortgang">Voortgang</button>
     <button class="nav-btn coach-only-btn" id="nav-btn-signalen" style="display:none" onclick="go('signalen')" data-i18n="nav.signalen">Signalen</button>
     <button class="nav-btn coach-only-btn" id="nav-btn-beheer" style="display:none;font-size:11px" onclick="go('beheer')" data-i18n="nav.photoManage">📷 Foto beheer</button>
@@ -829,19 +829,23 @@ window.PRIME_BUILD = '20260920-1704';
     <h2 style="font-family:'DM Serif Display',serif;font-size:26px" data-i18n="coach.title">Coach Anneke</h2>
     <div style="font-size:13px;color:var(--muted)" data-i18n="coach.tagline">Direct, nuchter, warm — altijd beschikbaar</div>
   </div>
+  <div class="future-banner">
+    <span class="future-icon">🧪</span>
+    <div><b data-i18n="coach.futureTitle">Toekomstige functie, nog niet actief.</b><br><span data-i18n="coach.futureText">Zo zou een AI-coach voor deelnemers kunnen werken. Deelnemers zien dit tabblad niet. Vragen stellen werkt nog niet.</span></div>
+  </div>
   <div class="card" style="padding:0;overflow:hidden">
     <div class="chat-wrap" id="chat-area"></div>
     <div style="padding:16px;border-top:1px solid var(--sand-dark)">
       <div class="chat-row">
-        <input class="chat-in" id="chat-input" type="text" data-i18n-placeholder="coach.inputPlaceholder" placeholder="Stel een vraag aan coach Anneke..." onkeydown="if(event.key==='Enter')sendMsg()">
-        <button class="send-btn" id="send-btn" onclick="sendMsg()">→</button>
+        <input class="chat-in" id="chat-input" type="text" disabled data-i18n-placeholder="coach.inputPlaceholder" placeholder="Stel een vraag aan coach Anneke..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button class="send-btn" id="send-btn" disabled onclick="sendMsg()">→</button>
       </div>
       <div class="quick-btns">
-        <button class="quick-btn" onclick="qMsg(t('coach.quick.afterTraining.prompt'))" data-i18n="coach.quick.afterTraining">Na training eten 💪</button>
-        <button class="quick-btn" onclick="qMsg(t('coach.quick.sleep.prompt'))" data-i18n="coach.quick.sleep">Beter slapen 😴</button>
-        <button class="quick-btn" onclick="qMsg(t('coach.quick.motivation.prompt'))" data-i18n="coach.quick.motivation">Motivatie 🔥</button>
-        <button class="quick-btn" onclick="qMsg(t('coach.quick.breakfast.prompt'))" data-i18n="coach.quick.breakfast">Snel ontbijt 🌅</button>
-        <button class="quick-btn" onclick="qMsg(t('coach.quick.routine.prompt'))" data-i18n="coach.quick.routine">Routine opbouwen 📅</button>
+        <button class="quick-btn" disabled onclick="qMsg(t('coach.quick.afterTraining.prompt'))" data-i18n="coach.quick.afterTraining">Na training eten 💪</button>
+        <button class="quick-btn" disabled onclick="qMsg(t('coach.quick.sleep.prompt'))" data-i18n="coach.quick.sleep">Beter slapen 😴</button>
+        <button class="quick-btn" disabled onclick="qMsg(t('coach.quick.motivation.prompt'))" data-i18n="coach.quick.motivation">Motivatie 🔥</button>
+        <button class="quick-btn" disabled onclick="qMsg(t('coach.quick.breakfast.prompt'))" data-i18n="coach.quick.breakfast">Snel ontbijt 🌅</button>
+        <button class="quick-btn" disabled onclick="qMsg(t('coach.quick.routine.prompt'))" data-i18n="coach.quick.routine">Routine opbouwen 📅</button>
       </div>
     </div>
   </div>
@@ -1443,6 +1447,6 @@ window.PRIME_BUILD = '20260920-1704';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260920-1704"></script>
+<script src="js/auth.js?v=20260920-1758"></script>
 </body>
 </html>
