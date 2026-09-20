@@ -336,7 +336,7 @@ const MEALS = {
 // app, maar heeft GEEN invloed meer op voedingsdoelen.
 //
 // Kcal: profile.calorieBehoefte (ingevuld in Profiel), of 2000 als die nog
-// leeg staat. Eiwit: vast 1.8 g/kg lichaamsgewicht (profile.weight, of 70kg
+// leeg staat. Eiwit: vast 2 g/kg lichaamsgewicht (profile.weight, of 70kg
 // als dat ontbreekt). Koolhydraten en vet vullen de resterende calorieën
 // aan in een vaste 60/40-verhouding -- zodat eiwit+koolh+vet altijd exact
 // optellen tot het kcal-doel. Gebruikt door checkin.js en food.js.
@@ -344,7 +344,7 @@ function getDagDoel() {
   const kcal = (profile.calorieBehoefte && profile.calorieBehoefte > 0) ? profile.calorieBehoefte : 2000;
 
   const gewicht = profile.weight > 0 ? profile.weight : 70;
-  const prot = Math.round(gewicht * 1.8);
+  const prot = Math.round(gewicht * 2);
 
   const protKcal = prot * 4;
   const restKcal = Math.max(0, kcal - protKcal);
