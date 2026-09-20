@@ -644,7 +644,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
     background: var(--coach-only-light); border: 1px solid var(--coach-only);
     border-radius: 14px; overflow: hidden;
   }
-  .more-menu-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--coach-only); padding: 10px 14px 6px; }
+  .more-menu-label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #fff; background: #b25e12; padding: 10px 14px; border-radius: 10px 10px 0 0; }
   .more-item {
     display: block; width: 100%; text-align: left; background: none; border: none;
     border-top: 1px solid rgba(230,126,34,0.25); padding: 12px 14px;
