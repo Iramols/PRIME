@@ -18,7 +18,7 @@ function isPrimeCoach() { return loggedInEmail === PRIME_COACH_EMAIL; }
 const APP_SCRIPTS = [
   'js/data.js', 'js/state.js', 'js/beheer.js', 'js/checkin.js',
   'js/training.js', 'js/food.js', 'js/coach.js', 'js/programmas.js',
-  'js/weekplanning.js', 'js/foodweek.js', 'js/history.js', 'js/profile.js', 'js/app.js'
+  'js/weekplanning.js', 'js/foodweek.js', 'js/history.js', 'js/export.js', 'js/profile.js', 'js/app.js'
 ];
 
 function toLoginEmail(input) {

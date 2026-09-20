@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260920-1330';
+window.PRIME_BUILD = '20260920-1344';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -32,11 +32,11 @@ window.PRIME_BUILD = '20260920-1330';
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260920-1330">
+<link rel="stylesheet" href="css/styles.css?v=20260920-1344">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="js/cloud.js?v=20260920-1330"></script>
-<script src="js/translations.js?v=20260920-1330"></script>
-<script src="js/i18n.js?v=20260920-1330"></script>
+<script src="js/cloud.js?v=20260920-1344"></script>
+<script src="js/translations.js?v=20260920-1344"></script>
+<script src="js/i18n.js?v=20260920-1344"></script>
 </head>
 <body>
 
@@ -968,6 +968,17 @@ window.PRIME_BUILD = '20260920-1330';
   <div id="consent-overzicht-content" style="margin-top:28px"></div>
   <div id="delete-requests-content" style="margin-top:28px"></div>
   <div id="feedback-overzicht-content" style="margin-top:28px"></div>
+  <div style="margin-top:28px">
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:12px" data-i18n="export.title">Data exporteren</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px" data-i18n="export.hint">Download alle gegevens van alle deelnemers.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-sm coach-only-btn" id="export-excel-btn" onclick="exportExcel()" data-i18n="export.excel">📊 Excel (voor analyse)</button>
+        <button class="btn-sm coach-only-btn" id="export-backup-btn" onclick="exportBackup()" data-i18n="export.backup">💾 Back-up (JSON)</button>
+      </div>
+      <div id="export-status" style="font-size:12px;color:#c0392b;margin-top:8px"></div>
+    </div>
+  </div>
 </div>
 </div>
 
@@ -1396,6 +1407,6 @@ window.PRIME_BUILD = '20260920-1330';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260920-1330"></script>
+<script src="js/auth.js?v=20260920-1344"></script>
 </body>
 </html>
