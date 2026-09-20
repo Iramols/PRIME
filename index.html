@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260920-0839';
+window.PRIME_BUILD = '20260920-1157';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -32,13 +32,38 @@ window.PRIME_BUILD = '20260920-0839';
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260920-0839">
+<link rel="stylesheet" href="css/styles.css?v=20260920-1157">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="js/cloud.js?v=20260920-0839"></script>
-<script src="js/translations.js?v=20260920-0839"></script>
-<script src="js/i18n.js?v=20260920-0839"></script>
+<script src="js/cloud.js?v=20260920-1157"></script>
+<script src="js/translations.js?v=20260920-1157"></script>
+<script src="js/i18n.js?v=20260920-1157"></script>
 </head>
 <body>
+
+<!-- TOESTEMMING (alleen deelnemers, bij de eerste keer inloggen; zie ensureConsent in auth.js) -->
+<div class="overlay" id="consent-overlay">
+  <div class="modal" style="max-height:90vh;overflow-y:auto">
+    <div class="modal-title"><span data-i18n="consent.title">Welkom bij de PRIME-pilot</span> <button class="modal-close" id="consent-close" style="display:none" onclick="closeConsentView()">×</button></div>
+    <p class="consent-p" data-i18n="consent.intro">Fijn dat je meedoet! Lees dit even door voordat je begint.</p>
+    <div class="consent-h" data-i18n="consent.h.data">Welke gegevens bewaren we?</div>
+    <p class="consent-p" data-i18n="consent.data"></p>
+    <div class="consent-h" data-i18n="consent.h.why">Waarvoor gebruiken we ze?</div>
+    <p class="consent-p" data-i18n="consent.why"></p>
+    <div class="consent-h" data-i18n="consent.h.who">Wie ziet ze?</div>
+    <p class="consent-p" data-i18n="consent.who"></p>
+    <div class="consent-h" data-i18n="consent.h.where">Waar staan ze?</div>
+    <p class="consent-p" data-i18n="consent.where"></p>
+    <div class="consent-h" data-i18n="consent.h.rights">Jouw rechten</div>
+    <p class="consent-p" data-i18n="consent.rights"></p>
+    <div id="consent-agree-block">
+      <label style="display:flex;gap:10px;align-items:flex-start;cursor:pointer;margin:14px 0;font-size:13px;line-height:1.5">
+        <input type="checkbox" id="consent-check" onchange="document.getElementById('consent-agree-btn').disabled = !this.checked" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--sage);margin-top:1px">
+        <span data-i18n="consent.check">Ik heb dit gelezen en ga akkoord met het gebruik van mijn gegevens voor de pilot.</span>
+      </label>
+      <button class="btn-primary" id="consent-agree-btn" disabled onclick="acceptConsent()" data-i18n="consent.agree">Akkoord en starten</button>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN -->
 <!-- DRAAI-MELDING: alleen zichtbaar op een telefoon in liggende stand (zie #rotate-hint in styles.css) -->
@@ -187,6 +212,7 @@ window.PRIME_BUILD = '20260920-0839';
         <div class="pilot-tip"><span class="pilot-tip-icon">📱</span><span data-i18n="pilotTips.oneDevice">Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.</span></div>
         <div class="pilot-tip"><span class="pilot-tip-icon">📶</span><span data-i18n="pilotTips.internet">Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.</span></div>
         <div class="pilot-tip"><span class="pilot-tip-icon">🔄</span><span data-i18n="pilotTips.update">Komt er een update? Je krijgt een mail. Sluit PRIME (of het tabblad) en open hem opnieuw: hij werkt zichzelf dan bij.</span></div>
+        <button class="pilot-feedback-btn" onclick="openFeedback()" data-i18n="feedback.btn">💬 Feedback geven</button>
       </div>
     </div>
 
@@ -264,6 +290,7 @@ window.PRIME_BUILD = '20260920-0839';
         <div class="pilot-tip"><span class="pilot-tip-icon">📱</span><span data-i18n="pilotTips.oneDevice">Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.</span></div>
         <div class="pilot-tip"><span class="pilot-tip-icon">📶</span><span data-i18n="pilotTips.internet">Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.</span></div>
         <div class="pilot-tip"><span class="pilot-tip-icon">🔄</span><span data-i18n="pilotTips.update">Komt er een update? Je krijgt een mail. Sluit PRIME (of het tabblad) en open hem opnieuw: hij werkt zichzelf dan bij.</span></div>
+        <button class="pilot-feedback-btn" onclick="openFeedback()" data-i18n="feedback.btn">💬 Feedback geven</button>
       </div>
     </div>
   </div>
@@ -932,6 +959,7 @@ window.PRIME_BUILD = '20260920-0839';
     <div style="font-size:13px;color:var(--muted)" data-i18n="signalen.subtitle">Klanten met openstaande signalen, gesorteerd op ernst.</div>
   </div>
   <div id="signalen-overzicht-content"></div>
+  <div id="feedback-overzicht-content" style="margin-top:28px"></div>
 </div>
 </div>
 
@@ -1012,7 +1040,32 @@ window.PRIME_BUILD = '20260920-0839';
         <span data-i18n="profile.trainingEnabledHint" style="font-size:12px;color:var(--muted)">Toon de Training-tab en trainingsonderdelen</span>
       </label>
     </div>
+    <div class="divider" style="margin:16px 0"></div>
+    <div class="form-row">
+      <label data-i18n="profile.privacy.title">Privacy</label>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-sm" onclick="openConsentView()" data-i18n="profile.privacy.view">Privacytekst bekijken</button>
+        <button class="btn-sm" onclick="requestDataDeletion()" data-i18n="profile.privacy.delete">Vraag verwijdering van mijn gegevens</button>
+        <button class="btn-sm" onclick="closeProfile();openFeedback()" data-i18n="feedback.btn">💬 Feedback geven</button>
+      </div>
+    </div>
     <button class="btn-primary" onclick="saveProfile()" data-i18n="profile.save">Opslaan ✓</button>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div class="overlay" id="feedback-modal">
+  <div class="modal">
+    <div class="modal-title"><span data-i18n="feedback.title">Feedback geven</span> <button class="modal-close" onclick="closeFeedback()">×</button></div>
+    <p class="consent-p" data-i18n="feedback.hint">Werkt iets niet, mis je iets of heb je een idee? Laat het weten.</p>
+    <div class="fb-kinds" id="fb-kinds">
+      <button class="fb-kind active" data-kind="bug" onclick="pickFeedbackKind('bug')" data-i18n="feedback.kind.bug">Iets werkt niet</button>
+      <button class="fb-kind" data-kind="idea" onclick="pickFeedbackKind('idea')" data-i18n="feedback.kind.idea">Idee of tip</button>
+      <button class="fb-kind" data-kind="other" onclick="pickFeedbackKind('other')" data-i18n="feedback.kind.other">Anders</button>
+    </div>
+    <textarea id="fb-message" rows="5" maxlength="2000" data-i18n-placeholder="feedback.placeholder" placeholder="Schrijf hier je bericht…" style="width:100%;margin:10px 0"></textarea>
+    <div id="fb-error" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>
+    <button class="btn-primary" id="fb-send" onclick="submitFeedback()" data-i18n="feedback.send">Versturen</button>
   </div>
 </div>
 
@@ -1335,6 +1388,6 @@ window.PRIME_BUILD = '20260920-0839';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260920-0839"></script>
+<script src="js/auth.js?v=20260920-1157"></script>
 </body>
 </html>

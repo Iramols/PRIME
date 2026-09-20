@@ -27,6 +27,47 @@ function toLoginEmail(input) {
   return input.toLowerCase().replace(/\s+/g, '.') + CLIENT_EMAIL_DOMAIN;
 }
 
+// ========== TOESTEMMING (deelnemers, eerste keer inloggen) ==========
+// Wordt per deelnemer opgeslagen in client_state (sleutel prime_consent) met
+// een versienummer: bij een aangepaste tekst hoeft alleen CONSENT_VERSION
+// verhoogd te worden om iedereen opnieuw akkoord te laten geven. De coach
+// (ook als die een klant bekijkt) krijgt dit scherm nooit -- toestemming
+// hoort bij de deelnemer zelf.
+const CONSENT_VERSION = 1;
+let _consentResolve = null;
+function hasConsent() {
+  try {
+    const c = JSON.parse(localStorage.getItem('prime_consent') || 'null');
+    return !!(c && c.version >= CONSENT_VERSION);
+  } catch (e) { return false; }
+}
+function ensureConsent() {
+  if (hasConsent()) return Promise.resolve();
+  return new Promise(function(resolve) {
+    _consentResolve = resolve;
+    hideBootLoader();
+    document.getElementById('consent-close').style.display = 'none';
+    document.getElementById('consent-agree-block').style.display = '';
+    document.getElementById('consent-check').checked = false;
+    document.getElementById('consent-agree-btn').disabled = true;
+    document.getElementById('consent-overlay').classList.add('open');
+  });
+}
+function acceptConsent() {
+  syncSet('prime_consent', { version: CONSENT_VERSION, date: new Date().toISOString() });
+  document.getElementById('consent-overlay').classList.remove('open');
+  const l = document.getElementById('boot-loader');
+  if (l) l.style.display = 'flex';
+  if (_consentResolve) { const r = _consentResolve; _consentResolve = null; r(); }
+}
+// Alleen-lezen weergave vanuit Profiel > Privacy.
+function openConsentView() {
+  document.getElementById('consent-agree-block').style.display = 'none';
+  document.getElementById('consent-close').style.display = '';
+  document.getElementById('consent-overlay').classList.add('open');
+}
+function closeConsentView() { document.getElementById('consent-overlay').classList.remove('open'); }
+
 function hideBootLoader() {
   const l = document.getElementById('boot-loader');
   if (l) l.style.display = 'none';
@@ -165,6 +206,7 @@ async function bootApp(clientId, isCoach) {
   const _l = document.getElementById('boot-loader');
   if (_l) _l.style.display = 'flex';
   await hydrateFromCloud(clientId);
+  if (!isCoach) await ensureConsent();
   hideLogin();
   hideClientPicker();
   if (isCoach) document.getElementById('switch-client-btn').style.display = '';

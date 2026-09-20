@@ -656,6 +656,17 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 }
 
 
+/* TOESTEMMING / FEEDBACK */
+#consent-overlay { z-index: 250; }
+.consent-h { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--sage); margin: 14px 0 4px; }
+.consent-p { font-size: 13px; line-height: 1.6; color: var(--charcoal); margin: 0; }
+.fb-kinds { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.fb-kind { padding: 7px 12px; border-radius: 20px; border: 1.5px solid var(--sand-dark); background: var(--white); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; color: var(--muted); }
+.fb-kind.active { border-color: var(--sage); background: var(--sage-light); color: var(--sage); font-weight: 600; }
+.pilot-feedback-btn { margin-top: 10px; padding: 7px 12px; border-radius: 10px; border: 1px solid var(--sage-mid); background: transparent; color: var(--sage); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+.fb-item { border-bottom: 1px solid var(--sand-dark); padding: 12px 0; }
+.fb-item:last-child { border-bottom: none; }
+
 /* DRAAI-MELDING: PRIME is voor staand gemaakt. Op een telefoon (aanraakscherm,
    weinig hoogte) in liggende stand tonen we alleen een melding. Tablets en
    computers hebben te veel hoogte / een muis en krijgen 'm nooit. */

@@ -813,9 +813,59 @@ function _signalenErnst(signals) {
   return 2;
 }
 
+// ========== FEEDBACK VAN DEELNEMERS (coach, onder Signalen) ==========
+function _fbEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+async function renderFeedbackList() {
+  const el = document.getElementById('feedback-overzicht-content');
+  if (!el) return;
+  let res;
+  try { res = await fetchFeedbackList(); } catch (e) { res = { data: [], error: e }; }
+  const head = '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:12px">' + t('feedback.coach.title') + '</div>';
+  if (res.error) {
+    el.innerHTML = head + '<div class="card" style="font-size:13px;color:var(--muted)">' + t('feedback.coach.noTable') + '</div>';
+    return;
+  }
+  if (!res.data.length) {
+    el.innerHTML = head + '<div class="card" style="text-align:center;color:var(--muted);padding:24px">' + t('feedback.coach.none') + '</div>';
+    return;
+  }
+  let clients = [];
+  try { clients = await fetchClientList(); } catch (e) {}
+  const nameOf = id => (clients.find(c => c.id === id) || {}).display_name || 'Coach';
+  const kindLabel = { bug: t('feedback.kind.bug'), idea: t('feedback.kind.idea'), other: t('feedback.kind.other'), delete_request: t('feedback.kind.delete_request') };
+  el.innerHTML = head + '<div class="card">' + res.data.map(f => {
+    const d = new Date(f.created_at);
+    const isDel = f.kind === 'delete_request';
+    return '<div class="fb-item" style="' + (f.handled ? 'opacity:0.5' : '') + '">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px">' +
+        '<span><b style="color:var(--charcoal)">' + _fbEsc(nameOf(f.client_id)) + '</b> · ' + d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) + '</span>' +
+        '<span style="padding:1px 8px;border-radius:10px;font-weight:600;' + (isDel ? 'background:#fdecea;color:#c0392b' : 'background:var(--sand);color:var(--muted)') + '">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' +
+      '</div>' +
+      '<div style="font-size:14px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap">' + _fbEsc(f.message) + '</div>' +
+      '<div style="display:flex;gap:8px">' +
+        '<button class="btn-sm" onclick="toggleFeedbackHandled(\'' + f.id + '\',' + (!f.handled) + ')">' + (f.handled ? t('feedback.coach.reopen') : t('feedback.coach.handled')) + '</button>' +
+        '<button class="btn-sm" onclick="removeFeedback(\'' + f.id + '\')">' + t('feedback.coach.delete') + '</button>' +
+      '</div></div>';
+  }).join('') + '</div>';
+}
+async function toggleFeedbackHandled(id, handled) {
+  const err = await setFeedbackHandled(id, handled);
+  if (err) console.error('toggleFeedbackHandled:', err);
+  renderFeedbackList();
+}
+async function removeFeedback(id) {
+  if (!confirm(t('feedback.coach.deleteConfirm'))) return;
+  const err = await deleteFeedbackRow(id);
+  if (err) console.error('removeFeedback:', err);
+  renderFeedbackList();
+}
+
 async function renderSignalenTab() {
   const el = document.getElementById('signalen-overzicht-content');
   if (!el) return;
+  renderFeedbackList();
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loading') + '</div>';
 
   let clients;

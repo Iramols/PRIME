@@ -27,7 +27,8 @@ const CLOUD_KEYS = [
   'prime_food_days',
   'prime_exercise_notes',
   'prime_custom_exercises',
-  'prime_training_days'
+  'prime_training_days',
+  'prime_consent'
 ];
 
 let _sb = null;
@@ -225,6 +226,35 @@ async function fetchClientStateFor(clientId, keys) {
 // Maximale bestandsgrootte van een geüploade foto (alle uploadplekken
 // controleren hierop en tonen anders een melding zonder op te slaan).
 const MAX_PHOTO_BYTES = 200 * 1024;
+
+// ========== FEEDBACK (tabel 'feedback', zie supabase/feedback.sql) ==========
+// Deelnemers sturen alleen; de coach leest, markeert en verwijdert.
+async function sendFeedback(kind, message) {
+  const sb = getSupabase();
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) return { error: { message: 'niet ingelogd' } };
+  const { error } = await sb.from('feedback').insert({
+    client_id: session.user.id,
+    kind: kind,
+    message: message,
+    app_build: window.PRIME_BUILD || null,
+    user_agent: (navigator.userAgent || '').slice(0, 200)
+  });
+  return { error: error || null };
+}
+async function fetchFeedbackList() {
+  const sb = getSupabase();
+  const { data, error } = await sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(100);
+  return { data: data || [], error: error || null };
+}
+async function setFeedbackHandled(id, handled) {
+  const { error } = await getSupabase().from('feedback').update({ handled: handled }).eq('id', id);
+  return error || null;
+}
+async function deleteFeedbackRow(id) {
+  const { error } = await getSupabase().from('feedback').delete().eq('id', id);
+  return error || null;
+}
 
 // ========== FOTO-OPSLAG (Supabase Storage) ==========
 // Foto's van eigen producten/gerechten/oefeningen/programma's staan als los
