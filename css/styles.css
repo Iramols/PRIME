@@ -696,3 +696,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 @media(max-width:600px){
   #wis-training-btn, #wis-voeding-btn { white-space: normal !important; flex-shrink: 1 !important; max-width: 118px; text-align: center; line-height: 1.25; }
 }
+
+/* AI-coach-scherm: alleen zichtbaar voor de coach, dus in de coach-kleur (oranje). */
+#screen-coach .card-label { color: var(--coach-only); }
+#screen-coach .send-btn { background: var(--coach-only); }
+#screen-coach .send-btn:hover { background: #c96c14; }
+#screen-coach .msg-av.coach { background: var(--coach-only-light); color: var(--coach-only); border-color: var(--coach-only); }
+#screen-coach .msg.user-msg .msg-bubble { background: var(--coach-only); border-color: var(--coach-only); }
+#screen-coach .chat-in:focus { border-color: var(--coach-only); }
+#screen-coach .quick-btn:hover { border-color: var(--coach-only); color: var(--coach-only); background: var(--coach-only-light); }
