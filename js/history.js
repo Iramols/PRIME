@@ -842,32 +842,15 @@ async function renderConsentOverview() {
   }).join('') + '</div>';
 }
 
-async function renderFeedbackList() {
-  const el = document.getElementById('feedback-overzicht-content');
-  if (!el) return;
-  let res;
-  try { res = await fetchFeedbackList(); } catch (e) { res = { data: [], error: e }; }
-  const head = '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:12px">' + t('feedback.coach.title') + '</div>';
-  if (res.error) {
-    el.innerHTML = head + '<div class="card" style="font-size:13px;color:var(--muted)">' + t('feedback.coach.noTable') + '</div>';
-    return;
-  }
-  if (!res.data.length) {
-    el.innerHTML = head + '<div class="card" style="text-align:center;color:var(--muted);padding:24px">' + t('feedback.coach.none') + '</div>';
-    return;
-  }
-  let clients = [], namen = {};
-  try { clients = await fetchClientList(); } catch (e) {}
-  try { namen = await fetchProfileNames(); } catch (e) {}
-  const nameOf = id => namen[id] || (clients.find(c => c.id === id) || {}).display_name || 'Coach';
-  const kindLabel = { bug: t('feedback.kind.bug'), idea: t('feedback.kind.idea'), other: t('feedback.kind.other'), delete_request: t('feedback.kind.delete_request') };
-  el.innerHTML = head + '<div class="card">' + res.data.map(f => {
+// Rendert twee aparte lijsten uit dezelfde tabel: gewone feedback (idee, tip,
+// iets dat niet werkt) en, apart, verzoeken tot verwijdering van gegevens.
+function _fbItemsHtml(items, nameOf, kindLabel) {
+  return '<div class="card">' + items.map(f => {
     const d = new Date(f.created_at);
-    const isDel = f.kind === 'delete_request';
     return '<div class="fb-item" style="' + (f.handled ? 'opacity:0.5' : '') + '">' +
       '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px">' +
         '<span><b style="color:var(--charcoal)">' + _fbEsc(nameOf(f.client_id)) + '</b> · ' + d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) + '</span>' +
-        '<span style="padding:1px 8px;border-radius:10px;font-weight:600;' + (isDel ? 'background:#fdecea;color:#c0392b' : 'background:var(--sand);color:var(--muted)') + '">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' +
+        (kindLabel ? '<span style="padding:1px 8px;border-radius:10px;font-weight:600;background:var(--sand);color:var(--muted)">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' : '') +
       '</div>' +
       '<div style="font-size:14px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap">' + _fbEsc(f.message) + '</div>' +
       '<div style="display:flex;gap:8px">' +
@@ -875,6 +858,30 @@ async function renderFeedbackList() {
         '<button class="btn-sm" onclick="removeFeedback(\'' + f.id + '\')">' + t('feedback.coach.delete') + '</button>' +
       '</div></div>';
   }).join('') + '</div>';
+}
+async function renderFeedbackList() {
+  const el = document.getElementById('feedback-overzicht-content');
+  const elDel = document.getElementById('delete-requests-content');
+  if (!el && !elDel) return;
+  let res;
+  try { res = await fetchFeedbackList(); } catch (e) { res = { data: [], error: e }; }
+  const kop = key => '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:12px">' + t(key) + '</div>';
+  const leeg = key => '<div class="card" style="text-align:center;color:var(--muted);padding:24px">' + t(key) + '</div>';
+  if (res.error) {
+    const melding = '<div class="card" style="font-size:13px;color:var(--muted)">' + t('feedback.coach.noTable') + '</div>';
+    if (el) el.innerHTML = kop('feedback.coach.title') + melding;
+    if (elDel) elDel.innerHTML = kop('deleteRequests.title') + melding;
+    return;
+  }
+  let clients = [], namen = {};
+  try { clients = await fetchClientList(); } catch (e) {}
+  try { namen = await fetchProfileNames(); } catch (e) {}
+  const nameOf = id => namen[id] || (clients.find(c => c.id === id) || {}).display_name || 'Coach';
+  const kindLabel = { bug: t('feedback.kind.bug'), idea: t('feedback.kind.idea'), other: t('feedback.kind.other') };
+  const verzoeken = res.data.filter(f => f.kind === 'delete_request');
+  const feedback = res.data.filter(f => f.kind !== 'delete_request');
+  if (elDel) elDel.innerHTML = kop('deleteRequests.title') + (verzoeken.length ? _fbItemsHtml(verzoeken, nameOf, null) : leeg('deleteRequests.none'));
+  if (el) el.innerHTML = kop('feedback.coach.title') + (feedback.length ? _fbItemsHtml(feedback, nameOf, kindLabel) : leeg('feedback.coach.none'));
 }
 async function toggleFeedbackHandled(id, handled) {
   const err = await setFeedbackHandled(id, handled);
