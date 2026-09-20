@@ -254,6 +254,16 @@ async function fetchProfileNames() {
   return map;
 }
 
+// Coach-only: wanneer elke deelnemer akkoord is gegaan met de voorwaarden
+// (client_state.prime_consent = {version, date}). Geeft {client_id: {version, date}}.
+async function fetchConsents() {
+  const { data, error } = await getSupabase().from('client_state').select('client_id, value').eq('key', 'prime_consent');
+  if (error) { console.error('fetchConsents:', error); return {}; }
+  const map = {};
+  (data || []).forEach(r => { if (r.value && r.value.date) map[r.client_id] = r.value; });
+  return map;
+}
+
 async function fetchFeedbackList() {
   const sb = getSupabase();
   const { data, error } = await sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(100);

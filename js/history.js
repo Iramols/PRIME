@@ -817,6 +817,31 @@ function _signalenErnst(signals) {
 function _fbEsc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+// Overzicht van ALLE deelnemers met wanneer ze akkoord zijn gegaan (of nog niet).
+async function renderConsentOverview() {
+  const el = document.getElementById('consent-overzicht-content');
+  if (!el) return;
+  let clients = [], namen = {}, consents = {};
+  try { clients = await fetchClientList(); } catch (e) { return; }
+  try { namen = await fetchProfileNames(); } catch (e) {}
+  try { consents = await fetchConsents(); } catch (e) {}
+  const head = '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:12px">' + t('consent.coach.title') + '</div>';
+  if (!clients.length) { el.innerHTML = ''; return; }
+  el.innerHTML = head + '<div class="card">' + clients.map(c => {
+    const naam = _fbEsc(namen[c.id] || c.display_name || c.id);
+    const cs = consents[c.id];
+    let status;
+    if (cs) {
+      const d = new Date(cs.date);
+      const oud = cs.version < CONSENT_VERSION;
+      status = '<span style="color:' + (oud ? '#c0392b' : 'var(--sage)') + '">' + t('consent.coach.agreed', { date: d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) }) + ' · v' + _fbEsc(cs.version) + (oud ? ' ' + t('consent.coach.outdated') : '') + '</span>';
+    } else {
+      status = '<span style="color:var(--coach-only);font-weight:600">' + t('consent.coach.none') + '</span>';
+    }
+    return '<div class="fb-item" style="display:flex;justify-content:space-between;gap:10px;font-size:13px"><b>' + naam + '</b>' + status + '</div>';
+  }).join('') + '</div>';
+}
+
 async function renderFeedbackList() {
   const el = document.getElementById('feedback-overzicht-content');
   if (!el) return;
@@ -866,6 +891,7 @@ async function removeFeedback(id) {
 async function renderSignalenTab() {
   const el = document.getElementById('signalen-overzicht-content');
   if (!el) return;
+  renderConsentOverview();
   renderFeedbackList();
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loading') + '</div>';
 
