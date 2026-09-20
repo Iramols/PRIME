@@ -328,7 +328,9 @@ function renderKcalTrendChart() {
   const maxLimiet = Math.round(doel.kcal * 1.1);
 
   const W = 300, H = 110;
-  const padL = 46, padR = 10, padT = 10, padB = 22;
+  // Rechts extra ruimte (padR 28) voor de limiet-getallen, zodat ze naast de
+  // grafiek staan i.p.v. over de lijn heen.
+  const padL = 46, padR = 28, padT = 10, padB = 22;
   const cW = W - padL - padR;
   const cH = H - padT - padB;
   const n = data.length;
@@ -355,7 +357,7 @@ function renderKcalTrendChart() {
 
   const limietLijnen = [minLimiet, maxLimiet].map(v => `
     <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#c8855a" stroke-width="1" stroke-dasharray="4,3"/>
-    <text x="${W - padR}" y="${yPos(v) - 3}" text-anchor="end" font-size="8" fill="#c8855a">${v}</text>
+    <text x="${W - padR + 3}" y="${yPos(v) + 3}" text-anchor="start" font-size="8" fill="#c8855a">${v}</text>
   `).join('');
 
   const pts = data.map((d, i) => `${xPos(i)},${yPos(d.kcal)}`).join(' ');
