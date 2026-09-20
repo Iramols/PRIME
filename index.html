@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260920-1344';
+window.PRIME_BUILD = '20260920-1414';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -32,11 +32,11 @@ window.PRIME_BUILD = '20260920-1344';
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260920-1344">
+<link rel="stylesheet" href="css/styles.css?v=20260920-1414">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="js/cloud.js?v=20260920-1344"></script>
-<script src="js/translations.js?v=20260920-1344"></script>
-<script src="js/i18n.js?v=20260920-1344"></script>
+<script src="js/cloud.js?v=20260920-1414"></script>
+<script src="js/translations.js?v=20260920-1414"></script>
+<script src="js/i18n.js?v=20260920-1414"></script>
 </head>
 <body>
 
@@ -67,6 +67,39 @@ window.PRIME_BUILD = '20260920-1344';
         <span data-i18n="consent.check">Ik heb dit gelezen en ga akkoord met het gebruik van mijn gegevens voor de pilot.</span>
       </label>
       <button class="btn-primary" id="consent-agree-btn" disabled onclick="acceptConsent()" data-i18n="consent.agree">Akkoord en starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- UITLEG VOOR NIEUWE DEELNEMERS (na de toestemming; zie ensureOnboarding in auth.js) -->
+<div class="overlay" id="onboarding-overlay">
+  <div class="modal" style="text-align:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <button class="onb-skip" onclick="finishOnboarding()" data-i18n="onb.skip">Overslaan</button>
+      <div class="lang-toggle">
+        <button class="lang-btn" data-lang="nl" onclick="setLang('nl')">NL</button>
+        <button class="lang-btn" data-lang="en" onclick="setLang('en')">EN</button>
+      </div>
+    </div>
+    <div class="onb-slide" data-step="0">
+      <div class="onb-icon">👤</div>
+      <div class="onb-title" data-i18n="onb.1.title">Vul eerst je profiel in</div>
+      <p class="onb-text" data-i18n="onb.1.text">Tik rechtsboven op Profiel en vul je naam, gewicht, lengte en doel in. Weet je je caloriebehoefte niet? Laat dat veld leeg: dan rekenen we met 2000 kcal, en je coach helpt je daarbij.</p>
+    </div>
+    <div class="onb-slide" data-step="1" style="display:none">
+      <div class="onb-icon">☀️🌙</div>
+      <div class="onb-title" data-i18n="onb.2.title">Elke dag een check-in en check-out</div>
+      <p class="onb-text" data-i18n="onb.2.text">Begin je dag met de check-in: je gewicht, slaap, energie en stress. Sluit je dag 's avonds af met de check-out. Zo zie je hoe je vooruitgaat.</p>
+    </div>
+    <div class="onb-slide" data-step="2" style="display:none">
+      <div class="onb-icon">🥗🏋️</div>
+      <div class="onb-title" data-i18n="onb.3.title">Voeding en training aanvinken</div>
+      <p class="onb-text" data-i18n="onb.3.text">Voeg toe wat je eet en traint, en vink het aan zodra je het hebt gedaan. Bij voeding telt alleen wat je hebt aangevinkt als gegeten. Aanvinken kan alleen voor vandaag; een afgesloten dag ligt vast.</p>
+    </div>
+    <div class="onb-dots" id="onb-dots"><span></span><span></span><span></span></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn-sm" id="onb-back" style="flex:1;display:none" onclick="onboardingBack()" data-i18n="onb.back">Terug</button>
+      <button class="btn-primary" id="onb-next" style="flex:2;margin:0" onclick="onboardingNext()" data-i18n="onb.next">Volgende</button>
     </div>
   </div>
 </div>
@@ -1064,6 +1097,7 @@ window.PRIME_BUILD = '20260920-1344';
       <label data-i18n="profile.privacy.title">Privacy</label>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button class="btn-sm" onclick="openConsentView()" data-i18n="profile.privacy.view">Privacytekst bekijken</button>
+        <button class="btn-sm" onclick="closeProfile();openOnboardingReplay()" data-i18n="onb.replay">Uitleg bekijken</button>
         <button class="btn-sm" onclick="requestDataDeletion()" data-i18n="profile.privacy.delete">Vraag verwijdering van mijn gegevens</button>
         <button class="btn-sm" onclick="closeProfile();openFeedback()" data-i18n="feedback.btn">💬 Feedback geven</button>
       </div>
@@ -1407,6 +1441,6 @@ window.PRIME_BUILD = '20260920-1344';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260920-1344"></script>
+<script src="js/auth.js?v=20260920-1414"></script>
 </body>
 </html>

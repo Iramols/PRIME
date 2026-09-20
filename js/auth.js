@@ -68,6 +68,54 @@ function openConsentView() {
 }
 function closeConsentView() { document.getElementById('consent-overlay').classList.remove('open'); }
 
+// ========== UITLEG VOOR NIEUWE DEELNEMERS ==========
+// Eenmalig na de toestemming (alleen deelnemers): drie korte kaarten. Opgeslagen
+// als prime_onboarding in client_state; opnieuw te bekijken via Profiel > Privacy.
+const ONBOARDING_VERSION = 1;
+let _onbResolve = null, _onbStep = 0, _onbReplay = false;
+function hasOnboarded() {
+  try {
+    const c = JSON.parse(localStorage.getItem('prime_onboarding') || 'null');
+    return !!(c && c.version >= ONBOARDING_VERSION);
+  } catch (e) { return false; }
+}
+function showOnboardingStep(i) {
+  _onbStep = i;
+  document.querySelectorAll('#onboarding-overlay .onb-slide').forEach(s => { s.style.display = parseInt(s.dataset.step, 10) === i ? '' : 'none'; });
+  document.querySelectorAll('#onb-dots span').forEach((d, k) => d.classList.toggle('on', k === i));
+  document.getElementById('onb-back').style.display = i === 0 ? 'none' : '';
+  document.getElementById('onb-next').textContent = t(i === 2 ? 'onb.start' : 'onb.next');
+}
+function ensureOnboarding() {
+  if (hasOnboarded()) return Promise.resolve();
+  return new Promise(function(resolve) {
+    _onbResolve = resolve; _onbReplay = false;
+    hideBootLoader();
+    showOnboardingStep(0);
+    document.getElementById('onboarding-overlay').classList.add('open');
+  });
+}
+function openOnboardingReplay() {
+  _onbReplay = true; _onbResolve = null;
+  showOnboardingStep(0);
+  document.getElementById('onboarding-overlay').classList.add('open');
+}
+function onboardingNext() { if (_onbStep < 2) showOnboardingStep(_onbStep + 1); else finishOnboarding(); }
+function onboardingBack() { if (_onbStep > 0) showOnboardingStep(_onbStep - 1); }
+function finishOnboarding() {
+  document.getElementById('onboarding-overlay').classList.remove('open');
+  if (_onbReplay) return;
+  syncSet('prime_onboarding', { version: ONBOARDING_VERSION, date: new Date().toISOString() });
+  // Nog geen naam ingevuld? Dan opent Profiel meteen na het opstarten (zie init in app.js).
+  try {
+    const p = JSON.parse(localStorage.getItem('prime_profile') || 'null');
+    window._primeOpenProfile = !(p && p.name && String(p.name).trim());
+  } catch (e) { window._primeOpenProfile = true; }
+  const l = document.getElementById('boot-loader');
+  if (l) l.style.display = 'flex';
+  if (_onbResolve) { const r = _onbResolve; _onbResolve = null; r(); }
+}
+
 function hideBootLoader() {
   const l = document.getElementById('boot-loader');
   if (l) l.style.display = 'none';
@@ -206,7 +254,7 @@ async function bootApp(clientId, isCoach) {
   const _l = document.getElementById('boot-loader');
   if (_l) _l.style.display = 'flex';
   await hydrateFromCloud(clientId);
-  if (!isCoach) await ensureConsent();
+  if (!isCoach) { await ensureConsent(); await ensureOnboarding(); }
   hideLogin();
   hideClientPicker();
   if (isCoach) document.getElementById('switch-client-btn').style.display = '';

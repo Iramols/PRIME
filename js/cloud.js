@@ -28,7 +28,8 @@ const CLOUD_KEYS = [
   'prime_exercise_notes',
   'prime_custom_exercises',
   'prime_training_days',
-  'prime_consent'
+  'prime_consent',
+  'prime_onboarding'
 ];
 
 let _sb = null;

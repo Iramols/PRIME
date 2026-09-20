@@ -223,6 +223,9 @@ function initInner() {
     addMsg('coach', t('coach.greeting', { name: profile.name ? ' ' + profile.name : '' }));
   }
 
+  // Net klaar met de uitleg en nog geen naam ingevuld: meteen Profiel openen.
+  if (window._primeOpenProfile) { window._primeOpenProfile = false; try { openProfile(); } catch (e) {} }
+
   // Bestaande base64-foto's op de achtergrond naar Storage verplaatsen
   // (idempotent, zie migrateBase64PhotosToStorage() in cloud.js). Even
   // wachten zodat het opstarten zelf niet vertraagd wordt.

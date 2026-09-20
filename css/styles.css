@@ -657,7 +657,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 
 
 /* TOESTEMMING / FEEDBACK */
-#consent-overlay { z-index: 250; }
+#consent-overlay, #onboarding-overlay { z-index: 250; }
+.onb-icon { font-size: 52px; line-height: 1.2; margin: 10px 0 6px; }
+.onb-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--sage); margin-bottom: 8px; }
+.onb-text { font-size: 14px; line-height: 1.6; color: var(--charcoal); margin: 0 4px 14px; min-height: 110px; }
+.onb-dots { display: flex; justify-content: center; gap: 7px; margin: 4px 0 12px; }
+.onb-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--sand-dark); }
+.onb-dots span.on { background: var(--sage); width: 22px; border-radius: 8px; }
+.onb-skip { background: none; border: none; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; padding: 4px 0; }
 .consent-h { font-family: 'DM Serif Display', serif; font-size: 16px; color: var(--sage); margin: 14px 0 4px; }
 .consent-p { font-size: 13px; line-height: 1.6; color: var(--charcoal); margin: 0; }
 .fb-kinds { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
