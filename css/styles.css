@@ -718,3 +718,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 #screen-coach .msg.user-msg .msg-bubble { background: var(--coach-only); border-color: var(--coach-only); }
 #screen-coach .chat-in:focus { border-color: var(--coach-only); }
 #screen-coach .quick-btn:hover { border-color: var(--coach-only); color: var(--coach-only); background: var(--coach-only-light); }
+
+/* iPhone/Safari zoomt automatisch in zodra je in een invoerveld tikt waarvan de
+   letters kleiner zijn dan 16px, en zoomt daarna niet altijd terug (scherm
+   blijft 'te groot'). Op telefoons/touch dus minimaal 16px in alle velden. */
+@media (max-width: 600px), (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea { font-size: 16px !important; }
+}
