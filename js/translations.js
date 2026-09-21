@@ -350,7 +350,7 @@ const I18N = {
     'auth.offline': 'Geen verbinding. Controleer je internet en probeer het opnieuw.',
     'pilotTips.title': 'Goed om te weten',
     'pilotTips.oneDevice': 'Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.',
-    'pilotTips.internet': 'Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan.',
+    'pilotTips.internet': 'Je hebt internet nodig om PRIME te gebruiken. Zonder verbinding kun je niet inloggen of opslaan. Zie je een foutmelding van je browser? Controleer je internet en ververs de pagina.',
     'pilotTips.update': 'Komt er een update? Je krijgt een mail. Sluit PRIME (of het tabblad) en open hem opnieuw: hij werkt zichzelf dan bij.',
 
     // Profiel
@@ -1063,7 +1063,7 @@ const I18N = {
     'auth.offline': 'No connection. Check your internet and try again.',
     'pilotTips.title': 'Good to know',
     'pilotTips.oneDevice': 'Use PRIME on one device at a time (phone or computer), otherwise changes may get lost.',
-    'pilotTips.internet': 'You need an internet connection to use PRIME. Without one you cannot log in or save.',
+    'pilotTips.internet': 'You need an internet connection to use PRIME. Without one you cannot log in or save. Seeing an error from your browser? Check your internet and refresh the page.',
     'pilotTips.update': 'Is there an update? You will get an email. Close PRIME (or the tab) and open it again: it updates itself.',
 
     'profile.title': 'Your profile',
