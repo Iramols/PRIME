@@ -147,6 +147,35 @@ async function hydrateFromCloud(clientId) {
 // Vervangt localStorage.setItem('prime_x', JSON.stringify(v)) call sites:
 // slaat lokaal op (voor directe herlees-snelheid) én synchroniseert async
 // naar Supabase voor de actieve klant.
+// ---- Verbindingsstatus ----
+// PRIME werkt bewust alleen online. Zonder deze melding lijkt het bij een
+// wegvallende verbinding alsof afvinken/opslaan 'gewoon' werkt, terwijl het
+// alleen lokaal staat. _connOffline volgt de browser (online/offline events),
+// _connSaveFailed wordt gezet als een cloud-opslag mislukt terwijl de browser
+// zichzelf wel online noemt (bv. zwakke 4G) en gaat weer uit na een geslaagde
+// opslag.
+let _connOffline = (typeof navigator !== 'undefined' && navigator.onLine === false);
+let _connSaveFailed = false;
+
+function updateConnBanner() {
+  const el = document.getElementById('conn-banner');
+  if (!el) return;
+  const msg = _connOffline ? t('conn.offline') : (_connSaveFailed ? t('conn.saveFailed') : '');
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+}
+
+function noteSyncResult(error) {
+  const failed = !!error;
+  if (failed === _connSaveFailed) return;
+  _connSaveFailed = failed;
+  updateConnBanner();
+}
+
+window.addEventListener('offline', function() { _connOffline = true; updateConnBanner(); });
+window.addEventListener('online', function() { _connOffline = false; _connSaveFailed = false; updateConnBanner(); });
+document.addEventListener('DOMContentLoaded', updateConnBanner);
+
 function syncSet(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -178,6 +207,10 @@ function syncSet(key, value) {
       .upsert({ client_id: activeClientId, key, value, updated_at: new Date().toISOString() })
       .then(({ error }) => {
         if (error) console.error('syncSet upsert error voor ' + key + ':', error);
+        noteSyncResult(error);
+      }, (e) => {
+        console.error('syncSet upsert faalde voor ' + key + ':', e);
+        noteSyncResult(e);
       });
   } catch (e) {
     console.error('syncSet cloud-sync faalde voor ' + key + ':', e);

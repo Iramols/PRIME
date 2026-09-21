@@ -204,8 +204,10 @@ async function doLogin() {
     if (error) throw error;
     await resolveSession();
   } catch (err) {
+    const offline = navigator.onLine === false || /failed to fetch|networkerror|load failed|network request failed/i.test(String(err && err.message));
     showLogin(err.message === 'Invalid login credentials'
       ? t('auth.invalidCredentials')
+      : offline ? t('auth.offline')
       : t('auth.loginFailed', { msg: err.message }));
   } finally {
     btn.disabled = false;
