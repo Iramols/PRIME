@@ -194,6 +194,13 @@ function selectClient(clientId) {
 }
 
 async function doLogin() {
+  // Het Supabase-script komt van een CDN. Was er bij het openen geen internet,
+  // dan is het nooit geladen en werkt inloggen pas na een herlaad.
+  if (typeof supabase === 'undefined') {
+    if (navigator.onLine !== false) { location.reload(); return; }
+    showLogin(t('auth.offline'));
+    return;
+  }
   const emailInput = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
   const btn = document.getElementById('login-submit');
@@ -298,6 +305,18 @@ async function resolveSession() {
     await bootApp(profileRow.id, false);
   }
 }
+
+// Stond PRIME bij het openen zonder internet, dan blijft het inlogscherm
+// hangen (Supabase-script niet geladen, of sessie/profiel niet op te halen).
+// Zodra de verbinding terugkomt herstelt het zichzelf: is het script er niet,
+// dan herladen we de pagina; anders proberen we de sessie opnieuw op te lossen
+// (bij een bestaande sessie start de app dan vanzelf).
+window.addEventListener('online', function() {
+  const overlay = document.getElementById('login-overlay');
+  if (!overlay || !overlay.classList.contains('open')) return;
+  if (typeof supabase === 'undefined') { location.reload(); return; }
+  resolveSession().catch(function() {});
+});
 
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('login-form').addEventListener('submit', function(e) {
