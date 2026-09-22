@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260922-1333';
+window.PRIME_BUILD = '20260922-1337';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -32,12 +32,12 @@ window.PRIME_BUILD = '20260922-1333';
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260922-1333">
+<link rel="stylesheet" href="css/styles.css?v=20260922-1337">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20260922-1333"></script>
-<script src="js/translations.js?v=20260922-1333"></script>
-<script src="js/i18n.js?v=20260922-1333"></script>
+<script src="js/cloud.js?v=20260922-1337"></script>
+<script src="js/translations.js?v=20260922-1337"></script>
+<script src="js/i18n.js?v=20260922-1337"></script>
 </head>
 <body>
 
@@ -541,7 +541,9 @@ window.PRIME_BUILD = '20260922-1333';
 
     <!-- CALORIE EN NUTRIËNTEN INNAME -->
     <div class="card" style="margin-bottom:18px;padding:24px">
-      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:20px" data-i18n="food.nutrients.title">Calorie en nutriënten inname (vandaag)</h3>
+      <h3 style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:6px" data-i18n="food.nutrients.title">Calorie en nutriënten inname (vandaag)</h3>
+      <!-- Zelfde geplande-samenvatting als op het dashboard, hier boven de gekleurde balkjes. Gevuld door updateHomePlannedSummary() (food.js). -->
+      <div id="food-planned-summary" class="home-planned-summary" style="display:none;margin-bottom:14px"></div>
       <div id="nutrient-rows">
         <!-- Calorieën -->
         <div class="nutrient-row">
@@ -1455,6 +1457,6 @@ window.PRIME_BUILD = '20260922-1333';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260922-1333"></script>
+<script src="js/auth.js?v=20260922-1337"></script>
 </body>
 </html>
