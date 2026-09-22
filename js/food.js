@@ -1655,6 +1655,26 @@ function splitTotals(items) {
 function plannedTint(color) { return 'color-mix(in srgb, ' + color + ' 30%, white)'; }
 function plannedText(n, unit) { return n > 0 ? t('food.plannedSuffix', { n: Math.round(n) + (unit ? ' ' + unit : '') }) : ''; }
 
+// Totale geplande (nog niet afgevinkte) kcal + E/K/V voor vandaag, rechtsboven
+// de statistiek-blokjes op het dashboard. Leest bewust rechtstreeks uit
+// foodDays i.p.v. dayLog: dayLog volgt de dag die net open staat in Voeding
+// (kan door Weekplanning een andere dag zijn), terwijl dit altijd om vandaag
+// moet gaan, ongeacht waar de gebruiker in Voeding aan het kijken is.
+function updateHomePlannedSummary() {
+  const el = document.getElementById('home-planned-summary');
+  if (!el) return;
+  const planned = splitTotals(foodDays[fdTodayStr()] || []).planned;
+  if (planned.kcal <= 0 && planned.prot <= 0 && planned.carb <= 0 && planned.fat <= 0) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+  el.textContent = t('home.plannedToday', {
+    kcal: Math.round(planned.kcal), prot: Math.round(planned.prot),
+    carb: Math.round(planned.carb), fat: Math.round(planned.fat)
+  });
+}
+
 // ========== MACRO TOTALS (combined: meals + log) ==========
 function updateHomeMacros() {
   const el = document.getElementById('home-nutrient-rows');

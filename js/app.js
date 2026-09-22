@@ -82,6 +82,7 @@ function renderHome() {
 
   // Stats
   updateStreak();
+  updateHomePlannedSummary();
 
   // Check of vandaag al volledig is afgesloten (checkout gedaan, dus als
   // laatste/eerste item in history staat) -- dan check-in/checkout niet
