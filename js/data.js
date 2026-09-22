@@ -384,7 +384,7 @@ const PRODUCTS = [
   { id:'g5', name:'Tomaat', name_en:'Tomato', icon:'🍅', cat:'groente', kcal:27, prot:0.9, carb:4, fat:0.8, photo:'images/producten/g5.jpg'},
   { id:'g6', name:'Paprika', name_en:'Bell pepper', icon:'🫑', cat:'groente', kcal:21, prot:0.8, carb:4.1, fat:0.2, photo:'images/producten/g6.jpg'},
   { id:'g7', name:'Zoete aardappel', name_en:'Sweet potato', icon:'🍠', cat:'groente', kcal:92, prot:1.2, carb:21, fat:0.3, photo:'images/producten/g7.jpg'},
-  { id:'g8', name:'Courgette', name_en:'Zucchini', icon:'🥬', cat:'groente', kcal:16, prot:1.3, carb:2.3, fat:0.2, photo:'images/producten/g8.jpg'},
+  { id:'g8', name:'Courgette', name_en:'Zucchini', icon:'🥬', cat:'groente', kcal:16, prot:1.3, carb:2.3, fat:0.2, portie:{ gram:300, label:'1 courgette', label_en:'1 zucchini' }, photo:'images/producten/g8.jpg'},
   { id:'g9', name:'Bloemkool', name_en:'Cauliflower', icon:'🥦', cat:'groente', kcal:21, prot:1.9, carb:3, fat:0.2, photo:'images/producten/g9.jpg'},
   { id:'g10', name:'Sperziebonen', name_en:'Green beans', icon:'🫛', cat:'groente', kcal:30, prot:2, carb:5, fat:0.2, photo:'images/producten/g10.jpg'},
   { id:'g11', name:'Avocado', name_en:'Avocado', icon:'🥑', cat:'groente', kcal:326, prot:3.8, carb:3.2, fat:33.1, photo:'images/producten/g11.jpg'},
