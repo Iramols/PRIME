@@ -1655,25 +1655,27 @@ function splitTotals(items) {
 function plannedTint(color) { return 'color-mix(in srgb, ' + color + ' 30%, white)'; }
 function plannedText(n, unit) { return n > 0 ? t('food.plannedSuffix', { n: Math.round(n) + (unit ? ' ' + unit : '') }) : ''; }
 
-// Totale geplande (nog niet afgevinkte) kcal + E/K/V voor vandaag: rechtsboven
-// de statistiek-blokjes op het dashboard, én rechtsboven de gekleurde balkjes
-// in Voeding. Leest bewust rechtstreeks uit foodDays i.p.v. dayLog: dayLog
-// volgt de dag die net open staat in Voeding (kan door Weekplanning een
-// andere dag zijn), terwijl dit altijd om vandaag moet gaan, ongeacht waar de
-// gebruiker in Voeding aan het kijken is.
+// Totaal geplande kcal + E/K/V voor vandaag (al gegeten + nog te gaan samen),
+// rechtsboven de statistiek-blokjes op het dashboard. (De Voeding-balkjes
+// tonen dit zelfde totaal per macro individueel boven hun eigen balk, zie
+// updateMacroTotals().) Leest bewust rechtstreeks uit foodDays i.p.v. dayLog:
+// dayLog volgt de dag die net open staat in Voeding (kan door Weekplanning
+// een andere dag zijn), terwijl dit altijd om vandaag moet gaan, ongeacht
+// waar de gebruiker in Voeding aan het kijken is.
 function updateHomePlannedSummary() {
-  const planned = splitTotals(foodDays[fdTodayStr()] || []).planned;
-  const show = planned.kcal > 0 || planned.prot > 0 || planned.carb > 0 || planned.fat > 0;
-  const text = show ? t('home.plannedToday', {
-    kcal: Math.round(planned.kcal), prot: Math.round(planned.prot),
-    carb: Math.round(planned.carb), fat: Math.round(planned.fat)
+  const el = document.getElementById('home-planned-summary');
+  if (!el) return;
+  const _split = splitTotals(foodDays[fdTodayStr()] || []);
+  const tot = {
+    kcal: _split.eaten.kcal + _split.planned.kcal, prot: _split.eaten.prot + _split.planned.prot,
+    carb: _split.eaten.carb + _split.planned.carb, fat: _split.eaten.fat + _split.planned.fat
+  };
+  const show = tot.kcal > 0 || tot.prot > 0 || tot.carb > 0 || tot.fat > 0;
+  el.style.display = show ? '' : 'none';
+  el.textContent = show ? t('home.plannedToday', {
+    kcal: Math.round(tot.kcal), prot: Math.round(tot.prot),
+    carb: Math.round(tot.carb), fat: Math.round(tot.fat)
   }) : '';
-  ['home-planned-summary', 'food-planned-summary'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.display = show ? '' : 'none';
-    el.textContent = text;
-  });
 }
 
 // ========== MACRO TOTALS (combined: meals + log) ==========
@@ -1767,8 +1769,14 @@ function updateMacroTotals() {
     // niet meer van elkaar te onderscheiden waren.
     const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
 
+    // Boven elke balk staat het TOTAAL voor vandaag (al gegeten + nog gepland
+    // samen) als hoofdgetal, met -- als er van beide iets is -- eronder hoeveel
+    // daarvan al is afgevinkt. Zo weet je in één oogopslag wat je totaal voor
+    // vandaag hebt staan, ongeacht wat je al hebt afgevinkt.
+    const _totRounded = Math.round(m.val + m.plan);
+    const _eatenRounded = Math.round(m.val);
     const _planRounded = Math.round(m.plan);
-    document.getElementById(m.valId).innerHTML = `${m.val} ${m.unit}` + (_planRounded > 0 ? '<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">' + plannedText(_planRounded) + '</span>' : '');
+    document.getElementById(m.valId).innerHTML = `${_totRounded} ${m.unit}` + (_eatenRounded > 0 && _planRounded > 0 ? '<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">' + t('food.eatenOfTotal', { n: _eatenRounded + ' ' + m.unit }) + '</span>' : '');
     const _allBar = Math.min(100, Math.round((m.val + m.plan) / m.doel * 100));
     const _track = document.getElementById(m.barId).parentElement;
     if (_track) _track.style.background = m.plan > 0 ? 'linear-gradient(to right,' + plannedTint(m.color) + ' ' + _allBar + '%,var(--sand-dark) ' + _allBar + '%)' : '';
