@@ -388,14 +388,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .meal-kcal { font-size: 12px; font-weight: 600; color: var(--accent); }
 
 /* NUTRIENT ROWS */
-.nutrient-row { display: grid; grid-template-columns: 180px 110px 1fr; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--sand-dark); }
+/* align-items was 'center': prima zolang nutrient-mid maar 1 regel is, maar
+   zodra daar (bij een deels afgevinkte dag) een 2e regel "waarvan X gegeten"
+   bijkomt, groeit de rij en werd de balk op het midden van de HELE rij
+   gecentreerd -- middenin die 2e regel, dus er overheen. Nu boven uitgelijnd
+   met een kleine top-marge op de balk, zodat hij net onder het cijfer blijft
+   staan, of dat cijfer nou 1 of 2 regels beslaat. */
+.nutrient-row { display: grid; grid-template-columns: 180px 110px 1fr; align-items: start; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--sand-dark); }
 .nutrient-row:last-child { border-bottom: none; }
 .nutrient-name { font-weight: 600; font-size: 14px; color: var(--charcoal); margin-bottom: 3px; }
 .nutrient-doel { font-size: 12px; color: var(--muted); }
 .nutrient-mid { display: flex; align-items: center; gap: 6px; }
-.nutrient-arrow { font-size: 14px; color: var(--muted); }
+.nutrient-arrow { font-size: 14px; color: var(--muted); margin-top: 2px; }
 .nutrient-val { font-size: 15px; font-weight: 600; color: var(--charcoal); white-space: nowrap; }
-.nutrient-bar-wrap { display: flex; align-items: center; gap: 10px; }
+.nutrient-bar-wrap { display: flex; align-items: center; gap: 10px; margin-top: 3px; }
 .nutrient-bar-bg { flex: 1; height: 18px; background: var(--sand-dark); border-radius: 6px; overflow: hidden; }
 .nutrient-bar-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
 .nutrient-pct { font-size: 13px; font-weight: 600; color: var(--muted); min-width: 36px; text-align: right; }
