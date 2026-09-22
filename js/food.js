@@ -1776,7 +1776,12 @@ function updateMacroTotals() {
     const _totRounded = Math.round(m.val + m.plan);
     const _eatenRounded = Math.round(m.val);
     const _planRounded = Math.round(m.plan);
-    document.getElementById(m.valId).innerHTML = `${_totRounded} ${m.unit}` + (_eatenRounded > 0 && _planRounded > 0 ? '<span style="display:block;font-size:10px;font-weight:400;color:var(--muted)">' + t('food.eatenOfTotal', { n: _eatenRounded + ' ' + m.unit }) + '</span>' : '');
+    // white-space:normal expliciet: .nutrient-val zelf staat op nowrap (voor
+    // het hoofdgetal), en zonder deze override erft dit regeltje dat mee --
+    // dan loopt de tekst door tot ver buiten de smalle kolom (over de balk
+    // heen op de laptop, buiten beeld op de telefoon) i.p.v. netjes af te
+    // breken.
+    document.getElementById(m.valId).innerHTML = `${_totRounded} ${m.unit}` + (_eatenRounded > 0 && _planRounded > 0 ? '<span style="display:block;white-space:normal;font-size:10px;font-weight:400;color:var(--muted)">' + t('food.eatenOfTotal', { n: _eatenRounded + ' ' + m.unit }) + '</span>' : '');
     const _allBar = Math.min(100, Math.round((m.val + m.plan) / m.doel * 100));
     const _track = document.getElementById(m.barId).parentElement;
     if (_track) _track.style.background = m.plan > 0 ? 'linear-gradient(to right,' + plannedTint(m.color) + ' ' + _allBar + '%,var(--sand-dark) ' + _allBar + '%)' : '';
