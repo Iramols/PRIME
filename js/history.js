@@ -527,13 +527,127 @@ function calcDagenZonderCheckin() {
 
 // ========== PROGRAMMA VOORTGANG TAB ==========
 function switchHistoryTab(tab) {
-  ['stats','programma'].forEach(t => {
+  ['stats','voeding','programma'].forEach(t => {
     const btn = document.getElementById('htab-' + t);
     const con = document.getElementById('hstab-content-' + t);
     if (btn) btn.classList.toggle('active', t === tab);
     if (con) con.style.display = t === tab ? 'block' : 'none';
   });
+  if (tab === 'voeding') renderVoedingVoortgang();
   if (tab === 'programma') renderProgrammaVoortgang();
+}
+
+// ========== VOEDING VOORTGANG TAB ==========
+// Zelfde opzet/stijl als renderProgrammaVoortgang() hieronder (overzichtskaart
+// + per-week dagrijen), maar dan voor Voeding. Anders dan Training heeft
+// Voeding geen apart "weekplanning"-schema per dag (prime_planning) -- elke
+// dag met minstens 1 voedingsitem in foodDays telt gewoon mee, of dat nou een
+// dag in het verleden, vandaag, of een voor-later geplande dag is.
+function renderVoedingVoortgang() {
+  const el = document.getElementById('voeding-voortgang-content');
+  if (!el) return;
+
+  const dagen = Object.keys(foodDays).filter(d => (foodDays[d] || []).length > 0).sort();
+  if (!dagen.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
+      '<div style="font-size:40px;margin-bottom:12px">\u{1F37D}️</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('history.noFoodTitle') + '</div>' +
+      '<div style="font-size:13px;color:var(--muted)">' + t('history.noFoodHint') + '</div>' +
+      '</div>';
+    return;
+  }
+
+  const vandaag = localDateStr();
+  const doel = getDagDoel();
+  // Zelfde ±10%-marge als de balkjes op Voeding zelf (updateMacroTotals in
+  // food.js) -- "doel gehaald" betekent hier calorieën ÉN eiwit allebei
+  // binnen die marge (zie history.foodGoalCriteria-tekst in de UI).
+  const inRange = (val, doelVal) => val >= doelVal * 0.9 && val <= doelVal * 1.1;
+
+  let geloggeDagen = 0, doelGehaaldDagen = 0, geplandeDagen = 0;
+  const dagInfo = {};
+  dagen.forEach(d => {
+    const items = foodDays[d] || [];
+    const split = splitTotals(items);
+    const tot = { kcal: split.eaten.kcal + split.planned.kcal, prot: split.eaten.prot + split.planned.prot };
+    const isToekomst = d > vandaag;
+    if (isToekomst) { geplandeDagen++; }
+    else { geloggeDagen++; if (inRange(tot.kcal, doel.kcal) && inRange(tot.prot, doel.prot)) doelGehaaldDagen++; }
+    dagInfo[d] = { tot, isToekomst };
+  });
+  const pct = geloggeDagen > 0 ? Math.round(doelGehaaldDagen / geloggeDagen * 100) : 0;
+
+  const statsHtml =
+    '<div class="card" style="margin-bottom:14px">' +
+    '<div class="card-label" style="margin-bottom:14px">' + t('history.foodOverview') + '</div>' +
+    '<div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + geloggeDagen + '</div><div class="stat-lbl">' + t('history.stat.logged') + '</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + doelGehaaldDagen + '</div><div class="stat-lbl">' + t('history.stat.goalMet') + '</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + geplandeDagen + '</div><div class="stat-lbl">' + t('history.stat.planned') + '</div></div>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;font-style:italic">' + t('history.foodGoalCriteria') + '</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.foodGoalMetSummary', { done: doelGehaaldDagen, total: geloggeDagen, pct }) + '</div>' +
+    '<div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">' +
+      '<div style="height:100%;background:var(--sage);border-radius:100px;width:' + pct + '%;transition:width 0.5s"></div>' +
+    '</div>' +
+    '</div>';
+
+  // ── Per week, zelfde groepering als renderProgrammaVoortgang() ──
+  const weken = new Map();
+  dagen.forEach(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const wd = dt.getDay();
+    const mon = new Date(dt);
+    mon.setDate(dt.getDate() - (wd === 0 ? 6 : wd - 1));
+    const key = localDateStr(mon);
+    if (!weken.has(key)) weken.set(key, []);
+    weken.get(key).push(d);
+  });
+
+  const wekenHtml = [...weken.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([monStr, dagenInWeek]) => {
+    const mon = new Date(monStr + 'T00:00:00');
+    const zo  = new Date(mon); zo.setDate(mon.getDate() + 6);
+    const label = mon.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' – ' +
+                  zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
+
+    const rijen = [...dagenInWeek].sort().map(d => {
+      const dt = new Date(d + 'T00:00:00');
+      const { tot, isToekomst } = dagInfo[d];
+      const isVandaag = d === vandaag;
+      const isVerleden = d < vandaag;
+      const kcalTekst = Math.round(tot.kcal) + ' kcal';
+
+      let badge;
+      if (isToekomst) {
+        badge = '<span style="font-size:11px;color:var(--muted);flex-shrink:0">' + t('history.foodPlannedBadge') + '</span>';
+      } else {
+        const geslaagd = inRange(tot.kcal, doel.kcal) && inRange(tot.prot, doel.prot);
+        const bg = geslaagd ? 'var(--sage)' : '#f39c12';
+        badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
+          (geslaagd ? '✓ ' + t('history.foodGoalBadge') : t('history.foodPartialBadge')) + '</span>';
+      }
+
+      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isVerleden && !isVandaag ? '0.55' : '1') + '">' +
+        '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + wpGetDayKort(dt.getDay()) + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + dt.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + '</div>' +
+        '<span style="font-size:16px;flex-shrink:0">\u{1F37D}️</span>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:13px;font-weight:' + (isVandaag ? '600' : '400') + ';color:' + (isVandaag ? 'var(--sage)' : 'var(--charcoal)') + '">' +
+            kcalTekst +
+            (isVandaag ? ' <span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;vertical-align:middle">' + t('weekplan.today') + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        badge +
+        '</div>';
+    }).join('');
+
+    return '<div style="margin-bottom:18px">' +
+      '<div style="font-size:11px;font-weight:700;color:var(--sage);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:8px">' + label + '</div>' +
+      rijen +
+      '</div>';
+  }).join('');
+
+  el.innerHTML = statsHtml + '<div class="card">' + wekenHtml + '</div>';
 }
 
 function renderProgrammaVoortgang() {

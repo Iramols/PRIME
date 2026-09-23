@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260923-1649';
+window.PRIME_BUILD = '20260923-1658';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -32,12 +32,12 @@ window.PRIME_BUILD = '20260923-1649';
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260923-1649">
+<link rel="stylesheet" href="css/styles.css?v=20260923-1658">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20260923-1649"></script>
-<script src="js/translations.js?v=20260923-1649"></script>
-<script src="js/i18n.js?v=20260923-1649"></script>
+<script src="js/cloud.js?v=20260923-1658"></script>
+<script src="js/translations.js?v=20260923-1658"></script>
+<script src="js/i18n.js?v=20260923-1658"></script>
 </head>
 <body>
 
@@ -877,6 +877,7 @@ window.PRIME_BUILD = '20260923-1649';
   <!-- HISTORY TABS -->
   <div class="food-tabs" style="margin-bottom:18px">
     <button class="food-tab active" id="htab-stats"     onclick="switchHistoryTab('stats')" data-i18n="history.tab.stats">Statistieken</button>
+    <button class="food-tab"        id="htab-voeding"   onclick="switchHistoryTab('voeding')" data-i18n="history.tab.food">Voeding</button>
     <button class="food-tab"        id="htab-programma" onclick="switchHistoryTab('programma')" data-i18n="history.tab.program">Training programma voortgang</button>
   </div>
 
@@ -993,6 +994,11 @@ window.PRIME_BUILD = '20260923-1649';
   </div>
 
   </div><!-- /hstab-content-stats -->
+
+  <!-- TAB: VOEDING VOORTGANG -->
+  <div id="hstab-content-voeding" style="display:none">
+    <div id="voeding-voortgang-content"></div>
+  </div>
 
   <!-- TAB: PROGRAMMA VOORTGANG -->
   <div id="hstab-content-programma" style="display:none">
@@ -1455,6 +1461,6 @@ window.PRIME_BUILD = '20260923-1649';
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260923-1649"></script>
+<script src="js/auth.js?v=20260923-1658"></script>
 </body>
 </html>
