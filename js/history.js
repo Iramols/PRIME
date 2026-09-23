@@ -547,7 +547,12 @@ function renderVoedingVoortgang() {
   const el = document.getElementById('voeding-voortgang-content');
   if (!el) return;
 
-  const dagen = Object.keys(foodDays).filter(d => (foodDays[d] || []).length > 0).sort();
+  // Alleen verleden + vandaag: toekomstige/geplande dagen tellen hier bewust
+  // niet mee (was eerder een aparte "Gepland"-teller + rij, op verzoek
+  // weggehaald -- deze tab gaat puur over wat je al gegeten/gepland hebt
+  // t/m vandaag, niet over wat er nog aankomt).
+  const vandaag = localDateStr();
+  const dagen = Object.keys(foodDays).filter(d => d <= vandaag && (foodDays[d] || []).length > 0).sort();
   if (!dagen.length) {
     el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F37D}️</div>' +
@@ -557,36 +562,42 @@ function renderVoedingVoortgang() {
     return;
   }
 
-  const vandaag = localDateStr();
   const doel = getDagDoel();
   // Zelfde ±10%-marge als de balkjes op Voeding zelf (updateMacroTotals in
-  // food.js) -- "doel gehaald" betekent hier calorieën ÉN eiwit allebei
-  // binnen die marge (zie history.foodGoalCriteria-tekst in de UI).
+  // food.js). De groene/rode badge bovenaan een dag gaat puur over
+  // calorieën -- Eiwit/Koolh/Vet staan er als losse detailregel bij (zie
+  // macroRij hieronder) zodat je altijd ziet wat er wel/niet binnen de
+  // marge viel, zonder dat die drie meetellen voor de badge zelf.
   const inRange = (val, doelVal) => val >= doelVal * 0.9 && val <= doelVal * 1.1;
+  const macroDef = [
+    { key: 'kcal', label: t('history.macro.cal'), unit: '' },
+    { key: 'prot', label: t('history.macro.protein'), unit: 'g' },
+    { key: 'carb', label: t('history.macro.carbs'), unit: 'g' },
+    { key: 'fat',  label: t('history.macro.fat'), unit: 'g' },
+  ];
 
-  let geloggeDagen = 0, doelGehaaldDagen = 0, geplandeDagen = 0;
+  let doelGehaaldDagen = 0;
   const dagInfo = {};
   dagen.forEach(d => {
     const items = foodDays[d] || [];
     const split = splitTotals(items);
-    const tot = { kcal: split.eaten.kcal + split.planned.kcal, prot: split.eaten.prot + split.planned.prot };
-    const isToekomst = d > vandaag;
-    if (isToekomst) { geplandeDagen++; }
-    else { geloggeDagen++; if (inRange(tot.kcal, doel.kcal) && inRange(tot.prot, doel.prot)) doelGehaaldDagen++; }
-    dagInfo[d] = { tot, isToekomst };
+    const tot = {
+      kcal: split.eaten.kcal + split.planned.kcal, prot: split.eaten.prot + split.planned.prot,
+      carb: split.eaten.carb + split.planned.carb, fat: split.eaten.fat + split.planned.fat
+    };
+    if (inRange(tot.kcal, doel.kcal)) doelGehaaldDagen++;
+    dagInfo[d] = tot;
   });
-  const pct = geloggeDagen > 0 ? Math.round(doelGehaaldDagen / geloggeDagen * 100) : 0;
+  const pct = dagen.length > 0 ? Math.round(doelGehaaldDagen / dagen.length * 100) : 0;
 
   const statsHtml =
     '<div class="card" style="margin-bottom:14px">' +
     '<div class="card-label" style="margin-bottom:14px">' + t('history.foodOverview') + '</div>' +
-    '<div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + geloggeDagen + '</div><div class="stat-lbl">' + t('history.stat.logged') + '</div></div>' +
+    '<div class="stats-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + dagen.length + '</div><div class="stat-lbl">' + t('history.stat.logged') + '</div></div>' +
       '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + doelGehaaldDagen + '</div><div class="stat-lbl">' + t('history.stat.goalMet') + '</div></div>' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + geplandeDagen + '</div><div class="stat-lbl">' + t('history.stat.planned') + '</div></div>' +
     '</div>' +
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:12px;font-style:italic">' + t('history.foodGoalCriteria') + '</div>' +
-    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.foodGoalMetSummary', { done: doelGehaaldDagen, total: geloggeDagen, pct }) + '</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.foodGoalMetSummary', { done: doelGehaaldDagen, total: dagen.length, pct }) + '</div>' +
     '<div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">' +
       '<div style="height:100%;background:var(--sage);border-radius:100px;width:' + pct + '%;transition:width 0.5s"></div>' +
     '</div>' +
@@ -612,22 +623,27 @@ function renderVoedingVoortgang() {
 
     const rijen = [...dagenInWeek].sort().map(d => {
       const dt = new Date(d + 'T00:00:00');
-      const { tot, isToekomst } = dagInfo[d];
+      const tot = dagInfo[d];
       const isVandaag = d === vandaag;
       const isVerleden = d < vandaag;
       const kcalTekst = Math.round(tot.kcal) + ' kcal';
+      const geslaagd = inRange(tot.kcal, doel.kcal);
+      const bg = geslaagd ? 'var(--sage)' : '#c0392b';
+      const badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
+        (geslaagd ? '✓' : '✗') + ' ' + t('history.foodGoalBadge') + '</span>';
 
-      let badge;
-      if (isToekomst) {
-        badge = '<span style="font-size:11px;color:var(--muted);flex-shrink:0">' + t('history.foodPlannedBadge') + '</span>';
-      } else {
-        const geslaagd = inRange(tot.kcal, doel.kcal) && inRange(tot.prot, doel.prot);
-        const bg = geslaagd ? 'var(--sage)' : '#f39c12';
-        badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
-          (geslaagd ? '✓ ' + t('history.foodGoalBadge') : t('history.foodPartialBadge')) + '</span>';
-      }
+      const macroRij = macroDef.map(m => {
+        const doelVal = doel[m.key];
+        const rmin = Math.round(doelVal * 0.9), rmax = Math.round(doelVal * 1.1);
+        const val = Math.round(tot[m.key]);
+        const ok = inRange(tot[m.key], doelVal);
+        const kleur = ok ? 'var(--sage)' : '#c0392b';
+        return '<div style="font-size:10px;color:' + kleur + '">' + m.label + ' ' + (ok ? '✓' : '✗') +
+          '<br><span style="color:var(--muted)">' + val + m.unit + ' (' + rmin + '–' + rmax + ')</span></div>';
+      }).join('');
 
-      return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isVerleden && !isVandaag ? '0.55' : '1') + '">' +
+      return '<div style="padding:10px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isVerleden && !isVandaag ? '0.55' : '1') + '">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
         '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + wpGetDayKort(dt.getDay()) + '</div>' +
         '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + dt.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + '</div>' +
         '<span style="font-size:16px;flex-shrink:0">\u{1F37D}️</span>' +
@@ -638,6 +654,8 @@ function renderVoedingVoortgang() {
           '</div>' +
         '</div>' +
         badge +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-left:90px">' + macroRij + '</div>' +
         '</div>';
     }).join('');
 
@@ -706,15 +724,13 @@ function renderProgrammaVoortgang() {
   // Statistieken-tab, zie wpVoortgangStats() in weekplanning.js)
   const { verledenCount, volledigDagen, totaalOef, gedaanOef } = wpVoortgangStats();
   const pct = totaalOef > 0 ? Math.round(gedaanOef / totaalOef * 100) : 0;
-  const toekomst = geplanning.filter(p => p.date >= vandaag).length;
 
   const statsHtml =
     '<div class="card" style="margin-bottom:14px">' +
     '<div class="card-label" style="margin-bottom:14px">' + t('history.programOverview') + '</div>' +
-    '<div class="stats-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">' +
+    '<div class="stats-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:14px">' +
       '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + verledenCount + '</div><div class="stat-lbl">' + t('history.stat.past') + '</div></div>' +
       '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + volledigDagen + '</div><div class="stat-lbl">' + t('history.stat.complete') + '</div></div>' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + toekomst + '</div><div class="stat-lbl">' + t('history.stat.upcoming') + '</div></div>' +
     '</div>' +
     '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.exercisesCompletedSummary', { done: gedaanOef, total: totaalOef, pct }) + '</div>' +
     '<div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">' +
