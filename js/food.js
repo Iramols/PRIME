@@ -1687,10 +1687,10 @@ function updateHomeMacros() {
   const tot = _split.eaten, planned = _split.planned;
 
   const macros = [
-    { label:t('food.nutrient.calories'), val:Math.round(tot.kcal), plan:planned.kcal, doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
-    { label:t('food.nutrient.protein'), val:Math.round(tot.prot), plan:planned.prot, doel:doel.prot, unit:'g.', color:'#2196F3' },
-    { label:t('food.nutrient.carbs'), val:Math.round(tot.carb), plan:planned.carb, doel:doel.carb, unit:'g.', color:'#E91E8C' },
-    { label:t('food.nutrient.fat'), val:Math.round(tot.fat), plan:planned.fat, doel:doel.fat, unit:'g.', color:'#FF5722' },
+    { key:'kcal', label:t('food.nutrient.calories'), val:Math.round(tot.kcal), plan:planned.kcal, doel:doel.kcal, unit:'kcal', color:'#4CAF50' },
+    { key:'prot', label:t('food.nutrient.protein'), val:Math.round(tot.prot), plan:planned.prot, doel:doel.prot, unit:'g.', color:'#2196F3' },
+    { key:'carb', label:t('food.nutrient.carbs'), val:Math.round(tot.carb), plan:planned.carb, doel:doel.carb, unit:'g.', color:'#E91E8C' },
+    { key:'fat',  label:t('food.nutrient.fat'), val:Math.round(tot.fat), plan:planned.fat, doel:doel.fat, unit:'g.', color:'#FF5722' },
   ];
 
   el.innerHTML = macros.map(m => {
@@ -1699,14 +1699,11 @@ function updateHomeMacros() {
     // buiten de kaart) via een aparte pctBar-variabele.
     const pct = Math.round(m.val / m.doel * 100);
     const pctBar = Math.min(100, pct);
-    const ratio = m.val / m.doel;
-    // Elke balk toont z'n eigen vaste kleur, ongeacht voortgang — alleen
-    // duidelijk over-doel (>110%) krijgt de rode waarschuwingskleur.
-    // Voorheen werd alles onder 85% uniform oranje, waardoor de balken
-    // niet meer van elkaar te onderscheiden waren.
-    const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
-    const rmin = Math.round(m.doel * 0.9);
-    const rmax = Math.round(m.doel * 1.1);
+    // Doel-range: kcal ±10%, eiwit/koolhydraten/vet ±20% (macroDoelRange in
+    // data.js). Elke balk toont z'n eigen vaste kleur, ongeacht voortgang —
+    // alleen duidelijk buiten de doelrange krijgt de rode waarschuwingskleur.
+    const { min: rmin, max: rmax } = macroDoelRange(m.doel, m.key);
+    const fillColor = m.val > rmax ? '#E24B4A' : m.color;
     return `
       <div style="display:grid;grid-template-columns:100px 80px 1fr;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--sand-dark)">
         <div>
@@ -1729,9 +1726,6 @@ function updateHomeMacros() {
 function updateMacroTotals() {
   const doel = getDagDoel();
 
-  // Doel-range: ±10% marge
-  const range = (val) => ({ min: Math.round(val * 0.9), max: Math.round(val * 1.1) });
-
   // dayLog is de enige bron van waarheid; alleen gegeten items tellen als
   // inname, het gepland-maar-niet-afgevinkte deel wordt apart getoond.
   const _split = splitTotals(dayLog);
@@ -1744,30 +1738,31 @@ function updateMacroTotals() {
   tot.fat  = Math.round(tot.fat);
 
   const macros = [
-    { valId:'f-kcal', barId:'bar-kcal', pctId:'pct-kcal', doelId:'doel-kcal',
+    { key:'kcal', valId:'f-kcal', barId:'bar-kcal', pctId:'pct-kcal', doelId:'doel-kcal',
       val: tot.kcal, plan: planned.kcal, doel: doel.kcal, unit:'kcal', color:'#4CAF50' },
-    { valId:'f-prot', barId:'bar-prot', pctId:'pct-prot', doelId:'doel-prot',
+    { key:'prot', valId:'f-prot', barId:'bar-prot', pctId:'pct-prot', doelId:'doel-prot',
       val: tot.prot, plan: planned.prot, doel: doel.prot, unit:'g.', color:'#2196F3' },
-    { valId:'f-carb', barId:'bar-carb', pctId:'pct-carb', doelId:'doel-carb',
+    { key:'carb', valId:'f-carb', barId:'bar-carb', pctId:'pct-carb', doelId:'doel-carb',
       val: tot.carb, plan: planned.carb, doel: doel.carb, unit:'g.', color:'#E91E8C' },
-    { valId:'f-fat',  barId:'bar-fat',  pctId:'pct-fat',  doelId:'doel-fat',
+    { key:'fat',  valId:'f-fat',  barId:'bar-fat',  pctId:'pct-fat',  doelId:'doel-fat',
       val: tot.fat,  plan: planned.fat,  doel: doel.fat,  unit:'g.', color:'#FF5722' },
   ];
 
   macros.forEach(m => {
-    const r = range(m.doel);
+    // Doel-range: kcal ±10%, eiwit/koolhydraten/vet ±20% (macroDoelRange in
+    // data.js).
+    const r = macroDoelRange(m.doel, m.key);
     // pct = exacte percentage (ook boven 100%, voor de weergegeven tekst);
     // de balk zelf blijft wel op 100% breedte gekapt (anders loopt hij
     // buiten de kaart) via een aparte pctBar-variabele.
     const pct = Math.round(m.val / m.doel * 100);
     const pctBar = Math.min(100, pct);
-    const ratio = m.val / m.doel;
 
     // Elke balk toont z'n eigen vaste kleur, ongeacht voortgang — alleen
-    // duidelijk over-doel (>110%) krijgt de rode waarschuwingskleur.
+    // duidelijk buiten de doelrange krijgt de rode waarschuwingskleur.
     // Voorheen werd alles onder 85% uniform oranje, waardoor de balken
     // niet meer van elkaar te onderscheiden waren.
-    const fillColor = ratio > 1.1 ? '#E24B4A' : m.color;
+    const fillColor = m.val > r.max ? '#E24B4A' : m.color;
 
     // Boven elke balk staat het TOTAAL voor vandaag (al gegeten + nog gepland
     // samen) als hoofdgetal, met -- als er van beide iets is -- eronder hoeveel

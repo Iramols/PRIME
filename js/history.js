@@ -94,7 +94,12 @@ function renderHistory() {
     if (v === '—') { el.textContent = '—'; el.style.color = 'var(--muted)'; return; }
     const n = parseFloat(v);
     const tier = n < 1.8 ? 'laag' : n < 2.5 ? 'midden' : 'hoog';
-    el.textContent = SCORE_LABELS[metric][tier];
+    // Naast de leesbare kwalificatie ("Goed") ook het kale gemiddelde als
+    // "3.4/4" eronder, in muted grijs -- zodat je zowel in één oogopslag de
+    // kwalificatie ziet als, voor wie het precies wil weten, het exacte
+    // gemiddelde.
+    el.innerHTML = SCORE_LABELS[metric][tier] +
+      '<span style="display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px">' + v + '/4</span>';
     el.style.color = SCORE_KLEUR[tier];
   };
   setScoreEl('h-avg-energy', 'energy', avg(recent7, 'energy'));
@@ -563,12 +568,13 @@ function renderVoedingVoortgang() {
   }
 
   const doel = getDagDoel();
-  // Zelfde ±10%-marge als de balkjes op Voeding zelf (updateMacroTotals in
-  // food.js). De groene/rode badge bovenaan een dag gaat puur over
-  // calorieën -- Eiwit/Koolh/Vet staan er als losse detailregel bij (zie
-  // macroRij hieronder) zodat je altijd ziet wat er wel/niet binnen de
-  // marge viel, zonder dat die drie meetellen voor de badge zelf.
-  const inRange = (val, doelVal) => val >= doelVal * 0.9 && val <= doelVal * 1.1;
+  // Zelfde marges als de balkjes op Voeding zelf (macroDoelRange in data.js:
+  // kcal ±10%, eiwit/koolhydraten/vet ±20%). De groene/rode badge bovenaan
+  // een dag gaat puur over calorieën -- Eiwit/Koolh/Vet staan er als losse
+  // detailregel bij (zie macroRij hieronder) zodat je altijd ziet wat er
+  // wel/niet binnen de marge viel, zonder dat die drie meetellen voor de
+  // badge zelf.
+  const inRange = (val, doelVal, key) => { const r = macroDoelRange(doelVal, key); return val >= r.min && val <= r.max; };
   const macroDef = [
     { key: 'kcal', label: t('history.macro.cal'), unit: '' },
     { key: 'prot', label: t('history.macro.protein'), unit: 'g' },
@@ -585,7 +591,7 @@ function renderVoedingVoortgang() {
       kcal: split.eaten.kcal + split.planned.kcal, prot: split.eaten.prot + split.planned.prot,
       carb: split.eaten.carb + split.planned.carb, fat: split.eaten.fat + split.planned.fat
     };
-    if (inRange(tot.kcal, doel.kcal)) doelGehaaldDagen++;
+    if (inRange(tot.kcal, doel.kcal, 'kcal')) doelGehaaldDagen++;
     dagInfo[d] = tot;
   });
   const pct = dagen.length > 0 ? Math.round(doelGehaaldDagen / dagen.length * 100) : 0;
@@ -627,16 +633,16 @@ function renderVoedingVoortgang() {
       const isVandaag = d === vandaag;
       const isVerleden = d < vandaag;
       const kcalTekst = Math.round(tot.kcal) + ' kcal';
-      const geslaagd = inRange(tot.kcal, doel.kcal);
+      const geslaagd = inRange(tot.kcal, doel.kcal, 'kcal');
       const bg = geslaagd ? 'var(--sage)' : '#c0392b';
       const badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
         (geslaagd ? '✓' : '✗') + ' ' + t('history.foodGoalBadge') + '</span>';
 
       const macroRij = macroDef.map(m => {
         const doelVal = doel[m.key];
-        const rmin = Math.round(doelVal * 0.9), rmax = Math.round(doelVal * 1.1);
+        const { min: rmin, max: rmax } = macroDoelRange(doelVal, m.key);
         const val = Math.round(tot[m.key]);
-        const ok = inRange(tot[m.key], doelVal);
+        const ok = inRange(tot[m.key], doelVal, m.key);
         const kleur = ok ? 'var(--sage)' : '#c0392b';
         return '<div style="font-size:10px;color:' + kleur + '">' + m.label + ' ' + (ok ? '✓' : '✗') +
           '<br><span style="color:var(--muted)">' + val + m.unit + ' (' + rmin + '–' + rmax + ')</span></div>';

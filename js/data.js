@@ -356,6 +356,21 @@ function getDagDoel() {
   return { kcal, prot, carb, fat };
 }
 
+// Marge rond het doel waarbinnen een waarde als "gehaald" telt: calorieën
+// ±10%, de drie macro's (eiwit/koolhydraten/vet) ±20% -- die laatste
+// schommelen van nature meer per dag (afhankelijk van wát je eet) dan het
+// totale calorieaantal, dus een even strakke marge als bij kcal sloeg te
+// vaak ten onrechte aan als "niet gehaald". Eén plek voor deze marge, zodat
+// de balkjes op Voeding, het dashboardkaartje en Voortgang → Voeding allemaal
+// dezelfde limieten tonen.
+function macroTolerantie(key) {
+  return key === 'kcal' ? 0.1 : 0.2;
+}
+function macroDoelRange(doelVal, key) {
+  const tol = macroTolerantie(key);
+  return { min: Math.round(doelVal * (1 - tol)), max: Math.round(doelVal * (1 + tol)) };
+}
+
 
 // ========== CLAUDE SYSTEEM PROMPT ==========
 const SYSTEM = `Je bent coach Anneke, een AI lifestyle coach. Direct, nuchter, warm en motiverend. Geen zweverige termen. Je combineert coachende vragen met concreet advies voor duurzame leefstijlverandering. Jij en je vrouw zijn zelf in 2018 volledig overgestapt naar een gezonde leefstijl — van overgewicht en gezondheidsklachten naar een sterk, fit lichaam. Dat maakt je geloofwaardig en menselijk. Antwoord altijd in het Nederlands. Maximaal 120 woorden per antwoord. Geen opsommingslijsten tenzij gevraagd.`;
