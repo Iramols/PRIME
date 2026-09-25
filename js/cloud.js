@@ -158,7 +158,97 @@ async function hydrateFromCloud(clientId) {
       if (raw != null) syncSet(key, JSON.parse(raw));
     } catch (e) { console.error('hydrateFromCloud: herstel-push mislukt voor ' + key + ':', e); }
   });
+
+  // Dit punt is alleen bereikt na een geslaagd cloud-verzoek hierboven --
+  // een goed moment om ook meteen te kijken of er nog iets in de wachtrij
+  // van een eerdere, mislukte sessie staat (bv. een vorige keer offline
+  // afgesloten zonder dat alles al gesynchroniseerd was).
+  flushSyncQueue();
 }
+
+// ========== WACHTRIJ VOOR MISLUKTE OPSLAG (fase 3: offline) ==========
+// syncSet()/syncRemove() slaan altijd meteen lokaal op (zie hieronder), en
+// proberen de cloud-kant async bij te werken. Mislukt die cloud-poging door
+// geen internet, dan ging die wijziging tot nu toe VERLOREN richting de
+// cloud -- pas bij een volgende hydrateFromCloud() (bv. een nieuwe
+// paginalading) werd hij via teHerpushen hierboven alsnog opnieuw
+// geprobeerd. Deze wachtrij lost dat sneller en betrouwbaarder op: een
+// mislukte poging komt hier per sleutel in te staan (niet de waarde zelf --
+// die staat al vers in localStorage, dus bij het opnieuw proberen wordt
+// altijd de MEEST RECENTE lokale waarde verstuurd), en flushSyncQueue()
+// probeert dat opnieuw zodra er weer verbinding lijkt te zijn. Eén open
+// wachtrij per klant-id, zodat een coach die van klant wisselt de wachtrij
+// van de vorige klant niet kwijtraakt of per ongeluk naar de verkeerde
+// klant stuurt.
+function _syncQueueKey(clientId) { return 'prime_sync_queue__' + clientId; }
+function _readSyncQueue(clientId) {
+  try { return JSON.parse(localStorage.getItem(_syncQueueKey(clientId)) || '{}'); } catch (e) { return {}; }
+}
+function _writeSyncQueue(clientId, q) {
+  try { localStorage.setItem(_syncQueueKey(clientId), JSON.stringify(q)); } catch (e) {}
+}
+function _enqueueSync(clientId, key, type) {
+  const q = _readSyncQueue(clientId);
+  q[key] = { type: type, ts: Date.now() };
+  _writeSyncQueue(clientId, q);
+}
+function _dequeueSync(clientId, key) {
+  const q = _readSyncQueue(clientId);
+  if (q[key]) { delete q[key]; _writeSyncQueue(clientId, q); }
+}
+// Voor fase 4 (zichtbaar maken wat nog wacht) en voor de verbindingsbanner.
+function pendingSyncCount(clientId) {
+  return Object.keys(_readSyncQueue(clientId || activeClientId)).length;
+}
+
+let _flushInProgress = false;
+async function flushSyncQueue() {
+  if (_flushInProgress) return;
+  if (!activeClientId) return;
+  const q = _readSyncQueue(activeClientId);
+  const keys = Object.keys(q);
+  if (!keys.length) return;
+  _flushInProgress = true;
+  const sb = getSupabase();
+  for (const key of keys) {
+    const entry = q[key];
+    try {
+      if (entry.type === 'delete' || localStorage.getItem(key) == null) {
+        // 'delete' zelf, of inmiddels ook lokaal verwijderd (dan is de
+        // oorspronkelijke 'upsert'-actie achterhaald): in beide gevallen
+        // moet de cloud-rij weg.
+        const { error } = await withTimeout(
+          sb.from('client_state').delete().eq('client_id', activeClientId).eq('key', key),
+          3000, { error: { message: 'Failed to fetch (timeout)' } }
+        );
+        if (error) throw error;
+      } else {
+        const value = JSON.parse(localStorage.getItem(key));
+        const { error } = await withTimeout(
+          sb.from('client_state').upsert({ client_id: activeClientId, key: key, value: value, updated_at: new Date().toISOString() }),
+          3000, { error: { message: 'Failed to fetch (timeout)' } }
+        );
+        if (error) throw error;
+      }
+      _dequeueSync(activeClientId, key);
+    } catch (e) {
+      console.error('flushSyncQueue: nog steeds mislukt voor ' + key + ':', e);
+      // Niet stoppen: een andere sleutel zou wel kunnen lukken (bv. een
+      // eerdere sleutel had toevallig een andere, inmiddels verholpen fout).
+      // withTimeout() begrenst elke losse poging, dus een hele offline
+      // wachtrij doorlopen kost nooit meer dan keys.length * 3s.
+    }
+  }
+  _flushInProgress = false;
+  noteSyncResult(pendingSyncCount(activeClientId) > 0 ? { message: 'pending' } : null);
+}
+
+// Elke 30s proberen als er nog iets in de wachtrij staat -- niet alleen op
+// het 'online'-event vertrouwen, want navigator.onLine bleek in fase 1 niet
+// altijd betrouwbaar (meldt soms 'online' zonder echte verbinding). Deze
+// timer is vrijwel gratis zolang de wachtrij leeg is (flushSyncQueue()
+// stopt dan meteen).
+setInterval(function() { flushSyncQueue(); }, 30000);
 
 // Vervangt localStorage.setItem('prime_x', JSON.stringify(v)) call sites:
 // slaat lokaal op (voor directe herlees-snelheid) én synchroniseert async
@@ -246,7 +336,16 @@ function noteSyncResult(error) {
 }
 
 window.addEventListener('offline', function() { _connOffline = true; updateConnBanner(); });
-window.addEventListener('online', function() { _connOffline = false; _connSaveFailed = false; updateConnBanner(); });
+window.addEventListener('online', function() {
+  _connOffline = false;
+  updateConnBanner();
+  // _connSaveFailed wordt bewust NIET hier al op false gezet: pas nadat
+  // flushSyncQueue() de wachtrij ook echt heeft leeggekregen (of er was
+  // toch niets in de wachtrij, in welk geval flushSyncQueue() zelf meteen
+  // klaar is). Anders verdwijnt de melding soms al vóór de wachtrij
+  // daadwerkelijk is bijgewerkt.
+  flushSyncQueue();
+});
 document.addEventListener('DOMContentLoaded', updateConnBanner);
 
 function syncSet(key, value) {
@@ -280,9 +379,14 @@ function syncSet(key, value) {
       .upsert({ client_id: activeClientId, key, value, updated_at: new Date().toISOString() })
       .then(({ error }) => {
         if (error) console.error('syncSet upsert error voor ' + key + ':', error);
+        // Netwerkfout: niet zomaar loggen en vergeten, maar in de wachtrij
+        // zetten zodat flushSyncQueue() dit later (met de dan actuele
+        // localStorage-waarde) alsnog verstuurt.
+        if (error && isNetworkError(error)) _enqueueSync(activeClientId, key, 'upsert');
         noteSyncResult(error);
       }, (e) => {
         console.error('syncSet upsert faalde voor ' + key + ':', e);
+        if (isNetworkError(e)) _enqueueSync(activeClientId, key, 'upsert');
         noteSyncResult(e);
       });
   } catch (e) {
@@ -298,6 +402,10 @@ function syncRemove(key) {
   if (!CLOUD_KEYS.includes(key)) return;
   if (!activeClientId) return;
 
+  // Meteen vastleggen dat DEZE sessie de sleutel zojuist lokaal heeft
+  // verwijderd -- zelfde reden als in syncSet() hierboven.
+  _markLocalSyncTs(key, activeClientId, Date.now());
+
   const sb = getSupabase();
   sb.from('client_state')
     .delete()
@@ -305,6 +413,12 @@ function syncRemove(key) {
     .eq('key', key)
     .then(({ error }) => {
       if (error) console.error('syncRemove delete error voor ' + key + ':', error);
+      if (error && isNetworkError(error)) _enqueueSync(activeClientId, key, 'delete');
+      noteSyncResult(error);
+    }, (e) => {
+      console.error('syncRemove delete faalde voor ' + key + ':', e);
+      if (isNetworkError(e)) _enqueueSync(activeClientId, key, 'delete');
+      noteSyncResult(e);
     });
 }
 
