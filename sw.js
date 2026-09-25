@@ -1,10 +1,21 @@
 // Service worker: laat PRIME ook zonder internet openen, met de laatst
-// bewaarde versie. CACHE_NAME wordt door tools/bump-build.js elke push
-// herschreven naar de nieuwe build -- zo krijgt elke push een verse,
-// eigen cache-naam en ruimt activate() de vorige(n) automatisch op. Geen
-// vaste lijst bestanden vooraf cachen (fragile bij dit soort losse-bestanden-
-// zonder-bundelaar-app): alles wat de app opvraagt wordt onderweg bewaard.
-const CACHE_NAME = 'prime-cache-20260925-1601';
+// bewaarde versie. Geen vaste lijst bestanden vooraf cachen (fragile bij dit
+// soort losse-bestanden-zonder-bundelaar-app): alles wat de app opvraagt
+// wordt onderweg bewaard.
+//
+// CACHE_NAME is bewust een VASTE naam, niet gekoppeld aan het buildnummer.
+// (tools/bump-build.js raakt dit bestand dan ook niet aan.) Wisselde deze
+// naam elke push mee, dan moest de browser na ELKE push (ook eentje die
+// niets met offline te maken had) een hele nieuwe service-worker-cyclus
+// doorlopen (installeren, activeren, de pagina zelf opnieuw cachen) voordat
+// offline weer betrouwbaar werkte -- bij snel na elkaar pushen (vaak meerdere
+// keren per dag) was die cyclus soms nog niet klaar tijdens het testen. Een
+// stabiele naam voorkomt dat: de al actieve service worker blijft gewoon
+// draaien met zijn opgewarmde cache, en werkt de navigatie-pagina bij elk
+// online bezoek gewoon bij (zie de fetch-handler hieronder). Bump dit getal
+// met de hand (v1 -> v2) alleen als je bewust wilt dat iedereen een keer een
+// volledig verse cache krijgt.
+const CACHE_NAME = 'prime-cache-v1';
 // Foto's (maaltijden/training, uit Supabase Storage) staan in een eigen,
 // vaste cache-naam -- die blijft, in tegenstelling tot CACHE_NAME hierboven,
 // gewoon staan bij elke nieuwe build/push. Anders zou elke push (soms meerdere
