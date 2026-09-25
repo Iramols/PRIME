@@ -23,6 +23,21 @@ const CACHE_NAME = 'prime-cache-v1';
 // per build wijzigen.
 const PHOTO_CACHE_NAME = 'prime-photos-cache';
 
+// Een gewone fetch() zonder internet kan, afhankelijk van het besturings-
+// systeem/netwerkstack, een hele tijd (soms 10-30+ sec.) blijven hangen
+// voordat hij daadwerkelijk als mislukt wordt gezien. Zonder tijdslimiet
+// zou "zonder internet openen" dus wel via het cache-vangnet lukken, maar
+// pas na die hele wachttijd -- dat voelt hetzelfde aan als vastlopen. Elke
+// fetch() in dit bestand loopt daarom via deze helper.
+function fetchMetTijdslimiet(request, opties, ms) {
+  return Promise.race([
+    fetch(request, opties),
+    new Promise(function (_, reject) {
+      setTimeout(function () { reject(new Error('fetch-tijdslimiet overschreden')); }, ms);
+    })
+  ]);
+}
+
 self.addEventListener('install', function (event) {
   self.skipWaiting();
 });
@@ -42,7 +57,7 @@ self.addEventListener('activate', function (event) {
       // je bij de eerste offline-poging alsnog de foutpagina van de browser.
       // Cache de pagina hier daarom meteen zelf.
       return caches.open(CACHE_NAME).then(function (c) {
-        return fetch('./', { cache: 'no-store' }).then(function (res) {
+        return fetchMetTijdslimiet('./', { cache: 'no-store' }, 3000).then(function (res) {
           if (res && res.ok) return c.put('./', res);
         }).catch(function () {});
       });
@@ -76,13 +91,13 @@ self.addEventListener('fetch', function (event) {
     event.respondWith(
       caches.match(req).then(function (cached) {
         if (cached) return cached;
-        return fetch(req).then(function (res) {
+        return fetchMetTijdslimiet(req, {}, 3000).then(function (res) {
           if (res && res.ok) {
             const copy = res.clone();
             caches.open(PHOTO_CACHE_NAME).then(function (c) { c.put(req, copy); });
           }
           return res;
-        }).catch(function () { return cached; });
+        }).catch(function () { return cached || new Response('', { status: 504, statusText: 'Offline' }); });
       })
     );
     return;
@@ -104,7 +119,7 @@ self.addEventListener('fetch', function (event) {
         // HTTP-cache van de browser (GitHub Pages stuurt max-age=600 mee), en
         // zou een bezoek van vlak vóór een push soms nog de vorige versie
         // laten zien terwijl je "gewoon" internet had.
-        const res = await fetch(req, { cache: 'no-store' });
+        const res = await fetchMetTijdslimiet(req, { cache: 'no-store' }, 3000);
         const copy = res.clone();
         caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
         return res;
@@ -133,7 +148,7 @@ self.addEventListener('fetch', function (event) {
   event.respondWith(
     caches.match(req).then(function (cached) {
       if (cached) return cached;
-      return fetch(req).then(function (res) {
+      return fetchMetTijdslimiet(req, {}, 3000).then(function (res) {
         if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
@@ -141,8 +156,10 @@ self.addEventListener('fetch', function (event) {
         return res;
       }).catch(function () {
         // Nog nooit opgehaald én geen internet: hier kan de service worker
-        // niets aan doen (bv. een nieuw icoon dat nog nooit geladen is).
-        return cached;
+        // niets aan doen (bv. een nieuw icoon dat nog nooit geladen is). Een
+        // geldige (lege) Response i.p.v. undefined -- anders laat ook een
+        // los sub-bestand respondWith() zonder Response komen te zitten.
+        return cached || new Response('', { status: 504, statusText: 'Offline' });
       });
     })
   );
