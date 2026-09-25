@@ -381,7 +381,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
       if (f && f.photo) photo = f.photo;
     }
     const photoDiv = photo
-      ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;background-image:url(\'' + photo + '\');background-size:cover;background-position:center"></div>'
+      ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;overflow:hidden"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
       : '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (o.icon || '💪') + '</div>';
 
     let editBtn = '';

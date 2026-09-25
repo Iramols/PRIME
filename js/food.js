@@ -158,7 +158,7 @@ function renderMealPlan() {
       const tot = mealTotals(m);
       return `
       <div class="product-card" onclick="openMealPortionModal('${m.id}')">
-        ${m.photo ? `<div class="product-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="product-icon">🍽️</div>`}
+        ${m.photo ? `<div class="product-photo"><img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">🍽️</div>`}
         <div class="product-name">${dispName(m)}</div>
         <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
         <div class="product-macros">
@@ -220,7 +220,7 @@ function renderProducts() {
   document.getElementById('product-grid').innerHTML = `<div class="product-grid">` +
     list.map(p => `
       <div class="product-card" onclick="openPortionModal('${p.id}')">
-        ${p.photo ? `<div class="product-photo" style="background-image:url('${p.photo}')"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
+        ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
         <div class="product-name">${dispName(p)}${p.custom ? ' <span style="font-size:9px;color:var(--sage);font-weight:600">(' + t('food.add.own') + ')</span>' : ''}</div>
         <div class="product-per">${t('food.per100')}</div>
         <div class="product-macros">
@@ -369,7 +369,7 @@ function renderAddProductTab() {
   el.innerHTML = customProducts.map(p => `
     <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
       ${p.photo
-        ? `<div style="width:64px;min-height:60px;background-image:url('${p.photo}');background-size:cover;background-position:center;flex-shrink:0"></div>`
+        ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
         : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${p.icon || '🍽️'}</div>`}
       <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
         <div style="flex:1">
@@ -429,7 +429,7 @@ function renderPrimeMealPlan() {
       const tot = mealTotals(m);
       return `
       <div class="product-card" onclick="openMealPortionModal('${m.id}')">
-        ${m.photo ? `<div class="product-photo" style="background-image:url('${m.photo}')"></div>` : `<div class="product-icon">🍽️</div>`}
+        ${m.photo ? `<div class="product-photo"><img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">🍽️</div>`}
         <div class="product-name">${dispName(m)}</div>
         <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
         <div class="product-macros">
@@ -628,7 +628,7 @@ function renderIngredientProductList() {
   }
   el.innerHTML = list.map(p => `
     <div onclick="pickIngredientProduct('${p.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--sand-dark);cursor:pointer">
-      ${p.photo ? `<div style="width:38px;height:38px;border-radius:8px;flex-shrink:0;background-size:cover;background-position:center;background-image:url('${p.photo}')"></div>` : `<div style="width:38px;height:38px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--sand)">${p.icon || '🍽️'}</div>`}
+      ${p.photo ? `<div style="width:38px;height:38px;border-radius:8px;flex-shrink:0;overflow:hidden"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div style="width:38px;height:38px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--sand)">${p.icon || '🍽️'}</div>`}
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;color:var(--charcoal)">${dispName(p)}</div>
         <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.per100Macros',{kcal:p.kcal,prot:p.prot,carb:p.carb,fat:p.fat})}</div>
@@ -954,7 +954,7 @@ function renderOwnMealsList() {
     return `
     <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
       ${dish.photo
-        ? `<div style="width:64px;min-height:60px;background-image:url('${dish.photo}');background-size:cover;background-position:center;flex-shrink:0"></div>`
+        ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${dish.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
         : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">🍽️</div>`}
       <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
         <div style="flex:1">
@@ -1485,7 +1485,7 @@ function renderLogItemCard(dateStr, item) {
   return `
     <div class="card" id="food-item-${item.logId}" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;cursor:${afgesloten ? 'default' : 'pointer'};opacity:${isEaten ? '1' : '0.75'}"${cardClick}>
       ${photo
-        ? `<div style="width:80px;min-height:75px;background-image:url('${photo}');background-size:cover;background-position:center;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)"></div>`
+        ? `<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm);overflow:hidden"><img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
         : `<div style="width:80px;min-height:75px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--sand);flex-shrink:0">${item.icon}</div>`}
       <div style="flex:1;min-width:0;padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">
         <div style="flex:1;min-width:120px">

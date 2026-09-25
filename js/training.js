@@ -126,7 +126,7 @@ function renderExtraExercises() {
       <div>
         ${group.exercises.map(ex => `
             <div class="ex-extra-card" onclick="openExerciseAddModal('${ex.id}')">
-              ${ex.photo ? `<div class="ex-extra-photo" style="background-image:url('${ex.photo}')"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
+              ${ex.photo ? `<div class="ex-extra-photo"><img src="${ex.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
               <div class="ex-extra-body">
                 <div class="ex-extra-name-row">
                   <div class="ex-extra-name">${dispName(ex)}</div>
@@ -309,7 +309,7 @@ function renderAddExerciseTab() {
   el.innerHTML = customExercises.map(ex => `
     <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
       ${ex.photo
-        ? `<div style="width:64px;min-height:60px;background-image:url('${ex.photo}');background-size:cover;background-position:center;flex-shrink:0"></div>`
+        ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${ex.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
         : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${ex.icon || '🏋️'}</div>`}
       <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
         <div style="flex:1">
@@ -759,7 +759,7 @@ function renderTrainingDag() {
       if (_f && _f.photo) _photo = _f.photo;
     }
     const photoDiv = _photo
-      ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;background-image:url(\'' + _photo + '\');background-size:cover;background-position:center"></div>'
+      ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;overflow:hidden"><img src="' + _photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
       : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
     return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;' + (clickable ? 'cursor:pointer' : '') + '">'
       + photoDiv
@@ -981,7 +981,7 @@ function renderTraining() {
                id="exopt-${i}-${oi}" onclick="selectAlt(${i}, ${oi === 0 ? -1 : oi - 1})">
             <div class="ex-option-sel" id="exoptsel-${i}-${oi}">✓</div>
             ${isDefault ? `<div class="ex-default-tag">${t('training.defaultTag')}</div>` : ''}
-            ${opt.photo ? `<div class="ex-option-photo" style="background-image:url('${opt.photo}')"></div>` : `<div class="ex-option-emoji">${opt.icon}</div>`}
+            ${opt.photo ? `<div class="ex-option-photo"><img src="${opt.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="ex-option-emoji">${opt.icon}</div>`}
             <div class="ex-option-name">${dispName(opt)}</div>
             <div class="ex-option-meta">${opt.sets}×${opt.reps} · ${opt.rest}</div>
             <a href="${opt.youtube}" target="_blank" class="ex-option-yt" onclick="event.stopPropagation()">▶ Video</a>
