@@ -258,6 +258,12 @@ function syncRemove(key) {
 }
 
 // Coach-only: lijst van alle klant-profielen voor de klantkiezer.
+// Bewaart bij een geslaagde ophaling een kopie in localStorage, en gebruikt
+// die als vangnet zonder internet -- vooral voor de coach: de "welke klant
+// bekeek je"-keuze staat alleen in sessionStorage (wist bij het écht
+// afsluiten van PRIME, zie resolveSession() in auth.js), dus zonder dit zou
+// de coach zonder internet nooit meer bij een klantscherm kunnen komen, ook
+// niet bij een klant die hij/zij al eerder online bekeken heeft.
 async function fetchClientList() {
   const sb = getSupabase();
   const { data, error } = await sb
@@ -265,7 +271,14 @@ async function fetchClientList() {
     .select('id, display_name, role')
     .eq('role', 'client')
     .order('display_name');
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      console.error('fetchClientList: geen verbinding, gebruik bewaarde lijst:', error);
+      try { return JSON.parse(localStorage.getItem('prime_cached_clientlist') || '[]'); } catch (e) { return []; }
+    }
+    throw error;
+  }
+  try { localStorage.setItem('prime_cached_clientlist', JSON.stringify(data || [])); } catch (e) {}
   return data || [];
 }
 

@@ -307,9 +307,14 @@ async function resolveSession() {
         if (cached.role === 'coach') {
           const remembered = sessionStorage.getItem('prime_active_client');
           if (remembered) { await bootApp(remembered, true); return; }
-          // Geen klant gekozen (die keuze wisselt per tabblad-sessie) en
-          // zonder internet is de klantlijst niet op te halen -- dit kan
-          // dan helaas niet anders dan hier stoppen.
+          // Geen klant gekozen (die keuze wisselt per tabblad-sessie, dus
+          // wist bij het écht afsluiten van PRIME): toon de klantkiezer met
+          // de laatst bewaarde lijst (fetchClientList() valt zelf terug op
+          // die cache zonder internet, zie cloud.js). Is er nog nooit een
+          // lijst bewaard (dit toestel is nog nooit offline als coach
+          // gebruikt), dan kan het helaas niet anders dan hier stoppen.
+          const clients = await fetchClientList();
+          if (clients.length) { showClientPicker(clients); return; }
           showLogin(t('auth.offline'));
           return;
         }
