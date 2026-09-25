@@ -77,14 +77,19 @@ self.addEventListener('fetch', function (event) {
   if (url.pathname.endsWith('/version.json')) return;
 
   // Supabase (inloggen, database, alles behalve foto's) nooit aanraken --
-  // dat moet altijd vers van de server komen. Foto's uit de 'prime-photos'-
-  // opslag zijn hierop de uitzondering: dat zijn losse plaatjes, net als een
-  // lettertype, en geen live gegevens -- die cachen we dus wél (zie
-  // PHOTO_CACHE_NAME hieronder), zodat een eenmaal geziene maaltijd- of
-  // trainingsfoto ook zonder internet zichtbaar blijft.
+  // dat moet altijd vers van de server komen. Foto's zijn hierop de
+  // uitzondering: dat zijn losse plaatjes, net als een lettertype, en geen
+  // live gegevens -- die cachen we dus wél (zie PHOTO_CACHE_NAME hieronder),
+  // zodat een eenmaal geziene maaltijd- of trainingsfoto ook zonder internet
+  // zichtbaar blijft. Twee bronnen: eigen Supabase Storage-opslag
+  // ('prime-photos', voor door de coach geüploade foto's) én
+  // images.pexels.com (de standaard-foto's bij tientallen producten/
+  // oefeningen in data.js en custom-photos.json -- zonder dit stonden
+  // Voeding en Training zonder internet dus grotendeels zonder foto's).
   const eigenOrigin = url.origin === location.origin;
   const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  const isFoto = url.hostname === 'thxknfjjcxuiktrehjyg.supabase.co' && url.pathname.indexOf('/storage/v1/object/public/prime-photos/') === 0;
+  const isFoto = (url.hostname === 'thxknfjjcxuiktrehjyg.supabase.co' && url.pathname.indexOf('/storage/v1/object/public/prime-photos/') === 0)
+    || url.hostname === 'images.pexels.com';
   if (!eigenOrigin && !isFont && !isFoto) return;
 
   if (isFoto) {
@@ -92,7 +97,14 @@ self.addEventListener('fetch', function (event) {
       caches.match(req).then(function (cached) {
         if (cached) return cached;
         return fetchMetTijdslimiet(req, {}, 3000).then(function (res) {
-          if (res && res.ok) {
+          // Een gewone <img src="..."> naar een ander domein (images.pexels.com)
+          // gaat zonder 'crossorigin'-attribuut in no-cors-modus, en dat
+          // levert een "opaque" Response op: die heeft altijd status 0 en
+          // res.ok === false, ook als de foto prima is opgehaald -- res.ok
+          // controleren zou zulke foto's dus NOOIT cachen. Cachen zodra de
+          // fetch zelf niet is mislukt (res bestaat) is voor dit soort
+          // externe plaatjes het best haalbare.
+          if (res) {
             const copy = res.clone();
             caches.open(PHOTO_CACHE_NAME).then(function (c) { c.put(req, copy); });
           }
