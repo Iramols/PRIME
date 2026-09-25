@@ -320,18 +320,37 @@ function probeOffline() {
 let _connOffline = (typeof navigator !== 'undefined' && navigator.onLine === false);
 let _connSaveFailed = false;
 
+// Fase 4: laat zien HOEVEEL wijzigingen er nog wachten op synchronisatie
+// (i.p.v. alleen "opslaan lukte niet"), zodat je bv. weet of het veilig is
+// om nu van toestel te wisselen. pendingSyncCount() leest de fase 3-
+// wachtrij (cloud.js) -- die telling is nauwkeuriger dan de kale
+// _connSaveFailed-vlag hieronder, dus heeft voorrang zodra er echt iets in
+// de wachtrij staat. _connSaveFailed blijft als vangnet voor het zeldzame
+// geval dat opslaan mislukt om een andere reden dan het netwerk (dus niets
+// in de wachtrij, wél een mislukking) -- zie isNetworkError()/syncSet().
 function updateConnBanner() {
   const el = document.getElementById('conn-banner');
   if (!el) return;
-  const msg = _connOffline ? t('conn.offline') : (_connSaveFailed ? t('conn.saveFailed') : '');
+  const pending = pendingSyncCount();
+  let msg = '';
+  if (_connOffline) {
+    msg = pending > 0 ? t('conn.offlinePending', { n: pending }) : t('conn.offline');
+  } else if (pending > 0) {
+    msg = t('conn.pendingSync', { n: pending });
+  } else if (_connSaveFailed) {
+    msg = t('conn.saveFailed');
+  }
   el.textContent = msg;
   el.style.display = msg ? '' : 'none';
 }
 
 function noteSyncResult(error) {
-  const failed = !!error;
-  if (failed === _connSaveFailed) return;
-  _connSaveFailed = failed;
+  // Altijd verversen (niet alleen bij een wijzigende failed/niet-failed-
+  // vlag): sinds fase 4 toont de banner ook het AANTAL nog wachtende
+  // wijzigingen, en dat aantal kan best veranderen (bv. van 2 naar 1) zonder
+  // dat de vlag zelf van waarde wisselt -- de oude kortsluiting hierboven
+  // zou de banner dan met een verouderd aantal laten staan.
+  _connSaveFailed = !!error;
   updateConnBanner();
 }
 
