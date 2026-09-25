@@ -20,14 +20,20 @@ function saveCustomPhotos(photos) {
 }
 
 // Laad foto's uit custom-photos.json (voor online gebruik) en merge met localStorage
+// Let op: callback is init() zelf (zie loadPhotosFromFile(init) in app.js) --
+// de HELE app verschijnt pas als deze functie 'm aanroept. Vroeger gebeurde
+// dat pas na een fetch() zonder tijdslimiet en met een bij elke paginalading
+// wisselende link (Date.now()) -- zonder internet kon dat dus de volle
+// (10-30+ sec.) netwerk-timeout duren vóórdat de app zichtbaar werd, en werd
+// dit bestand ook nooit uit de cache van de service worker bediend. Zelfde
+// reparatie als bij loadAppScripts() in auth.js: PRIME_BUILD i.p.v. Date.now()
+// voor een stabiele, cachebare link, plus withTimeout() (cloud.js) als vangnet.
 function loadPhotosFromFile(callback) {
   var done = function() { applyCustomPhotos(); if (callback) callback(); };
   try {
-    // Zelfde cache-busting-reden als loadAppScripts() in auth.js: dit
-    // wordt dynamisch opgehaald ná de initiële paginalading en kan
-    // anders een verouderde versie blijven serveren.
-    fetch('./custom-photos.json?v=' + Date.now())
-      .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+    var url = './custom-photos.json?v=' + (window.PRIME_BUILD || Date.now());
+    withTimeout(fetch(url), 3000, null)
+      .then(function(r) { return (r && r.ok) ? r.json() : Promise.reject(); })
       .then(function(filePhotos) {
         if (filePhotos && typeof filePhotos === 'object' && Object.keys(filePhotos).length > 0) {
           var local = getCustomPhotos();
