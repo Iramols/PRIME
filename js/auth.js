@@ -250,11 +250,19 @@ function switchToClient(clientId) {
 // Cache-busting: deze scripts worden pas ná de initiële paginalading
 // dynamisch toegevoegd, dus een gewone harde refresh (Ctrl+Shift+R) van
 // de pagina ververst ze niet altijd betrouwbaar mee — met name GitHub
-// Pages' eigen CDN-caching kan een oudere versie nog een tijd
-// vasthouden. Eén tijdstip per paginalading als querystring dwingt een
-// verse download af, zodat een nieuwe commit nooit onopgemerkt "oud"
-// blijft draaien.
-const _appScriptsCacheBust = Date.now();
+// Pages' eigen CDN-caching kan een oudere versie nog een tijd vasthouden.
+// PRIME_BUILD (verandert bij elke push, zie tools/bump-build.js) als
+// querystring dwingt een verse download af bij een nieuwe versie.
+//
+// Was eerst Date.now() -- dus een ANDERE, unieke querystring bij elke
+// paginalading, ook zonder nieuwe versie. Daardoor kon de service worker
+// deze 14 bestanden nooit uit zijn cache herkennen (de URL was immers nog
+// nooit eerder gezien) en moest hij ze zonder internet ALLEMAAL, na elkaar,
+// eerst laten mislukken -- dat was de belangrijkste oorzaak van het lange
+// wachten bij offline opstarten. Met PRIME_BUILD blijft de URL binnen
+// dezelfde versie stabiel, dus treft de service worker na de eerste
+// geslaagde online lading gewoon een cache-treffer.
+const _appScriptsCacheBust = window.PRIME_BUILD || Date.now();
 
 function loadAppScripts(index) {
   index = index || 0;
@@ -262,6 +270,13 @@ function loadAppScripts(index) {
   const script = document.createElement('script');
   script.src = APP_SCRIPTS[index] + '?v=' + _appScriptsCacheBust;
   script.onload = function() { loadAppScripts(index + 1); };
+  // Zonder dit blijft de keten hangen (tot de 12s-vangnet-timer in bootApp())
+  // als er ooit één bestand toch niet lukt (bv. nog nooit gecachet én zonder
+  // internet) -- beter zo goed mogelijk doorgaan met de rest.
+  script.onerror = function() {
+    console.error('loadAppScripts: laden mislukt voor ' + script.src);
+    loadAppScripts(index + 1);
+  };
   document.body.appendChild(script);
 }
 
