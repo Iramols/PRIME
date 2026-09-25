@@ -4,7 +4,7 @@
 // eigen cache-naam en ruimt activate() de vorige(n) automatisch op. Geen
 // vaste lijst bestanden vooraf cachen (fragile bij dit soort losse-bestanden-
 // zonder-bundelaar-app): alles wat de app opvraagt wordt onderweg bewaard.
-const CACHE_NAME = 'prime-cache-20260925-1239';
+const CACHE_NAME = 'prime-cache-20260925-1243';
 // Foto's (maaltijden/training, uit Supabase Storage) staan in een eigen,
 // vaste cache-naam -- die blijft, in tegenstelling tot CACHE_NAME hierboven,
 // gewoon staan bij elke nieuwe build/push. Anders zou elke push (soms meerdere
@@ -23,7 +23,19 @@ self.addEventListener('activate', function (event) {
         keys.filter(function (k) { return k !== CACHE_NAME && k !== PHOTO_CACHE_NAME; })
           .map(function (k) { return caches.delete(k); })
       );
-    }).then(function () { return self.clients.claim(); })
+    }).then(function () { return self.clients.claim(); }).then(function () {
+      // De allereerste keer dat deze service worker actief wordt, kan hij
+      // de navigatie-aanvraag die hem heeft geregistreerd nooit zelf hebben
+      // onderschept (die was al onderweg vóórdat hij bestond) -- zonder dit
+      // stond er dus pas na een TWEEDE keer laden iets in de cache, en zag
+      // je bij de eerste offline-poging alsnog de foutpagina van de browser.
+      // Cache de pagina hier daarom meteen zelf.
+      return caches.open(CACHE_NAME).then(function (c) {
+        return fetch('./', { cache: 'no-store' }).then(function (res) {
+          if (res && res.ok) return c.put('./', res);
+        }).catch(function () {});
+      });
+    })
   );
 });
 
