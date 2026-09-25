@@ -286,17 +286,66 @@ async function bootApp(clientId, isCoach) {
   setTimeout(revealApp, 12000);
 }
 
+// Vangnet zonder internet: gebruikt het laatst bewaarde profiel (zie
+// resolveSession() hieronder, twee aanroeppunten -- geen sessie kunnen
+// bevestigen, en wel een sessie maar de profielcheck niet). userId is null
+// als we niet eens meer zeker weten wie er ingelogd is (getSession() zelf
+// al te traag/mislukt); dan wordt de bewaarde klant/coach zonder id-check
+// vertrouwd -- op één toestel is dat vrijwel altijd hetzelfde account.
+async function offlineFallbackBoot(userId) {
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem('prime_cached_profile') || 'null'); } catch (e) {}
+  if (!cached || (userId && cached.id !== userId)) { showLogin(t('auth.offline')); return; }
+  if (cached.role === 'coach') {
+    const remembered = sessionStorage.getItem('prime_active_client');
+    if (remembered) { await bootApp(remembered, true); return; }
+    // Geen klant gekozen (die keuze wisselt per tabblad-sessie, dus wist bij
+    // het écht afsluiten van PRIME): toon de klantkiezer met de laatst
+    // bewaarde lijst (fetchClientList() valt zelf terug op die cache zonder
+    // internet, zie cloud.js). Is er nog nooit een lijst bewaard (dit
+    // toestel is nog nooit offline als coach gebruikt), dan kan het helaas
+    // niet anders dan hier stoppen.
+    const clients = await fetchClientList();
+    if (clients.length) { showClientPicker(clients); return; }
+    showLogin(t('auth.offline'));
+    return;
+  }
+  await bootApp(cached.id, false);
+}
+
 async function resolveSession() {
   const sb = getSupabase();
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { showLogin(); return; }
+  const offline = navigator.onLine === false;
+
+  // getSession() leest normaal gewoon lokaal (snel), maar kan zonder
+  // internet toch blijven hangen als de ingelogde sessie bijna verlopen is
+  // en Supabase intern een ververs-poging over het net doet. Race met een
+  // korte timeout i.p.v. dat (soms 10-30 sec.) af te wachten.
+  let session = null;
+  if (offline) {
+    try {
+      const result = await Promise.race([
+        sb.auth.getSession(),
+        new Promise(function(resolve) { setTimeout(function() { resolve(null); }, 1500); })
+      ]);
+      session = result && result.data && result.data.session;
+    } catch (e) {}
+  } else {
+    const result = await sb.auth.getSession();
+    session = result.data.session;
+  }
+
+  if (!session) {
+    if (offline) { await offlineFallbackBoot(null); return; }
+    showLogin();
+    return;
+  }
   loggedInEmail = session.user.email || null;
 
-  // Weet de browser al zeker dat er geen internet is (bv. vliegtuigmodus),
-  // dan slaan we de profielcheck zelf over -- anders wacht je eerst de hele
-  // (soms 10-30 sec. durende) netwerk-timeout af voordat onderstaand vangnet
-  // aanspringt, wat voelt alsof de app vastloopt.
-  const { data: profileRow, error } = navigator.onLine === false
+  // Weet de browser al zeker dat er geen internet is, dan slaan we de
+  // profielcheck zelf over -- anders wacht je eerst de hele netwerk-timeout
+  // af voordat het vangnet aanspringt, wat voelt alsof de app vastloopt.
+  const { data: profileRow, error } = offline
     ? { data: null, error: { message: 'offline (navigator.onLine)' } }
     : await sb.from('profiles').select('id, role, display_name').eq('id', session.user.id).single();
   if (error || !profileRow) {
@@ -305,30 +354,7 @@ async function resolveSession() {
     // hier vast te lopen op het inlogscherm -- de sessie zelf (hierboven)
     // komt sowieso al uit Supabase's eigen lokale opslag, alleen déze
     // profielcheck vraagt nog een netwerkverzoek.
-    if (isNetworkError(error)) {
-      let cached = null;
-      try { cached = JSON.parse(localStorage.getItem('prime_cached_profile') || 'null'); } catch (e) {}
-      if (cached && cached.id === session.user.id) {
-        if (cached.role === 'coach') {
-          const remembered = sessionStorage.getItem('prime_active_client');
-          if (remembered) { await bootApp(remembered, true); return; }
-          // Geen klant gekozen (die keuze wisselt per tabblad-sessie, dus
-          // wist bij het écht afsluiten van PRIME): toon de klantkiezer met
-          // de laatst bewaarde lijst (fetchClientList() valt zelf terug op
-          // die cache zonder internet, zie cloud.js). Is er nog nooit een
-          // lijst bewaard (dit toestel is nog nooit offline als coach
-          // gebruikt), dan kan het helaas niet anders dan hier stoppen.
-          const clients = await fetchClientList();
-          if (clients.length) { showClientPicker(clients); return; }
-          showLogin(t('auth.offline'));
-          return;
-        }
-        await bootApp(cached.id, false);
-        return;
-      }
-      showLogin(t('auth.offline'));
-      return;
-    }
+    if (isNetworkError(error)) { await offlineFallbackBoot(session.user.id); return; }
     showLogin(t('auth.profileLoadFailed', { msg: error ? error.message : t('auth.unknownUser') }));
     return;
   }

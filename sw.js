@@ -4,7 +4,7 @@
 // eigen cache-naam en ruimt activate() de vorige(n) automatisch op. Geen
 // vaste lijst bestanden vooraf cachen (fragile bij dit soort losse-bestanden-
 // zonder-bundelaar-app): alles wat de app opvraagt wordt onderweg bewaard.
-const CACHE_NAME = 'prime-cache-20260925-1249';
+const CACHE_NAME = 'prime-cache-20260925-1555';
 // Foto's (maaltijden/training, uit Supabase Storage) staan in een eigen,
 // vaste cache-naam -- die blijft, in tegenstelling tot CACHE_NAME hierboven,
 // gewoon staan bij elke nieuwe build/push. Anders zou elke push (soms meerdere
