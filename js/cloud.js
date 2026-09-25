@@ -90,7 +90,17 @@ async function hydrateFromCloud(clientId) {
     .select('key, value, updated_at')
     .eq('client_id', clientId);
 
-  if (error) throw error;
+  if (error) {
+    if (isNetworkError(error)) {
+      // Geen internet: gewoon doorgaan met wat al lokaal staat (van de
+      // laatste geslaagde synchronisatie), i.p.v. het opstarten van de app
+      // hier af te breken. Zodra er weer verbinding is, lopen syncSet() en
+      // een latere hydratie dit vanzelf weer bij.
+      console.error('hydrateFromCloud: geen verbinding, ga door met lokale data:', error);
+      return;
+    }
+    throw error;
+  }
 
   const serverKeys = new Set();
   const teHerpushen = []; // sleutels waar de lokale versie "wint" en dus nog naar de cloud moet
@@ -147,6 +157,18 @@ async function hydrateFromCloud(clientId) {
 // Vervangt localStorage.setItem('prime_x', JSON.stringify(v)) call sites:
 // slaat lokaal op (voor directe herlees-snelheid) én synchroniseert async
 // naar Supabase voor de actieve klant.
+// Eén plek om te herkennen of een mislukte Supabase-aanroep kwam doordat er
+// simpelweg geen internet was (i.p.v. een echte fout, zoals een verkeerd
+// wachtwoord of een serverprobleem) -- gebruikt bij inloggen, het ophalen
+// van het profiel en het hydrateren vanuit de cloud, zodat die alle drie op
+// dezelfde manier "geen internet" herkennen en daar hetzelfde (vriendelijk,
+// niet-blokkerend) mee omgaan.
+function isNetworkError(err) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  const msg = String((err && err.message) || err || '');
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(msg);
+}
+
 // ---- Verbindingsstatus ----
 // PRIME werkt bewust alleen online. Zonder deze melding lijkt het bij een
 // wegvallende verbinding alsof afvinken/opslaan 'gewoon' werkt, terwijl het

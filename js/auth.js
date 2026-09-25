@@ -211,7 +211,7 @@ async function doLogin() {
     if (error) throw error;
     await resolveSession();
   } catch (err) {
-    const offline = navigator.onLine === false || /failed to fetch|networkerror|load failed|network request failed/i.test(String(err && err.message));
+    const offline = isNetworkError(err);
     showLogin(err.message === 'Invalid login credentials'
       ? t('auth.invalidCredentials')
       : offline ? t('auth.offline')
@@ -294,7 +294,38 @@ async function resolveSession() {
     .select('id, role, display_name')
     .eq('id', session.user.id)
     .single();
-  if (error || !profileRow) { showLogin(t('auth.profileLoadFailed', { msg: error ? error.message : t('auth.unknownUser') })); return; }
+  if (error || !profileRow) {
+    // Geen internet, maar dit toestel is hier al eerder succesvol
+    // ingelogd geweest: start de app dan met die laatst bekende rol i.p.v.
+    // hier vast te lopen op het inlogscherm -- de sessie zelf (hierboven)
+    // komt sowieso al uit Supabase's eigen lokale opslag, alleen déze
+    // profielcheck vraagt nog een netwerkverzoek.
+    if (isNetworkError(error)) {
+      let cached = null;
+      try { cached = JSON.parse(localStorage.getItem('prime_cached_profile') || 'null'); } catch (e) {}
+      if (cached && cached.id === session.user.id) {
+        if (cached.role === 'coach') {
+          const remembered = sessionStorage.getItem('prime_active_client');
+          if (remembered) { await bootApp(remembered, true); return; }
+          // Geen klant gekozen (die keuze wisselt per tabblad-sessie) en
+          // zonder internet is de klantlijst niet op te halen -- dit kan
+          // dan helaas niet anders dan hier stoppen.
+          showLogin(t('auth.offline'));
+          return;
+        }
+        await bootApp(cached.id, false);
+        return;
+      }
+      showLogin(t('auth.offline'));
+      return;
+    }
+    showLogin(t('auth.profileLoadFailed', { msg: error ? error.message : t('auth.unknownUser') }));
+    return;
+  }
+
+  // Voor de offline-vangnet hierboven: alleen bewaard bij een geslaagde
+  // check, dus altijd de meest recent bevestigde rol.
+  try { localStorage.setItem('prime_cached_profile', JSON.stringify({ id: profileRow.id, role: profileRow.role })); } catch (e) {}
 
   if (profileRow.role === 'coach') {
     const remembered = sessionStorage.getItem('prime_active_client');
