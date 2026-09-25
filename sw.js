@@ -4,7 +4,7 @@
 // eigen cache-naam en ruimt activate() de vorige(n) automatisch op. Geen
 // vaste lijst bestanden vooraf cachen (fragile bij dit soort losse-bestanden-
 // zonder-bundelaar-app): alles wat de app opvraagt wordt onderweg bewaard.
-const CACHE_NAME = 'prime-cache-20260925-1235';
+const CACHE_NAME = 'prime-cache-20260925-1239';
 // Foto's (maaltijden/training, uit Supabase Storage) staan in een eigen,
 // vaste cache-naam -- die blijft, in tegenstelling tot CACHE_NAME hierboven,
 // gewoon staan bij elke nieuwe build/push. Anders zou elke push (soms meerdere
@@ -71,7 +71,11 @@ self.addEventListener('fetch', function (event) {
   // actuele PRIME_BUILD), en pas zonder internet de bewaarde versie.
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req).then(function (res) {
+      // cache: 'no-store' -- anders volgt deze fetch() gewoon de normale
+      // HTTP-cache van de browser (GitHub Pages stuurt max-age=600 mee), en
+      // zou een bezoek van vlak vóór een push soms nog de vorige versie
+      // laten zien terwijl je "gewoon" internet had.
+      fetch(req, { cache: 'no-store' }).then(function (res) {
         const copy = res.clone();
         caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
         return res;
