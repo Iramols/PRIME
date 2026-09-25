@@ -93,26 +93,36 @@ self.addEventListener('fetch', function (event) {
   // internet. Zo krijgt een online bezoeker altijd de verse pagina (met het
   // actuele PRIME_BUILD), en pas zonder internet de bewaarde versie.
   if (req.mode === 'navigate') {
-    event.respondWith(
-      // cache: 'no-store' -- anders volgt deze fetch() gewoon de normale
-      // HTTP-cache van de browser (GitHub Pages stuurt max-age=600 mee), en
-      // zou een bezoek van vlak vóór een push soms nog de vorige versie
-      // laten zien terwijl je "gewoon" internet had.
-      fetch(req, { cache: 'no-store' }).then(function (res) {
+    event.respondWith((async function () {
+      // respondWith() MOET altijd een geldige Response krijgen -- lukt dat
+      // hieronder om wat voor reden dan ook nergens, dan geeft
+      // offlineFallbackPage() (helemaal onderaan) alsnog een zelfgemaakte,
+      // nette PRIME-pagina terug i.p.v. dat de browser zijn eigen kale
+      // "site niet bereikbaar"-foutpagina toont.
+      try {
+        // cache: 'no-store' -- anders volgt deze fetch() gewoon de normale
+        // HTTP-cache van de browser (GitHub Pages stuurt max-age=600 mee), en
+        // zou een bezoek van vlak vóór een push soms nog de vorige versie
+        // laten zien terwijl je "gewoon" internet had.
+        const res = await fetch(req, { cache: 'no-store' });
         const copy = res.clone();
         caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
         return res;
-      }).catch(function () {
-        // ignoreSearch: de bewaarde pagina staat onder de URL zoals hij
-        // toen precies is opgehaald (vaak met een ?b=<build>-parameter van
-        // het zelf-ververs-mechanisme erbij). Een latere, kale herlaad-
-        // aanvraag zonder die parameter moet 'm alsnog vinden, anders werkt
-        // dit vangnet alleen toevallig als de querystring exact overeenkomt.
-        return caches.match(req, { ignoreSearch: true }).then(function (cached) {
-          return cached || caches.match('./index.html', { ignoreSearch: true });
-        });
-      })
-    );
+      } catch (e) {
+        try {
+          // ignoreSearch: de bewaarde pagina staat onder de URL zoals hij
+          // toen precies is opgehaald (vaak met een ?b=<build>-parameter van
+          // het zelf-ververs-mechanisme erbij). Een latere, kale herlaad-
+          // aanvraag zonder die parameter moet 'm alsnog vinden, anders werkt
+          // dit vangnet alleen toevallig als de querystring exact overeenkomt.
+          const cached = await caches.match(req, { ignoreSearch: true });
+          if (cached) return cached;
+          const cachedIndex = await caches.match('./index.html', { ignoreSearch: true });
+          if (cachedIndex) return cachedIndex;
+        } catch (e2) {}
+        return offlineFallbackPage();
+      }
+    })());
     return;
   }
 
@@ -137,3 +147,29 @@ self.addEventListener('fetch', function (event) {
     })
   );
 });
+
+// Zelfgemaakte, minimale pagina (geen externe lettertypen/stijlen nodig --
+// die kunnen zelf ook net ontbreken) voor het geval een navigatie-aanvraag
+// zonder internet ECHT nergens iets gecachet vindt (bv. dit toestel heeft
+// PRIME nog nooit met internet geopend). Puur een nette uitleg i.p.v. de
+// kale foutpagina van de browser zelf.
+function offlineFallbackPage() {
+  const html = '<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>PRIME by Anneke</title>' +
+    '<style>' +
+    'body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
+    'background:#f5f0e8;color:#2a2a2a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:20px;box-sizing:border-box}' +
+    '.card{background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,0.08);padding:32px 28px;max-width:380px;text-align:center}' +
+    'h1{font-size:20px;margin:0 0 12px;color:#4a7c59}' +
+    'p{font-size:14px;line-height:1.6;color:#6b6b6b;margin:0 0 20px}' +
+    'button{background:#4a7c59;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer}' +
+    '</style></head><body>' +
+    '<div class="card">' +
+    '<h1>PRIME</h1>' +
+    '<p>Geen verbinding, en dit toestel heeft nog geen eerdere versie van PRIME bewaard. ' +
+    'Open PRIME eerst een keer met internet, en probeer het daarna opnieuw zonder internet.</p>' +
+    '<button onclick="location.reload()">Opnieuw proberen</button>' +
+    '</div></body></html>';
+  return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+}
