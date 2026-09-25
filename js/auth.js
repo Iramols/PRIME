@@ -315,39 +315,33 @@ async function offlineFallbackBoot(userId) {
 
 async function resolveSession() {
   const sb = getSupabase();
-  const offline = navigator.onLine === false;
 
-  // getSession() leest normaal gewoon lokaal (snel), maar kan zonder
-  // internet toch blijven hangen als de ingelogde sessie bijna verlopen is
-  // en Supabase intern een ververs-poging over het net doet. Race met een
-  // korte timeout i.p.v. dat (soms 10-30 sec.) af te wachten.
+  // getSession() leest normaal gewoon lokaal (snel), maar kan blijven hangen
+  // als Supabase intern een ververs-poging voor een bijna-verlopen token
+  // doet en er geen (werkende) verbinding is. navigator.onLine bleek daarbij
+  // niet betrouwbaar genoeg om op te vertrouwen (meldt soms nog "online"
+  // zonder echte verbinding) -- daarom hier een harde tijdslimiet i.p.v. een
+  // voorwaarde, zie withTimeout() in cloud.js.
   let session = null;
-  if (offline) {
-    try {
-      const result = await Promise.race([
-        sb.auth.getSession(),
-        new Promise(function(resolve) { setTimeout(function() { resolve(null); }, 1500); })
-      ]);
-      session = result && result.data && result.data.session;
-    } catch (e) {}
-  } else {
-    const result = await sb.auth.getSession();
-    session = result.data.session;
-  }
+  let getSessionTimedOut = false;
+  try {
+    const result = await withTimeout(sb.auth.getSession(), 3000, { data: { session: null }, _timedOut: true });
+    session = result && result.data && result.data.session;
+    getSessionTimedOut = !!(result && result._timedOut);
+  } catch (e) {}
 
   if (!session) {
-    if (offline) { await offlineFallbackBoot(null); return; }
+    if (getSessionTimedOut) { await offlineFallbackBoot(null); return; }
     showLogin();
     return;
   }
   loggedInEmail = session.user.email || null;
 
-  // Weet de browser al zeker dat er geen internet is, dan slaan we de
-  // profielcheck zelf over -- anders wacht je eerst de hele netwerk-timeout
-  // af voordat het vangnet aanspringt, wat voelt alsof de app vastloopt.
-  const { data: profileRow, error } = offline
-    ? { data: null, error: { message: 'offline (navigator.onLine)' } }
-    : await sb.from('profiles').select('id, role, display_name').eq('id', session.user.id).single();
+  // Zelfde harde tijdslimiet voor de profielcheck.
+  const { data: profileRow, error } = await withTimeout(
+    sb.from('profiles').select('id, role, display_name').eq('id', session.user.id).single(),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error || !profileRow) {
     // Geen internet, maar dit toestel is hier al eerder succesvol
     // ingelogd geweest: start de app dan met die laatst bekende rol i.p.v.

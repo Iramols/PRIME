@@ -85,13 +85,13 @@ function _markLocalSyncTs(key, clientId, ts) {
 async function hydrateFromCloud(clientId) {
   activeClientId = clientId;
   const sb = getSupabase();
-  // navigator.onLine === false: sla het verzoek zelf over i.p.v. eerst de
-  // volledige netwerk-timeout af te wachten (zie ook resolveSession() in
-  // auth.js) -- voelt anders aan als vastlopen bij het opstarten zonder
-  // internet.
-  const { data, error } = navigator.onLine === false
-    ? { data: null, error: { message: 'offline (navigator.onLine)' } }
-    : await sb.from('client_state').select('key, value, updated_at').eq('client_id', clientId);
+  // Harde tijdslimiet i.p.v. te vertrouwen op navigator.onLine (bleek niet
+  // betrouwbaar genoeg, zie withTimeout() hierboven) -- zo wacht dit nooit
+  // langer dan 3s, ook niet als de browser zelf nog "online" meldt.
+  const { data, error } = await withTimeout(
+    sb.from('client_state').select('key, value, updated_at').eq('client_id', clientId),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
 
   if (error) {
     if (isNetworkError(error)) {
@@ -169,7 +169,23 @@ async function hydrateFromCloud(clientId) {
 function isNetworkError(err) {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
   const msg = String((err && err.message) || err || '');
-  return /failed to fetch|networkerror|load failed|network request failed/i.test(msg);
+  return /failed to fetch|networkerror|load failed|network request failed|timeout/i.test(msg);
+}
+
+// Bindt een Supabase-aanroep aan een harde tijdslimiet, ONGEACHT wat
+// navigator.onLine zegt -- die bleek in de praktijk niet betrouwbaar genoeg
+// (meldt soms nog "online" terwijl er geen echte verbinding is), waardoor
+// het eerdere vangnet (dat alleen op navigator.onLine vertrouwde) bij het
+// opstarten alsnog de volle, lange netwerk-timeout kon afwachten. timeoutData
+// is wat teruggegeven wordt als de tijd verstrijkt, in dezelfde vorm als een
+// normaal Supabase-antwoord ({ data, error } of { data: { session } }).
+function withTimeout(promise, ms, timeoutData) {
+  return Promise.race([
+    promise,
+    new Promise(function (resolve) {
+      setTimeout(function () { resolve(timeoutData); }, ms);
+    })
+  ]);
 }
 
 // ---- Verbindingsstatus ----
@@ -269,11 +285,11 @@ function syncRemove(key) {
 // niet bij een klant die hij/zij al eerder online bekeken heeft.
 async function fetchClientList() {
   const sb = getSupabase();
-  // navigator.onLine === false: zie de toelichting bij hydrateFromCloud()
-  // hierboven -- voorkomt een lange, onnodige netwerk-timeout.
-  const { data, error } = navigator.onLine === false
-    ? { data: null, error: { message: 'offline (navigator.onLine)' } }
-    : await sb.from('profiles').select('id, display_name, role').eq('role', 'client').order('display_name');
+  // Harde tijdslimiet: zie de toelichting bij hydrateFromCloud() hierboven.
+  const { data, error } = await withTimeout(
+    sb.from('profiles').select('id, display_name, role').eq('role', 'client').order('display_name'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) {
     if (isNetworkError(error)) {
       console.error('fetchClientList: geen verbinding, gebruik bewaarde lijst:', error);
