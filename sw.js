@@ -4,7 +4,7 @@
 // eigen cache-naam en ruimt activate() de vorige(n) automatisch op. Geen
 // vaste lijst bestanden vooraf cachen (fragile bij dit soort losse-bestanden-
 // zonder-bundelaar-app): alles wat de app opvraagt wordt onderweg bewaard.
-const CACHE_NAME = 'prime-cache-20260925-0935';
+const CACHE_NAME = 'prime-cache-20260925-0937';
 
 self.addEventListener('install', function (event) {
   self.skipWaiting();
@@ -49,8 +49,13 @@ self.addEventListener('fetch', function (event) {
         caches.open(CACHE_NAME).then(function (c) { c.put(req, copy); });
         return res;
       }).catch(function () {
-        return caches.match(req).then(function (cached) {
-          return cached || caches.match('./index.html');
+        // ignoreSearch: de bewaarde pagina staat onder de URL zoals hij
+        // toen precies is opgehaald (vaak met een ?b=<build>-parameter van
+        // het zelf-ververs-mechanisme erbij). Een latere, kale herlaad-
+        // aanvraag zonder die parameter moet 'm alsnog vinden, anders werkt
+        // dit vangnet alleen toevallig als de querystring exact overeenkomt.
+        return caches.match(req, { ignoreSearch: true }).then(function (cached) {
+          return cached || caches.match('./index.html', { ignoreSearch: true });
         });
       })
     );
