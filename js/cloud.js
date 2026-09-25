@@ -85,13 +85,16 @@ function _markLocalSyncTs(key, clientId, ts) {
 async function hydrateFromCloud(clientId) {
   activeClientId = clientId;
   const sb = getSupabase();
-  // Harde tijdslimiet i.p.v. te vertrouwen op navigator.onLine (bleek niet
-  // betrouwbaar genoeg, zie withTimeout() hierboven) -- zo wacht dit nooit
-  // langer dan 3s, ook niet als de browser zelf nog "online" meldt.
-  const { data, error } = await withTimeout(
-    sb.from('client_state').select('key, value, updated_at').eq('client_id', clientId),
-    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
-  );
+  // probeOffline() is al eerder in het opstartproces gedraaid (zie
+  // resolveSession() in auth.js) en hergebruikt hier dat resultaat i.p.v.
+  // zelf opnieuw een netwerkpoging (met eigen tijdslimiet) te doen -- anders
+  // stapelen de tijdslimieten van alle opstartstappen bij elkaar op.
+  const { data, error } = (await probeOffline())
+    ? { data: null, error: { message: 'Failed to fetch (offline)' } }
+    : await withTimeout(
+        sb.from('client_state').select('key, value, updated_at').eq('client_id', clientId),
+        3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+      );
 
   if (error) {
     if (isNetworkError(error)) {
@@ -186,6 +189,35 @@ function withTimeout(promise, ms, timeoutData) {
       setTimeout(function () { resolve(timeoutData); }, ms);
     })
   ]);
+}
+
+// Eenmalige, snelle verbindingstest voor het hele opstartproces. Zonder dit
+// probeert elke stap apart (inlogsessie, profiel, gegevens, klantenlijst)
+// het netwerk met zijn eigen tijdslimiet -- zonder internet stapelen die
+// limieten dan op tot een veelvoud (4-5 stappen x enkele seconden), ook al
+// is elke stap zelf begrensd. Nu wordt vóór resolveSession() precies één
+// keer getest of er verbinding is (klein bestand, korte tijdslimiet), en
+// gebruiken alle stappen daarna datzelfde resultaat i.p.v. het zelf opnieuw
+// te ontdekken. Gememoriseerd per pagina-lading (niet daarna opnieuw
+// gecontroleerd): een enkele test is voor het opstarten voldoende, en een
+// écht wegvallende verbinding tijdens gebruik wordt al apart afgehandeld
+// door de online/offline-events (zie updateConnBanner()).
+let _offlineProbePromise = null;
+function probeOffline() {
+  if (_offlineProbePromise) return _offlineProbePromise;
+  _offlineProbePromise = (async function () {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+    try {
+      const res = await withTimeout(
+        fetch('version.json?probe=' + Date.now(), { cache: 'no-store' }),
+        1500, null
+      );
+      return !(res && res.ok);
+    } catch (e) {
+      return true;
+    }
+  })();
+  return _offlineProbePromise;
 }
 
 // ---- Verbindingsstatus ----
@@ -285,11 +317,13 @@ function syncRemove(key) {
 // niet bij een klant die hij/zij al eerder online bekeken heeft.
 async function fetchClientList() {
   const sb = getSupabase();
-  // Harde tijdslimiet: zie de toelichting bij hydrateFromCloud() hierboven.
-  const { data, error } = await withTimeout(
-    sb.from('profiles').select('id, display_name, role').eq('role', 'client').order('display_name'),
-    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
-  );
+  // Hergebruikt probeOffline(): zie de toelichting bij hydrateFromCloud() hierboven.
+  const { data, error } = (await probeOffline())
+    ? { data: null, error: { message: 'Failed to fetch (offline)' } }
+    : await withTimeout(
+        sb.from('profiles').select('id, display_name, role').eq('role', 'client').order('display_name'),
+        3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+      );
   if (error) {
     if (isNetworkError(error)) {
       console.error('fetchClientList: geen verbinding, gebruik bewaarde lijst:', error);

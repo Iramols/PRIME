@@ -316,28 +316,42 @@ async function offlineFallbackBoot(userId) {
 async function resolveSession() {
   const sb = getSupabase();
 
+  // Eén keer, meteen vooraf, vaststellen of er verbinding is (probeOffline()
+  // in cloud.js) -- de stappen hieronder (profielcheck, en straks
+  // fetchClientList()/hydrateFromCloud()) hergebruiken dat resultaat i.p.v.
+  // elk apart het netwerk te proberen. Zonder dit stapelden de tijdslimieten
+  // van alle stappen samen op tot een veelvoud, ook al was elke stap zelf
+  // begrensd.
+  const offline = await probeOffline();
+
   // getSession() leest normaal gewoon lokaal (snel), maar kan blijven hangen
   // als Supabase intern een ververs-poging voor een bijna-verlopen token
-  // doet en er geen (werkende) verbinding is. navigator.onLine bleek daarbij
-  // niet betrouwbaar genoeg om op te vertrouwen (meldt soms nog "online"
-  // zonder echte verbinding) -- daarom hier een harde tijdslimiet i.p.v. een
-  // voorwaarde, zie withTimeout() in cloud.js.
+  // doet. Kortere tijdslimiet als we al weten dat er geen verbinding is.
   let session = null;
   let getSessionTimedOut = false;
   try {
-    const result = await withTimeout(sb.auth.getSession(), 3000, { data: { session: null }, _timedOut: true });
+    const result = await withTimeout(sb.auth.getSession(), offline ? 1200 : 3000, { data: { session: null }, _timedOut: true });
     session = result && result.data && result.data.session;
     getSessionTimedOut = !!(result && result._timedOut);
   } catch (e) {}
 
   if (!session) {
-    if (getSessionTimedOut) { await offlineFallbackBoot(null); return; }
+    if (offline || getSessionTimedOut) { await offlineFallbackBoot(null); return; }
     showLogin();
     return;
   }
   loggedInEmail = session.user.email || null;
 
-  // Zelfde harde tijdslimiet voor de profielcheck.
+  if (offline) {
+    // Al vastgesteld dat er geen verbinding is: niet nog een keer de
+    // profielcheck over het netwerk proberen (die zou toch mislukken en
+    // kost alleen tijd) -- meteen naar het vangnet.
+    await offlineFallbackBoot(session.user.id);
+    return;
+  }
+
+  // Zelfde harde tijdslimiet voor de profielcheck (alleen hier als we op dit
+  // punt nog niet wisten dat het offline is).
   const { data: profileRow, error } = await withTimeout(
     sb.from('profiles').select('id, role, display_name').eq('id', session.user.id).single(),
     3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
