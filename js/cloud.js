@@ -85,10 +85,13 @@ function _markLocalSyncTs(key, clientId, ts) {
 async function hydrateFromCloud(clientId) {
   activeClientId = clientId;
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from('client_state')
-    .select('key, value, updated_at')
-    .eq('client_id', clientId);
+  // navigator.onLine === false: sla het verzoek zelf over i.p.v. eerst de
+  // volledige netwerk-timeout af te wachten (zie ook resolveSession() in
+  // auth.js) -- voelt anders aan als vastlopen bij het opstarten zonder
+  // internet.
+  const { data, error } = navigator.onLine === false
+    ? { data: null, error: { message: 'offline (navigator.onLine)' } }
+    : await sb.from('client_state').select('key, value, updated_at').eq('client_id', clientId);
 
   if (error) {
     if (isNetworkError(error)) {
@@ -266,11 +269,11 @@ function syncRemove(key) {
 // niet bij een klant die hij/zij al eerder online bekeken heeft.
 async function fetchClientList() {
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from('profiles')
-    .select('id, display_name, role')
-    .eq('role', 'client')
-    .order('display_name');
+  // navigator.onLine === false: zie de toelichting bij hydrateFromCloud()
+  // hierboven -- voorkomt een lange, onnodige netwerk-timeout.
+  const { data, error } = navigator.onLine === false
+    ? { data: null, error: { message: 'offline (navigator.onLine)' } }
+    : await sb.from('profiles').select('id, display_name, role').eq('role', 'client').order('display_name');
   if (error) {
     if (isNetworkError(error)) {
       console.error('fetchClientList: geen verbinding, gebruik bewaarde lijst:', error);

@@ -201,6 +201,9 @@ async function doLogin() {
     showLogin(t('auth.offline'));
     return;
   }
+  // Geen internet: niet eens proberen (en dus niet de volledige netwerk-
+  // timeout afwachten) -- inloggen kan sowieso niet zonder verbinding.
+  if (navigator.onLine === false) { showLogin(t('auth.offline')); return; }
   const emailInput = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
   const btn = document.getElementById('login-submit');
@@ -289,11 +292,13 @@ async function resolveSession() {
   if (!session) { showLogin(); return; }
   loggedInEmail = session.user.email || null;
 
-  const { data: profileRow, error } = await sb
-    .from('profiles')
-    .select('id, role, display_name')
-    .eq('id', session.user.id)
-    .single();
+  // Weet de browser al zeker dat er geen internet is (bv. vliegtuigmodus),
+  // dan slaan we de profielcheck zelf over -- anders wacht je eerst de hele
+  // (soms 10-30 sec. durende) netwerk-timeout af voordat onderstaand vangnet
+  // aanspringt, wat voelt alsof de app vastloopt.
+  const { data: profileRow, error } = navigator.onLine === false
+    ? { data: null, error: { message: 'offline (navigator.onLine)' } }
+    : await sb.from('profiles').select('id, role, display_name').eq('id', session.user.id).single();
   if (error || !profileRow) {
     // Geen internet, maar dit toestel is hier al eerder succesvol
     // ingelogd geweest: start de app dan met die laatst bekende rol i.p.v.
