@@ -4,7 +4,13 @@
 // eigen cache-naam en ruimt activate() de vorige(n) automatisch op. Geen
 // vaste lijst bestanden vooraf cachen (fragile bij dit soort losse-bestanden-
 // zonder-bundelaar-app): alles wat de app opvraagt wordt onderweg bewaard.
-const CACHE_NAME = 'prime-cache-20260925-0937';
+const CACHE_NAME = 'prime-cache-20260925-1213';
+// Foto's (maaltijden/training, uit Supabase Storage) staan in een eigen,
+// vaste cache-naam -- die blijft, in tegenstelling tot CACHE_NAME hierboven,
+// gewoon staan bij elke nieuwe build/push. Anders zou elke push (soms meerdere
+// per dag) alle al-bewaarde foto's weer weggooien, terwijl foto's zelf niet
+// per build wijzigen.
+const PHOTO_CACHE_NAME = 'prime-photos-cache';
 
 self.addEventListener('install', function (event) {
   self.skipWaiting();
@@ -14,7 +20,7 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
       return Promise.all(
-        keys.filter(function (k) { return k !== CACHE_NAME; })
+        keys.filter(function (k) { return k !== CACHE_NAME && k !== PHOTO_CACHE_NAME; })
           .map(function (k) { return caches.delete(k); })
       );
     }).then(function () { return self.clients.claim(); })
@@ -32,11 +38,32 @@ self.addEventListener('fetch', function (event) {
   // pagina een update nooit meer.
   if (url.pathname.endsWith('/version.json')) return;
 
-  // Supabase (en andere externe API's) nooit aanraken -- alleen de eigen
-  // statische bestanden (HTML/CSS/JS/iconen) en lettertypen cachen.
+  // Supabase (inloggen, database, alles behalve foto's) nooit aanraken --
+  // dat moet altijd vers van de server komen. Foto's uit de 'prime-photos'-
+  // opslag zijn hierop de uitzondering: dat zijn losse plaatjes, net als een
+  // lettertype, en geen live gegevens -- die cachen we dus wél (zie
+  // PHOTO_CACHE_NAME hieronder), zodat een eenmaal geziene maaltijd- of
+  // trainingsfoto ook zonder internet zichtbaar blijft.
   const eigenOrigin = url.origin === location.origin;
   const isFont = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (!eigenOrigin && !isFont) return;
+  const isFoto = url.hostname === 'thxknfjjcxuiktrehjyg.supabase.co' && url.pathname.indexOf('/storage/v1/object/public/prime-photos/') === 0;
+  if (!eigenOrigin && !isFont && !isFoto) return;
+
+  if (isFoto) {
+    event.respondWith(
+      caches.match(req).then(function (cached) {
+        if (cached) return cached;
+        return fetch(req).then(function (res) {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(PHOTO_CACHE_NAME).then(function (c) { c.put(req, copy); });
+          }
+          return res;
+        }).catch(function () { return cached; });
+      })
+    );
+    return;
+  }
 
   // De pagina zelf (navigatie, bv. het openen/herladen van index.html):
   // netwerk-eerst, met de laatst gecachete versie als vangnet zonder
