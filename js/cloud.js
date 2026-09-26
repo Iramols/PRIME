@@ -513,15 +513,21 @@ const MAX_PHOTO_BYTES = 200 * 1024;
 // Deelnemers sturen alleen; de coach leest, markeert en verwijdert.
 async function sendFeedback(kind, message) {
   const sb = getSupabase();
-  const { data: { session } } = await sb.auth.getSession();
+  const { data: sessionData } = await withTimeout(
+    sb.auth.getSession(), 3000, { data: { session: null } }
+  );
+  const session = sessionData.session;
   if (!session) return { error: { message: 'niet ingelogd' } };
-  const { error } = await sb.from('feedback').insert({
-    client_id: session.user.id,
-    kind: kind,
-    message: message,
-    app_build: window.PRIME_BUILD || null,
-    user_agent: (navigator.userAgent || '').slice(0, 200)
-  });
+  const { error } = await withTimeout(
+    sb.from('feedback').insert({
+      client_id: session.user.id,
+      kind: kind,
+      message: message,
+      app_build: window.PRIME_BUILD || null,
+      user_agent: (navigator.userAgent || '').slice(0, 200)
+    }),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   return { error: error || null };
 }
 // Coach-only: de naam die elke deelnemer zelf in Profiel heeft ingevuld

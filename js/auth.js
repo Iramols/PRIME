@@ -216,7 +216,10 @@ async function doLogin() {
   btn.disabled = true;
   try {
     const sb = getSupabase();
-    const { error } = await sb.auth.signInWithPassword({ email: toLoginEmail(emailInput), password: password });
+    const { error } = await withTimeout(
+      sb.auth.signInWithPassword({ email: toLoginEmail(emailInput), password: password }),
+      3000, { error: { message: 'Failed to fetch (timeout)' } }
+    );
     if (error) throw error;
     await resolveSession();
   } catch (err) {
