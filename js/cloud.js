@@ -281,33 +281,48 @@ function withTimeout(promise, ms, timeoutData) {
   ]);
 }
 
+// Eén korte, verse verbindingstest (klein bestand, korte tijdslimiet) --
+// gebruikt door zowel probeOffline() (opstarten, hieronder) als door schermen
+// die je pas een tijd NA het opstarten kunt openen (bv. Signalen), die dus
+// niet op een oude, bij het opstarten al bepaalde uitkomst mogen vertrouwen.
+async function _checkOffline() {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  try {
+    const res = await withTimeout(
+      fetch('version.json?probe=' + Date.now(), { cache: 'no-store' }),
+      1500, null
+    );
+    return !(res && res.ok);
+  } catch (e) {
+    return true;
+  }
+}
+
 // Eenmalige, snelle verbindingstest voor het hele opstartproces. Zonder dit
 // probeert elke stap apart (inlogsessie, profiel, gegevens, klantenlijst)
 // het netwerk met zijn eigen tijdslimiet -- zonder internet stapelen die
 // limieten dan op tot een veelvoud (4-5 stappen x enkele seconden), ook al
 // is elke stap zelf begrensd. Nu wordt vóór resolveSession() precies één
-// keer getest of er verbinding is (klein bestand, korte tijdslimiet), en
-// gebruiken alle stappen daarna datzelfde resultaat i.p.v. het zelf opnieuw
-// te ontdekken. Gememoriseerd per pagina-lading (niet daarna opnieuw
-// gecontroleerd): een enkele test is voor het opstarten voldoende, en een
-// écht wegvallende verbinding tijdens gebruik wordt al apart afgehandeld
-// door de online/offline-events (zie updateConnBanner()).
+// keer getest of er verbinding is, en gebruiken alle stappen daarna
+// datzelfde resultaat i.p.v. het zelf opnieuw te ontdekken. Gememoriseerd
+// per pagina-lading (niet daarna opnieuw gecontroleerd): een enkele test is
+// voor het OPSTARTEN voldoende. Gebruik voor een latere, verse controle
+// (een scherm dat je pas een tijd na het opstarten opent) probeOfflineNow()
+// hieronder, niet deze -- anders krijg je precies het probleem dat Signalen
+// had: een verouderde "online"-uitkomst van bij het opstarten, terwijl de
+// verbinding inmiddels al was weggevallen.
 let _offlineProbePromise = null;
 function probeOffline() {
   if (_offlineProbePromise) return _offlineProbePromise;
-  _offlineProbePromise = (async function () {
-    if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
-    try {
-      const res = await withTimeout(
-        fetch('version.json?probe=' + Date.now(), { cache: 'no-store' }),
-        1500, null
-      );
-      return !(res && res.ok);
-    } catch (e) {
-      return true;
-    }
-  })();
+  _offlineProbePromise = _checkOffline();
   return _offlineProbePromise;
+}
+
+// Niet-gememoriseerd: voor een controle op het moment zelf, ongeacht wat
+// probeOffline() bij het opstarten heeft vastgesteld. Zie Signalen
+// (renderSignalenTab e.a. in history.js).
+function probeOfflineNow() {
+  return _checkOffline();
 }
 
 // ---- Verbindingsstatus ----

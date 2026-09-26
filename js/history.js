@@ -960,7 +960,7 @@ async function renderConsentOverview() {
   // Zie de toelichting bij renderSignalenTab(): dit gaat over andere klanten,
   // dus geen offline-vangnet mogelijk -- snel en duidelijk melden i.p.v. lang
   // laten wachten.
-  if (await probeOffline()) {
+  if (await probeOfflineNow()) {
     el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">' + t('signalen.offline') + '</div>';
     return;
   }
@@ -1009,7 +1009,7 @@ async function renderFeedbackList() {
   const kop = key => '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:12px">' + t(key) + '</div>';
   // Zie de toelichting bij renderSignalenTab(): geen offline-vangnet mogelijk
   // voor andermans feedback/verwijderverzoeken -- snel en duidelijk melden.
-  if (await probeOffline()) {
+  if (await probeOfflineNow()) {
     const offlineHtml = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">' + t('signalen.offline') + '</div>';
     if (el) el.innerHTML = kop('feedback.coach.title') + offlineHtml;
     if (elDel) elDel.innerHTML = kop('deleteRequests.title') + offlineHtml;
@@ -1054,7 +1054,7 @@ async function renderSignalenTab() {
   // Eerst één keer snel testen (probeOffline(), fase 1) i.p.v. hier en in elk
   // van de aparte fetch-aanroepen hieronder de volle netwerk-timeout af te
   // wachten, dat gaf eerder een lange wachttijd bij meerdere klanten.
-  if (await probeOffline()) {
+  if (await probeOfflineNow()) {
     const offlineHtml = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">' + t('signalen.offline') + '</div>';
     document.getElementById('consent-overzicht-content') && (document.getElementById('consent-overzicht-content').innerHTML = offlineHtml);
     document.getElementById('feedback-overzicht-content') && (document.getElementById('feedback-overzicht-content').innerHTML = offlineHtml);
