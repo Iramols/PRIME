@@ -475,11 +475,15 @@ async function fetchClientList() {
 // volledig ongemoeid.
 async function fetchClientStateFor(clientId, keys) {
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from('client_state')
-    .select('key, value')
-    .eq('client_id', clientId)
-    .in('key', keys);
+  // Wordt in renderSignalenTab() per klant apart aangeroepen -- zonder
+  // tijdslimiet zou dat bij meerdere klanten en geen internet oplopen tot
+  // meerdere keren de volle netwerk-timeout. renderSignalenTab() zelf test
+  // eerst al probeOffline() en slaat deze aanroep dan helemaal over; dit is
+  // het vangnet voor als dat ooit ergens anders zonder die check gebeurt.
+  const { data, error } = await withTimeout(
+    sb.from('client_state').select('key, value').eq('client_id', clientId).in('key', keys),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) { console.error('fetchClientStateFor faalde voor ' + clientId + ':', error); return {}; }
   const result = {};
   (data || []).forEach(row => { result[row.key] = row.value; });
@@ -510,7 +514,10 @@ async function sendFeedback(kind, message) {
 // De inlognaam (profiles.display_name, bv. miep.tiep@client.local) blijft de
 // terugval als iemand nog geen naam heeft ingevuld.
 async function fetchProfileNames() {
-  const { data, error } = await getSupabase().from('client_state').select('client_id, value').eq('key', 'prime_profile');
+  const { data, error } = await withTimeout(
+    getSupabase().from('client_state').select('client_id, value').eq('key', 'prime_profile'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) { console.error('fetchProfileNames:', error); return {}; }
   const map = {};
   (data || []).forEach(r => { if (r.value && r.value.name && String(r.value.name).trim()) map[r.client_id] = String(r.value.name).trim(); });
@@ -520,7 +527,10 @@ async function fetchProfileNames() {
 // Coach-only: wanneer elke deelnemer akkoord is gegaan met de voorwaarden
 // (client_state.prime_consent = {version, date}). Geeft {client_id: {version, date}}.
 async function fetchConsents() {
-  const { data, error } = await getSupabase().from('client_state').select('client_id, value').eq('key', 'prime_consent');
+  const { data, error } = await withTimeout(
+    getSupabase().from('client_state').select('client_id, value').eq('key', 'prime_consent'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) { console.error('fetchConsents:', error); return {}; }
   const map = {};
   (data || []).forEach(r => { if (r.value && r.value.date) map[r.client_id] = r.value; });
@@ -529,7 +539,10 @@ async function fetchConsents() {
 
 async function fetchFeedbackList() {
   const sb = getSupabase();
-  const { data, error } = await sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(100);
+  const { data, error } = await withTimeout(
+    sb.from('feedback').select('*').order('created_at', { ascending: false }).limit(100),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   return { data: data || [], error: error || null };
 }
 async function setFeedbackHandled(id, handled) {
