@@ -239,7 +239,18 @@ async function doLogout() {
   location.reload();
 }
 
-function switchClient() {
+// Klant wisselen herlaadt de pagina (zie APP_SCRIPTS hierboven: alleen zo
+// lezen de top-level `let`-variabelen in state.js gegarandeerd de juiste
+// klant-data). Zonder internet is zo'n herlaad onbetrouwbaar -- op sommige
+// toestellen (vooral mobiel) breekt de navigatie dan al af vóórdat de
+// pagina zelf iets kan tonen, zodat de oude klant stil actief blijft en er
+// geen melding verschijnt. Daarom eerst checken en, zo ja, helemaal niet
+// herladen.
+async function switchClient() {
+  if (await probeOfflineNow()) {
+    try { showToast(t('picker.switchOffline'), true); } catch (e) {}
+    return;
+  }
   sessionStorage.removeItem('prime_active_client');
   location.reload();
 }
@@ -247,7 +258,11 @@ function switchClient() {
 // Rechtstreeks naar een specifieke klant wisselen (bv. vanuit de
 // Signalen-tab, waar op een klant-kaart geklikt wordt) -- zelfde
 // "onthouden + herladen"-mechanisme als de klantkiezer zelf gebruikt.
-function switchToClient(clientId) {
+async function switchToClient(clientId) {
+  if (await probeOfflineNow()) {
+    try { showToast(t('picker.switchOffline'), true); } catch (e) {}
+    return;
+  }
   sessionStorage.setItem('prime_active_client', clientId);
   location.reload();
 }
