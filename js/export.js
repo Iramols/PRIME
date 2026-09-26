@@ -12,7 +12,10 @@ const EXPORT_XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx
 // Alle client_state-rijen van alle klanten in één vraag (de coach mag alles
 // lezen, zie RLS in supabase/schema.sql). Geeft {client_id: {key: value}}.
 async function exportFetchAllState() {
-  const { data, error } = await getSupabase().from('client_state').select('client_id, key, value');
+  const { data, error } = await withTimeout(
+    getSupabase().from('client_state').select('client_id, key, value'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) throw error;
   const per = {};
   (data || []).forEach(r => { (per[r.client_id] = per[r.client_id] || {})[r.key] = r.value; });
@@ -119,6 +122,19 @@ async function exportBusy(btnId, fn) {
   const oud = btn.textContent;
   btn.disabled = true; btn.textContent = t('export.busy');
   if (status) status.textContent = '';
+
+  // Data-export leest gegevens van ALLE klanten -- net als Signalen kan dat
+  // nooit uit de eigen offline-cache (fase 1 gaat alleen over je eigen
+  // gegevens). Eerst een verse verbindingstest (probeOfflineNow(), niet de
+  // gememoriseerde probeOffline() van het opstarten) i.p.v. de onderliggende
+  // aanroepen te laten mislukken -- dat kon zonder duidelijke melding lang
+  // (of zelfs helemaal niet zichtbaar) blijven hangen.
+  if (await probeOfflineNow()) {
+    if (status) status.textContent = t('export.offline');
+    btn.disabled = false; btn.textContent = oud;
+    return;
+  }
+
   try { await fn(); }
   catch (e) {
     console.error('export mislukt:', e);

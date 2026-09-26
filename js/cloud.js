@@ -678,7 +678,10 @@ async function migrateBase64PhotosToStorage() {
 
 async function fetchPrimeProgramsFromCloud() {
   const sb = getSupabase();
-  const { data, error } = await sb.from('prime_programs').select('id, value');
+  const { data, error } = await withTimeout(
+    sb.from('prime_programs').select('id, value'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) { console.error('fetchPrimeProgramsFromCloud:', error); return null; }
   const list = (data || []).map(row => row.value);
   try { localStorage.setItem('prime_prime_programmas', JSON.stringify(list)); } catch (e) { console.error(e); }
@@ -704,7 +707,10 @@ async function deletePrimeProgramFromCloud(id) {
 
 async function fetchPrimeMealsFromCloud() {
   const sb = getSupabase();
-  const { data, error } = await sb.from('prime_meals').select('id, value');
+  const { data, error } = await withTimeout(
+    sb.from('prime_meals').select('id, value'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) { console.error('fetchPrimeMealsFromCloud:', error); return null; }
   const list = (data || []).map(row => row.value);
   try { localStorage.setItem('prime_prime_meals', JSON.stringify(list)); } catch (e) { console.error(e); }
