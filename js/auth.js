@@ -178,8 +178,14 @@ async function renameClient(clientId, currentName) {
   const newName = prompt(t('picker.renamePrompt'), currentName || '');
   if (newName === null || !newName.trim()) return;
   const sb = getSupabase();
-  const { error } = await sb.from('profiles').update({ display_name: newName.trim() }).eq('id', clientId);
-  if (error) { alert(t('auth.renameFailed', { msg: error.message })); return; }
+  const { error } = await withTimeout(
+    sb.from('profiles').update({ display_name: newName.trim() }).eq('id', clientId),
+    3000, { error: { message: 'timeout' } }
+  );
+  if (error) {
+    alert(isNetworkError(error) ? t('auth.renameFailedOffline') : t('auth.renameFailed', { msg: error.message }));
+    return;
+  }
   const clients = await fetchClientList();
   showClientPicker(clients);
 }

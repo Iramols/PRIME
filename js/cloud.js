@@ -561,11 +561,17 @@ async function fetchFeedbackList() {
   return { data: data || [], error: error || null };
 }
 async function setFeedbackHandled(id, handled) {
-  const { error } = await getSupabase().from('feedback').update({ handled: handled }).eq('id', id);
+  const { error } = await withTimeout(
+    getSupabase().from('feedback').update({ handled: handled }).eq('id', id),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   return error || null;
 }
 async function deleteFeedbackRow(id) {
-  const { error } = await getSupabase().from('feedback').delete().eq('id', id);
+  const { error } = await withTimeout(
+    getSupabase().from('feedback').delete().eq('id', id),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   return error || null;
 }
 

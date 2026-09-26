@@ -1036,13 +1036,22 @@ async function renderFeedbackList() {
 }
 async function toggleFeedbackHandled(id, handled) {
   const err = await setFeedbackHandled(id, handled);
-  if (err) console.error('toggleFeedbackHandled:', err);
+  if (err) {
+    console.error('toggleFeedbackHandled:', err);
+    // Zonder dit leek de knop niets te doen: de lijst bleef ongewijzigd
+    // (de wijziging was immers niet aangekomen), maar er verscheen nergens
+    // een melding waarom.
+    try { showToast(t('feedback.coach.actionFailed'), true); } catch (e) {}
+  }
   renderFeedbackList();
 }
 async function removeFeedback(id) {
   if (!confirm(t('feedback.coach.deleteConfirm'))) return;
   const err = await deleteFeedbackRow(id);
-  if (err) console.error('removeFeedback:', err);
+  if (err) {
+    console.error('removeFeedback:', err);
+    try { showToast(t('feedback.coach.actionFailed'), true); } catch (e) {}
+  }
   renderFeedbackList();
 }
 

@@ -23,6 +23,7 @@ const I18N = {
     'picker.renameTitle': 'Naam aanpassen',
     'picker.renamePrompt': 'Naam voor deze klant:',
     'auth.renameFailed': 'Aanpassen mislukt: {msg}',
+    'auth.renameFailedOffline': 'Geen verbinding. De naam is niet aangepast -- probeer het opnieuw zodra je weer online bent.',
     'auth.invalidCredentials': 'Onjuiste inloggegevens.',
     'auth.loginFailed': 'Inloggen mislukt: {msg}',
     'auth.profileLoadFailed': 'Kon profiel niet laden: {msg}',
@@ -323,6 +324,7 @@ const I18N = {
     'feedback.coach.delete': 'Verwijderen',
     'feedback.coach.deleteConfirm': 'Deze feedback verwijderen?',
     'feedback.coach.noTable': 'De feedback-tabel bestaat nog niet. Voer supabase/feedback.sql uit in Supabase.',
+    'feedback.coach.actionFailed': 'Actie mislukt (geen internet?). Andere apparaten zien deze wijziging dan nog niet -- probeer het later opnieuw.',
     'consent.coach.title': 'Toestemming deelnemers',
     'consent.coach.agreed': 'Akkoord op {date}',
     'consent.coach.none': 'Nog geen akkoord',
@@ -473,6 +475,7 @@ const I18N = {
     'programmas.prime.nameRequired': 'Vul een naam in voor het PRIME-programma.',
     'programmas.prime.saved': 'PRIME-programma opgeslagen ✓',
     'programmas.prime.saveFailed': 'Opslaan naar de cloud mislukt (geen internet?). Andere deelnemers zien dit programma dan nog niet -- probeer het later opnieuw.',
+    'programmas.prime.deleteFailed': 'Verwijderen uit de cloud mislukt (geen internet?). Andere deelnemers zien dit programma nog wel -- probeer het later opnieuw.',
 
     // Weekplanning (weekplanning.js)
     'weekplan.rest': 'Rust',
@@ -716,6 +719,7 @@ const I18N = {
     'food.primeMeals.nameRequired': 'Vul een naam in voor het PRIME-gerecht.',
     'food.primeMeals.saved': 'PRIME-gerecht opgeslagen ✓',
     'food.primeMeals.saveFailed': 'Opslaan naar de cloud mislukt (geen internet?). Andere deelnemers zien dit gerecht dan nog niet -- probeer het later opnieuw.',
+    'food.primeMeals.deleteFailed': 'Verwijderen uit de cloud mislukt (geen internet?). Andere deelnemers zien dit gerecht nog wel -- probeer het later opnieuw.',
 
     // Voeding weekplanning
     'food.tab.week': 'Weekplanning',
@@ -763,6 +767,7 @@ const I18N = {
     'picker.renameTitle': 'Edit name',
     'picker.renamePrompt': 'Name for this client:',
     'auth.renameFailed': 'Failed to update: {msg}',
+    'auth.renameFailedOffline': 'No connection. The name was not updated -- try again once you are back online.',
     'auth.invalidCredentials': 'Invalid login credentials.',
     'auth.loginFailed': 'Login failed: {msg}',
     'auth.profileLoadFailed': 'Could not load profile: {msg}',
@@ -1056,6 +1061,7 @@ const I18N = {
     'feedback.coach.delete': 'Delete',
     'feedback.coach.deleteConfirm': 'Delete this feedback?',
     'feedback.coach.noTable': 'The feedback table does not exist yet. Run supabase/feedback.sql in Supabase.',
+    'feedback.coach.actionFailed': 'Action failed (no internet?). Other devices will not see this change yet -- try again later.',
     'consent.coach.title': 'Participant consent',
     'consent.coach.agreed': 'Agreed on {date}',
     'consent.coach.none': 'Not agreed yet',
@@ -1204,6 +1210,7 @@ const I18N = {
     'programmas.prime.nameRequired': 'Enter a name for the PRIME program.',
     'programmas.prime.saved': 'PRIME program saved ✓',
     'programmas.prime.saveFailed': 'Saving to the cloud failed (no internet?). Other participants will not see this program yet -- try again later.',
+    'programmas.prime.deleteFailed': 'Deleting from the cloud failed (no internet?). Other participants will still see this program -- try again later.',
 
     // Weekplanning (weekplanning.js)
     'weekplan.rest': 'Rest',
@@ -1447,6 +1454,7 @@ const I18N = {
     'food.primeMeals.nameRequired': 'Enter a name for the PRIME dish.',
     'food.primeMeals.saved': 'PRIME dish saved ✓',
     'food.primeMeals.saveFailed': 'Saving to the cloud failed (no internet?). Other participants will not see this dish yet -- try again later.',
+    'food.primeMeals.deleteFailed': 'Deleting from the cloud failed (no internet?). Other participants will still see this dish -- try again later.',
 
     // Nutrition weekly plan
     'food.tab.week': 'Weekly plan',

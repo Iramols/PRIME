@@ -451,13 +451,20 @@ function renderPrimeMealPlan() {
 // Verwijdert een PRIME-gerecht -- coach-only (de knop ernaartoe is al
 // afgeschermd, dit is defense-in-depth; de echte grens is de Supabase
 // RLS-policy op prime_meals).
-function removePrimeMeal(id) {
+async function removePrimeMeal(id) {
   if (!isPrimeCoach()) return;
   if (!confirm(t('food.addMeal.confirmDelete'))) return;
   if (_amEditingId === id && _amEditingIsPrime) resetMealForm();
   primeMeals = primeMeals.filter(m => m.id !== id);
   try { localStorage.setItem('prime_prime_meals', JSON.stringify(primeMeals)); } catch(e) { console.error(e); }
-  deletePrimeMealFromCloud(id);
+  const fout = await deletePrimeMealFromCloud(id);
+  if (fout) {
+    // Lokaal is het gerecht al weg (hierboven), maar zonder deze melding
+    // zou je niet weten dat het bij andere deelnemers -- die het uit de
+    // cloud lezen -- nog gewoon zichtbaar is.
+    console.error('removePrimeMeal:', fout);
+    try { showToast(t('food.primeMeals.deleteFailed'), true); } catch (e) { console.error(e); }
+  }
   // Verwijder eventueel al gelogde porties van dit gerecht, op elke datum.
   Object.keys(foodDays).forEach(dateStr => {
     const filtered = foodDays[dateStr].filter(i => i.dishId !== id);

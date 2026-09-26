@@ -468,7 +468,7 @@ function addNewProgram() {
   renderProgrammas();
 }
 
-function progVerwijder(id) {
+async function progVerwijder(id) {
   if (!progCanEdit()) return;
   const prog = progLijst.find(p => p.id === id);
   if (!prog || prog.builtin) return;
@@ -477,7 +477,11 @@ function progVerwijder(id) {
   if (progMode === 'prime') {
     primeProgLijst = progLijst;
     try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch(e) { console.error(e); }
-    deletePrimeProgramFromCloud(id);
+    const fout = await deletePrimeProgramFromCloud(id);
+    if (fout) {
+      console.error('progVerwijder:', fout);
+      try { showToast(t('programmas.prime.deleteFailed'), true); } catch (e) { console.error(e); }
+    }
   } else {
     progSlaOp();
   }
