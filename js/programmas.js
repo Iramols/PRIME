@@ -777,7 +777,7 @@ async function confirmPrimeSave() {
   closePrimeSaveModal();
   // Alleen "opgeslagen" tonen als dat ook echt zo is -- zie de toelichting
   // bij confirmPrimeMealSave() (food.js).
-  try { showToast(fout ? t('programmas.prime.saveFailed') : t('programmas.prime.saved')); } catch(e) { console.error(e); }
+  try { showToast(fout ? t('programmas.prime.saveFailed') : t('programmas.prime.saved'), !!fout); } catch(e) { console.error(e); }
 
   // Naar de PRIME-tab springen en de LIJST van alle PRIME-programma's
   // tonen (niet meteen de editor van het nieuwe programma openen) --

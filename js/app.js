@@ -1,9 +1,12 @@
-// ========== TOAST (korte succesmelding) ==========
+// ========== TOAST (korte melding: succes of fout) ==========
 // Generiek herbruikbaar over de hele app, bv. na het kopiëren van
 // maaltijden in Weekplanning. Bouwt het element bij eerste gebruik op
-// en hergebruikt het daarna gewoon.
+// en hergebruikt het daarna gewoon. isError=true (bv. "opslaan mislukt")
+// toont 'm in rood i.p.v. de standaard salie-groene succeskleur -- die twee
+// zagen er anders bijna hetzelfde uit, waardoor een mislukking nauwelijks
+// opviel tussen alle gewone succesmeldingen.
 let _toastTimer = null;
-function showToast(msg) {
+function showToast(msg, isError) {
   // Laat een eventueel actief invoerveld los (bv. het datumveld van de
   // kopieer-modal), zodat een mobiel toetsenbord meteen dichtklapt i.p.v.
   // de melding te verbergen tot na de timeout.
@@ -17,6 +20,7 @@ function showToast(msg) {
     document.body.appendChild(el);
   }
   el.textContent = msg;
+  el.classList.toggle('error', !!isError);
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), 3000);

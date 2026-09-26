@@ -538,7 +538,7 @@ async function confirmPrimeMealSave() {
   // Alleen "opgeslagen" tonen als dat ook echt zo is -- anders (bv. geen
   // internet) dacht je dat het gerecht al voor alle deelnemers klaarstond,
   // terwijl het alleen op dit toestel stond.
-  try { showToast(fout ? t('food.primeMeals.saveFailed') : t('food.primeMeals.saved')); } catch(e) { console.error(e); }
+  try { showToast(fout ? t('food.primeMeals.saveFailed') : t('food.primeMeals.saved'), !!fout); } catch(e) { console.error(e); }
 
   renderPrimeMealPlan();
   resetMealForm();
