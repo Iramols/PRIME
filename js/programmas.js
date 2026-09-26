@@ -772,10 +772,12 @@ async function confirmPrimeSave() {
   // confirmPrimeMealSave() (food.js): anders kan die ververs-aanroep de
   // server nog vóór deze upsert bereiken en het net-opgeslagen
   // PRIME-programma weer laten verdwijnen totdat je de tab opnieuw opent.
-  await savePrimeProgramToCloud(nieuw);
+  const fout = await savePrimeProgramToCloud(nieuw);
 
   closePrimeSaveModal();
-  try { showToast(t('programmas.prime.saved')); } catch(e) { console.error(e); }
+  // Alleen "opgeslagen" tonen als dat ook echt zo is -- zie de toelichting
+  // bij confirmPrimeMealSave() (food.js).
+  try { showToast(fout ? t('programmas.prime.saveFailed') : t('programmas.prime.saved')); } catch(e) { console.error(e); }
 
   // Naar de PRIME-tab springen en de LIJST van alle PRIME-programma's
   // tonen (niet meteen de editor van het nieuwe programma openen) --

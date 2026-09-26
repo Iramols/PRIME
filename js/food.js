@@ -532,10 +532,13 @@ async function confirmPrimeMealSave() {
   // net-toegevoegde gerecht weer van het scherm laten verdwijnen totdat
   // je de tab een keer opnieuw opent. Zelfde race als eerder dit seizoen
   // bij prime_planning (zie wpApplyPlanningChanges in weekplanning.js).
-  await savePrimeMealToCloud(nieuw);
+  const fout = await savePrimeMealToCloud(nieuw);
 
   closePrimeMealSaveModal();
-  try { showToast(t('food.primeMeals.saved')); } catch(e) { console.error(e); }
+  // Alleen "opgeslagen" tonen als dat ook echt zo is -- anders (bv. geen
+  // internet) dacht je dat het gerecht al voor alle deelnemers klaarstond,
+  // terwijl het alleen op dit toestel stond.
+  try { showToast(fout ? t('food.primeMeals.saveFailed') : t('food.primeMeals.saved')); } catch(e) { console.error(e); }
 
   renderPrimeMealPlan();
   resetMealForm();

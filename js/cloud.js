@@ -688,17 +688,26 @@ async function fetchPrimeProgramsFromCloud() {
   return list;
 }
 
+// Geeft de fout terug (of null bij succes) -- zie de toelichting bij
+// savePrimeMealToCloud() hierboven.
 async function savePrimeProgramToCloud(prog) {
   const sb = getSupabase();
-  const { error } = await sb.from('prime_programs')
-    .upsert({ id: prog.id, value: prog, updated_at: new Date().toISOString() });
+  const { error } = await withTimeout(
+    sb.from('prime_programs').upsert({ id: prog.id, value: prog, updated_at: new Date().toISOString() }),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) console.error('savePrimeProgramToCloud:', error);
+  return error || null;
 }
 
 async function deletePrimeProgramFromCloud(id) {
   const sb = getSupabase();
-  const { error } = await sb.from('prime_programs').delete().eq('id', id);
+  const { error } = await withTimeout(
+    sb.from('prime_programs').delete().eq('id', id),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) console.error('deletePrimeProgramFromCloud:', error);
+  return error || null;
 }
 
 // ========== PRIME-GERECHTEN (gedeeld, coach-only bewerkbaar) ==========
@@ -717,15 +726,26 @@ async function fetchPrimeMealsFromCloud() {
   return list;
 }
 
+// Geeft de fout terug (of null bij succes) -- de aanroeper kan zo een
+// "opgeslagen"-melding tonen die ook echt klopt i.p.v. altijd succes te
+// beweren, ongeacht of de cloud-kant is gelukt (zie confirmPrimeMealSave()
+// in food.js).
 async function savePrimeMealToCloud(meal) {
   const sb = getSupabase();
-  const { error } = await sb.from('prime_meals')
-    .upsert({ id: meal.id, value: meal, updated_at: new Date().toISOString() });
+  const { error } = await withTimeout(
+    sb.from('prime_meals').upsert({ id: meal.id, value: meal, updated_at: new Date().toISOString() }),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) console.error('savePrimeMealToCloud:', error);
+  return error || null;
 }
 
 async function deletePrimeMealFromCloud(id) {
   const sb = getSupabase();
-  const { error } = await sb.from('prime_meals').delete().eq('id', id);
+  const { error } = await withTimeout(
+    sb.from('prime_meals').delete().eq('id', id),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
   if (error) console.error('deletePrimeMealFromCloud:', error);
+  return error || null;
 }

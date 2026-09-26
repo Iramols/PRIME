@@ -472,6 +472,7 @@ const I18N = {
     'programmas.prime.saveConfirm': 'Opslaan als PRIME-programma',
     'programmas.prime.nameRequired': 'Vul een naam in voor het PRIME-programma.',
     'programmas.prime.saved': 'PRIME-programma opgeslagen ✓',
+    'programmas.prime.saveFailed': 'Opslaan naar de cloud mislukt (geen internet?). Andere deelnemers zien dit programma dan nog niet -- probeer het later opnieuw.',
 
     // Weekplanning (weekplanning.js)
     'weekplan.rest': 'Rust',
@@ -714,6 +715,7 @@ const I18N = {
     'food.primeMeals.saveConfirm': 'Opslaan als PRIME-gerecht',
     'food.primeMeals.nameRequired': 'Vul een naam in voor het PRIME-gerecht.',
     'food.primeMeals.saved': 'PRIME-gerecht opgeslagen ✓',
+    'food.primeMeals.saveFailed': 'Opslaan naar de cloud mislukt (geen internet?). Andere deelnemers zien dit gerecht dan nog niet -- probeer het later opnieuw.',
 
     // Voeding weekplanning
     'food.tab.week': 'Weekplanning',
@@ -1201,6 +1203,7 @@ const I18N = {
     'programmas.prime.saveConfirm': 'Save as PRIME program',
     'programmas.prime.nameRequired': 'Enter a name for the PRIME program.',
     'programmas.prime.saved': 'PRIME program saved ✓',
+    'programmas.prime.saveFailed': 'Saving to the cloud failed (no internet?). Other participants will not see this program yet -- try again later.',
 
     // Weekplanning (weekplanning.js)
     'weekplan.rest': 'Rest',
@@ -1443,6 +1446,7 @@ const I18N = {
     'food.primeMeals.saveConfirm': 'Save as PRIME dish',
     'food.primeMeals.nameRequired': 'Enter a name for the PRIME dish.',
     'food.primeMeals.saved': 'PRIME dish saved ✓',
+    'food.primeMeals.saveFailed': 'Saving to the cloud failed (no internet?). Other participants will not see this dish yet -- try again later.',
 
     // Nutrition weekly plan
     'food.tab.week': 'Weekly plan',
