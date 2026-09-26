@@ -158,6 +158,15 @@ function exportExcel() {
   });
 }
 
+// De 'geen verbinding'-melding hierboven is een momentopname (gezet op het
+// moment dat je op de knop klikte) -- zonder dit bleef hij, anders dan de
+// balk bovenaan de pagina (die zichzelf al bijwerkt), gewoon staan nadat er
+// weer internet was, tot je de knop een keer opnieuw indrukte.
+window.addEventListener('online', function() {
+  const status = document.getElementById('export-status');
+  if (status && status.textContent === t('export.offline')) status.textContent = '';
+});
+
 function exportBackup() {
   return exportBusy('export-backup-btn', async function() {
     const d = await exportVerzamel();
