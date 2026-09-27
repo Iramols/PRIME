@@ -635,6 +635,25 @@ async function deleteFeedbackRow(id) {
   return error || null;
 }
 
+// Zorgt dat een lijst foto-URL's alvast door de service worker gecachet
+// wordt voor offline gebruik, zonder dat er ergens een <img> voor
+// gerenderd hoeft te zijn -- sw.js kijkt bij het cachen alleen naar de
+// URL zelf, niet naar hoe het verzoek is ontstaan, dus een kale fetch()
+// triggert dezelfde cache-eerst-logica als een <img src>. Een foto die al
+// gecachet is, komt zo meteen (goedkoop, geen download) terug -- er hoeft
+// dus niet apart bijgehouden te worden welke foto's al bekend zijn, deze
+// functie mag gerust steeds de hele actuele lijst opnieuw krijgen.
+// Gebruikt na elke ververs van de gedeelde PRIME-gerechten/-programma's
+// (primeMealsRefreshFromCloud() in food.js, primeProgRefreshFromCloud() in
+// programmas.js), zodat een gerecht/programma dat nog nooit bekeken is
+// straks ook zijn foto al klaar heeft staan i.p.v. alleen zijn gegevens.
+function warmPhotoCache(urls) {
+  (urls || []).forEach(function(url) {
+    if (!url || url.indexOf('data:') === 0) return; // base64: al lokaal, niets te cachen
+    fetch(url).catch(function() {});
+  });
+}
+
 // ========== FOTO-OPSLAG (Supabase Storage) ==========
 // Foto's van eigen producten/gerechten/oefeningen/programma's staan als los
 // bestand in de bucket 'prime-photos' (zie supabase/photo_storage.sql); in

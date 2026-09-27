@@ -62,6 +62,7 @@ async function primeProgRefreshFromCloud() {
   const list = await fetchPrimeProgramsFromCloud();
   if (list) {
     primeProgLijst = list;
+    warmPhotoCache(list.map(p => p.foto));
     if (progMode === 'prime') { progLaadData(); renderProgrammas(); }
   }
 }

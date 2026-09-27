@@ -401,6 +401,7 @@ async function primeMealsRefreshFromCloud() {
   const list = await fetchPrimeMealsFromCloud();
   if (list) {
     primeMeals = list;
+    warmPhotoCache(list.map(m => m.photo));
     if (document.getElementById('foodtab-primemeals')?.style.display !== 'none') renderPrimeMealPlan();
   }
 }
