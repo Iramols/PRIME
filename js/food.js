@@ -377,7 +377,7 @@ function renderAddProductTab() {
           <div style="font-size:11px;color:var(--muted)">${t('cat.' + p.cat)} · ${p.kcal} kcal · ${t('food.macroAbbr.protein')}${p.prot}g ${t('food.macroAbbr.carbs')}${p.carb}g ${t('food.macroAbbr.fat')}${p.fat}g</div>
         </div>
         <button onclick="editCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
-        <button onclick="removeCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">${t('common.delete')}</button>
+        <button onclick="removeCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
       </div>
     </div>`).join('');
 }
@@ -440,7 +440,7 @@ function renderPrimeMealPlan() {
         <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
           ${canEdit ? `
           <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('common.edit')}</button>
-          <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">${t('common.delete')}</button>
+          <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">🗑️ ${t('common.delete')}</button>
           ` : `
           <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('programmas.view')}</button>
           `}
@@ -973,7 +973,7 @@ function renderOwnMealsList() {
           <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.totalWeightLine', { gram: tot.gram })} · ${tot.kcal} kcal</div>
         </div>
         <button onclick="editCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
-        <button onclick="removeCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">${t('common.delete')}</button>
+        <button onclick="removeCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
       </div>
     </div>`;
   }).join('');
@@ -1512,7 +1512,7 @@ function renderLogItemCard(dateStr, item) {
             <span class="ex-check-label">${t('food.log.markEaten')}</span>
           </div>
           <div class="ex-check-wrap" ${delClick}style="cursor:${afgesloten ? 'default' : 'pointer'}">
-            <span style="font-size:16px;color:var(--muted);line-height:1">×</span>
+            <span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span>
             <span class="ex-check-label">${t('common.delete')}</span>
           </div>
         </div>

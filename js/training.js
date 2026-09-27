@@ -317,7 +317,7 @@ function renderAddExerciseTab() {
           <div style="font-size:11px;color:var(--muted)">${ex.group} · ${ex.sets}${t('programmas.setsAbbr')} × ${ex.reps || '—'}${ex.rest ? ' · ' + t('training.restLabel') + ' ' + ex.rest : ''}</div>
         </div>
         <button onclick="editCustomExercise('${ex.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
-        <button onclick="removeCustomExercise('${ex.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">${t('common.delete')}</button>
+        <button onclick="removeCustomExercise('${ex.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
       </div>
     </div>`).join('');
 }
@@ -810,8 +810,8 @@ function renderTrainingDag() {
         : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + _dagToday + '\',' + i + ')">'
           + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
       const wpDelBtn = _dagAfgesloten
-        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
-        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + _dagToday + '\',' + i + ');renderTrainingDag();updateTrainingDagBadge();try{renderWeekplanning();}catch(e){}" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
       html += exCard(norm, wpEditBtn + wpDelBtn,
         _dagWpDoneArr.includes(key), "toggleWpMijnDag('" + _dagToday + "','" + keyEsc + "'," + i + ")",
         undefined, "openWpExerciseDetail('" + _dagToday + "'," + i + ")");
@@ -838,8 +838,8 @@ function renderTrainingDag() {
           : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + ex.id + '\')">'
             + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
         const losDelBtn = _dagAfgesloten
-          ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
-          : '<div class="ex-check-wrap" onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+          ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+          : '<div class="ex-check-wrap" onclick="event.stopPropagation();removeExtraDag(\'' + ex.id + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
         html += exCard(ex, losEditBtn + losDelBtn,
           undefined, undefined, ex.id
         );

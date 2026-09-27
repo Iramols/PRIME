@@ -115,7 +115,7 @@ function progBouwLijst() {
     let knoppen = '<button class="btn-primary" style="flex:1;min-width:140px;padding:10px" onclick="progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>';
     if (!prog.builtin && canEdit) {
       knoppen += '<button class="btn-sm' + coachOnlyBtn + '" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('common.edit') + '</button>' +
-        '<button class="btn-sm' + coachOnlyBtn + '" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">' + t('common.delete') + '</button>';
+        '<button class="btn-sm' + coachOnlyBtn + '" style="color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="progVerwijder(\'' + prog.id + '\')">🗑️ ' + t('common.delete') + '</button>';
     } else if (!prog.builtin) {
       knoppen += '<button class="btn-sm" onclick="progOpenEditor(\'' + prog.id + '\')">' + t('programmas.view') + '</button>';
     }
@@ -209,7 +209,7 @@ function progBouw3ColEditor() {
         (canEdit
           ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0">' +
             '<button class="ex-detail-btn' + coachOnlyBtn + '" onclick="progOefBewerken(' + i + ')"><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>' +
-            '<div class="ex-check-wrap' + coachOnlyBtn + '" onclick="progOefVerwijder(' + i + ')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>' +
+            '<div class="ex-check-wrap' + coachOnlyBtn + '" onclick="progOefVerwijder(' + i + ')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>' +
             '</div>'
           : '') +
         '</div>';

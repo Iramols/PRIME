@@ -393,8 +393,8 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openWpExerciseDetail(\'' + dateStr + '\',' + row.verwijderIdx + ')">'
           + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
       delBtn = afgesloten
-        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
-        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + dateStr + '\',' + row.verwijderIdx + ');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveOefForDay(\'' + dateStr + '\',' + row.verwijderIdx + ');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     } else if (row.kind === 'adhoc') {
       const hasDetail = !!(exerciseNotes[row.exId] && (exerciseNotes[row.exId].notes || (exerciseNotes[row.exId].sets && exerciseNotes[row.exId].sets.length)));
       editBtn = afgesloten
@@ -402,8 +402,8 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         : '<button class="ex-detail-btn ' + (hasDetail ? 'has-data' : '') + '" onclick="event.stopPropagation();openExerciseDetail(\'' + row.exId + '\')">'
           + '<span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
       delBtn = afgesloten
-        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
-        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--muted);line-height:1">✕</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     }
 
     const doneClick = kanAfvinken ? 'onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" ' : '';
