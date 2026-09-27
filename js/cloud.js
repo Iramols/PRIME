@@ -370,6 +370,17 @@ function noteSyncResult(error) {
 }
 
 window.addEventListener('offline', function() { _connOffline = true; updateConnBanner(); });
+
+// Ruwe momentopname (géén parsing nodig) van alles wat hieronder ververst
+// wordt, puur om na afloop te kunnen zien of er ECHT iets veranderd is --
+// zie de 'online'-listener hieronder.   als scheidingsteken sluit
+// toevallige overlap tussen twee sleutels uit.
+function _clientDataSnapshot() {
+  return CLOUD_KEYS.concat(['prime_prime_meals', 'prime_prime_programmas'])
+    .map(function(k) { return localStorage.getItem(k) || ''; })
+    .join(' ');
+}
+
 window.addEventListener('online', function() {
   _connOffline = false;
   updateConnBanner();
@@ -386,9 +397,7 @@ window.addEventListener('online', function() {
   // ander toestel, of -- voor de gedeelde PRIME-inhoud -- van de coach)
   // alsnog binnenkomen. hydrateFromCloud() overschrijft een lokale, nog
   // niet verzonden wijziging nooit zomaar (zie teHerpushen hierboven), dus
-  // dit is ook veilig als er nog iets in de wachtrij stond. De twee
-  // PRIME-ververs-functies bestaan pas na inloggen (lazy-geladen
-  // app-scripts, zie APP_SCRIPTS) -- vandaar de typeof-check.
+  // dit is ook veilig als er nog iets in de wachtrij stond.
   //
   // hydrateFromCloud() gebruikt zelf probeOffline() -- die onthoudt zijn
   // uitkomst voor de rest van de pagina-lading (bedoeld zodat het
@@ -399,15 +408,31 @@ window.addEventListener('online', function() {
   // zijn -- vandaar dat die herinnering hier expliciet gewist wordt, zodat
   // deze aanroep een eigen, verse controle doet.
   _offlineProbePromise = null;
-  if (activeClientId) {
-    hydrateFromCloud(activeClientId).catch(function(e) { console.error('online: hydrateFromCloud faalde:', e); });
-  }
+
+  if (!activeClientId) return; // nog niet ingelogd/gehydrateerd: niets om te verversen
+
+  // Ververste data komt alleen in localStorage terecht -- de app leest
+  // gewone klantgegevens (voedingslog, trainingslog, weekplanning, etc.)
+  // maar één keer in, bij het opstarten, in vaste variabelen (bv.
+  // foodDays/dayLog in state.js). Een achtergrond-ververs zonder herlaad
+  // zou dus wél de opslag bijwerken, maar niet het scherm dat je al open
+  // hebt staan. Om dat te vermijden: bij een ECHTE wijziging (dus niet bij
+  // elke online-flikkering zonder gevolg) de pagina herladen, zodat alles
+  // gegarandeerd vers wordt ingelezen -- dezelfde, al beproefde weg als bij
+  // het opstarten zelf. De twee PRIME-ververs-functies bestaan pas na
+  // inloggen (lazy-geladen app-scripts, zie APP_SCRIPTS), vandaar de
+  // typeof-check.
+  const voorSnapshot = _clientDataSnapshot();
+  const taken = [hydrateFromCloud(activeClientId).catch(function(e) { console.error('online: hydrateFromCloud faalde:', e); })];
   if (typeof primeMealsRefreshFromCloud === 'function') {
-    primeMealsRefreshFromCloud().catch(function(e) { console.error('online: primeMealsRefreshFromCloud faalde:', e); });
+    taken.push(primeMealsRefreshFromCloud().catch(function(e) { console.error('online: primeMealsRefreshFromCloud faalde:', e); }));
   }
   if (typeof primeProgRefreshFromCloud === 'function') {
-    primeProgRefreshFromCloud().catch(function(e) { console.error('online: primeProgRefreshFromCloud faalde:', e); });
+    taken.push(primeProgRefreshFromCloud().catch(function(e) { console.error('online: primeProgRefreshFromCloud faalde:', e); }));
   }
+  Promise.all(taken).then(function() {
+    if (_clientDataSnapshot() !== voorSnapshot) location.reload();
+  });
 });
 document.addEventListener('DOMContentLoaded', updateConnBanner);
 
