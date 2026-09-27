@@ -379,6 +379,35 @@ window.addEventListener('online', function() {
   // klaar is). Anders verdwijnt de melding soms al vóór de wachtrij
   // daadwerkelijk is bijgewerkt.
   flushSyncQueue();
+  // De app kan tijdens een internet-onderbreking gewoon open zijn
+  // gebleven (dus geen nieuwe opstart, waar dit anders vanzelf bij zou
+  // gebeuren) -- daarom hier dezelfde volledige ververs opnieuw uitvoeren
+  // als bij het opstarten, zodat gemiste wijzigingen (van jezelf op een
+  // ander toestel, of -- voor de gedeelde PRIME-inhoud -- van de coach)
+  // alsnog binnenkomen. hydrateFromCloud() overschrijft een lokale, nog
+  // niet verzonden wijziging nooit zomaar (zie teHerpushen hierboven), dus
+  // dit is ook veilig als er nog iets in de wachtrij stond. De twee
+  // PRIME-ververs-functies bestaan pas na inloggen (lazy-geladen
+  // app-scripts, zie APP_SCRIPTS) -- vandaar de typeof-check.
+  //
+  // hydrateFromCloud() gebruikt zelf probeOffline() -- die onthoudt zijn
+  // uitkomst voor de rest van de pagina-lading (bedoeld zodat het
+  // opstarten zelf niet steeds opnieuw hoeft te proberen). Was de pagina
+  // ooit tijdens het opstarten al als offline vastgesteld, dan zou
+  // hydrateFromCloud() hier anders die verouderde "offline"-uitkomst
+  // blijven hergebruiken, ook al meldt de browser nu juist weer online te
+  // zijn -- vandaar dat die herinnering hier expliciet gewist wordt, zodat
+  // deze aanroep een eigen, verse controle doet.
+  _offlineProbePromise = null;
+  if (activeClientId) {
+    hydrateFromCloud(activeClientId).catch(function(e) { console.error('online: hydrateFromCloud faalde:', e); });
+  }
+  if (typeof primeMealsRefreshFromCloud === 'function') {
+    primeMealsRefreshFromCloud().catch(function(e) { console.error('online: primeMealsRefreshFromCloud faalde:', e); });
+  }
+  if (typeof primeProgRefreshFromCloud === 'function') {
+    primeProgRefreshFromCloud().catch(function(e) { console.error('online: primeProgRefreshFromCloud faalde:', e); });
+  }
 });
 document.addEventListener('DOMContentLoaded', updateConnBanner);
 
