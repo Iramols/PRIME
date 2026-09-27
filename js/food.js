@@ -594,7 +594,7 @@ function addIngredientRow(prefill) {
     '<td style="padding:4px 3px"><input type="number" class="am-ing-carb" min="0" step="0.1" value="' + (p.carb ?? 0) + '" oninput="updateMealFormTotals()"' + dis + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
     '<td style="padding:4px 3px"><input type="number" class="am-ing-fat" min="0" step="0.1" value="' + (p.fat ?? 0) + '" oninput="updateMealFormTotals()"' + dis + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
     '<td style="padding:4px 3px;text-align:center;font-size:12px;color:var(--muted)" class="am-ing-kcal">0</td>' +
-    '<td style="padding:4px 0 4px 4px;text-align:center"><button onclick="removeIngredientRow(\'' + rowId + '\')" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px' + (_amFormReadOnly ? ';display:none' : '') + '">&#x2715;</button></td>';
+    '<td style="padding:4px 0 4px 4px;text-align:center"><button onclick="removeIngredientRow(\'' + rowId + '\')" title="' + t('common.delete') + '" style="padding:5px 8px;border-radius:6px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px' + (_amFormReadOnly ? ';display:none' : '') + '">&#x2715;</button></td>';
   if (p.per100) tr.style.borderLeft = '3px solid var(--sage)';
   tbody.appendChild(tr);
   updateMealFormTotals();
