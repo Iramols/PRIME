@@ -182,7 +182,7 @@ function progBouw3ColEditor() {
     const isActief = i === progActiefDagIdx;
     return '<div class="prog-list-row' + (isActief ? ' active' : '') + '" onclick="progDagSelecteer(' + i + ')">' +
       '<span>' + t('programmas.dayLabel', { n: i + 1 }) + (naam ? ' – ' + naam : '') + '</span>' +
-      (canEdit ? '<button class="prog-list-row-remove' + coachOnlyBtn + '" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">&#x2715;</button>' : '') +
+      (canEdit ? '<button class="prog-list-row-remove' + coachOnlyBtn + '" onclick="event.stopPropagation();progDagVerwijder(' + i + ')" title="' + t('common.delete') + '">🗑️</button>' : '') +
       '</div>';
   }).join('');
 

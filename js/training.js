@@ -459,7 +459,7 @@ function edRenderSets() {
         <input class="ed-set-input" type="text" value="${(s.reps || '').replace(/"/g,'&quot;')}" oninput="_edSets[${i}].reps=this.value">
         <input class="ed-set-input" type="text" value="${(s.rest || '').replace(/"/g,'&quot;')}" oninput="_edSets[${i}].rest=this.value">
       </div>
-      ${_edSets.length > 1 ? `<button class="ed-rm-btn" onclick="edRemoveSet(${i})" title="${t('extra.detail.removeSet')}">×</button>` : `<span style="width:20px;flex-shrink:0"></span>`}
+      ${_edSets.length > 1 ? `<button class="ed-rm-btn" onclick="edRemoveSet(${i})" title="${t('extra.detail.removeSet')}">🗑️</button>` : `<span style="width:20px;flex-shrink:0"></span>`}
     </div>`).join('');
 }
 
