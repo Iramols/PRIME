@@ -2,8 +2,9 @@
 // Conventie voor toekomstige features (zie ook js/i18n.js):
 //  - Elke nieuwe UI-tekst krijgt hier een nl- én een en-sleutel, gebruik
 //    in HTML data-i18n="jouw.sleutel" (textContent), data-i18n-html
-//    (innerHTML, voor tekst met opmaak) of data-i18n-placeholder
-//    (placeholder-attribuut). In JS: t('jouw.sleutel').
+//    (innerHTML, voor tekst met opmaak), data-i18n-placeholder
+//    (placeholder-attribuut) of data-i18n-aria-label (aria-label-attribuut).
+//    In JS: t('jouw.sleutel').
 //  - Nieuwe data-entiteiten (oefening/maaltijd/product/schema in
 //    js/data.js) krijgen een `name_en`-veld (en evt. `beschrijving_en`/
 //    `doel_en`). Het bestaande `name`/`naam`-veld (en interne
@@ -17,6 +18,8 @@ const I18N = {
     'login.title': 'Inloggen bij PRIME',
     'login.emailLabel': 'E-mail of gebruikersnaam',
     'login.passwordLabel': 'Wachtwoord',
+    'login.showPassword': 'Wachtwoord tonen',
+    'login.hidePassword': 'Wachtwoord verbergen',
     'login.submit': 'Inloggen →',
     'picker.title': 'Kies een klant',
     'picker.empty': 'Nog geen klanten aangemaakt. Voeg een login toe via het Supabase dashboard (zie supabase/schema.sql).',
@@ -762,6 +765,8 @@ const I18N = {
     'login.title': 'Log in to PRIME',
     'login.emailLabel': 'Email or username',
     'login.passwordLabel': 'Password',
+    'login.showPassword': 'Show password',
+    'login.hidePassword': 'Hide password',
     'login.submit': 'Log in →',
     'picker.title': 'Choose a client',
     'picker.empty': 'No clients created yet. Add a login via the Supabase dashboard (see supabase/schema.sql).',

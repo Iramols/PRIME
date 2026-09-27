@@ -439,6 +439,13 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   document.getElementById('logout-btn').addEventListener('click', doLogout);
   document.getElementById('switch-client-btn').addEventListener('click', switchClient);
+  document.getElementById('login-password-toggle').addEventListener('click', function() {
+    const input = document.getElementById('login-password');
+    const tonen = input.type === 'password';
+    input.type = tonen ? 'text' : 'password';
+    this.textContent = tonen ? '🙈' : '👁️';
+    this.setAttribute('aria-label', t(tonen ? 'login.hidePassword' : 'login.showPassword'));
+  });
   resolveSession().catch(function(err) {
     showLogin(t('auth.somethingWrong', { msg: err.message }));
   });
