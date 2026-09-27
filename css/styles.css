@@ -711,6 +711,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 
 /* Verbindingsmelding (alleen online): plakt bovenaan en duwt de pagina omlaag, i.p.v. knoppen te overlappen. */
 #conn-banner { position: sticky; top: 0; z-index: 400; background: var(--charcoal); color: #fff; font-size: 13px; line-height: 1.45; text-align: center; padding: calc(9px + env(safe-area-inset-top, 0px)) 16px 9px; }
+/* Update-melding: zelfde plak-aanpak als de verbindingsmelding hierboven. */
+#update-banner { position: sticky; top: 0; z-index: 401; background: var(--sage); color: #fff; font-size: 13px; line-height: 1.45; text-align: center; padding: calc(9px + env(safe-area-inset-top, 0px)) 16px 9px; }
+#update-banner button { margin-left: 10px; background: #fff; color: var(--charcoal); border: none; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
 /* 'Binnenkort'-label en banner: de AI-coach is een toekomstige functie. */
 .soon-badge { background: var(--coach-only); color: #fff; border-radius: 6px; padding: 1px 6px; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }

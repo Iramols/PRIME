@@ -371,6 +371,28 @@ function noteSyncResult(error) {
 
 window.addEventListener('offline', function() { _connOffline = true; updateConnBanner(); });
 
+// Zelfde controle als het zelf-ververs-scriptje bovenin index.html, maar dat
+// draait maar één keer, bij het laden van de pagina -- een tabblad dat al een
+// tijdje open staat merkt een nieuwe push dus nooit vanzelf op. Hier wordt
+// diezelfde controle herhaald zolang de app open blijft (elke 5 minuten, en
+// bij elke reconnect), maar in plaats van stil te herladen (dat zou midden in
+// iets kunnen gebeuren) tonen we een banner met een knop, zodat de gebruiker
+// zelf kiest wanneer hij herlaadt.
+let _updateBeschikbaar = false;
+async function checkForNewBuild() {
+  if (_updateBeschikbaar || typeof window.PRIME_BUILD === 'undefined') return;
+  try {
+    const res = await fetch('version.json?ts=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const v = await res.json();
+    if (!v || !v.build || v.build === window.PRIME_BUILD) return;
+    _updateBeschikbaar = true;
+    const el = document.getElementById('update-banner');
+    if (el) el.style.display = '';
+  } catch (e) {}
+}
+setInterval(checkForNewBuild, 5 * 60 * 1000);
+
 // Ruwe momentopname (géén parsing nodig) van alles wat hieronder ververst
 // wordt, puur om na afloop te kunnen zien of er ECHT iets veranderd is --
 // zie de 'online'-listener hieronder.   als scheidingsteken sluit
@@ -384,6 +406,7 @@ function _clientDataSnapshot() {
 window.addEventListener('online', function() {
   _connOffline = false;
   updateConnBanner();
+  checkForNewBuild();
   // _connSaveFailed wordt bewust NIET hier al op false gezet: pas nadat
   // flushSyncQueue() de wachtrij ook echt heeft leeggekregen (of er was
   // toch niets in de wachtrij, in welk geval flushSyncQueue() zelf meteen

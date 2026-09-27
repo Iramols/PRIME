@@ -364,7 +364,9 @@ const I18N = {
     'pilotTips.title': 'Goed om te weten',
     'pilotTips.oneDevice': 'Gebruik PRIME op één apparaat tegelijk (telefoon óf computer), anders kunnen wijzigingen verloren gaan.',
     'pilotTips.internet': 'PRIME werkt ook zonder internet, zodra je de app een eerste keer met internet hebt geopend. Wijzigingen die je offline maakt, worden automatisch gesynchroniseerd zodra je weer online bent.',
-    'pilotTips.update': 'Komt er een update? Je krijgt een mail. Sluit PRIME (of het tabblad) en open hem opnieuw: hij werkt zichzelf dan bij.',
+    'pilotTips.update': 'Komt er een update? Je ziet dan een melding boven in de app. Herlaad de pagina (of sluit PRIME en open hem opnieuw) om de nieuwste versie te gebruiken.',
+    'app.updateAvailable': 'Er is een update beschikbaar.',
+    'app.updateReload': 'Herlaad nu',
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -1104,7 +1106,9 @@ const I18N = {
     'pilotTips.title': 'Good to know',
     'pilotTips.oneDevice': 'Use PRIME on one device at a time (phone or computer), otherwise changes may get lost.',
     'pilotTips.internet': 'PRIME also works without internet, once you have opened the app with internet at least once. Changes you make offline sync automatically once you are back online.',
-    'pilotTips.update': 'Is there an update? You will get an email. Close PRIME (or the tab) and open it again: it updates itself.',
+    'pilotTips.update': 'Is there an update? You will see a notice at the top of the app. Reload the page (or close PRIME and open it again) to use the newest version.',
+    'app.updateAvailable': 'An update is available.',
+    'app.updateReload': 'Reload now',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
