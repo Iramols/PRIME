@@ -725,7 +725,13 @@ async function migrateBase64PhotosToStorage() {
       prime_custom_meals: v => { customMeals = v; },
       prime_custom_exercises: v => { customExercises = v; },
       prime_training_days: v => { trainingDays = v; trainingDagLog = trainingDays[currentTrainingDate] || []; },
-      prime_programmas: v => {}
+      prime_programmas: v => {},
+      // Een gelogd product/gerecht bewaart zijn foto als eigen kopie op het
+      // moment van loggen (zie food.js) -- die kopie leeft dus los van het
+      // bronproduct en wordt NOOIT vanzelf gemigreerd als alleen dat
+      // bronproduct hierboven wordt aangepakt. Bij dagelijks loggen kan dit
+      // flink oplopen; vandaar hier apart meegenomen.
+      prime_food_days: v => { foodDays = v; dayLog = foodDays[currentLogDate] || []; }
     };
     const rows = await fetchClientStateFor(activeClientId, Object.keys(setters));
     for (const key of Object.keys(rows)) {
