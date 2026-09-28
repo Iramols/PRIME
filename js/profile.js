@@ -46,11 +46,19 @@ function openProfile() {
   document.getElementById('p-goal').value = profile.goal || '';
   document.getElementById('p-activity').value = profile.activity || 1.375;
   document.getElementById('p-calorie-need').value = profile.calorieBehoefte || '';
+  document.getElementById('p-calorie-min').value = profile.calorieMin || '';
+  document.getElementById('p-calorie-max').value = profile.calorieMax || '';
   document.getElementById('p-training-enabled').checked = profile.trainingEnabled !== false;
   document.getElementById('profile-modal').classList.add('open');
 }
 function closeProfile() { document.getElementById('profile-modal').classList.remove('open'); }
 function saveProfile() {
+  const calorieMin = document.getElementById('p-calorie-min').value ? +document.getElementById('p-calorie-min').value : null;
+  const calorieMax = document.getElementById('p-calorie-max').value ? +document.getElementById('p-calorie-max').value : null;
+  if (calorieMin && calorieMax && calorieMin > calorieMax) {
+    try { showToast(t('profile.calorieRange.invalid'), true); } catch (e) {}
+    return;
+  }
   profile = {
     name: document.getElementById('p-name').value,
     age: +document.getElementById('p-age').value,
@@ -60,6 +68,8 @@ function saveProfile() {
     goal: document.getElementById('p-goal').value,
     activity: +document.getElementById('p-activity').value,
     calorieBehoefte: document.getElementById('p-calorie-need').value ? +document.getElementById('p-calorie-need').value : null,
+    calorieMin: calorieMin,
+    calorieMax: calorieMax,
     trainingEnabled: document.getElementById('p-training-enabled').checked
   };
   syncSet('prime_profile', profile);

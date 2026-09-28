@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20260927-2058';
+window.PRIME_BUILD = '20260928-0718';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260927-2058">
+<link rel="stylesheet" href="css/styles.css?v=20260928-0718">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20260927-2058"></script>
-<script src="js/translations.js?v=20260927-2058"></script>
-<script src="js/i18n.js?v=20260927-2058"></script>
+<script src="js/cloud.js?v=20260928-0718"></script>
+<script src="js/translations.js?v=20260928-0718"></script>
+<script src="js/i18n.js?v=20260928-0718"></script>
 </head>
 <body>
 
@@ -1131,6 +1131,13 @@ if ('serviceWorker' in navigator) {
       <input id="p-calorie-need" type="number" min="0" data-i18n-placeholder="profile.calorieNeed.placeholder" placeholder="optioneel">
       <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.calorieNeed.hint">Vul dit in om zelf het dagelijkse kcal-doel te bepalen. Dit vervangt dan de automatische inschatting op basis van de check-in (Herstel/Normaal/Zwaar) — eiwit/koolhydraten/vet blijven wel per dagtype verschillen. Laat leeg voor de automatische inschatting.</div>
     </div>
+    <div class="form-row"><label data-i18n="profile.calorieMin">Ondergrens calorieën (kcal/dag)</label>
+      <input id="p-calorie-min" type="number" min="0" data-i18n-placeholder="profile.calorieRange.placeholder" placeholder="optioneel">
+    </div>
+    <div class="form-row"><label data-i18n="profile.calorieMax">Bovengrens calorieën (kcal/dag)</label>
+      <input id="p-calorie-max" type="number" min="0" data-i18n-placeholder="profile.calorieRange.placeholder" placeholder="optioneel">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.calorieRange.hint">Laat beide leeg voor de automatische marge van ±10% rond je caloriedoel. Vul je er maar één in, dan blijft de andere grens automatisch.</div>
+    </div>
     <div class="form-row"><label data-i18n="profile.trainingEnabled">Training</label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
         <input id="p-training-enabled" type="checkbox" checked style="width:18px;height:18px;cursor:pointer;accent-color:var(--sage)">
@@ -1487,6 +1494,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20260927-2058"></script>
+<script src="js/auth.js?v=20260928-0718"></script>
 </body>
 </html>

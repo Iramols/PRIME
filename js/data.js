@@ -368,6 +368,15 @@ function macroTolerantie(key) {
 }
 function macroDoelRange(doelVal, key) {
   const tol = macroTolerantie(key);
+  // Calorieën: handmatige onder-/bovengrens uit het profiel wint, per grens
+  // apart -- vul je er maar één in, dan blijft de andere gewoon de
+  // automatische marge. Zie profile.js (p-calorie-min/-max).
+  if (key === 'kcal' && typeof profile !== 'undefined' && profile && (profile.calorieMin || profile.calorieMax)) {
+    return {
+      min: profile.calorieMin || Math.round(doelVal * (1 - tol)),
+      max: profile.calorieMax || Math.round(doelVal * (1 + tol))
+    };
+  }
   return { min: Math.round(doelVal * (1 - tol)), max: Math.round(doelVal * (1 + tol)) };
 }
 
