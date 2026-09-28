@@ -366,15 +366,20 @@ function getDagDoel() {
 function macroTolerantie(key) {
   return key === 'kcal' ? 0.1 : 0.2;
 }
-function macroDoelRange(doelVal, key) {
+// profielOverride (optioneel): gebruik het profiel van een ANDERE klant dan
+// de actieve (bv. calcSignalenVoorKlant() in history.js, dat per klant in de
+// Signalen-lijst een eigen los opgehaald profiel doorgeeft i.p.v. de globale
+// `profile`-variabele, die alleen de actieve/bekeken klant is).
+function macroDoelRange(doelVal, key, profielOverride) {
   const tol = macroTolerantie(key);
+  const p = profielOverride !== undefined ? profielOverride : (typeof profile !== 'undefined' ? profile : null);
   // Calorieën: handmatige onder-/bovengrens uit het profiel wint, per grens
   // apart -- vul je er maar één in, dan blijft de andere gewoon de
   // automatische marge. Zie profile.js (p-calorie-min/-max).
-  if (key === 'kcal' && typeof profile !== 'undefined' && profile && (profile.calorieMin || profile.calorieMax)) {
+  if (key === 'kcal' && p && (p.calorieMin || p.calorieMax)) {
     return {
-      min: profile.calorieMin || Math.round(doelVal * (1 - tol)),
-      max: profile.calorieMax || Math.round(doelVal * (1 + tol))
+      min: p.calorieMin || Math.round(doelVal * (1 - tol)),
+      max: p.calorieMax || Math.round(doelVal * (1 + tol))
     };
   }
   return { min: Math.round(doelVal * (1 - tol)), max: Math.round(doelVal * (1 + tol)) };

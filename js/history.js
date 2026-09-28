@@ -117,15 +117,27 @@ function renderHistory() {
     }
   }
 
-  // ── Voeding ──
-  const foodDays = metCheckout.filter(h => h.checkout.food > 0);
-  const opDoel   = foodDays.filter(h => h.checkout.food === 3).length;
-  const teveel   = foodDays.filter(h => h.checkout.food === 4).length;
-  const teweinig = foodDays.filter(h => h.checkout.food <= 2 && h.checkout.food > 0).length;
-  const pctLog   = total > 0 ? Math.round(foodDays.length / total * 100) : 0;
-  document.getElementById('h-food-ondoel').textContent  = foodDays.length > 0 ? Math.round(opDoel/foodDays.length*100)   + '%' : '—';
-  document.getElementById('h-food-teveel').textContent  = foodDays.length > 0 ? Math.round(teveel/foodDays.length*100)   + '%' : '—';
-  document.getElementById('h-food-teweinig').textContent = foodDays.length > 0 ? Math.round(teweinig/foodDays.length*100) + '%' : '—';
+  // ── Voeding ── Live herberekend uit de daadwerkelijk gelogde data
+  // (foodDays, state.js) tegen de huidige doelgrenzen (macroDoelRange() in
+  // data.js) -- zelfde aanpak als het "Voeding"-tabblad
+  // (renderVoedingVoortgang), i.p.v. de bevroren checkout.food-momentopname
+  // van bij het afsluiten van die dag. Zo tonen beide tabbladen altijd
+  // hetzelfde percentage, en werkt een latere aanpassing van je
+  // caloriegrens (Profiel) ook meteen door in oudere dagen. De dagen die
+  // meetellen blijven wel dezelfde als voorheen (elke dag met een
+  // check-out), alleen de op-doel/teveel/teweinig-indeling per dag is nu
+  // live berekend i.p.v. de oude vaste momentopname.
+  const kcalDoelVoeding = getDagDoel().kcal;
+  const kcalRangeVoeding = macroDoelRange(kcalDoelVoeding, 'kcal');
+  const kcalOpCheckoutDag = h => { const s = splitTotals(foodDays[h.date] || []); return s.eaten.kcal + s.planned.kcal; };
+  const foodDaysHist = metCheckout.filter(h => h.checkout.food > 0);
+  const opDoel   = foodDaysHist.filter(h => { const k = kcalOpCheckoutDag(h); return k >= kcalRangeVoeding.min && k <= kcalRangeVoeding.max; }).length;
+  const teveel   = foodDaysHist.filter(h => kcalOpCheckoutDag(h) > kcalRangeVoeding.max).length;
+  const teweinig = foodDaysHist.filter(h => kcalOpCheckoutDag(h) < kcalRangeVoeding.min).length;
+  const pctLog   = total > 0 ? Math.round(foodDaysHist.length / total * 100) : 0;
+  document.getElementById('h-food-ondoel').textContent  = foodDaysHist.length > 0 ? Math.round(opDoel/foodDaysHist.length*100)   + '%' : '—';
+  document.getElementById('h-food-teveel').textContent  = foodDaysHist.length > 0 ? Math.round(teveel/foodDaysHist.length*100)   + '%' : '—';
+  document.getElementById('h-food-teweinig').textContent = foodDaysHist.length > 0 ? Math.round(teweinig/foodDaysHist.length*100) + '%' : '—';
   document.getElementById('h-food-log-bar').style.width = pctLog + '%';
   document.getElementById('h-food-log-pct').textContent = pctLog + t('history.pctFoodLoggedSuffix');
 
@@ -138,8 +150,8 @@ function renderHistory() {
   if (parseFloat(avg(recent7, 'stress')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.highStress') });
   if (verledenCount >= 3 && volledig / verledenCount < 0.4) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowTrainingCompletion') });
   if (pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodRarelyLogged') });
-  if (foodDays.length >= 3) {
-    const pctOpDoel = opDoel / foodDays.length * 100;
+  if (foodDaysHist.length >= 3) {
+    const pctOpDoel = opDoel / foodDaysHist.length * 100;
     if (pctOpDoel < 65) signals.push({ kleur:'#E24B4A', tekst:t('history.signal.foodOnTargetLow') });
     else if (pctOpDoel <= 80) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodOnTargetMid') });
     else signals.push({ kleur:'var(--sage)', tekst:t('history.signal.foodOnTargetHigh') });
@@ -877,7 +889,7 @@ function calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj) {
   return { verledenCount: verleden.length, volledigDagen };
 }
 
-function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj) {
+function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, profielObj) {
   const signals = [];
   hist = (hist || []).slice().sort((a, b) => b.date.localeCompare(a.date));
   const total = hist.length;
@@ -914,9 +926,19 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj) {
   const { verledenCount, volledigDagen } = calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj);
   if (verledenCount >= 3 && volledigDagen / verledenCount < 0.4) signals.push({ kleur: '#f39c12', tekst: t('history.signal.lowTrainingCompletion') });
 
+  // Live herberekend uit de gelogde data van DEZE klant tegen ZIJN/HAAR
+  // eigen doelgrenzen -- zelfde aanpak als renderHistory() (het eigen
+  // Statistieken-tabblad), i.p.v. de bevroren checkout.food-momentopname.
+  // profielOverride op macroDoelRange() is hier nodig: de globale `profile`
+  // is die van de klant die de coach nu toevallig bekijkt, niet van elke
+  // klant in dit Signalen-overzicht.
+  const foodDaysKlant = foodDaysObj || {};
+  const kcalDoelKlant = (profielObj && profielObj.calorieBehoefte && profielObj.calorieBehoefte > 0) ? profielObj.calorieBehoefte : 2000;
+  const kcalRangeKlant = macroDoelRange(kcalDoelKlant, 'kcal', profielObj || {});
+  const kcalOpCheckoutDagKlant = h => { const s = splitTotals(foodDaysKlant[h.date] || []); return s.eaten.kcal + s.planned.kcal; };
   const metCheckout = hist.filter(h => h.checkout);
   const foodDaysArr = metCheckout.filter(h => h.checkout.food > 0);
-  const opDoel = foodDaysArr.filter(h => h.checkout.food === 3).length;
+  const opDoel = foodDaysArr.filter(h => { const k = kcalOpCheckoutDagKlant(h); return k >= kcalRangeKlant.min && k <= kcalRangeKlant.max; }).length;
   const pctLog = total > 0 ? foodDaysArr.length / total * 100 : 0;
   if (pctLog < 40 && total >= 3) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodRarelyLogged') });
   if (foodDaysArr.length >= 3) {
@@ -1084,8 +1106,8 @@ async function renderSignalenTab() {
   try { namen = await fetchProfileNames(); } catch (e) {}
   const resultaten = [];
   for (const c of clients) {
-    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done']);
-    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {});
+    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile']);
+    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {});
     if (signals.length) resultaten.push({ client: c, signals });
   }
   resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
