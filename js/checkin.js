@@ -149,6 +149,12 @@ function buildFoodSummary() {
 
   const kcalPct = doel.kcal > 0 ? Math.round(tot.kcal / doel.kcal * 100) : 0;
   const protPct = doel.prot > 0 ? Math.round(tot.prot / doel.prot * 100) : 0;
+  // Zelfde grens als de "Doel: X–Y kcal"-weergave bij Voeding en de
+  // calorietrend-grafiek (macroDoelRange() in data.js: automatisch ±10%, of
+  // de handmatige onder-/bovengrens uit Profiel) -- kcalPct hierboven blijft
+  // alleen voor de weergegeven tekst ("X% van je doel"), de daadwerkelijke
+  // op-doel/teveel/teweinig-beslissing gebruikt de absolute grenzen.
+  const kcalRange = macroDoelRange(doel.kcal, 'kcal');
 
   // Bepaal status op basis van calorieën
   let statusIcon, statusText, coachQuestion, confirmOptions;
@@ -164,7 +170,7 @@ function buildFoodSummary() {
       { label: t('checkin.confirm.mostlyFollowed'), val: 2 },
       { label: t('checkin.confirm.notWellToday'), val: 1 },
     ];
-  } else if (kcalPct >= 90 && kcalPct <= 115) {
+  } else if (tot.kcal >= kcalRange.min && tot.kcal <= kcalRange.max) {
     // Op doel
     statusIcon = '✅';
     statusText = t('checkin.food.onTarget', { kcal: Math.round(tot.kcal), doel: doel.kcal, pct: kcalPct });
@@ -175,7 +181,7 @@ function buildFoodSummary() {
       { label: t('checkin.confirm.ateMore'), val: 4 },
       { label: t('checkin.confirm.ateLess'), val: 2 },
     ];
-  } else if (kcalPct > 115) {
+  } else if (tot.kcal > kcalRange.max) {
     // Teveel gegeten
     const over = Math.round(tot.kcal - doel.kcal);
     statusIcon = '⬆️';

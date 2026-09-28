@@ -307,8 +307,10 @@ function renderWeightChart() {
 // (state.js) -- de daadwerkelijk gelogde producten/gerechten per datum --
 // zelfde inline-SVG-stijl als de Energie-/Gewichtgrafiek hierboven. Toont
 // ook het kcal-doel (getDagDoel()) als min/max-band met stippellijnen
-// (±10%, dezelfde marge als de "Doel: X–Y kcal"-weergave bij Voeding), zodat
-// in één oogopslag te zien is welke dagen binnen of buiten die band vielen.
+// (macroDoelRange() in data.js: automatisch ±10%, of de handmatige onder-/
+// bovengrens uit Profiel -- dezelfde marge als de "Doel: X–Y kcal"-weergave
+// bij Voeding), zodat in één oogopslag te zien is welke dagen binnen of
+// buiten die band vielen.
 function renderKcalTrendChart() {
   const el = document.getElementById('kcal-trend-chart');
   if (!el) return;
@@ -329,8 +331,7 @@ function renderKcalTrendChart() {
   }
 
   const doel = getDagDoel();
-  const minLimiet = Math.round(doel.kcal * 0.9);
-  const maxLimiet = Math.round(doel.kcal * 1.1);
+  const { min: minLimiet, max: maxLimiet } = macroDoelRange(doel.kcal, 'kcal');
 
   const W = 300, H = 110;
   // Rechts extra ruimte (padR 28) voor de limiet-getallen, zodat ze naast de
