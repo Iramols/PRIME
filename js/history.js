@@ -328,13 +328,18 @@ function renderKcalTrendChart() {
   if (!el) return;
 
   const _tmVandaag = localDateStr();
+  // Gegeten + ingepland samen (sumItems() zonder isEatenItem-filter) --
+  // zelfde aanpak als de macrotrend-grafiek hieronder, zodat beide
+  // grafieken tijdens de lopende dag hetzelfde beeld geven i.p.v. dat kcal
+  // alleen het al-afgevinkte deel telt terwijl E/V/K ook het geplande deel
+  // meetellen.
   const data = Object.keys(foodDays)
-    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag && sumItems(foodDays[dateStr].filter(isEatenItem)).kcal > 0)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag && sumItems(foodDays[dateStr]).kcal > 0)
     .sort()
     .slice(-30)
     .map(dateStr => ({
       date: dateStr,
-      kcal: Math.round(sumItems(foodDays[dateStr].filter(isEatenItem)).kcal)
+      kcal: Math.round(sumItems(foodDays[dateStr]).kcal)
     }));
 
   if (data.length < 2) {
