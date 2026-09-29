@@ -101,6 +101,7 @@ function renderHome() {
 
   document.getElementById('already-done-section').style.display = alDagAfgesloten ? 'block' : 'none';
   document.getElementById('day-section').style.display = isVandaagActief ? 'block' : 'none';
+  if (typeof updateHomeWeightRows === 'function') updateHomeWeightRows();
   document.getElementById('checkin-section').style.display = (alDagAfgesloten || isVandaagActief) ? 'none' : 'block';
   // De ondertitel in de hero-banner ("Doe je check-in...") is anders
   // statische tekst die nooit meebeweegt met de staat van de dag -- klopte

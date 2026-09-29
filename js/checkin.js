@@ -19,6 +19,85 @@ function skipWeight() {
   skipBtn.classList.add('skipped');
 }
 
+// ========== GEWICHT ALSNOG TOEVOEGEN/AANPASSEN ==========
+// Los van de ochtend-check-in: via het Dashboard (elke dagstand) of de
+// gewicht-grafiek in Voortgang kun je een gewicht ook achteraf, voor
+// vandaag of een gemiste dag, toevoegen of aanpassen. Vandaag-nog-niet-
+// afgesloten leeft in `todayData` (nog niet in `history`, zie doCheckout()
+// hieronder); elke andere dag (afgesloten, of een dag uit het verleden die
+// nog nooit een check-in had) leeft/komt in `history`.
+function _weightForDate(dateStr) {
+  if (todayData && todayData.date === dateStr) return (todayData.checkin && todayData.checkin.weight) || null;
+  const entry = history.find(h => h.date === dateStr);
+  return (entry && entry.checkin && entry.checkin.weight) || null;
+}
+
+function setWeightForDate(dateStr, gewicht) {
+  if (todayData && todayData.date === dateStr) {
+    todayData.checkin = todayData.checkin || {};
+    todayData.checkin.weight = gewicht;
+    syncSet('prime_today', todayData);
+  } else {
+    let entry = history.find(h => h.date === dateStr);
+    if (!entry) {
+      entry = { date: dateStr, checkin: {}, checkout: null };
+      history.push(entry);
+      history.sort((a, b) => b.date.localeCompare(a.date));
+      if (history.length > 60) history = history.slice(0, 60);
+    }
+    entry.checkin = entry.checkin || {};
+    entry.checkin.weight = gewicht;
+    syncSet('prime_history', history);
+  }
+  // Zelfde als bij een normale check-in (doCheckin() hierboven): het
+  // profielgewicht bijwerken als dit de meest recente bekende dag is.
+  const meestRecenteDag = (todayData && todayData.date) || (history.length && history[0].date);
+  if (dateStr === meestRecenteDag) {
+    profile.weight = gewicht;
+    syncSet('prime_profile', profile);
+  }
+}
+
+function openWeightModal(dateStr) {
+  const d = dateStr || localDateStr();
+  document.getElementById('wm-date').value = d;
+  document.getElementById('wm-date').max = localDateStr(); // geen toekomstige datum
+  document.getElementById('wm-weight').value = _weightForDate(d) || '';
+  document.getElementById('wm-error').textContent = '';
+  document.getElementById('weight-modal').classList.add('open');
+}
+function closeWeightModal() { document.getElementById('weight-modal').classList.remove('open'); }
+
+function saveWeightModal() {
+  const dateStr = document.getElementById('wm-date').value;
+  const val = parseFloat(document.getElementById('wm-weight').value);
+  const errEl = document.getElementById('wm-error');
+  if (!dateStr) { errEl.textContent = t('weight.modal.dateRequired'); return; }
+  if (!(val > 0)) { errEl.textContent = t('weight.modal.weightRequired'); return; }
+  if (dateStr > localDateStr()) { errEl.textContent = t('weight.modal.futureNotAllowed'); return; }
+  setWeightForDate(dateStr, val);
+  closeWeightModal();
+  // Meteen overal zichtbaar i.p.v. pas bij een volgende tabwissel.
+  if (typeof updateHomeWeightRows === 'function') updateHomeWeightRows();
+  if (typeof renderHistory === 'function') renderHistory();
+  try { showToast(t('weight.modal.saved')); } catch (e) {}
+}
+
+// Regeltje op het Dashboard ("Gewicht: X kg ✏️ Aanpassen" / "Nog geen
+// gewicht ingevuld ✏️ Toevoegen") -- zelfde inhoud op de twee plekken waar
+// de dag ook maar kan staan (nog actief, of al afgesloten), zie renderHome()
+// in app.js.
+function updateHomeWeightRows() {
+  const gewicht = _weightForDate(localDateStr());
+  const html = gewicht > 0
+    ? '<span style="font-size:20px;line-height:1">⚖️</span><span style="font-size:14px;color:var(--charcoal);flex:1">' + t('weight.row.filled', { kg: gewicht }) + '</span><span style="font-size:13px;color:var(--sage);font-weight:600">✏️ ' + t('weight.row.editBtn') + '</span>'
+    : '<span style="font-size:20px;line-height:1">⚖️</span><span style="font-size:14px;color:var(--muted);flex:1">' + t('weight.row.empty') + '</span><span style="font-size:13px;color:var(--sage);font-weight:600">✏️ ' + t('weight.row.addBtn') + '</span>';
+  const dayEl = document.getElementById('day-weight-row');
+  const doneEl = document.getElementById('done-weight-row');
+  if (dayEl) dayEl.innerHTML = html;
+  if (doneEl) doneEl.innerHTML = html;
+}
+
 function pick(key, val, btn) {
   const container = btn.closest('.cq-options') || btn.closest('.emoji-scale');
   const btnSel = btn.classList.contains('cq-btn') ? '.cq-btn' : '.emoji-btn';
