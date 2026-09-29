@@ -246,7 +246,15 @@ function renderWeightChart() {
   const el = document.getElementById('weight-chart');
   if (!el) return;
 
-  const data = history
+  // Een gewicht dat via het Dashboard-regeltje is ingevuld terwijl de dag
+  // nog actief is (nog niet afgesloten) staat in todayData, niet in
+  // history (dat gebeurt pas bij checkout, zie doCheckout()) -- zonder dit
+  // zou je dat gewicht dus pas ná het afsluiten van de dag in de grafiek
+  // zien i.p.v. meteen.
+  const bron = (todayData && todayData.checkin && todayData.checkin.weight > 0)
+    ? [todayData, ...history]
+    : history;
+  const data = bron
     .filter(h => h.checkin && h.checkin.weight > 0)
     .slice(0, 30)
     .reverse();
