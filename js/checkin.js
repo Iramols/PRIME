@@ -185,12 +185,17 @@ function buildTrainingSummary() {
     ];
   }
 
-  // Render tags
+  // Render tags -- zelfde detectie als de teller hierboven (ex._wpKey, de
+  // stabiele naam-sleutel). Gebruikte voorheen per ongeluk nog de oude,
+  // numerieke index (parseInt(ex.id...)), die tegen de huidige
+  // string-sleutels in _btsWpDoneArr vrijwel nooit meer matchte -- daardoor
+  // leken weekplanning-oefeningen altijd "niet gedaan", ook al waren ze
+  // wel afgevinkt (en telden ze wel goed mee in "X van Y gedaan").
   let doneTags = '';
   allItems.forEach(function(ex) {
     let isDone = dagDone[ex.id];
     if (!isDone && ex.id.startsWith('wp-')) {
-      isDone = _btsWpDoneArr.includes(parseInt(ex.id.replace('wp-', '')));
+      isDone = _btsWpDoneArr.includes(ex._wpKey);
     }
     doneTags += isDone
       ? '<span class="done-tag">✓ ' + ex.name + '</span>'
