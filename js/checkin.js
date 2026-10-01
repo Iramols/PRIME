@@ -131,9 +131,19 @@ function buildTrainingSummary() {
   const _btsWpEntry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(p => p.date === _btsToday) || null;
   const _btsWpDoneArr = wpGetDone(_btsToday); // migreert oude numerieke data indien nodig, zie weekplanning.js
   const _btsWpOef = _btsWpEntry ? wpGetOefeningen(_btsWpEntry.schemaId) : [];
-  const wpItems = _btsWpOef.map(function(ex, i) {
-    return { id: 'wp-' + i, name: dispName(ex) || ('Oefening ' + (i+1)), _wpKey: wpOefKey(ex, i, _btsWpOef) };
-  });
+  // Voor vandaag verwijderde weekplanning-oefeningen (zie wpRemoveOefForDay())
+  // tellen hier niet meer mee -- zelfde aanpak als _dagWpZichtbaar in
+  // renderTrainingDag() (training.js). Rank-sleutel (wpOefKey) blijft
+  // berekend tegen het ONGEFILTERDE _btsWpOef met de ORIGINELE index, zodat
+  // hij exact overeenkomt met de sleutel die elders (bij het afvinken) voor
+  // diezelfde oefening is opgeslagen.
+  const _btsWpVerwijderd = wpGetRemoved(_btsToday);
+  const wpItems = _btsWpOef
+    .map(function(ex, i) { return { ex: ex, i: i }; })
+    .filter(function(x) { return !_btsWpVerwijderd.includes(x.i); })
+    .map(function(x) {
+      return { id: 'wp-' + x.i, name: dispName(x.ex) || ('Oefening ' + (x.i+1)), _wpKey: wpOefKey(x.ex, x.i, _btsWpOef) };
+    });
 
   const allItems = wpItems.concat(trainingDagLog);
   const total = allItems.length;
