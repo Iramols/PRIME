@@ -37,6 +37,12 @@ function go(screen) {
   const _bnavMore = document.getElementById('bnav-more');
   if (_bnavMore) _bnavMore.classList.toggle('active', screen === 'signalen' || screen === 'beheer' || screen === 'coach');
   closeMoreMenu();
+  // Zonder dit bleef het Dashboard een bevroren momentopname tonen (bv. een
+  // inmiddels verwijderde oefening) totdat de pagina werd herladen -- elk
+  // ander scherm hieronder ververst zichzelf al wel bij elke tabwissel.
+  // renderHome() is al veilig herhaaldelijk aan te roepen (gebeurt al bij
+  // een taalwissel, zie rerenderCurrentScreen() in i18n.js).
+  if (screen === 'home') renderHome();
   if (screen === 'history') renderHistory();
   if (screen === 'signalen') renderSignalenTab();
   if (screen === 'training') switchTrainingTab('dag');
@@ -124,7 +130,12 @@ function renderHome() {
       const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
       document.getElementById('day-title').textContent = t('home.pilotThanks');
       document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + dispName(_wpDisp) + '</div>';
-      const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
+      // wpGetZichtbareOefeningen() i.p.v. wpGetOefeningen(): die laatste geeft
+      // het hele programma-sjabloon terug, zonder rekening te houden met
+      // oefeningen die voor déze specifieke dag verwijderd zijn (zie
+      // wpGetRemoved() in weekplanning.js) -- zonder dit bleef een
+      // verwijderde oefening dus gewoon in deze Dashboard-preview staan.
+      const _wpOef = wpGetZichtbareOefeningen(today, _wpEntry.schemaId);
       document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');
       document.getElementById('day-summary').innerHTML = t('day.summary.default');
       document.getElementById('hero-sub').innerHTML = t('day.summary.default');

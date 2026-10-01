@@ -402,7 +402,10 @@ async function doCheckin() {
   if (_wpEntry) {
     const _wpDisp = wpGetDisplay(_wpEntry.schemaId);
     document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-normal">' + _wpDisp.icon + ' ' + _wpDisp.naam + '</div>';
-    const _wpOef = wpGetOefeningen(_wpEntry.schemaId);
+    // wpGetZichtbareOefeningen() i.p.v. wpGetOefeningen(): houdt rekening
+    // met oefeningen die voor vandaag specifiek verwijderd zijn (zie
+    // renderHome() in app.js, zelfde fix).
+    const _wpOef = wpGetZichtbareOefeningen(today, _wpEntry.schemaId);
     document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');
   } else {
     document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
