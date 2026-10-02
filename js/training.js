@@ -1012,10 +1012,10 @@ function renderTrainingDag() {
       })() + '</div>'
     + '</div>'
     + (_dagAfgesloten ? '' :
-      '<div style="display:flex;gap:8px;margin-top:8px">'
-      + '<button class="btn-sm" style="flex:1;padding:8px 6px" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
-      + '<button class="btn-sm" style="flex:1;padding:8px 6px" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
-      + '<button class="btn-sm" style="flex:1;padding:8px 6px" onclick="openSessieModal(\'' + _dagToday + '\')">' + t('sessie.btn.add') + '</button>'
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">'
+      + '<button class="btn-sm" style="flex:1" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
+      + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
+      + '<button class="btn-sm" style="flex:1 1 100%" onclick="openSessieModal(\'' + _dagToday + '\')">' + t('sessie.btn.add') + '</button>'
       + '</div>')
     // Kopiëren blijft mogelijk vanaf een vastliggende dag (leest er alleen
     // van, wijzigt de dag zelf niet) -- zelfde principe als in
