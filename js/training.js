@@ -10,6 +10,121 @@ function persistTrainingDag() {
   syncSet('prime_training_days', trainingDays);
 }
 
+// ─── Sessies (personal training / groepstraining) ─────────────────────────────
+// Een sessie is een eigen soort item in dezelfde per-datum lijst als de losse
+// oefeningen (trainingDays[datum]): { id, kind:'sessie', sessieType:'pt'|'groep',
+// name, time, duur, notes }. Daardoor werken kopiëren, dag wissen en offline
+// vanzelf. De gedaan-status staat op ÉÉN plek: prime_wp_done[datum] met sleutel
+// 'a:<id>' (zie isSessieGedaan) -- Vandaag, Weekplanning, de check-in en de
+// export lezen allemaal daaruit, nooit uit een eigen kopie (zie dagDone).
+// Door gebruikers getypte tekst (titel/notitie) komt in innerHTML terecht, en
+// de coach ziet die ook bij andere klanten -- dus altijd eerst escapen.
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function isSessie(e) { return !!e && e.kind === 'sessie'; }
+function sessieIcon(type) { return type === 'groep' ? '👥' : '🤝'; }
+function sessieTypeLabel(type) { return t(type === 'groep' ? 'sessie.type.groep' : 'sessie.type.pt'); }
+function newSessieId() { return 'sess-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+function isSessieGedaan(dateStr, id) { return wpGetDone(dateStr).includes('a:' + id); }
+function sessiesVoorDag(dateStr) { return (trainingDays[dateStr] || []).filter(isSessie); }
+function sessieSubtekst(s) {
+  const delen = [sessieTypeLabel(s.sessieType)];
+  if (s.time) delen.push(s.time);
+  if (s.duur) delen.push(s.duur + ' ' + t('sessie.minutes'));
+  if (s.notes) delen.push(s.notes);
+  return delen.join(' · ');
+}
+function sessieKleur(type) { return type === 'groep' ? 'var(--accent-light)' : 'var(--sage-light)'; }
+
+// Vinkt een sessie af/uit op de dag zelf (zelfde regel als oefeningen,
+// magAfvinken in data.js) en houdt beide schermen gelijk.
+function toggleSessieDone(dateStr, id) {
+  if (!magAfvinken(dateStr)) return;
+  wpToggleOefDone(dateStr, 'a:' + id);
+  const gedaan = isSessieGedaan(dateStr, id);
+  dagDone[id] = gedaan;
+  const chk = document.getElementById('dag-check-' + id);
+  if (chk) chk.classList.toggle('done', gedaan);
+  updateDagProgress();
+}
+
+// Alles opnieuw tekenen wat sessies toont (Vandaag, Weekplanning, tabteller,
+// dashboard) -- één plek, zodat een scherm nooit vergeten wordt.
+function refreshNaSessieWijziging() {
+  try { if (document.getElementById('training-dag-list')) renderTrainingDag(); } catch (e) { console.error(e); }
+  try { if (document.getElementById('weekplanning-content')) renderWeekplanning(); } catch (e) { console.error(e); }
+  try { updateTrainingDagBadge(); } catch (e) { console.error(e); }
+  try { if (typeof renderHome === 'function') renderHome(); } catch (e) { console.error(e); }
+}
+
+function sessieVerwijder(dateStr, id) {
+  if (isDagAfgesloten(dateStr)) return;
+  const lijst = (trainingDays[dateStr] || []).filter(function(e) { return e.id !== id; });
+  trainingDays[dateStr] = lijst;
+  syncSet('prime_training_days', trainingDays);
+  if (dateStr === currentTrainingDate) trainingDagLog = lijst;
+  delete dagDone[id];
+  refreshNaSessieWijziging();
+}
+
+let _sessieModalDate = null, _sessieModalEditId = null, _sessieModalType = 'pt';
+function pickSessieType(type) {
+  const vorigeStandaard = sessieTypeLabel(_sessieModalType);
+  _sessieModalType = type;
+  document.querySelectorAll('#sm-types .fb-kind').forEach(function(b) { b.classList.toggle('active', b.dataset.type === type); });
+  const titel = document.getElementById('sm-title');
+  // De standaardtitel meewisselen, maar nooit een zelf getypte titel overschrijven.
+  if (titel && (!titel.value.trim() || titel.value.trim() === vorigeStandaard)) titel.value = sessieTypeLabel(type);
+}
+function openSessieModal(dateStr, editId) {
+  if (isDagAfgesloten(dateStr)) { alert(t('weekplan.dayLocked')); return; }
+  _sessieModalDate = dateStr;
+  _sessieModalEditId = editId || null;
+  const bestaand = editId ? (trainingDays[dateStr] || []).find(function(e) { return e.id === editId; }) : null;
+  _sessieModalType = bestaand ? bestaand.sessieType : 'pt';
+  document.getElementById('sm-heading').textContent = t(bestaand ? 'sessie.modal.titleEdit' : 'sessie.modal.title');
+  const d = wpDate(dateStr);
+  document.getElementById('sm-date').textContent = d.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('sm-title').value = bestaand ? bestaand.name : sessieTypeLabel(_sessieModalType);
+  document.getElementById('sm-time').value = bestaand ? (bestaand.time || '') : '';
+  document.getElementById('sm-duur').value = bestaand ? (bestaand.duur || '') : '';
+  document.getElementById('sm-notes').value = bestaand ? (bestaand.notes || '') : '';
+  document.getElementById('sm-error').textContent = '';
+  document.querySelectorAll('#sm-types .fb-kind').forEach(function(b) { b.classList.toggle('active', b.dataset.type === _sessieModalType); });
+  document.getElementById('sessie-modal').classList.add('open');
+}
+function closeSessieModal() { document.getElementById('sessie-modal').classList.remove('open'); }
+function saveSessieModal() {
+  const err = document.getElementById('sm-error');
+  const naam = document.getElementById('sm-title').value.trim();
+  const duurRaw = document.getElementById('sm-duur').value.trim();
+  const duur = duurRaw === '' ? null : Math.round(Number(duurRaw));
+  if (!naam) { err.textContent = t('sessie.err.title'); return; }
+  if (duur !== null && (!(duur >= 5) || duur > 600)) { err.textContent = t('sessie.err.duration'); return; }
+  const dateStr = _sessieModalDate;
+  if (isDagAfgesloten(dateStr)) { err.textContent = t('weekplan.dayLocked'); return; }
+  const item = {
+    id: _sessieModalEditId || newSessieId(),
+    kind: 'sessie',
+    sessieType: _sessieModalType,
+    name: naam,
+    icon: sessieIcon(_sessieModalType),
+    time: document.getElementById('sm-time').value || '',
+    duur: duur,
+    notes: document.getElementById('sm-notes').value.trim()
+  };
+  const lijst = (trainingDays[dateStr] || []).slice();
+  const idx = lijst.findIndex(function(e) { return e.id === item.id; });
+  if (idx !== -1) lijst[idx] = item; else lijst.push(item);
+  trainingDays[dateStr] = lijst;
+  syncSet('prime_training_days', trainingDays);
+  if (dateStr === currentTrainingDate) trainingDagLog = lijst;
+  closeSessieModal();
+  refreshNaSessieWijziging();
+  try { showToast(t('sessie.saved')); } catch (e) { console.error(e); }
+}
+
 // Zet welke datum trainingDagLog weergeeft/bewerkt -- zelfde patroon als
 // switchLogDate() bij Voeding. Gebruikt door wpdAddForDay() (Weekplanning >
 // dagkaart > "+ Oefening") zodat je oefeningen kunt toevoegen voor een
@@ -707,6 +822,12 @@ function renderTrainingDag() {
   // Altijd synchroon houden met trainingDays (bv. na kopiëren vanuit Weekplanning)
   trainingDagLog = trainingDays[currentTrainingDate] || [];
 
+  // Sessies (personal/groep) staan in dezelfde lijst als de losse oefeningen,
+  // maar hebben geen spiergroep/sets -- hier gesplitst zodat de groeperingen
+  // hieronder alleen echte oefeningen zien.
+  const _dagSessies = trainingDagLog.filter(isSessie);
+  const _dagLos = trainingDagLog.filter(function(e) { return !isSessie(e); });
+
   // Weekplanning oefeningen voor vandaag
   const _dagToday = localDateStr();
   // "Vandaag" is altijd de datum van vandaag, maar die kan ondertussen al
@@ -738,7 +859,9 @@ function renderTrainingDag() {
   if (progWrap) progWrap.style.display = 'block';
 
   // Init dagDone voor losse oefeningen
-  trainingDagLog.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
+  _dagLos.forEach(function(ex) { if (dagDone[ex.id] === undefined) dagDone[ex.id] = false; });
+  // Sessies: de gedaan-status komt altijd uit prime_wp_done (zie isSessieGedaan).
+  _dagSessies.forEach(function(s) { dagDone[s.id] = isSessieGedaan(_dagToday, s.id); });
   // Init dagDone voor weekplanning items (gespiegeld vanuit prime_wp_done,
   // gematcht op de stabiele naam-sleutel i.p.v. array-positie, zie
   // wpOefKey() in weekplanning.js) -- alleen de zichtbare (niet-
@@ -820,10 +943,35 @@ function renderTrainingDag() {
   }
 
 
+  // Sessies (personal training / groepstraining)
+  if (_dagSessies.length > 0) {
+    html += '<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">' + t('sessie.section') + '</div>';
+    _dagSessies.forEach(function(s) {
+      const gedaan = dagDone[s.id];
+      const idEsc = String(s.id).replace(/'/g, "\\'");
+      const editBtn = _dagAfgesloten
+        ? '<button class="ex-detail-btn" disabled><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+        : '<button class="ex-detail-btn" onclick="event.stopPropagation();openSessieModal(\'' + _dagToday + '\',\'' + idEsc + '\')"><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
+      const delBtn = _dagAfgesloten
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();sessieVerwijder(\'' + _dagToday + '\',\'' + idEsc + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+      html += '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
+        + '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;background:' + sessieKleur(s.sessieType) + '">' + sessieIcon(s.sessieType) + '</div>'
+        + '<div style="flex:1;min-width:0;padding:12px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">'
+        + '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:14px;margin-bottom:2px">' + escapeHtml(s.name) + '</div>'
+        + '<div style="font-size:12px;color:var(--muted)">' + escapeHtml(sessieSubtekst(s)) + '</div></div>'
+        + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;' + (_dagAfgesloten ? 'opacity:0.55' : '') + '">'
+        + '<div class="ex-check-wrap"' + (_dagAfgesloten ? '' : ' onclick="toggleSessieDone(\'' + _dagToday + '\',\'' + idEsc + '\')"') + ' style="cursor:' + (_dagAfgesloten ? 'default' : 'pointer') + '"><div id="dag-check-' + s.id + '" class="exercise-check ' + (gedaan ? 'done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>'
+        + editBtn + delBtn
+        + '</div></div></div>';
+    });
+    html += '</div>';
+  }
+
   // Losse oefeningen
-  if (trainingDagLog.length > 0) {
+  if (_dagLos.length > 0) {
     const groups = {};
-    trainingDagLog.forEach(function(ex) {
+    _dagLos.forEach(function(ex) {
       if (!groups[ex.group]) groups[ex.group] = [];
       groups[ex.group].push(ex);
     });
@@ -855,12 +1003,19 @@ function renderTrainingDag() {
     + trainingDagLog.reduce(function(a,e){ return a + Number(e.sets||0); }, 0);
   totalEl.innerHTML = '<div class="card" style="background:var(--sage-light);border-color:var(--sage-mid);margin-top:4px">'
     + '<div style="font-size:13px;font-weight:600;color:var(--sage);margin-bottom:4px">' + t('training.totalOverview') + '</div>'
-    + '<div style="font-size:13px;color:var(--charcoal)">' + t('training.totalSummary', { items: totalItems, sets: totalSets }) + '</div>'
+    + '<div style="font-size:13px;color:var(--charcoal)">' + (function() {
+        // Sessies zijn geen oefeningen: apart benoemd i.p.v. meegeteld.
+        const oefItems = totalItems - _dagSessies.length;
+        const sessieTekst = _dagSessies.length + ' ' + t(_dagSessies.length === 1 ? 'sessie.singular' : 'sessie.plural');
+        if (!_dagSessies.length) return t('training.totalSummary', { items: oefItems, sets: totalSets });
+        return oefItems > 0 ? t('training.totalSummary', { items: oefItems, sets: totalSets }) + ' · ' + sessieTekst : sessieTekst;
+      })() + '</div>'
     + '</div>'
     + (_dagAfgesloten ? '' :
       '<div style="display:flex;gap:8px;margin-top:8px">'
-      + '<button class="btn-sm" style="flex:1" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
-      + '<button class="btn-sm" style="flex:1" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
+      + '<button class="btn-sm" style="flex:1;padding:8px 6px" onclick="trainingAddForDay(\'oefeningen\')">' + t('training.dag.addExerciseForDay') + '</button>'
+      + '<button class="btn-sm" style="flex:1;padding:8px 6px" onclick="switchTrainingTab(\'weekplanning\')">' + t('training.dag.addProgramForDay') + '</button>'
+      + '<button class="btn-sm" style="flex:1;padding:8px 6px" onclick="openSessieModal(\'' + _dagToday + '\')">' + t('sessie.btn.add') + '</button>'
       + '</div>')
     // Kopiëren blijft mogelijk vanaf een vastliggende dag (leest er alleen
     // van, wijzigt de dag zelf niet) -- zelfde principe als in

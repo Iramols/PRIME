@@ -366,6 +366,27 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
     const naam = dispName(o);
     const isDone = done.includes(key);
 
+    if (row.kind === 'sessie') {
+      const idEsc = String(o.id).replace(/'/g, "\\'");
+      const sEdit = afgesloten
+        ? '<button class="ex-detail-btn" disabled><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>'
+        : '<button class="ex-detail-btn" onclick="event.stopPropagation();openSessieModal(\'' + dateStr + '\',\'' + idEsc + '\')"><span class="ex-detail-icon">✏️</span><span class="ex-detail-label">' + t('extra.detail.editBtn') + '</span></button>';
+      const sDel = afgesloten
+        ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
+        : '<div class="ex-check-wrap" onclick="event.stopPropagation();sessieVerwijder(\'' + dateStr + '\',\'' + idEsc + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
+      return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
+        '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;background:' + sessieKleur(o.sessieType) + '">' + sessieIcon(o.sessieType) + '</div>' +
+        '<div style="flex:1;min-width:120px">' +
+          '<div style="font-size:12px;color:var(--charcoal)">' + escapeHtml(o.name) + '</div>' +
+          '<div style="font-size:11px;color:var(--muted)">' + escapeHtml(sessieSubtekst(o)) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;' + (afgesloten ? 'opacity:0.55' : '') + '">' +
+          '<div class="ex-check-wrap" ' + (kanAfvinken ? 'onclick="toggleSessieDone(\'' + dateStr + '\',\'' + idEsc + '\')" ' : '') + 'style="cursor:' + (kanAfvinken ? 'pointer' : 'default') + (kanAfvinken ? '' : ';opacity:0.55') + '"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+          sEdit + sDel +
+        '</div>' +
+        '</div>';
+    }
+
     // Voor een programma-oefening telt een per-dag aanpassing (sets/
     // reps/rust, zie openWpExerciseDetail()) mee in wat hier getoond
     // wordt, zonder de programma-definitie zelf aan te raken.
@@ -681,10 +702,22 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
     .filter(function(x) { return !wpVerwijderd.includes(x.verwijderIdx); });
   const adhocOefeningen = trainingDays[dateStr] || [];
   const adhocRows = adhocOefeningen.map(function(oef, i) {
-    return { oef: oef, doneKey: 'a:' + oef.id, kind: 'adhoc', exId: oef.id };
+    return { oef: oef, doneKey: 'a:' + oef.id, kind: isSessie(oef) ? 'sessie' : 'adhoc', exId: oef.id };
   });
   const alleRows = [...geplandeRows, ...adhocRows];
   const hasData = alleRows.length > 0;
+  // Sessies (personal/groep) zijn geen oefeningen: apart tellen, zodat de
+  // dagkop niet "3 oefeningen" zegt als er 2 oefeningen en 1 sessie staan.
+  const sessieCount = alleRows.filter(function(r) { return r.kind === 'sessie'; }).length;
+  const oefCount = alleRows.length - sessieCount;
+  const sessieTekst = sessieCount + ' ' + t(sessieCount === 1 ? 'sessie.singular' : 'sessie.plural');
+  const hoofdTekst = oefCount > 0
+    ? oefCount + ' ' + t(oefCount === 1 ? 'programmas.exerciseSingular' : 'programmas.exercisesPlural')
+    : sessieTekst;
+  const subDelen = [];
+  if (disp && disp.naam) subDelen.push(disp.icon + ' ' + disp.naam);
+  if (oefCount > 0 && sessieCount > 0) subDelen.push(sessieTekst);
+  const subTekst = subDelen.join(' · ');
 
   const header = `
     <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="wpdToggleDag('${dateStr}')">
@@ -696,8 +729,8 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
       <div style="flex:1"></div>
       ${hasData
         ? `<div style="text-align:right">
-             <div style="font-family:'DM Serif Display',serif;font-size:16px">${alleRows.length} ${t(alleRows.length === 1 ? 'programmas.exerciseSingular' : 'programmas.exercisesPlural')}</div>
-             ${disp && disp.naam ? `<div style="font-size:10px;color:var(--muted)">${disp.icon} ${disp.naam}</div>` : ''}
+             <div style="font-family:'DM Serif Display',serif;font-size:16px">${hoofdTekst}</div>
+             ${subTekst ? `<div style="font-size:10px;color:var(--muted)">${subTekst}</div>` : ''}
            </div>`
         : `<div style="font-size:12px;color:var(--muted)">${t('foodweek.notFilledIn')}</div>`}
       <span style="font-size:11px;color:var(--muted);margin-left:8px;flex-shrink:0">${isOpen ? '▴' : '▾'}</span>
@@ -725,8 +758,9 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
       ${dagLigtVast
         ? `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">${t('weekplan.dayLocked')}</div>`
         : `<div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn-sm" style="flex:1" onclick="wpdAddForDay('${dateStr}')">${t('training.dag.addExerciseForDay')}</button>
-        <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('programmas')">${t('training.dag.addProgramForDay')}</button>
+        <button class="btn-sm" style="flex:1;padding:8px 6px" onclick="wpdAddForDay('${dateStr}')">${t('training.dag.addExerciseForDay')}</button>
+        <button class="btn-sm" style="flex:1;padding:8px 6px" onclick="switchTrainingTab('programmas')">${t('training.dag.addProgramForDay')}</button>
+        <button class="btn-sm" style="flex:1;padding:8px 6px" onclick="openSessieModal('${dateStr}')">${t('sessie.btn.add')}</button>
       </div>`}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="wpOpenTrainingCopyModal('${dateStr}')">${t('weekplan.trainingCopy.button')}</button></div>` : ''}
       ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
@@ -896,7 +930,10 @@ function wpConfirmTrainingCopyInner() {
     // toegevoegd aan wat er op de doeldag al staat i.p.v. dat te vervangen.
     if (bronOefeningen.length) {
       const bestaand = trainingDays[dateStr] || [];
-      trainingDays[dateStr] = [...bestaand, ...bronOefeningen.map(ex => ({ ...ex }))];
+      // Een gekopieerde sessie krijgt een eigen id: de gedaan-status hangt aan
+      // datum+id, en twee sessies met hetzelfde id op één dag zouden samen
+      // afgevinkt/verwijderd worden.
+      trainingDays[dateStr] = [...bestaand, ...bronOefeningen.map(ex => isSessie(ex) ? { ...ex, id: newSessieId() } : { ...ex })];
       trainingDaysGewijzigd = true;
     }
 

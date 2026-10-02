@@ -136,13 +136,13 @@ function renderHome() {
       // wpGetRemoved() in weekplanning.js) -- zonder dit bleef een
       // verwijderde oefening dus gewoon in deze Dashboard-preview staan.
       const _wpOef = wpGetZichtbareOefeningen(today, _wpEntry.schemaId);
-      document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');
+      document.getElementById('home-training-preview').innerHTML = homeTrainingPreviewHtml(today, _wpOef);
       document.getElementById('day-summary').innerHTML = t('day.summary.default');
       document.getElementById('hero-sub').innerHTML = t('day.summary.default');
     } else {
       document.getElementById('day-title').textContent = t('home.pilotThanks');
-      document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
-      document.getElementById('home-training-preview').innerHTML = t('home.noTrainingToday');
+      document.getElementById('home-training-badge').innerHTML = homeNoPlanBadgeHtml(today);
+      document.getElementById('home-training-preview').innerHTML = homeTrainingPreviewHtml(today, []);
       // Zelfde 2-regelige instructietekst als wanneer er wél een training
       // gepland staat -- of er een training gepland is, zie je al aan de
       // trainingskaart hierboven (badge + preview), dus dat hoeft hier niet

@@ -123,6 +123,23 @@ function checkCheckoutReady() {
   document.getElementById('checkout-btn').disabled = !ready;
 }
 
+// Dashboard-trainingskaart: preview-regel en (zonder programmadag) de badge.
+// Gedeeld door renderHome() (app.js) en de check-in (hieronder), die eerder
+// elk hun eigen kopie van deze regels hadden. Sessies staan vooraan.
+function homeTrainingPreviewHtml(dateStr, wpOef) {
+  const sessies = sessiesVoorDag(dateStr).map(function(s) { return sessieIcon(s.sessieType) + ' ' + escapeHtml(s.name) + (s.time ? ' ' + s.time : ''); });
+  const oefs = (wpOef || []).map(function(o) { return escapeHtml(dispName(o)); });
+  const alles = sessies.concat(oefs);
+  if (!alles.length) return t('home.noTrainingToday');
+  return alles.slice(0, 3).join(' &nbsp;·&nbsp; ') + (alles.length > 3 ? ' &nbsp;+' + (alles.length - 3) + t('home.more') : '');
+}
+function homeNoPlanBadgeHtml(dateStr) {
+  const sessies = sessiesVoorDag(dateStr);
+  if (!sessies.length) return '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
+  const iconen = sessies.map(function(s) { return sessieIcon(s.sessieType); }).join('');
+  return '<div class="training-type-badge badge-normal">' + iconen + ' ' + sessies.length + ' ' + t(sessies.length === 1 ? 'sessie.singular' : 'sessie.plural') + '</div>';
+}
+
 function buildTrainingSummary() {
   // Weekplanning oefeningen voor vandaag
   const _btsToday = localDateStr();
@@ -150,17 +167,22 @@ function buildTrainingSummary() {
 
   // Tel afgevinkte: dagDone voor schema-tab en losse, prime_wp_done voor
   // weekplanning (gematcht op de stabiele naam-sleutel, zie wpOefKey()).
+  // Eén helper voor de teller én de tags hieronder (twee eigen kopieën liepen
+  // hier eerder uit elkaar). Sessies lezen altijd uit prime_wp_done.
+  function _btsItemDone(ex) {
+    if (isSessie(ex)) return isSessieGedaan(_btsToday, ex.id);
+    let d = dagDone[ex.id];
+    if (!d && ex.id.startsWith('wp-')) d = _btsWpDoneArr.includes(ex._wpKey);
+    return !!d;
+  }
   let done = 0;
-  allItems.forEach(function(ex) {
-    let isDone = dagDone[ex.id];
-    if (!isDone && ex.id.startsWith('wp-')) {
-      isDone = _btsWpDoneArr.includes(ex._wpKey);
-    }
-    if (isDone) done++;
-  });
+  allItems.forEach(function(ex) { if (_btsItemDone(ex)) done++; });
 
   const pct = total > 0 ? Math.round(done / total * 100) : 0;
-  const typeLabel = _btsWpEntry ? wpGetDisplay(_btsWpEntry.schemaId).naam : t('checkin.noTraining');
+  const _btsSessies = trainingDagLog.filter(isSessie);
+  const typeLabel = _btsWpEntry
+    ? wpGetDisplay(_btsWpEntry.schemaId).naam
+    : (_btsSessies.length ? _btsSessies.map(function(s) { return sessieIcon(s.sessieType) + ' ' + escapeHtml(s.name); }).join(' · ') : t('checkin.noTraining'));
 
   let status, statusIcon, coachQuestion, confirmOptions;
 
@@ -203,13 +225,10 @@ function buildTrainingSummary() {
   // wel afgevinkt (en telden ze wel goed mee in "X van Y gedaan").
   let doneTags = '';
   allItems.forEach(function(ex) {
-    let isDone = dagDone[ex.id];
-    if (!isDone && ex.id.startsWith('wp-')) {
-      isDone = _btsWpDoneArr.includes(ex._wpKey);
-    }
-    doneTags += isDone
-      ? '<span class="done-tag">✓ ' + ex.name + '</span>'
-      : '<span class="skipped-tag">' + ex.name + '</span>';
+    const label = isSessie(ex) ? (sessieIcon(ex.sessieType) + ' ' + escapeHtml(ex.name)) : ex.name;
+    doneTags += _btsItemDone(ex)
+      ? '<span class="done-tag">✓ ' + label + '</span>'
+      : '<span class="skipped-tag">' + label + '</span>';
   });
 
   document.getElementById('training-summary-content').innerHTML =
@@ -416,10 +435,10 @@ async function doCheckin() {
     // met oefeningen die voor vandaag specifiek verwijderd zijn (zie
     // renderHome() in app.js, zelfde fix).
     const _wpOef = wpGetZichtbareOefeningen(today, _wpEntry.schemaId);
-    document.getElementById('home-training-preview').innerHTML = _wpOef.slice(0,3).map(o => dispName(o)).join(' &nbsp;·&nbsp; ') + (_wpOef.length > 3 ? ' &nbsp;+' + (_wpOef.length - 3) + t('home.more') : '');
+    document.getElementById('home-training-preview').innerHTML = homeTrainingPreviewHtml(today, _wpOef);
   } else {
-    document.getElementById('home-training-badge').innerHTML = '<div class="training-type-badge badge-light">' + t('home.noTrainingSelected') + '</div>';
-    document.getElementById('home-training-preview').innerHTML = t('home.noTrainingToday');
+    document.getElementById('home-training-badge').innerHTML = homeNoPlanBadgeHtml(today);
+    document.getElementById('home-training-preview').innerHTML = homeTrainingPreviewHtml(today, []);
   }
 
   // Render training & food screens

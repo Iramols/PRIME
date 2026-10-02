@@ -87,7 +87,8 @@ function exportBuildSheets(clients, namen, per, feedback, primeProgs) {
     Object.keys(st.prime_training_days || {}).sort().forEach(function(datum) {
       const done = gedaan[datum] || [];
       (st.prime_training_days[datum] || []).forEach(function(ex) {
-        sheets.Training.rows.push([naam, datum, '(losse oefening)', '', ex.name || ex.naam || '', done.includes('a:' + ex.id) ? 'ja' : 'nee']);
+        const soort = isSessie(ex) ? ('(' + sessieTypeLabel(ex.sessieType).toLowerCase() + (ex.time ? ' ' + ex.time : '') + ')') : '(losse oefening)';
+        sheets.Training.rows.push([naam, datum, soort, '', ex.name || ex.naam || '', done.includes('a:' + ex.id) ? 'ja' : 'nee']);
       });
     });
   });

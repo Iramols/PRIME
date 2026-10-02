@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261002-2110';
+window.PRIME_BUILD = '20261002-2130';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261002-2110">
+<link rel="stylesheet" href="css/styles.css?v=20261002-2130">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261002-2110"></script>
-<script src="js/translations.js?v=20261002-2110"></script>
-<script src="js/i18n.js?v=20261002-2110"></script>
+<script src="js/cloud.js?v=20261002-2130"></script>
+<script src="js/translations.js?v=20261002-2130"></script>
+<script src="js/i18n.js?v=20261002-2130"></script>
 </head>
 <body>
 
@@ -546,6 +546,7 @@ if ('serviceWorker' in navigator) {
       <div id="training-dag-empty-addrow" style="display:flex;gap:8px">
         <button class="btn-sm" style="flex:1" onclick="trainingAddForDay('oefeningen')" data-i18n="training.dag.addExerciseForDay">+ Oefening</button>
         <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('weekplanning')" data-i18n="training.dag.addProgramForDay">+ Programma</button>
+        <button class="btn-sm" style="flex:1" onclick="openSessieModal(localDateStr())" data-i18n="sessie.btn.add">+ Sessie</button>
       </div>
     </div>
     <div id="training-dag-list"></div>
@@ -1183,6 +1184,33 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<div class="overlay" id="sessie-modal">
+  <div class="modal">
+    <div class="modal-title"><span id="sm-heading" data-i18n="sessie.modal.title">Sessie inplannen</span> <button class="modal-close" onclick="closeSessieModal()">×</button></div>
+    <div id="sm-date" style="font-size:12px;color:var(--muted);margin-bottom:10px"></div>
+    <div class="fb-kinds" id="sm-types">
+      <button class="fb-kind active" data-type="pt" onclick="pickSessieType('pt')">🤝 <span data-i18n="sessie.type.pt">Personal training</span></button>
+      <button class="fb-kind" data-type="groep" onclick="pickSessieType('groep')">👥 <span data-i18n="sessie.type.groep">Groepstraining</span></button>
+    </div>
+    <div class="form-row" style="margin-top:10px"><label data-i18n="sessie.label.title">Titel</label>
+      <input id="sm-title" type="text" maxlength="60">
+    </div>
+    <div style="display:flex;gap:10px">
+      <div class="form-row" style="flex:1"><label data-i18n="sessie.label.time">Tijd (optioneel)</label>
+        <input id="sm-time" type="time">
+      </div>
+      <div class="form-row" style="flex:1"><label data-i18n="sessie.label.duration">Duur in min. (optioneel)</label>
+        <input id="sm-duur" type="number" min="5" max="600" step="5" inputmode="numeric" data-i18n-placeholder="sessie.ph.duration" placeholder="60">
+      </div>
+    </div>
+    <div class="form-row"><label data-i18n="sessie.label.notes">Notitie (optioneel)</label>
+      <input id="sm-notes" type="text" maxlength="120" data-i18n-placeholder="sessie.ph.notes" placeholder="Bijv. neem bandjes mee">
+    </div>
+    <div id="sm-error" style="color:#c0392b;font-size:12px;margin-bottom:10px"></div>
+    <button class="btn-primary" style="width:100%" onclick="saveSessieModal()" data-i18n="sessie.save">Opslaan</button>
+  </div>
+</div>
+
 <!-- FEEDBACK MODAL -->
 <div class="overlay" id="feedback-modal">
   <div class="modal">
@@ -1519,6 +1547,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261002-2110"></script>
+<script src="js/auth.js?v=20261002-2130"></script>
 </body>
 </html>
