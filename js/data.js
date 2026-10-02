@@ -428,6 +428,11 @@ const PRODUCTS = [
   { id:'g20', name:'Asperges', name_en:'Asparagus', icon:'🌱', cat:'groente', kcal:16, prot:1, carb:3, fat:0, photo:'images/producten/g20.jpg'},
   { id:'g21', name:'Tuinerwten', name_en:'Garden peas', icon:'🫛', cat:'groente', kcal:79, prot:6.6, carb:12, fat:0.5, photo:'images/producten/g21.jpg'},
   { id:'g22', name:'Koolraap', name_en:'Kohlrabi', icon:'🥬', cat:'groente', kcal:26, prot:1, carb:5, fat:0.2, photo:'images/producten/g22.jpg'},
+  { id:'g23', name:'Witlof', name_en:'Chicory (Belgian endive)', icon:'🥬', cat:'groente', kcal:19, prot:1.3, carb:2.4, fat:0.3, photo:'images/producten/g23.jpg'},
+  { id:'g24', name:'Sla', name_en:'Lettuce', icon:'🥬', cat:'groente', kcal:12, prot:1.6, carb:0.4, fat:0.4, photo:'images/producten/g24.jpg'},
+  { id:'g25', name:'Bleekselderij', name_en:'Celery', icon:'🥬', cat:'groente', kcal:14, prot:1, carb:2, fat:0, photo:'images/producten/g25.jpg'},
+  { id:'g26', name:'Olijven (groen)', name_en:'Green olives', icon:'🫒', cat:'groente', kcal:112, prot:1, carb:0.5, fat:11, photo:'images/producten/g26.jpg'},
+  { id:'g27', name:'Olijven (zwart)', name_en:'Black olives', icon:'🫒', cat:'groente', kcal:162, prot:1, carb:1.8, fat:14, photo:'images/producten/g27.jpg'},
   // VLEES
   { id:'v1', name:'Kipfilet', name_en:'Chicken breast', icon:'🍗', cat:'vlees', kcal:113, prot:23, carb:0, fat:2.3, photo:'images/producten/v1.jpg'},
   { id:'v2', name:'Kipgehakt', name_en:'Ground chicken', icon:'🍗', cat:'vlees', kcal:143, prot:17, carb:0, fat:8, photo:'images/producten/v2.jpg'},
