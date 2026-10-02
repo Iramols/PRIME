@@ -524,7 +524,7 @@ async function doCheckout() {
     document.getElementById('afsluiting-text').textContent = t('checkin.closingFallback');
   }
 
-  updateStats();
+  updateStreak();
 }
 
 function badgeHTML(type) {

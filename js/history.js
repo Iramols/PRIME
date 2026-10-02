@@ -862,18 +862,21 @@ function calcStreak() {
   return streak;
 }
 
+// Check-ins = aantal echt afgesloten dagen (history.length) -- vroeger
+// stond hier een onvoorwaardelijke "+ 1" (bedoeld om een nog niet
+// afgesloten "vandaag" vast mee te tellen), maar die telde ook mee als er
+// nog NOOIT was ingecheckt, waardoor een gloednieuw account al "1"
+// check-in liet zien. Er bestond daarnaast nog een losse, bijna
+// identieke updateStats() (zonder de +1, wel het juiste getal) die na
+// checkout werd aangeroepen -- maar renderHome() riep bij de eerstvolgende
+// Dashboard-weergave alweer deze functie (mét de +1) aan, dus die correcte
+// waarde was toch meteen weer overschreven. Nu nog maar één functie.
 function updateStreak() {
   const streak = calcStreak();
   document.getElementById('s-streak').textContent = streak;
-  document.getElementById('s-checkins').textContent = history.length + 1;
+  document.getElementById('s-checkins').textContent = history.length;
   const energyAvg = history.length > 0 ? Math.round(history.slice(0,7).reduce((a,h) => a + (h.checkout?.energy||0), 0) / Math.min(7, history.length)) : 0;
   document.getElementById('s-avg').textContent = energyAvg > 0 ? ['','🪫','😑','⚡','🔥'][energyAvg] : '—';
-}
-
-function updateStats() {
-  const streak = calcStreak();
-  document.getElementById('s-streak').textContent = streak;
-  document.getElementById('s-checkins').textContent = history.length;
 }
 
 // ========== SIGNALEN-TAB (coach-only, overzicht over alle klanten) ==========
