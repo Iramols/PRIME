@@ -134,7 +134,11 @@ function wpGetOefeningen(sid) {
     const progId = parts[1], dagIdx = parseInt(parts[2]);
     const p = wpVindProgramma(progId);
     const dag = p ? (p.dagen || {})[dagIdx] : null;
-    return dag ? (dag.oefeningen || []) : [];
+    // Foto-pad van ingebouwde oefeningen altijd naar de huidige versie (zie
+    // exPhotoUrl in i18n.js); de rest van het object blijft hetzelfde.
+    return dag ? (dag.oefeningen || []).map(function(o) {
+      return (o && o.photo) ? Object.assign({}, o, { photo: exPhotoUrl(o.photo) }) : o;
+    }) : [];
   }
   return [];
 }

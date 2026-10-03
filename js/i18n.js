@@ -59,6 +59,18 @@ function findCanonicalExercise(name) {
   return null;
 }
 
+// Oefeningen in een programma bewaren hun foto-pad zoals dat op het moment van
+// opslaan was, inclusief de toen geldige "?v=N". Wordt een standaardfoto later
+// vervangen en EXTRA_EXERCISE_PHOTO_VERSION opgehoogd, dan bleven programma's
+// daardoor de oude (door de browser gecachete) foto tonen. Deze helper zet de
+// versie van een ingebouwde oefenfoto altijd op de huidige; eigen foto's
+// (coach-uploads, data-URL's) blijven ongemoeid.
+function exPhotoUrl(photo) {
+  if (!photo || typeof photo !== 'string' || photo.indexOf('images/oefeningen/') !== 0) return photo;
+  const v = (typeof EXTRA_EXERCISE_PHOTO_VERSION !== 'undefined') ? EXTRA_EXERCISE_PHOTO_VERSION : 1;
+  return photo.split('?')[0] + '?v=' + v;
+}
+
 function dateLocale() {
   return currentLang === 'en' ? 'en-US' : 'nl-NL';
 }
