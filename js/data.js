@@ -58,7 +58,7 @@ const EXTRA_EXERCISES = [
     { id:"ex-dcbp", name:"Decline Bench Press", icon:"⬇️", sets:3, reps:"8-10", rest:"90 sec", tip:"Traint vooral de onderkant van de borst. Gebruik een spotter of veiligheidsbeugels en laat de stang gecontroleerd zakken.", tip_en:"Targets the lower chest. Use a spotter or safety arms and lower the bar under control.", youtube:"https://www.youtube.com/watch?v=16yItsCGnsw", photo:"images/oefeningen/decline-bench-press.jpg"},
     { id:"ex-cx", name:"Cable Crossover", icon:"🔗", sets:3, reps:"12-15", rest:"60 sec", tip:"Kabels hoog, een lichte stap naar voren. Breng je handen in een boog naar elkaar toe voor je lichaam.", tip_en:"Cables set high, one small step forward. Bring your hands together in an arc in front of your body.", youtube:"https://www.youtube.com/watch?v=taI4XduLpTk", photo:"images/oefeningen/cable-crossover.jpg"},
     { id:"ex-dpo", name:"Dumbbell Pullover", icon:"🔄", sets:3, reps:"10-12", rest:"75 sec", tip:"Lig dwars op de bank en houd één dumbbell met beide handen vast. Laat hem in een boog achter je hoofd zakken, ellebogen licht gebogen.", tip_en:"Lie across the bench holding one dumbbell with both hands. Lower it in an arc behind your head with slightly bent elbows.", youtube:"https://www.youtube.com/watch?v=wveUmKmIBcI", photo:"images/oefeningen/dumbbell-pullover.jpg"},
-    { id:"ex-kpu", name:"Knee Push-ups", icon:"🤸", sets:3, reps:"10-15", rest:"60 sec", tip:"Zoals een gewone push-up, maar op je knieën. Houd je lichaam recht van knieën tot schouders.", tip_en:"Like a regular push-up, but on your knees. Keep your body in a straight line from knees to shoulders.", youtube:"https://www.youtube.com/watch?v=1nAsgpufzhc"},
+    { id:"ex-kpu", name:"Knee Push-ups", icon:"🤸", sets:3, reps:"10-15", rest:"60 sec", tip:"Zoals een gewone push-up, maar op je knieën. Houd je lichaam recht van knieën tot schouders.", tip_en:"Like a regular push-up, but on your knees. Keep your body in a straight line from knees to shoulders.", youtube:"https://www.youtube.com/watch?v=1nAsgpufzhc", photo:"images/oefeningen/knee-push-ups.jpg"},
     { id:"ex-lmp", name:"Landmine Press", icon:"💥", sets:3, reps:"10", rest:"60 sec", tip:"Zet het uiteinde van de stang in een landmine-houder of hoek. Duw het schuin omhoog vanaf je schouder.", tip_en:"Anchor one end of the bar in a landmine holder or corner. Press the other end up and forward from your shoulder.", youtube:"https://www.youtube.com/watch?v=3gYz0bLG-wY", photo:"images/oefeningen/landmine-press.jpg"},
   ]},
   { group:'Rug', group_en:'Back', icon:'🎿', color:'#553c9a', exercises:[
@@ -250,7 +250,7 @@ const EXTRA_EXERCISES = [
 
 // Cache-busting: zelfde reden als PRODUCT_PHOTO_VERSION hierboven -- ophogen
 // zodra een foto in EXTRA_EXERCISES vervangen wordt.
-const EXTRA_EXERCISE_PHOTO_VERSION = 2;
+const EXTRA_EXERCISE_PHOTO_VERSION = 3;
 EXTRA_EXERCISES.forEach(group => group.exercises.forEach(ex => { if (ex.photo && ex.photo.startsWith('images/')) ex.photo += '?v=' + EXTRA_EXERCISE_PHOTO_VERSION; }));
 
 
