@@ -592,6 +592,11 @@ const PRODUCTS = [
   { id:'n10', name:'Pijnboompitten', name_en:'Pine nuts', icon:'🌰', cat:'noten', kcal:673, prot:14, carb:13, fat:68, photo:'images/producten/n10.jpg'},
   { id:'n11', name:'Sesamzaad', name_en:'Sesame seeds', icon:'🌱', cat:'noten', kcal:573, prot:18, carb:23, fat:50, photo:'images/producten/n11.jpg'},
   { id:'n12', name:'Zonnebloempitten', name_en:'Sunflower seeds', icon:'🌻', cat:'noten', kcal:584, prot:21, carb:20, fat:51, photo:'images/producten/n12.jpg'},
+  { id:'n13', name:'Pistachenoten', name_en:'Pistachios', icon:'🥜', cat:'noten', kcal:590, prot:24, carb:11, fat:48.5, portie:{ gram:20, label:'1 handje', label_en:'1 handful' }, photo:'images/producten/n13.jpg'},
+  { id:'n14', name:'Pinda's', name_en:'Peanuts', icon:'🥜', cat:'noten', kcal:628, prot:25.2, carb:12, fat:51.6, portie:{ gram:25, label:'1 handje', label_en:'1 handful' }, photo:'images/producten/n14.jpg'},
+  { id:'n15', name:'Macadamianoten', name_en:'Macadamia nuts', icon:'🥜', cat:'noten', kcal:752, prot:8, carb:5.6, fat:76, portie:{ gram:25, label:'1 handje', label_en:'1 handful' }, photo:'images/producten/n15.jpg'},
+  { id:'n16', name:'Paranoten', name_en:'Brazil nuts', icon:'🥜', cat:'noten', kcal:688, prot:14.4, carb:2.4, fat:67.2, portie:{ gram:25, label:'1 handje', label_en:'1 handful' }, photo:'images/producten/n16.jpg'},
+  { id:'n17', name:'Hennepzaad', name_en:'Hemp seeds', icon:'🌱', cat:'noten', kcal:593, prot:31.3, carb:4.7, fat:48.7, portie:{ gram:15, label:'1 eetlepel', label_en:'1 tablespoon' }, photo:'images/producten/n17.jpg'},
   // OVERIG
   { id:'o1', name:'Hummus', name_en:'Hummus', icon:'🫙', cat:'overig', kcal:166, prot:8, carb:14, fat:10, photo:'images/producten/o1.jpg'},
   { id:'o2', name:'Olijfolie', name_en:'Olive oil', icon:'🫒', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'images/producten/o2.jpg'},
