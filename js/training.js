@@ -204,6 +204,13 @@ function switchTrainingTab(tab) {
   if (tab === 'weekplanning') renderWeekplanning();
 }
 
+// Gekozen spiergroep in de filterbalk van "Losse oefeningen" ('alle' = geen filter).
+let currentExGroup = 'alle';
+function filterExGroup(groep) {
+  currentExGroup = groep || 'alle';
+  renderExtraExercises();
+}
+
 function renderExtraExercises() {
   trainingDagLog = trainingDays[currentTrainingDate] || [];
   const el = document.getElementById('extra-exercise-list');
@@ -219,12 +226,23 @@ function renderExtraExercises() {
     groupsData.push({ group: 'Eigen oefeningen', group_en: 'My exercises', icon: '⭐', exercises: leftoverCustom });
   }
 
+  // Filterbalk met alle spiergroepen (zelfde opzet als de categorieën bij Voeding).
+  // Een gekozen groep die niet meer bestaat valt terug op "Alle".
+  if (currentExGroup !== 'alle' && !groupsData.some(g => g.group === currentExGroup)) currentExGroup = 'alle';
+  const tabsEl = document.getElementById('ex-cat-tabs');
+  if (tabsEl) {
+    tabsEl.innerHTML = '<button class="cat-tab' + (currentExGroup === 'alle' ? ' active' : '') + '" onclick="filterExGroup(\'alle\')">' + t('cat.alle') + '</button>'
+      + groupsData.map(g => '<button class="cat-tab' + (currentExGroup === g.group ? ' active' : '') + '" data-g="' + escapeHtml(g.group) + '" onclick="filterExGroup(this.dataset.g)">' + escapeHtml(dispField(g, 'group')) + '</button>').join('');
+  }
+  const groupsDataAlle = groupsData;
+  const groupsDataFiltered = currentExGroup === 'alle' ? groupsDataAlle : groupsDataAlle.filter(g => g.group === currentExGroup);
+
   const q = (document.getElementById('exercise-search')?.value || '').toLowerCase();
   const zichtbareGroups = q
-    ? groupsData
+    ? groupsDataFiltered
         .map(group => ({ ...group, exercises: group.exercises.filter(ex => (ex.name || '').toLowerCase().includes(q) || dispName(ex).toLowerCase().includes(q)) }))
         .filter(group => group.exercises.length)
-    : groupsData;
+    : groupsDataFiltered;
 
   if (q && !zichtbareGroups.length) {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('common.noSearchResults') + '</div>';
