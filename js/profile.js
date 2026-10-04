@@ -49,20 +49,45 @@ function openProfile() {
   document.getElementById('p-calorie-min').value = profile.calorieMin || '';
   document.getElementById('p-calorie-max').value = profile.calorieMax || '';
   document.getElementById('p-protein-per-kg').value = profile.proteinPerKg || '';
-  document.getElementById('p-carb-pct').value = (typeof profile.carbPct === 'number') ? profile.carbPct : 60;
+  const cpStart = (typeof profile.carbPct === 'number') ? profile.carbPct : 60;
+  document.getElementById('p-carb-pct').value = cpStart;
+  document.getElementById('p-fat-pct').value = 100 - cpStart;
   document.getElementById('p-training-enabled').checked = profile.trainingEnabled !== false;
   updateMacroPreview();
   document.getElementById('profile-modal').classList.add('open');
 }
 // Profielvelden -> tijdelijk profielobject voor berekenDagDoel() (data.js).
 // Lege velden vallen daar terug op de standaardwaarden (2 g/kg en 60/40).
+// Koolhydraten % uit de twee gekoppelde velden: null = leeg (standaard 60/40),
+// 'ongeldig' = geen getal tussen 0 en 100. Staat alleen vet ingevuld, dan is
+// koolhydraten de rest.
+function _carbPctUitVelden() {
+  const kRaw = document.getElementById('p-carb-pct').value, vRaw = document.getElementById('p-fat-pct').value;
+  const geldig = x => x !== '' && !isNaN(+x) && +x >= 0 && +x <= 100;
+  if (kRaw !== '') return geldig(kRaw) ? Math.round(+kRaw) : 'ongeldig';
+  if (vRaw !== '') return geldig(vRaw) ? 100 - Math.round(+vRaw) : 'ongeldig';
+  return null;
+}
+// Typ je in het ene veld, dan vult het andere zichzelf aan tot 100. Bij
+// loslaten (definitief) worden decimalen afgerond op hele getallen.
+function syncKoolhVet(bron, definitief) {
+  const kEl = document.getElementById('p-carb-pct'), vEl = document.getElementById('p-fat-pct');
+  const bronEl = bron === 'k' ? kEl : vEl, anderEl = bron === 'k' ? vEl : kEl;
+  const raw = bronEl.value;
+  if (raw !== '' && !isNaN(+raw) && +raw >= 0 && +raw <= 100) {
+    if (definitief) bronEl.value = Math.round(+raw);
+    anderEl.value = 100 - Math.round(+raw);
+  }
+  updateMacroPreview();
+}
+
 function _profielMacroInvoer() {
   const num = id => { const v = document.getElementById(id).value; return v === '' ? null : +v; };
   return {
     calorieBehoefte: num('p-calorie-need'),
     weight: num('p-weight'),
     proteinPerKg: num('p-protein-per-kg'),
-    carbPct: num('p-carb-pct')
+    carbPct: (function() { const c = _carbPctUitVelden(); return c === 'ongeldig' ? null : c; })()
   };
 }
 
@@ -71,8 +96,6 @@ function updateMacroPreview() {
   const p = _profielMacroInvoer();
   const d = berekenDagDoel(p);
   const pct = d.carbPct;
-  document.getElementById('p-carb-pct-val').textContent = pct;
-  document.getElementById('p-fat-pct-val').textContent = 100 - pct;
   const gew = p.weight > 0 ? p.weight : 70;
   document.getElementById('p-protein-hint').textContent = t('profile.protein.hint', { kg: gew, g: Math.round(gew * d.perKg) });
   const eK = d.prot * 4, kK = d.carb * 4, vK = d.fat * 9, tot = Math.max(1, eK + kK + vK);
@@ -109,7 +132,11 @@ function saveProfile() {
     try { showToast(t('profile.protein.range'), true); } catch (e) {}
     return;
   }
-  const carbPct = +document.getElementById('p-carb-pct').value;
+  const carbPct = _carbPctUitVelden();
+  if (carbPct === 'ongeldig') {
+    try { showToast(t('profile.carbSplit.range'), true); } catch (e) {}
+    return;
+  }
   const macroCheck = berekenDagDoel({
     calorieBehoefte: document.getElementById('p-calorie-need').value ? +document.getElementById('p-calorie-need').value : null,
     weight: +document.getElementById('p-weight').value, proteinPerKg: proteinPerKg, carbPct: carbPct });
