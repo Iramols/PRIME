@@ -522,10 +522,16 @@ function openWpExerciseDetail(dateStr, oefIdx) {
     sets = Array.from({ length: n }, function() { return { reps: defaultReps, rest: defaultRest }; });
   }
 
+  // Programma-oefeningen bewaren niet altijd een foto/icoon; val dan terug op de
+  // oefening uit de bibliotheek (zelfde als in de weekplanning-lijst).
+  const wpCanon = (!oef.photo && typeof findCanonicalExercise === 'function') ? findCanonicalExercise(oef.name || oef.naam) : null;
+  const wpDetailFoto = oef.photo || (wpCanon && wpCanon.photo) || null;
+  const wpDetailIcoon = oef.icon || (wpCanon && wpCanon.icon) || null;
+
   openExerciseDetailGeneric({
     name: naam,
-    photo: oef.photo,
-    icon: oef.icon,
+    photo: wpDetailFoto,
+    icon: wpDetailIcoon,
     sets: sets,
     notes: (override && override.notes) || '',
     onSave: function(newSets, newNotes) {
