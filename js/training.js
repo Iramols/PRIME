@@ -900,8 +900,8 @@ function renderTrainingDag() {
       if (_f && _f.photo) _photo = _f.photo;
     }
     const photoDiv = _photo
-      ? '<div style="width:80px;min-height:75px;flex-shrink:0;border-radius:8px 0 0 8px;overflow:hidden"><img src="' + _photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
-      : '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
+      ? '<div style="width:104px;min-height:78px;flex-shrink:0;border-radius:8px 0 0 8px;overflow:hidden"><img src="' + _photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
+      : '<div style="width:104px;min-height:78px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;background:#f0ece4">' + (ex.icon||'💪') + '</div>';
     return '<div class="card"' + cardClick + ' style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch;' + (clickable ? 'cursor:pointer' : '') + '">'
       + photoDiv
       + '<div style="flex:1;min-width:0;padding:12px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">'
@@ -974,7 +974,7 @@ function renderTrainingDag() {
         ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
         : '<div class="ex-check-wrap" onclick="event.stopPropagation();sessieVerwijder(\'' + _dagToday + '\',\'' + idEsc + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
       html += '<div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">'
-        + '<div style="width:80px;min-height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;background:' + sessieKleur(s.sessieType) + '">' + sessieIcon(s.sessieType) + '</div>'
+        + '<div style="width:104px;min-height:78px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;background:' + sessieKleur(s.sessieType) + '">' + sessieIcon(s.sessieType) + '</div>'
         + '<div style="flex:1;min-width:0;padding:12px 14px;display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px">'
         + '<div style="flex:1;min-width:120px"><div style="font-weight:600;font-size:14px;margin-bottom:2px">' + escapeHtml(s.name) + '</div>'
         + '<div style="font-size:12px;color:var(--muted)">' + escapeHtml(sessieSubtekst(s)) + '</div></div>'

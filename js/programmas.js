@@ -198,8 +198,8 @@ function progBouw3ColEditor() {
       const photo = canonical ? canonical.photo : null;
       const meta = oef.stappen ? oef.stappen : (oef.sets ? oef.sets + '\xD7' + (oef.reps || '') + (oef.rust ? ' \xB7 ' + oef.rust : '') : (oef.reps || ''));
       const photoDiv = photo
-        ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;overflow:hidden"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
-        : '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>';
+        ? '<div style="width:72px;height:54px;flex-shrink:0;border-radius:8px;overflow:hidden"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
+        : '<div style="width:72px;height:54px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (canonical ? canonical.icon : '\u{1F3CB}️') + '</div>';
       return '<div style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:8px 6px;border-bottom:0.5px solid var(--sand-dark)">' +
         photoDiv +
         '<div style="flex:1;min-width:120px">' +

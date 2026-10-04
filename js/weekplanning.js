@@ -393,7 +393,7 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
         : '<div class="ex-check-wrap" onclick="event.stopPropagation();sessieVerwijder(\'' + dateStr + '\',\'' + idEsc + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
       return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
-        '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;background:' + sessieKleur(o.sessieType) + '">' + sessieIcon(o.sessieType) + '</div>' +
+        '<div style="width:72px;height:54px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;background:' + sessieKleur(o.sessieType) + '">' + sessieIcon(o.sessieType) + '</div>' +
         '<div style="flex:1;min-width:120px">' +
           '<div style="font-size:12px;color:var(--charcoal)">' + escapeHtml(o.name) + '</div>' +
           '<div style="font-size:11px;color:var(--muted)">' + escapeHtml(sessieSubtekst(o)) + '</div>' +
@@ -420,8 +420,8 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
       if (f && f.photo) photo = f.photo;
     }
     const photoDiv = photo
-      ? '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;overflow:hidden"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
-      : '<div style="width:50px;height:50px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (o.icon || '💪') + '</div>';
+      ? '<div style="width:72px;height:54px;flex-shrink:0;border-radius:8px;overflow:hidden"><img src="' + photo + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
+      : '<div style="width:72px;height:54px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--sand)">' + (o.icon || '💪') + '</div>';
 
     let editBtn = '';
     let delBtn = '';
