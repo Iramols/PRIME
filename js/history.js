@@ -251,9 +251,11 @@ function renderWeightChart() {
   // history (dat gebeurt pas bij checkout, zie doCheckout()) -- zonder dit
   // zou je dat gewicht dus pas ná het afsluiten van de dag in de grafiek
   // zien i.p.v. meteen.
-  const bron = (todayData && todayData.checkin && todayData.checkin.weight > 0)
+  // Dezelfde datum kan in todayData én history staan (bv. na gebruik op twee
+  // apparaten); dedupeHistoryByDate() houdt er één van over: één punt per dag.
+  const bron = dedupeHistoryByDate((todayData && todayData.checkin && todayData.checkin.weight > 0)
     ? [todayData, ...history]
-    : history;
+    : history);
   const data = bron
     .filter(h => h.checkin && h.checkin.weight > 0)
     .slice(0, 30)

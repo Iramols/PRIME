@@ -473,6 +473,16 @@ async function doCheckout() {
   // Save to history
   if (todayData) {
     todayData.checkout = checkout;
+    // Een record voor deze datum kan er al staan (gewicht eerder ingevuld, of
+    // de dag is op een ander apparaat al afgesloten): vervang dat i.p.v. er
+    // een tweede record bij te zetten, en neem een daarin ingevuld gewicht over.
+    const _bestaandRecord = history.find(h => h.date === todayData.date);
+    if (_bestaandRecord) {
+      if (!(todayData.checkin && todayData.checkin.weight > 0) && _bestaandRecord.checkin && _bestaandRecord.checkin.weight > 0) {
+        todayData.checkin = Object.assign({}, todayData.checkin, { weight: _bestaandRecord.checkin.weight });
+      }
+      history = history.filter(h => h.date !== todayData.date);
+    }
     history.unshift(todayData);
     if (history.length > 60) history.pop();
     syncSet('prime_history', history);

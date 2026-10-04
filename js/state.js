@@ -18,7 +18,35 @@ let activeTrainingTab = 'dag';
 
 // ========== HOOFD STATE ==========
 let profile = JSON.parse(localStorage.getItem('prime_profile') || '{"name":"","age":35,"weight":70,"height":170,"gender":"v","goal":"Meer spiermassa opbouwen","activity":1.375,"trainingEnabled":true}');
-let history = JSON.parse(localStorage.getItem('prime_history') || '[]');
+// Per datum hoort er maar één dag-record te zijn. Bij gebruik op meerdere
+// apparaten (of een gewicht invullen vóór de check-in) kon dezelfde datum toch
+// twee keer in history terechtkomen, wat o.a. dubbele punten in de gewichts-
+// grafiek gaf. Een afgesloten record (checkout ingevuld) gaat voor een open
+// record; verder blijft het eerste staan, aangevuld met een gewicht dat alleen
+// in het andere record zat. De volgorde van de lijst blijft behouden.
+function dedupeHistoryByDate(lijst) {
+  const perDatum = new Map();
+  (lijst || []).forEach(function(h) {
+    if (!h || !h.date) return;
+    const bestaand = perDatum.get(h.date);
+    if (!bestaand) { perDatum.set(h.date, h); return; }
+    const winnaar = (!bestaand.checkout && h.checkout) ? h : bestaand;
+    const andere = winnaar === bestaand ? h : bestaand;
+    if (!(winnaar.checkin && winnaar.checkin.weight > 0) && andere.checkin && andere.checkin.weight > 0) {
+      winnaar.checkin = Object.assign({}, winnaar.checkin, { weight: andere.checkin.weight });
+    }
+    perDatum.set(h.date, winnaar);
+  });
+  const gezien = new Set();
+  return (lijst || []).map(function(h) { return h && h.date ? perDatum.get(h.date) : h; })
+    .filter(function(h) {
+      if (!h || !h.date) return true;
+      if (gezien.has(h.date)) return false;
+      gezien.add(h.date);
+      return true;
+    });
+}
+let history = dedupeHistoryByDate(JSON.parse(localStorage.getItem('prime_history') || '[]'));
 let todayData = JSON.parse(localStorage.getItem('prime_today') || 'null');
 let checkin = { sleep:0, energy:0, stress:0, weight:null };
 let checkout = { energy:0, training:0, food:0 };
