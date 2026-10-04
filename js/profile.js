@@ -49,34 +49,71 @@ function openProfile() {
   document.getElementById('p-calorie-min').value = profile.calorieMin || '';
   document.getElementById('p-calorie-max').value = profile.calorieMax || '';
   document.getElementById('p-protein-per-kg').value = profile.proteinPerKg || '';
-  const cpStart = (typeof profile.carbPct === 'number') ? profile.carbPct : 60;
-  document.getElementById('p-carb-pct').value = cpStart;
-  document.getElementById('p-fat-pct').value = 100 - cpStart;
+  _kvRatio = (typeof profile.carbPct === 'number') ? profile.carbPct / 100 : 0.6;
+  _kvLeeg = false;
+  _kvVeldenVullen();
   document.getElementById('p-training-enabled').checked = profile.trainingEnabled !== false;
   updateMacroPreview();
   document.getElementById('profile-modal').classList.add('open');
 }
 // Profielvelden -> tijdelijk profielobject voor berekenDagDoel() (data.js).
 // Lege velden vallen daar terug op de standaardwaarden (2 g/kg en 60/40).
-// Koolhydraten % uit de twee gekoppelde velden: null = leeg (standaard 60/40),
-// 'ongeldig' = geen getal tussen 0 en 100. Staat alleen vet ingevuld, dan is
-// koolhydraten de rest.
+// Koolhydraten en vet zijn in het scherm percentages van het TOTALE dagdoel
+// (eiwit + koolhydraten + vet = 100%). Opgeslagen blijft profile.carbPct, het
+// aandeel koolhydraten van wat na het eiwit overblijft (standaard 60), zodat
+// bestaande instellingen en getDagDoel() ongewijzigd blijven. _kvRatio is dat
+// aandeel als 0-1 getal; _kvLeeg = beide velden bewust leeg (= standaard).
+let _kvRatio = 0.6, _kvLeeg = false;
+
+// Eiwit als % van het dagdoel, uit de huidige invoer (gram per kg x gewicht).
+function _eiwitPct() {
+  const d = berekenDagDoel(_profielMacroInvoer());
+  return d.kcal > 0 ? Math.round(d.prot * 4 / d.kcal * 100) : 0;
+}
+
+// Zet de twee velden volgens _kvRatio en het huidige eiwitpercentage.
+function _kvVeldenVullen() {
+  const rest = Math.max(0, 100 - _eiwitPct());
+  const k = Math.round(rest * _kvRatio);
+  document.getElementById('p-carb-pct').value = k;
+  document.getElementById('p-fat-pct').value = rest - k;
+}
+
+// Eiwit (g/kg), gewicht of caloriebehoefte veranderd: het eiwitaandeel schuift
+// mee, dus koolhydraten/vet behouden hun onderlinge verhouding.
+function eiwitInvoerGewijzigd() {
+  if (!_kvLeeg) _kvVeldenVullen();
+  updateMacroPreview();
+}
+
+// null = leeg (standaard 60/40 van de rest), 'ongeldig' = geen getal tussen 0
+// en het beschikbare aandeel, anders het aandeel koolhydraten van de rest in %.
 function _carbPctUitVelden() {
   const kRaw = document.getElementById('p-carb-pct').value, vRaw = document.getElementById('p-fat-pct').value;
-  const geldig = x => x !== '' && !isNaN(+x) && +x >= 0 && +x <= 100;
-  if (kRaw !== '') return geldig(kRaw) ? Math.round(+kRaw) : 'ongeldig';
-  if (vRaw !== '') return geldig(vRaw) ? 100 - Math.round(+vRaw) : 'ongeldig';
-  return null;
+  const rest = Math.max(0, 100 - _eiwitPct());
+  const geldig = x => x !== '' && !isNaN(+x) && +x >= 0 && +x <= rest;
+  if (kRaw === '' && vRaw === '') return null;
+  if ((kRaw !== '' && !geldig(kRaw)) || (vRaw !== '' && !geldig(vRaw))) return 'ongeldig';
+  return Math.round(_kvRatio * 10000) / 100;
 }
-// Typ je in het ene veld, dan vult het andere zichzelf aan tot 100. Bij
-// loslaten (definitief) worden decimalen afgerond op hele getallen.
+
+// Typ je in het ene veld, dan vult het andere zichzelf aan tot het deel dat
+// na het eiwit overblijft. Bij loslaten (definitief) worden decimalen afgerond.
 function syncKoolhVet(bron, definitief) {
   const kEl = document.getElementById('p-carb-pct'), vEl = document.getElementById('p-fat-pct');
   const bronEl = bron === 'k' ? kEl : vEl, anderEl = bron === 'k' ? vEl : kEl;
+  const rest = Math.max(0, 100 - _eiwitPct());
+  if (kEl.value === '' && vEl.value === '') { _kvLeeg = true; updateMacroPreview(); return; }
+  // Bij loslaten: een waarde boven het beschikbare deel wordt teruggezet.
+  if (definitief && bronEl.value !== '' && !isNaN(+bronEl.value) && +bronEl.value > rest) bronEl.value = rest;
   const raw = bronEl.value;
-  if (raw !== '' && !isNaN(+raw) && +raw >= 0 && +raw <= 100) {
-    if (definitief) bronEl.value = Math.round(+raw);
-    anderEl.value = 100 - Math.round(+raw);
+  if (raw !== '' && !isNaN(+raw) && +raw >= 0 && +raw <= rest) {
+    _kvLeeg = false;
+    const x = Math.round(+raw);
+    if (definitief) bronEl.value = x;
+    anderEl.value = rest - x;
+    const k = bron === 'k' ? x : rest - x;
+    _kvRatio = rest > 0 ? k / rest : 0.6;
   }
   updateMacroPreview();
 }
@@ -87,7 +124,7 @@ function _profielMacroInvoer() {
     calorieBehoefte: num('p-calorie-need'),
     weight: num('p-weight'),
     proteinPerKg: num('p-protein-per-kg'),
-    carbPct: (function() { const c = _carbPctUitVelden(); return c === 'ongeldig' ? null : c; })()
+    carbPct: _kvLeeg ? null : Math.round(_kvRatio * 10000) / 100
   };
 }
 
@@ -97,15 +134,20 @@ function updateMacroPreview() {
   const d = berekenDagDoel(p);
   const pct = d.carbPct;
   const gew = p.weight > 0 ? p.weight : 70;
-  document.getElementById('p-protein-hint').textContent = t('profile.protein.hint', { kg: gew, g: Math.round(gew * d.perKg) });
+  const eiwitPct = d.kcal > 0 ? Math.round(d.prot * 4 / d.kcal * 100) : 0;
+  document.getElementById('p-protein-hint').textContent = t('profile.protein.hint', { kg: gew, g: Math.round(gew * d.perKg), pct: eiwitPct });
+  document.getElementById('p-macro-split-label').textContent = t('profile.macroSplit.label', { rest: Math.max(0, 100 - eiwitPct) });
   const eK = d.prot * 4, kK = d.carb * 4, vK = d.fat * 9, tot = Math.max(1, eK + kK + vK);
   document.getElementById('pm-kcal').textContent = d.kcal;
   document.getElementById('pm-e').textContent = d.prot + ' g';
   document.getElementById('pm-k').textContent = d.carb + ' g';
   document.getElementById('pm-v').textContent = d.fat + ' g';
-  document.getElementById('pm-ep').textContent = Math.round(eK / tot * 100) + '%';
-  document.getElementById('pm-kp').textContent = Math.round(kK / tot * 100) + '%';
-  document.getElementById('pm-vp').textContent = Math.round(vK / tot * 100) + '%';
+  // Afgeronde percentages die samen precies 100% zijn (vet = de rest).
+  const pE = Math.round(eK / tot * 100), pK = Math.round(kK / tot * 100), pV = Math.max(0, 100 - pE - pK);
+  document.getElementById('pm-ep').textContent = pE + '%';
+  document.getElementById('pm-kp').textContent = pK + '%';
+  document.getElementById('pm-vp').textContent = pV + '%';
+  document.getElementById('pm-som').textContent = pE + '% + ' + pK + '% + ' + pV + '% = 100%';
   // Cirkeldiagram: elk deel is een stuk van de omtrek (dasharray/dashoffset).
   const omtrek = 2 * Math.PI * 46;
   const seg = (id, start, frac) => { const el = document.getElementById(id); el.setAttribute('stroke-dasharray', Math.max(0, frac * omtrek) + ' ' + omtrek); el.setAttribute('stroke-dashoffset', -start * omtrek); };
