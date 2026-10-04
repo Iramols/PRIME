@@ -392,14 +392,16 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
       const sDel = afgesloten
         ? '<div class="ex-check-wrap"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>'
         : '<div class="ex-check-wrap" onclick="event.stopPropagation();sessieVerwijder(\'' + dateStr + '\',\'' + idEsc + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
-      return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
+      // Klik op de rij opent de sessie (zelfde als de bewerkknop).
+      const sRijKlik = afgesloten ? '' : ' onclick="openSessieModal(\'' + dateStr + '\',\'' + idEsc + '\')"';
+      return '<div id="wp-oef-' + dateStr + '-' + key + '"' + sRijKlik + ' style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + (afgesloten ? '' : ';cursor:pointer') + '">' +
         '<div style="width:72px;height:54px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;background:' + sessieKleur(o.sessieType) + '">' + sessieIcon(o.sessieType) + '</div>' +
         '<div style="flex:1;min-width:120px">' +
           '<div style="font-size:12px;color:var(--charcoal)">' + escapeHtml(o.name) + '</div>' +
           '<div style="font-size:11px;color:var(--muted)">' + escapeHtml(sessieSubtekst(o)) + '</div>' +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;row-gap:4px;flex-shrink:0;' + (afgesloten ? 'opacity:0.55' : '') + '">' +
-          '<div class="ex-check-wrap" ' + (kanAfvinken ? 'onclick="toggleSessieDone(\'' + dateStr + '\',\'' + idEsc + '\')" ' : '') + 'style="cursor:' + (kanAfvinken ? 'pointer' : 'default') + (kanAfvinken ? '' : ';opacity:0.55') + '"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
+          '<div class="ex-check-wrap" ' + (kanAfvinken ? 'onclick="event.stopPropagation();toggleSessieDone(\'' + dateStr + '\',\'' + idEsc + '\')" ' : '') + 'style="cursor:' + (kanAfvinken ? 'pointer' : 'default') + (kanAfvinken ? '' : ';opacity:0.55') + '"><div id="wp-chk-' + dateStr + '-' + key + '" class="exercise-check' + (isDone ? ' done' : '') + '" title="' + t('weekplan.markDone') + '">✓</div><span class="ex-check-label">' + t('extra.detail.markDone') + '</span></div>' +
           sEdit + sDel +
         '</div>' +
         '</div>';
@@ -445,9 +447,14 @@ function wpBouwOefeningenAfvinken(rows, dateStr) {
         : '<div class="ex-check-wrap" onclick="event.stopPropagation();wpRemoveAdhocForDay(\'' + dateStr + '\',\'' + row.exId + '\');wpdRefreshNaVerwijderen(\'' + dateStr + '\')" style="cursor:pointer"><span style="font-size:16px;color:var(--accent);line-height:1">🗑️</span><span class="ex-check-label">' + t('common.delete') + '</span></div>';
     }
 
-    const doneClick = kanAfvinken ? 'onclick="wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" ' : '';
+    const doneClick = kanAfvinken ? 'onclick="event.stopPropagation();wpToggleOefDone(\'' + dateStr + '\',\'' + keyEsc + '\')" ' : '';
 
-    return '<div id="wp-oef-' + dateStr + '-' + key + '" style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + '">' +
+    // Klik op de rij opent dezelfde details als de knop "Sets & notities".
+    let rijKlik = '';
+    if (!afgesloten && row.kind === 'prog') rijKlik = ' onclick="openWpExerciseDetail(\'' + dateStr + '\',' + row.verwijderIdx + ')"';
+    else if (!afgesloten && row.kind === 'adhoc') rijKlik = ' onclick="openExerciseDetail(\'' + row.exId + '\')"';
+
+    return '<div id="wp-oef-' + dateStr + '-' + key + '"' + rijKlik + ' style="display:flex;align-items:center;flex-wrap:wrap;row-gap:6px;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isDone ? '0.45' : '1') + (rijKlik ? ';cursor:pointer' : '') + '">' +
       photoDiv +
       '<div style="flex:1;min-width:120px">' +
         '<div style="font-size:12px;color:var(--charcoal)">' + naam + '</div>' +
