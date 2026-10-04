@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261003-1638';
+window.PRIME_BUILD = '20261004-0944';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261003-1638">
+<link rel="stylesheet" href="css/styles.css?v=20261004-0944">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261003-1638"></script>
-<script src="js/translations.js?v=20261003-1638"></script>
-<script src="js/i18n.js?v=20261003-1638"></script>
+<script src="js/cloud.js?v=20261004-0944"></script>
+<script src="js/translations.js?v=20261004-0944"></script>
+<script src="js/i18n.js?v=20261004-0944"></script>
 </head>
 <body>
 
@@ -1146,7 +1146,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="form-row"><label data-i18n="profile.calorieNeed">Caloriebehoefte (kcal/dag)</label>
       <input id="p-calorie-need" type="number" min="0" data-i18n-placeholder="profile.calorieNeed.placeholder" placeholder="optioneel">
-      <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.calorieNeed.hint">Vul dit in om zelf het dagelijkse kcal-doel te bepalen. Dit vervangt dan de automatische inschatting op basis van de check-in (Herstel/Normaal/Zwaar) — eiwit/koolhydraten/vet blijven wel per dagtype verschillen. Laat leeg voor de automatische inschatting.</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.calorieNeed.hint">Dit is het dagelijkse kcal-doel — hetzelfde elke dag. Eiwit en de verdeling van de rest stel je hieronder in. Leeg = standaard 2000 kcal.</div>
     </div>
     <div class="form-row"><label data-i18n="profile.calorieMin">Ondergrens calorieën (kcal/dag)</label>
       <input id="p-calorie-min" type="number" min="0" data-i18n-placeholder="profile.calorieRange.placeholder" placeholder="optioneel">
@@ -1154,6 +1154,32 @@ if ('serviceWorker' in navigator) {
     <div class="form-row"><label data-i18n="profile.calorieMax">Bovengrens calorieën (kcal/dag)</label>
       <input id="p-calorie-max" type="number" min="0" data-i18n-placeholder="profile.calorieRange.placeholder" placeholder="optioneel">
       <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.calorieRange.hint">Laat beide leeg voor de automatische marge van ±10% rond je caloriedoel. Vul je er maar één in, dan blijft de andere grens automatisch.</div>
+    </div>
+    <div class="form-row"><label data-i18n="profile.protein.label">Eiwit (gram per kg lichaamsgewicht)</label>
+      <input id="p-protein-per-kg" type="number" min="0.8" max="4" step="0.1" placeholder="2" oninput="updateMacroPreview()">
+      <div style="font-size:11px;color:var(--muted);margin-top:4px" id="p-protein-hint"></div>
+    </div>
+    <div class="form-row"><label data-i18n="profile.macroSplit.label">Verdeling van de overige calorieën</label>
+      <input id="p-carb-pct" type="range" min="0" max="100" step="5" value="60" style="width:100%;accent-color:var(--sage)" oninput="updateMacroPreview()">
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px">
+        <span style="background:var(--sage);color:#fff;padding:2px 10px;border-radius:100px;font-weight:600"><span data-i18n="profile.macro.carb">Koolhydraten</span> <span id="p-carb-pct-val">60</span>%</span>
+        <span style="background:var(--accent);color:#fff;padding:2px 10px;border-radius:100px;font-weight:600"><span data-i18n="profile.macro.fat">Vet</span> <span id="p-fat-pct-val">40</span>%</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.macroSplit.hint">Het deel dat overblijft na het eiwit wordt over koolhydraten en vet verdeeld.</div>
+    </div>
+    <div id="p-macro-preview" style="background:var(--sage-light);border:1px solid var(--sage-mid);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--sage);font-weight:600;letter-spacing:.5px;text-transform:uppercase" data-i18n="profile.macro.goalTitle">Je dagdoel</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-top:2px"><span id="pm-kcal">2000</span> kcal</div>
+      <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;margin:8px 0 10px">
+        <div id="pm-bar-e" style="background:#2b6cb0"></div><div id="pm-bar-k" style="background:var(--sage)"></div><div id="pm-bar-v" style="background:var(--accent)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:6px;font-size:12px">
+        <span><span style="color:#2b6cb0">●</span> <span data-i18n="profile.macro.prot">Eiwit</span><b id="pm-e" style="display:block;font-size:15px"></b><span id="pm-ep" style="color:var(--muted)"></span></span>
+        <span><span style="color:var(--sage)">●</span> <span data-i18n="profile.macro.carb">Koolhydraten</span><b id="pm-k" style="display:block;font-size:15px"></b><span id="pm-kp" style="color:var(--muted)"></span></span>
+        <span><span style="color:var(--accent)">●</span> <span data-i18n="profile.macro.fat">Vet</span><b id="pm-v" style="display:block;font-size:15px"></b><span id="pm-vp" style="color:var(--muted)"></span></span>
+      </div>
+      <div id="pm-warn" style="display:none;margin-top:10px;background:#fdf0e4;border:1px solid #e8c4a8;border-radius:10px;padding:10px 12px;font-size:12px;color:#7a4a1c" data-i18n-html="profile.macro.warn"></div>
+      <div id="pm-err" style="display:none;margin-top:10px;background:#fbe9e7;border:1px solid #e6b0a8;border-radius:10px;padding:10px 12px;font-size:12px;color:#8a2c1c" data-i18n-html="profile.macro.err"></div>
     </div>
     <div class="form-row"><label data-i18n="profile.trainingEnabled">Training</label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
@@ -1553,6 +1579,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261003-1638"></script>
+<script src="js/auth.js?v=20261004-0944"></script>
 </body>
 </html>

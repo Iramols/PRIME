@@ -448,24 +448,40 @@ const MEALS = {
 // app, maar heeft GEEN invloed meer op voedingsdoelen.
 //
 // Kcal: profile.calorieBehoefte (ingevuld in Profiel), of 2000 als die nog
-// leeg staat. Eiwit: vast 2 g/kg lichaamsgewicht (profile.weight, of 70kg
-// als dat ontbreekt). Koolhydraten en vet vullen de resterende calorieën
-// aan in een vaste 60/40-verhouding -- zodat eiwit+koolh+vet altijd exact
-// optellen tot het kcal-doel. Gebruikt door checkin.js en food.js.
-function getDagDoel() {
-  const kcal = (profile.calorieBehoefte && profile.calorieBehoefte > 0) ? profile.calorieBehoefte : 2000;
+// leeg staat. Eiwit: profile.proteinPerKg (standaard 2) g/kg lichaamsgewicht
+// (profile.weight, of 70kg als dat ontbreekt). Koolhydraten en vet vullen de
+// resterende calorieën aan volgens profile.carbPct (standaard 60/40) -- zodat
+// eiwit+koolh+vet altijd exact optellen tot het kcal-doel. Zie berekenDagDoel().
+// Eén plek die uit een profiel het dagdoel uitrekent, zodat Profiel (live
+// voorbeeld), Voeding, Dashboard, Voortgang en de check-in nooit uiteenlopen.
+// Eiwit = proteinPerKg (standaard 2) x lichaamsgewicht. De overige calorieën
+// worden verdeeld in carbPct % koolhydraten en de rest vet (standaard 60/40).
+// Zonder ingevulde waarden blijft het dus precies zoals het altijd was.
+function berekenDagDoel(p) {
+  p = p || {};
+  const kcal = (p.calorieBehoefte && p.calorieBehoefte > 0) ? p.calorieBehoefte : 2000;
+  const gewicht = p.weight > 0 ? p.weight : 70;
+  const perKg = (typeof p.proteinPerKg === 'number' && p.proteinPerKg > 0) ? p.proteinPerKg : 2;
+  const carbPct = (typeof p.carbPct === 'number' && p.carbPct >= 0 && p.carbPct <= 100) ? p.carbPct : 60;
 
-  const gewicht = profile.weight > 0 ? profile.weight : 70;
-  const prot = Math.round(gewicht * 2);
-
+  const prot = Math.round(gewicht * perKg);
   const protKcal = prot * 4;
   const restKcal = Math.max(0, kcal - protKcal);
-  const carbRatio = 0.6;
+  const carbRatio = carbPct / 100;
 
   const carb = Math.round((restKcal * carbRatio) / 4);
   const fat = Math.round((restKcal * (1 - carbRatio)) / 9);
 
-  return { kcal, prot, carb, fat };
+  return {
+    kcal, prot, carb, fat, perKg, carbPct,
+    // Eiwit alleen is al meer dan het kcal-doel: past niet.
+    proteinTeHoog: protKcal > kcal,
+    // Waarschuwing: meer dan 2,5 g/kg of meer dan 35% van de calorieën.
+    proteinHoog: perKg > 2.5 || (kcal > 0 && protKcal / kcal > 0.35)
+  };
+}
+function getDagDoel() {
+  return berekenDagDoel(profile);
 }
 
 // Marge rond het doel waarbinnen een waarde als "gehaald" telt: calorieën
