@@ -54,6 +54,14 @@ function wpSlaPlanningOp(){ syncSet('prime_planning',  geplanning); }
 // datum verwijderen) mee, en deze functie ververst zelf altijd EERST
 // vanuit localStorage vlak vóór het toepassen, zodat een verouderde
 // aanroeper de meest recente stand nooit per ongeluk kan overschrijven.
+function wpWisDagAanpassingen(dateStr) {
+  ['prime_wp_removed', 'prime_wp_ex_overrides'].forEach(function(key) {
+    let all;
+    try { all = JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return; }
+    if (all[dateStr] !== undefined) { delete all[dateStr]; syncSet(key, all); }
+  });
+}
+
 function wpApplyPlanningChanges(changes) {
   wpLaadData();
   changes.forEach(function(c) {
@@ -62,6 +70,12 @@ function wpApplyPlanningChanges(changes) {
     // schrijft, kan geen enkele aanroeper (kopiëren, programma inplannen,
     // dag wissen, ...) daar per ongeluk of expres nog omheen.
     if (isDagAfgesloten(c.date)) return;
+    // Een (nieuw) toegewezen of gewiste programmadag begint schoon: de voor
+    // deze datum verwijderde oefeningen en per-dag aanpassingen horen bij de
+    // INDEXEN van het vorige programma. Bleven ze staan, dan werden bij een
+    // gekopieerde of ingeroosterde dag de oefeningen op diezelfde indexen
+    // verborgen -- na eerst alles te hebben weggehaald bleef Vandaag leeg.
+    wpWisDagAanpassingen(c.date);
     geplanning = geplanning.filter(function(p) { return p.date !== c.date; });
     if (c.schemaId != null && c.schemaId !== '') geplanning.push({ date: c.date, schemaId: c.schemaId });
   });
