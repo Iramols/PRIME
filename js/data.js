@@ -476,8 +476,8 @@ function berekenDagDoel(p) {
     kcal, prot, carb, fat, perKg, carbPct,
     // Eiwit alleen is al meer dan het kcal-doel: past niet.
     proteinTeHoog: protKcal > kcal,
-    // Waarschuwing: meer dan 2,5 g/kg of meer dan 35% van de calorieën.
-    proteinHoog: perKg > 2.5 || (kcal > 0 && protKcal / kcal > 0.35)
+    // Waarschuwing: meer dan 3 g eiwit per kg lichaamsgewicht.
+    proteinHoog: perKg > 3
   };
 }
 function getDagDoel() {
