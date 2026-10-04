@@ -83,9 +83,12 @@ function updateMacroPreview() {
   document.getElementById('pm-ep').textContent = Math.round(eK / tot * 100) + '%';
   document.getElementById('pm-kp').textContent = Math.round(kK / tot * 100) + '%';
   document.getElementById('pm-vp').textContent = Math.round(vK / tot * 100) + '%';
-  document.getElementById('pm-bar-e').style.width = (eK / tot * 100) + '%';
-  document.getElementById('pm-bar-k').style.width = (kK / tot * 100) + '%';
-  document.getElementById('pm-bar-v').style.width = (vK / tot * 100) + '%';
+  // Cirkeldiagram: elk deel is een stuk van de omtrek (dasharray/dashoffset).
+  const omtrek = 2 * Math.PI * 46;
+  const seg = (id, start, frac) => { const el = document.getElementById(id); el.setAttribute('stroke-dasharray', Math.max(0, frac * omtrek) + ' ' + omtrek); el.setAttribute('stroke-dashoffset', -start * omtrek); };
+  const fE = eK / tot, fK = kK / tot, fV = vK / tot;
+  seg('pm-seg-e', 0, fE); seg('pm-seg-k', fE, fK); seg('pm-seg-v', fE + fK, fV);
+  document.getElementById('pm-donut').setAttribute('aria-label', t('profile.macro.goalTitle') + ': ' + d.kcal + ' kcal');
   document.getElementById('pm-err').style.display = d.proteinTeHoog ? 'block' : 'none';
   document.getElementById('pm-warn').style.display = (!d.proteinTeHoog && d.proteinHoog) ? 'block' : 'none';
 }
