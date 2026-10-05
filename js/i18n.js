@@ -68,7 +68,8 @@ function findCanonicalExercise(name) {
 function exPhotoUrl(photo) {
   if (!photo || typeof photo !== 'string' || photo.indexOf('images/oefeningen/') !== 0) return photo;
   const v = (typeof EXTRA_EXERCISE_PHOTO_VERSION !== 'undefined') ? EXTRA_EXERCISE_PHOTO_VERSION : 1;
-  return photo.split('?')[0] + '?v=' + v;
+  // Chin-ups had eerst een .png; in programma's kan dat oude pad nog staan.
+  return photo.split('?')[0].replace('/chin-up.png', '/chin-up.jpg') + '?v=' + v;
 }
 
 function dateLocale() {
