@@ -249,7 +249,7 @@ const EXTRA_EXERCISES = [
 
 // Cache-busting: zelfde reden als PRODUCT_PHOTO_VERSION hierboven -- ophogen
 // zodra een foto in EXTRA_EXERCISES vervangen wordt.
-const EXTRA_EXERCISE_PHOTO_VERSION = 10;
+const EXTRA_EXERCISE_PHOTO_VERSION = 11;
 EXTRA_EXERCISES.forEach(group => group.exercises.forEach(ex => { if (ex.photo && ex.photo.startsWith('images/')) ex.photo += '?v=' + EXTRA_EXERCISE_PHOTO_VERSION; }));
 
 
