@@ -429,6 +429,23 @@ const EXERCISES = {
   ]
 };
 
+// De vaste schema-oefeningen en hun alternatieven hadden eigen stockfoto's. Staat
+// dezelfde oefening ook in Losse oefeningen (op naam), dan gebruiken we daar de
+// foto van, zodat een oefening overal dezelfde afbeelding heeft.
+(function() {
+  const perNaam = {};
+  EXTRA_EXERCISES.forEach(g => g.exercises.forEach(e => {
+    if (!e.photo) return;
+    [e.name, e.name_en].forEach(n => { if (n) perNaam[n] = e.photo; });
+  }));
+  Object.keys(EXERCISES).forEach(type => (EXERCISES[type] || []).forEach(ex => {
+    [ex].concat(ex.alts || []).forEach(o => {
+      const f = perNaam[o.name] || (o.name_en && perNaam[o.name_en]);
+      if (f) o.photo = f;
+    });
+  }));
+})();
+
 
 // ========== MAALTIJDPLAN ==========
 // De ontbijt/lunch/avond/snack-lijsten per type bestaan nog voor een paar
