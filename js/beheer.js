@@ -200,19 +200,23 @@ function resetPhoto(key, tab) {
 
 function applyCustomPhotos() {
   const photos = getCustomPhotos();
+  // custom-photos.json bevat oude Pexels-links per oefeningnaam. Heeft een oefening
+  // inmiddels een eigen foto in images/ (bv. de nieuwe illustraties), dan mag zo'n
+  // oude link die niet meer overschrijven. Zelf geüploade foto's (data-URL) wél.
+  const magOverschrijven = (huidig, nieuw) => !(huidig && String(huidig).indexOf('images/') === 0 && String(nieuw).indexOf('https://images.pexels.com/') === 0);
   // Pas toe op EXERCISES
   ['herstel','normaal','zwaar'].forEach(type => {
     (EXERCISES[type] || []).forEach(ex => {
-      if (photos['ex-' + ex.name]) ex.photo = photos['ex-' + ex.name];
+      if (photos['ex-' + ex.name] && magOverschrijven(ex.photo, photos['ex-' + ex.name])) ex.photo = photos['ex-' + ex.name];
       (ex.alts || []).forEach(alt => {
-        if (photos['ex-' + alt.name]) alt.photo = photos['ex-' + alt.name];
+        if (photos['ex-' + alt.name] && magOverschrijven(alt.photo, photos['ex-' + alt.name])) alt.photo = photos['ex-' + alt.name];
       });
     });
   });
   // Pas toe op EXTRA_EXERCISES
   EXTRA_EXERCISES.forEach(group => {
     group.exercises.forEach(ex => {
-      if (photos['ex-' + ex.name]) ex.photo = photos['ex-' + ex.name];
+      if (photos['ex-' + ex.name] && magOverschrijven(ex.photo, photos['ex-' + ex.name])) ex.photo = photos['ex-' + ex.name];
     });
   });
   // Pas toe op MEALS
