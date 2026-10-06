@@ -133,8 +133,8 @@ const EXTRA_EXERCISES = [
     { id:"ex-tt", name:"Toe Touches", icon:"🦶", sets:3, reps:"15", rest:"45 sec", tip:"Lig op je rug met gestrekte benen omhoog. Til je schouders op en reik naar je tenen.", tip_en:"Lie on your back with legs up. Lift your shoulders and reach for your toes.", youtube:"https://www.youtube.com/results?search_query=Toe%20Touches%20proper%20form", photo:"images/oefeningen/toe-touches.jpg"},
     { id:"ex-rc", name:"Reverse Crunch", icon:"🔄", sets:3, reps:"12-15", rest:"45 sec", tip:"Trek je knieën naar je borst en til je billen licht op, zonder te zwaaien.", tip_en:"Pull your knees to your chest and lift your hips slightly, without swinging.", youtube:"https://www.youtube.com/results?search_query=Reverse%20Crunch%20proper%20form", photo:"images/oefeningen/reverse-crunch.jpg"},
     { id:"ex-sit", name:"Sit-ups", icon:"⬆️", sets:3, reps:"15-20", rest:"45 sec", tip:"Rol je romp gecontroleerd omhoog en trek niet aan je nek.", tip_en:"Curl your torso up under control and do not pull on your neck.", youtube:"https://www.youtube.com/results?search_query=Sit-ups%20proper%20form", photo:"images/oefeningen/sit-ups.jpg"},
-    { id:"ex-wwi", name:"Windshield Wipers", icon:"🚗", sets:3, reps:"10 per kant", rest:"60 sec", tip:"Lig op je rug met je benen omhoog. Laat ze als een ruitenwisser van links naar rechts zakken.", tip_en:"Lie on your back with your legs up. Lower them side to side like windshield wipers.", youtube:"https://www.youtube.com/results?search_query=Windshield%20Wipers%20proper%20form"},
-    { id:"ex-lsit", name:"L-sit", icon:"🅻", sets:3, reps:"10-20 sec", rest:"60 sec", tip:"Steun op je handen of parallelle stangen, benen gestrekt voor je. Houd vast.", tip_en:"Support yourself on your hands or parallel bars with your legs straight in front. Hold.", youtube:"https://www.youtube.com/results?search_query=L-sit%20proper%20form"},
+    { id:"ex-wwi", name:"Windshield Wipers", icon:"🚗", sets:3, reps:"10 per kant", rest:"60 sec", tip:"Lig op je rug met je benen omhoog. Laat ze als een ruitenwisser van links naar rechts zakken.", tip_en:"Lie on your back with your legs up. Lower them side to side like windshield wipers.", youtube:"https://www.youtube.com/results?search_query=Windshield%20Wipers%20proper%20form", photo:"images/oefeningen/windshield-wipers.jpg"},
+    { id:"ex-lsit", name:"L-sit", icon:"🅻", sets:3, reps:"10-20 sec", rest:"60 sec", tip:"Steun op je handen of parallelle stangen, benen gestrekt voor je. Houd vast.", tip_en:"Support yourself on your hands or parallel bars with your legs straight in front. Hold.", youtube:"https://www.youtube.com/results?search_query=L-sit%20proper%20form", photo:"images/oefeningen/l-sit.jpg"},
     { id:"ex-sup", name:"Superman", icon:"🦸", sets:3, reps:"12", rest:"45 sec", tip:"Lig op je buik, til armen en benen tegelijk op en houd even vast.", tip_en:"Lie on your stomach, lift your arms and legs at the same time and hold briefly.", youtube:"https://www.youtube.com/results?search_query=Superman%20proper%20form", photo:"images/oefeningen/superman.jpg"},
   ]},
   { group:'Full body', group_en:'Full body', icon:'🔑', color:'#276749', exercises:[
@@ -249,7 +249,7 @@ const EXTRA_EXERCISES = [
 
 // Cache-busting: zelfde reden als PRODUCT_PHOTO_VERSION hierboven -- ophogen
 // zodra een foto in EXTRA_EXERCISES vervangen wordt.
-const EXTRA_EXERCISE_PHOTO_VERSION = 11;
+const EXTRA_EXERCISE_PHOTO_VERSION = 12;
 EXTRA_EXERCISES.forEach(group => group.exercises.forEach(ex => { if (ex.photo && ex.photo.startsWith('images/')) ex.photo += '?v=' + EXTRA_EXERCISE_PHOTO_VERSION; }));
 
 
