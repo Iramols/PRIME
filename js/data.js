@@ -578,7 +578,7 @@ const PRODUCTS = [
   { id:'g12', name:'Ui', name_en:'Onion', icon:'🧅', cat:'groente', kcal:32, prot:1.3, carb:6.3, fat:0.2, photo:'images/producten/g12.jpg'},
   { id:'g13', name:'Doperwten', name_en:'Green peas', icon:'🫛', cat:'groente', kcal:81, prot:5.4, carb:14, fat:0.4, photo:'images/producten/g13.jpg'},
   { id:'g14', name:'Champignons', name_en:'Mushrooms', icon:'🍄', cat:'groente', kcal:28, prot:2.5, carb:4.3, fat:0.1, photo:'images/producten/g14.jpg'},
-  { id:'g15', name:'Aziatische Wokgroenten', name_en:'Asian wok vegetables', icon:'🥬', cat:'groente', kcal:19, prot:3.5, carb:0.1, fat:0.5, photo:'images/producten/g15.jpg'},
+  { id:'g15', name:'Aziatische Wokgroenten', name_en:'Asian wok vegetables', icon:'🥬', cat:'groente', kcal:29, prot:2.6, carb:2.8, fat:0.8, photo:'images/producten/g15.jpg'},
   { id:'g17', name:'Pompoen', name_en:'Pumpkin', icon:'🎃', cat:'groente', kcal:35, prot:1, carb:7, fat:0.3, photo:'images/producten/g17.jpg'},
   { id:'g18', name:'Wortelpeterselie', name_en:'Hamburg parsley root', icon:'🥕', cat:'groente', kcal:46, prot:2.3, carb:8, fat:0.5, photo:'images/producten/g18.jpg'},
   { id:'g19', name:'Spruiten', name_en:'Brussels sprouts', icon:'🥦', cat:'groente', kcal:34, prot:4.5, carb:3.3, fat:0.3, photo:'images/producten/g19.jpg'},
