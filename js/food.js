@@ -324,6 +324,7 @@ function resetAddProductForm() {
   _apPrimeId = null;
   const _pa = document.getElementById('ap-prime-actions');
   if (_pa) _pa.style.display = 'none';
+  document.getElementById('ap-submit-btn').classList.remove('coach-only-btn');
 
   document.getElementById('ap-form-title').textContent = t('food.add.formTitle');
   document.getElementById('ap-submit-btn').textContent = t('food.add.submit');
@@ -1942,6 +1943,7 @@ function editPrimeProduct(id) {
 
   document.getElementById('ap-form-title').textContent = t('food.prime.editTitle');
   document.getElementById('ap-submit-btn').textContent = t('food.prime.save');
+  document.getElementById('ap-submit-btn').classList.add('coach-only-btn'); // coach-only: oranje
   document.getElementById('ap-cancel-btn').style.display = 'inline-block';
   const rij = primeProducts.find(r => r && r.id === id);
   const isNieuw = !!(rij && rij.op === 'new');
