@@ -234,6 +234,7 @@ function renderProducts() {
 let _apPhotoData = null;
 let _apEditingId = null; // id van het product dat bewerkt wordt, null = nieuw product
 let _apPrimeId = null; // id van het basisproduct dat de coach voor iedereen aanpast, anders null
+let _apCopyOf = null; // id van het basisproduct waarvan de coach een kopie maakt, anders null
 
 function updateAddProductKcal() {
   const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
@@ -268,6 +269,7 @@ function handleAddProductPhoto(event) {
 
 function addCustomProduct() {
   if (_apPrimeId) { savePrimeProductEdit(); return; }
+  if (_apCopyOf || _apGedeeld()) { savePrimeProductNew(); return; }
   const nameInput = document.getElementById('ap-name');
   const name = nameInput.value.trim();
   const errorEl = document.getElementById('ap-error');
@@ -322,9 +324,13 @@ function resetAddProductForm() {
   _apPhotoData = null;
   _apEditingId = null;
   _apPrimeId = null;
+  _apCopyOf = null;
   const _pa = document.getElementById('ap-prime-actions');
   if (_pa) _pa.style.display = 'none';
+  const _sh = document.getElementById('ap-share');
+  if (_sh) _sh.checked = true;
   document.getElementById('ap-submit-btn').classList.remove('coach-only-btn');
+  updateApShareRow();
 
   document.getElementById('ap-form-title').textContent = t('food.add.formTitle');
   document.getElementById('ap-submit-btn').textContent = t('food.add.submit');
@@ -337,6 +343,7 @@ function editCustomProduct(id) {
   const product = customProducts.find(p => p.id === id);
   if (!product) return;
   _apEditingId = id;
+  updateApShareRow();
 
   document.getElementById('ap-name').value = product.name;
   document.getElementById('ap-cat').value = product.cat || 'overig';
@@ -366,6 +373,7 @@ function removeCustomProduct(id) {
 }
 
 function renderAddProductTab() {
+  updateApShareRow();
   const el = document.getElementById('own-products-list');
   if (!el) return;
   if (!customProducts.length) {
@@ -1928,6 +1936,7 @@ function editPrimeProduct(id) {
   closePortionModal();
   resetAddProductForm();
   _apPrimeId = id;
+  updateApShareRow();
 
   document.getElementById('ap-name').value = p.name;
   document.getElementById('ap-cat').value = p.cat || 'overig';
@@ -1961,6 +1970,7 @@ async function savePrimeProductEdit() {
   const errorEl = document.getElementById('ap-error');
   const name = document.getElementById('ap-name').value.trim();
   if (!name) { errorEl.textContent = t('food.add.nameRequired'); return; }
+  if (productNaamBestaat(name, _apPrimeId)) { errorEl.textContent = t('food.prime.nameExists'); return; }
   errorEl.textContent = '';
 
   const velden = {
@@ -2043,4 +2053,88 @@ async function deletePrimeProduct() {
   resetAddProductForm();
   switchFoodTab('basis');
   try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.deleted'), !!fout); } catch (e) { console.error(e); }
+}
+
+
+// ----- Nieuw product voor iedereen (coach): kopie van een basisproduct, of een
+// nieuw product via "+ Eigen basisproducten" met het vinkje "voor iedereen" -----
+
+// Bestaat er al een product (vast, door de coach toegevoegd of eigen) met deze
+// naam? Zo voorkomen we dubbele namen in de lijst. exceptId = het product dat
+// zelf wordt aangepast.
+function productNaamBestaat(naam, exceptId) {
+  const norm = String(naam || '').trim().toLowerCase();
+  if (!norm) return false;
+  return getAllProducts().some(p => p.id !== exceptId &&
+    [p.name, p.name_en].some(n => n && String(n).trim().toLowerCase() === norm));
+}
+
+// Staat het formulier in "nieuw product voor iedereen"-stand (coach, nieuw
+// product, vinkje aan)?
+function _apGedeeld() {
+  if (!isPrimeCoach() || _apEditingId || _apPrimeId) return false;
+  const sh = document.getElementById('ap-share');
+  return !!(sh && sh.checked);
+}
+
+// Toont het vinkje "Voor iedereen" alleen voor de coach bij een NIEUW product,
+// en kleurt de opslaan-knop oranje (coach-only) zodra het voor iedereen is.
+function updateApShareRow() {
+  const row = document.getElementById('ap-share-row');
+  const btn = document.getElementById('ap-submit-btn');
+  if (!row || !btn) return;
+  const nieuwStand = isPrimeCoach() && !_apEditingId && !_apPrimeId && !_apCopyOf;
+  row.style.display = nieuwStand ? 'block' : 'none';
+  if (_apPrimeId) return; // oranje + tekst worden door editPrimeProduct() gezet
+  const gedeeld = _apCopyOf ? true : _apGedeeld();
+  btn.classList.toggle('coach-only-btn', gedeeld);
+  if (_apCopyOf) btn.textContent = t('food.prime.saveNew');
+  else if (!_apEditingId) btn.textContent = t('food.add.submit');
+}
+
+// Coach: maakt van het geopende basisproduct een kopie. De velden blijven
+// gevuld; opslaan kan pas met een andere naam (zie productNaamBestaat()).
+function copyPrimeProduct() {
+  if (!isPrimeCoach() || !_apPrimeId) return;
+  _apCopyOf = _apPrimeId;
+  _apPrimeId = null;
+  document.getElementById('ap-form-title').textContent = t('food.prime.copyTitle');
+  document.getElementById('ap-prime-actions').style.display = 'none';
+  document.getElementById('ap-error').textContent = t('food.prime.copyHint');
+  updateApShareRow();
+  const naamEl = document.getElementById('ap-name');
+  naamEl.focus();
+  naamEl.select();
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Opslaan van een nieuw product voor iedereen (kopie of nieuw met vinkje).
+async function savePrimeProductNew() {
+  if (!isPrimeCoach()) return;
+  const errorEl = document.getElementById('ap-error');
+  const name = document.getElementById('ap-name').value.trim();
+  if (!name) { errorEl.textContent = t('food.add.nameRequired'); return; }
+  if (productNaamBestaat(name, null)) { errorEl.textContent = t('food.prime.nameExists'); return; }
+  errorEl.textContent = '';
+
+  const bron = _apCopyOf ? PRODUCTS.find(p => p.id === _apCopyOf) : null;
+  const rij = {
+    id: 'prime-' + Date.now() + Math.floor(Math.random() * 1000),
+    op: 'new',
+    icon: (bron && bron.icon) || '🍽️',
+    name: name,
+    cat: document.getElementById('ap-cat').value,
+    kcal: updateAddProductKcal(),
+    prot: parseFloat(document.getElementById('ap-prot').value) || 0,
+    carb: parseFloat(document.getElementById('ap-carb').value) || 0,
+    fat: parseFloat(document.getElementById('ap-fat').value) || 0,
+    photo: _apPhotoData || null
+  };
+  primeProducts = primeProducts.concat([rij]);
+  _bewaarPrimeProductenLokaal();
+  applyPrimeProducts();
+  const fout = await savePrimeProductToCloud(rij);
+  resetAddProductForm();
+  switchFoodTab('basis');
+  try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.savedNew'), !!fout); } catch (e) { console.error(e); }
 }

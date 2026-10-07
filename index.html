@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261007-1916';
+window.PRIME_BUILD = '20261007-1945';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261007-1916">
+<link rel="stylesheet" href="css/styles.css?v=20261007-1945">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261007-1916"></script>
-<script src="js/translations.js?v=20261007-1916"></script>
-<script src="js/i18n.js?v=20261007-1916"></script>
+<script src="js/cloud.js?v=20261007-1945"></script>
+<script src="js/translations.js?v=20261007-1945"></script>
+<script src="js/i18n.js?v=20261007-1945"></script>
 </head>
 <body>
 
@@ -786,12 +786,19 @@ if ('serviceWorker' in navigator) {
             <span style="font-size:11px;color:var(--muted)" data-i18n="photo.maxHint">Max. 200 KB</span>
           </div>
         </div>
+        <div id="ap-share-row" style="display:none;margin-bottom:12px;padding:10px 12px;border:1px solid var(--coach-only);border-radius:10px;background:var(--coach-only-light)">
+          <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--coach-only);font-weight:600;cursor:pointer">
+            <input type="checkbox" id="ap-share" checked onchange="updateApShareRow()" style="margin-top:3px">
+            <span data-i18n="food.prime.shareLabel">Voor iedereen zichtbaar bij Basisproducten (alleen coach). Haal het vinkje weg om het alleen als eigen basisproduct te bewaren.</span>
+          </label>
+        </div>
         <div id="ap-error" style="color:#c0392b;font-size:12px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
           <button class="btn-primary" style="flex:1;margin-bottom:0" id="ap-submit-btn" onclick="addCustomProduct()" data-i18n="food.add.submit">+ Product toevoegen</button>
           <button class="btn-sm" id="ap-cancel-btn" onclick="resetAddProductForm()" style="display:none" data-i18n="food.addMeal.cancel">Annuleren</button>
         </div>
         <div id="ap-prime-actions" style="display:none;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn-sm coach-only-btn" id="ap-prime-copy" onclick="copyPrimeProduct()" data-i18n="food.prime.copy">📋 Kopiëren als nieuw product</button>
           <button class="btn-sm coach-only-btn" id="ap-prime-reset" onclick="resetPrimeProduct()" style="display:none" data-i18n="food.prime.reset">↩️ Terug naar origineel</button>
           <button class="btn-sm coach-only-btn" id="ap-prime-delete" onclick="deletePrimeProduct()" data-i18n="food.prime.delete">🗑️ Verwijderen voor iedereen</button>
         </div>
@@ -1597,6 +1604,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261007-1916"></script>
+<script src="js/auth.js?v=20261007-1945"></script>
 </body>
 </html>
