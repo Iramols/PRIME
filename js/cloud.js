@@ -398,7 +398,7 @@ setInterval(checkForNewBuild, 5 * 60 * 1000);
 // zie de 'online'-listener hieronder.   als scheidingsteken sluit
 // toevallige overlap tussen twee sleutels uit.
 function _clientDataSnapshot() {
-  return CLOUD_KEYS.concat(['prime_prime_meals', 'prime_prime_programmas'])
+  return CLOUD_KEYS.concat(['prime_prime_meals', 'prime_prime_programmas', 'prime_prime_products'])
     .map(function(k) { return localStorage.getItem(k) || ''; })
     .join(' ');
 }
@@ -449,6 +449,9 @@ window.addEventListener('online', function() {
   const taken = [hydrateFromCloud(activeClientId).catch(function(e) { console.error('online: hydrateFromCloud faalde:', e); })];
   if (typeof primeMealsRefreshFromCloud === 'function') {
     taken.push(primeMealsRefreshFromCloud().catch(function(e) { console.error('online: primeMealsRefreshFromCloud faalde:', e); }));
+  }
+  if (typeof primeProductsRefreshFromCloud === 'function') {
+    taken.push(primeProductsRefreshFromCloud().catch(function(e) { console.error('online: primeProductsRefreshFromCloud faalde:', e); }));
   }
   if (typeof primeProgRefreshFromCloud === 'function') {
     taken.push(primeProgRefreshFromCloud().catch(function(e) { console.error('online: primeProgRefreshFromCloud faalde:', e); }));

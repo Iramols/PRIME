@@ -7,9 +7,9 @@ function switchFoodTab(tab) {
   // "Mijn dag" betekent altijd vandaag — verlaat een eventueel via
   // Weekplanning geopende andere datum weer.
   if (tab === 'log') { switchLogDate(fdTodayStr()); renderDayLog(); }
-  if (tab === 'basis') renderProducts();
+  if (tab === 'basis') { renderProducts(); primeProductsRefreshFromCloud(); }
   if (tab === 'primemeals') { renderPrimeMealPlan(); primeMealsRefreshFromCloud(); }
-  if (tab === 'add') renderAddProductTab();
+  if (tab === 'add') { renderAddProductTab(); primeProductsRefreshFromCloud(); }
   if (tab === 'addmeal') renderAddMealTab();
   if (tab === 'week') renderFoodWeek();
 }
@@ -233,6 +233,7 @@ function renderProducts() {
 // ========== EIGEN PRODUCT TOEVOEGEN ==========
 let _apPhotoData = null;
 let _apEditingId = null; // id van het product dat bewerkt wordt, null = nieuw product
+let _apPrimeId = null; // id van het basisproduct dat de coach voor iedereen aanpast, anders null
 
 function updateAddProductKcal() {
   const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
@@ -266,6 +267,7 @@ function handleAddProductPhoto(event) {
 }
 
 function addCustomProduct() {
+  if (_apPrimeId) { savePrimeProductEdit(); return; }
   const nameInput = document.getElementById('ap-name');
   const name = nameInput.value.trim();
   const errorEl = document.getElementById('ap-error');
@@ -319,6 +321,9 @@ function resetAddProductForm() {
   document.getElementById('ap-error').textContent = '';
   _apPhotoData = null;
   _apEditingId = null;
+  _apPrimeId = null;
+  const _pa = document.getElementById('ap-prime-actions');
+  if (_pa) _pa.style.display = 'none';
 
   document.getElementById('ap-form-title').textContent = t('food.add.formTitle');
   document.getElementById('ap-submit-btn').textContent = t('food.add.submit');
@@ -1194,6 +1199,8 @@ function openPortionModal(productId) {
   document.getElementById('pm-date').value = currentLogDate;
   updatePmDateLabel();
   updatePortionPreview();
+  const _editBtn = document.getElementById('pm-edit-btn');
+  if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p.custom) ? 'inline-block' : 'none';
   document.getElementById('portion-modal').classList.add('open');
 }
 
@@ -1395,6 +1402,8 @@ function editLogItem(dateStr, logId) {
     openPortionModal(item.productId);
     if (!currentPortionProduct) { alert(t('food.edit.noLongerAvailable')); return; }
     _editingLogId = logId;
+    const _editBtn2 = document.getElementById('pm-edit-btn');
+    if (_editBtn2) _editBtn2.style.display = 'none';
     document.getElementById('pm-gram').value = item.gram;
     currentMoment = item.moment;
     setActiveMomentBtn('#portion-modal', item.moment);
@@ -1812,4 +1821,224 @@ function updateMacroTotals() {
   // Update dashboard preview
   updateHomeMacros();
   updateHomePlannedSummary();
+}
+
+
+// ========== PRIME-PRODUCTEN (gedeeld, alleen coach kan bewerken) ==========
+// De vaste basisproducten staan in data.js (PRODUCTS). De coach kan er voor
+// iedereen wijzigingen op aanbrengen: een product aanpassen ('edit'), verwijderen
+// ('hide') of een nieuw product toevoegen ('new'). Die wijzigingen staan in de
+// gedeelde Supabase-tabel prime_products (zie supabase/prime_products.sql) en
+// worden hier, cache-first uit localStorage, over PRODUCTS heen gelegd -- dus
+// ook offline beschikbaar. Zelfde opzet als de PRIME-gerechten hierboven.
+let primeProducts = [];
+try { primeProducts = JSON.parse(localStorage.getItem('prime_prime_products') || '[]'); } catch (e) {}
+let _productsOrig = null; // ongewijzigde kopie van PRODUCTS uit data.js
+const PRIME_PRODUCT_VELDEN = ['name', 'name_en', 'cat', 'kcal', 'prot', 'carb', 'fat', 'photo', 'icon', 'portie'];
+
+// Bouwt PRODUCTS opnieuw op uit de originele lijst plus de gedeelde wijzigingen.
+// De array zelf blijft dezelfde (op zijn plek aangepast), zodat alles wat naar
+// PRODUCTS verwijst blijft werken.
+function applyPrimeProducts() {
+  if (!_productsOrig) _productsOrig = PRODUCTS.map(p => Object.assign({}, p));
+  const perId = {};
+  primeProducts.forEach(r => { if (r && r.id) perId[r.id] = r; });
+  const nieuw = [];
+  _productsOrig.forEach(orig => {
+    const r = perId[orig.id];
+    if (r && r.op === 'hide') return;
+    const p = Object.assign({}, orig);
+    if (r && r.op === 'edit') {
+      PRIME_PRODUCT_VELDEN.forEach(f => { if (r[f] !== undefined) p[f] = r[f]; });
+      p.primeEdited = true;
+    }
+    nieuw.push(p);
+  });
+  primeProducts.forEach(r => {
+    if (r && r.op === 'new') {
+      const p = Object.assign({ icon: '🍽️' }, r);
+      delete p.op;
+      p.primeShared = true;
+      nieuw.push(p);
+    }
+  });
+  PRODUCTS.length = 0;
+  nieuw.forEach(p => PRODUCTS.push(p));
+  if (typeof applyCustomPhotos === 'function') { try { applyCustomPhotos(); } catch (e) { console.error(e); } }
+}
+
+function _bewaarPrimeProductenLokaal() {
+  try { localStorage.setItem('prime_prime_products', JSON.stringify(primeProducts)); } catch (e) { console.error(e); }
+}
+
+async function fetchPrimeProductsFromCloud() {
+  const sb = getSupabase();
+  const { data, error } = await withTimeout(
+    sb.from('prime_products').select('id, value'),
+    3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
+  );
+  if (error) { console.error('fetchPrimeProductsFromCloud:', error); return null; }
+  return (data || []).map(row => row.value);
+}
+
+// Geeft de fout terug (of null bij succes), zie savePrimeMealToCloud().
+async function savePrimeProductToCloud(row) {
+  const sb = getSupabase();
+  const { error } = await withTimeout(
+    sb.from('prime_products').upsert({ id: row.id, value: row, updated_at: new Date().toISOString() }),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
+  if (error) console.error('savePrimeProductToCloud:', error);
+  return error || null;
+}
+
+async function deletePrimeProductFromCloud(id) {
+  const sb = getSupabase();
+  const { error } = await withTimeout(
+    sb.from('prime_products').delete().eq('id', id),
+    3000, { error: { message: 'Failed to fetch (timeout)' } }
+  );
+  if (error) console.error('deletePrimeProductFromCloud:', error);
+  return error || null;
+}
+
+async function primeProductsRefreshFromCloud() {
+  const lijst = await fetchPrimeProductsFromCloud();
+  if (lijst === null) return;
+  if (JSON.stringify(lijst) === JSON.stringify(primeProducts)) return;
+  primeProducts = lijst;
+  _bewaarPrimeProductenLokaal();
+  applyPrimeProducts();
+  const basis = document.getElementById('tab-basis');
+  if (basis && basis.classList.contains('active')) renderProducts();
+}
+
+// Opstarten: eerst de bewaarde wijzigingen toepassen (werkt ook offline), daarna
+// op de achtergrond verversen vanuit de cloud.
+applyPrimeProducts();
+setTimeout(function() { primeProductsRefreshFromCloud().catch(function(e) { console.error(e); }); }, 1500);
+
+// Coach: opent het formulier bij "+ Eigen basisproducten" met de gegevens van
+// een basisproduct, om dat voor iedereen aan te passen.
+function editPrimeProduct(id) {
+  if (!isPrimeCoach()) return;
+  const p = PRODUCTS.find(x => x.id === id);
+  if (!p) return;
+  closePortionModal();
+  resetAddProductForm();
+  _apPrimeId = id;
+
+  document.getElementById('ap-name').value = p.name;
+  document.getElementById('ap-cat').value = p.cat || 'overig';
+  document.getElementById('ap-prot').value = p.prot || 0;
+  document.getElementById('ap-carb').value = p.carb || 0;
+  document.getElementById('ap-fat').value = p.fat || 0;
+  updateAddProductKcal();
+  _apPhotoData = p.photo || null;
+  document.getElementById('ap-photo-preview').innerHTML = p.photo
+    ? '<img src="' + p.photo + '" style="width:100%;height:100%;object-fit:cover">'
+    : '🍽️';
+  document.getElementById('ap-error').textContent = '';
+
+  document.getElementById('ap-form-title').textContent = t('food.prime.editTitle');
+  document.getElementById('ap-submit-btn').textContent = t('food.prime.save');
+  document.getElementById('ap-cancel-btn').style.display = 'inline-block';
+  const rij = primeProducts.find(r => r && r.id === id);
+  const isNieuw = !!(rij && rij.op === 'new');
+  document.getElementById('ap-prime-actions').style.display = 'flex';
+  // "Terug naar origineel" kan alleen bij een aangepast, oorspronkelijk product.
+  document.getElementById('ap-prime-reset').style.display = (rij && rij.op === 'edit') ? 'inline-block' : 'none';
+
+  switchFoodTab('add');
+  document.getElementById('ap-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Opslaan van een aangepast basisproduct, voor iedereen.
+async function savePrimeProductEdit() {
+  if (!isPrimeCoach() || !_apPrimeId) return;
+  const errorEl = document.getElementById('ap-error');
+  const name = document.getElementById('ap-name').value.trim();
+  if (!name) { errorEl.textContent = t('food.add.nameRequired'); return; }
+  errorEl.textContent = '';
+
+  const velden = {
+    name: name,
+    cat: document.getElementById('ap-cat').value,
+    kcal: updateAddProductKcal(),
+    prot: parseFloat(document.getElementById('ap-prot').value) || 0,
+    carb: parseFloat(document.getElementById('ap-carb').value) || 0,
+    fat: parseFloat(document.getElementById('ap-fat').value) || 0,
+    photo: _apPhotoData || null
+  };
+
+  const id = _apPrimeId;
+  const bestaand = primeProducts.find(r => r && r.id === id);
+  let rij;
+  if (bestaand && bestaand.op === 'new') {
+    rij = Object.assign({}, bestaand, velden);
+    if (bestaand.name !== name) rij.name_en = '';
+  } else {
+    // Alleen wat afwijkt van het originele product wordt bewaard, zodat latere
+    // verbeteringen aan de vaste lijst voor onaangepaste velden blijven doorwerken.
+    const orig = (_productsOrig || []).find(o => o.id === id) || {};
+    rij = { id: id, op: 'edit' };
+    Object.keys(velden).forEach(f => { if (velden[f] !== orig[f] && !(velden[f] === null && orig[f] === undefined)) rij[f] = velden[f]; });
+    // Het formulier rekent kcal altijd uit E/K/V; de vaste lijst heeft soms de
+    // kcal uit de bron. Alleen als de macro's zelf zijn gewijzigd telt de nieuwe kcal.
+    const macrosGewijzigd = ['prot', 'carb', 'fat'].some(f => velden[f] !== orig[f]);
+    if (!macrosGewijzigd) delete rij.kcal;
+    if (rij.name !== undefined) rij.name_en = '';
+  }
+
+  if (!bestaand && rij.op === 'edit' && Object.keys(rij).length === 2) {
+    // Niets veranderd: er valt niets op te slaan.
+    resetAddProductForm();
+    switchFoodTab('basis');
+    return;
+  }
+
+  primeProducts = primeProducts.filter(r => !(r && r.id === id)).concat([rij]);
+  _bewaarPrimeProductenLokaal();
+  applyPrimeProducts();
+  const fout = await savePrimeProductToCloud(rij);
+  resetAddProductForm();
+  switchFoodTab('basis');
+  try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.saved'), !!fout); } catch (e) { console.error(e); }
+}
+
+// Coach: aangepast basisproduct terugzetten naar de oorspronkelijke waarden.
+async function resetPrimeProduct() {
+  if (!isPrimeCoach() || !_apPrimeId) return;
+  if (!confirm(t('food.prime.confirmReset'))) return;
+  const id = _apPrimeId;
+  primeProducts = primeProducts.filter(r => !(r && r.id === id));
+  _bewaarPrimeProductenLokaal();
+  applyPrimeProducts();
+  const fout = await deletePrimeProductFromCloud(id);
+  resetAddProductForm();
+  switchFoodTab('basis');
+  try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.resetDone'), !!fout); } catch (e) { console.error(e); }
+}
+
+// Coach: basisproduct voor iedereen verwijderen (vaste producten worden
+// verborgen, een door de coach toegevoegd product wordt echt weggehaald).
+async function deletePrimeProduct() {
+  if (!isPrimeCoach() || !_apPrimeId) return;
+  if (!confirm(t('food.prime.confirmDelete'))) return;
+  const id = _apPrimeId;
+  const bestaand = primeProducts.find(r => r && r.id === id);
+  let fout;
+  if (bestaand && bestaand.op === 'new') {
+    primeProducts = primeProducts.filter(r => !(r && r.id === id));
+    fout = await deletePrimeProductFromCloud(id);
+  } else {
+    const rij = { id: id, op: 'hide' };
+    primeProducts = primeProducts.filter(r => !(r && r.id === id)).concat([rij]);
+    fout = await savePrimeProductToCloud(rij);
+  }
+  _bewaarPrimeProductenLokaal();
+  applyPrimeProducts();
+  resetAddProductForm();
+  switchFoodTab('basis');
+  try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.deleted'), !!fout); } catch (e) { console.error(e); }
 }
