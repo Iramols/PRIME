@@ -235,6 +235,7 @@ let _apPhotoData = null;
 let _apEditingId = null; // id van het product dat bewerkt wordt, null = nieuw product
 let _apPrimeId = null; // id van het basisproduct dat de coach voor iedereen aanpast, anders null
 let _apCopyOf = null; // id van het basisproduct waarvan de coach een kopie maakt, anders null
+let _apCopyOwn = false; // true = kopie van een eigen product (de coach kiest zelf: voor iedereen of eigen)
 
 function updateAddProductKcal() {
   const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
@@ -277,6 +278,7 @@ function addCustomProduct() {
     errorEl.textContent = t('food.add.nameRequired');
     return;
   }
+  if (_apCopyOwn && productNaamBestaat(name, _apEditingId)) { errorEl.textContent = t('food.prime.nameExists'); return; }
   errorEl.textContent = '';
 
   const kcal = updateAddProductKcal();
@@ -325,6 +327,7 @@ function resetAddProductForm() {
   _apEditingId = null;
   _apPrimeId = null;
   _apCopyOf = null;
+  _apCopyOwn = false;
   const _pa = document.getElementById('ap-prime-actions');
   if (_pa) _pa.style.display = 'none';
   const _sh = document.getElementById('ap-share');
@@ -387,13 +390,17 @@ function renderAddProductTab() {
       ${p.photo
         ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
         : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${p.icon || '🍽️'}</div>`}
-      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
-        <div style="flex:1">
+      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px">
+        <div style="flex:1;min-width:120px">
           <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(p)}</div>
           <div style="font-size:11px;color:var(--muted)">${t('cat.' + p.cat)} · ${p.kcal} kcal · ${t('food.macroAbbr.protein')}${p.prot}g ${t('food.macroAbbr.carbs')}${p.carb}g ${t('food.macroAbbr.fat')}${p.fat}g</div>
         </div>
         <button onclick="editCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
         <button onclick="removeCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
+        ${isPrimeCoach() ? `<div style="width:100%;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="coach-only-btn" onclick="deelEigenProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--coach-only);cursor:pointer;font-weight:600">${t('food.prime.shareOwn')}</button>
+          <button class="coach-only-btn" onclick="kopieerEigenProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--coach-only);cursor:pointer;font-weight:600">${t('food.prime.copyOwn')}</button>
+        </div>` : ''}
       </div>
     </div>`).join('');
 }
@@ -2147,11 +2154,89 @@ async function savePrimeProductNew() {
 function apNaamInput() {
   const hint = document.getElementById('ap-hint');
   if (!hint) return;
-  const actief = !!(_apCopyOf || _apPrimeId || _apGedeeld());
+  const actief = !!(_apCopyOf || _apCopyOwn || _apPrimeId || _apGedeeld());
   const naam = document.getElementById('ap-name').value;
   const bestaat = actief && productNaamBestaat(naam, _apPrimeId);
   hint.textContent = bestaat ? t('food.prime.nameExists') : '';
   hint.style.display = bestaat ? 'block' : 'none';
   const errorEl = document.getElementById('ap-error');
   if (!bestaat && errorEl && errorEl.textContent === t('food.prime.nameExists')) errorEl.textContent = '';
+}
+
+
+// ----- Bestaande eigen producten van de coach: voor iedereen beschikbaar maken of kopiëren -----
+
+// Een foto die nog als data-URL in het product staat (upload naar Storage was
+// toen niet gelukt) alsnog uploaden, zodat de gedeelde rij klein blijft. Lukt het
+// niet, dan blijft de data-URL gewoon staan.
+async function _fotoNaarStorage(foto) {
+  if (!foto || String(foto).indexOf('data:') !== 0) return foto || null;
+  try {
+    const blob = await (await fetch(foto)).blob();
+    const ext = (blob.type.split('/')[1] || 'jpg').replace(/[^a-z0-9]/g, '') || 'jpg';
+    const url = await uploadPhotoToStorage(new File([blob], 'foto.' + ext, { type: blob.type }));
+    return url || foto;
+  } catch (e) {
+    console.error('_fotoNaarStorage:', e);
+    return foto;
+  }
+}
+
+// Verplaatst een eigen product naar de gedeelde basisproducten. Het id blijft
+// hetzelfde, zodat al gelogde items het product (en de foto) blijven terugvinden.
+// Pas als het opslaan in de cloud lukt verdwijnt het uit "Mijn eigen producten";
+// anders blijft alles zoals het was.
+async function deelEigenProduct(id) {
+  if (!isPrimeCoach()) return;
+  const p = customProducts.find(x => x.id === id);
+  if (!p) return;
+  if (productNaamBestaat(p.name, id)) { alert(t('food.prime.shareNameExists')); return; }
+  if (!confirm(t('food.prime.shareConfirm'))) return;
+  const foto = await _fotoNaarStorage(p.photo);
+  const rij = {
+    id: p.id, op: 'new', icon: p.icon || '🍽️', name: p.name, cat: p.cat,
+    kcal: p.kcal, prot: p.prot, carb: p.carb, fat: p.fat, photo: foto || null
+  };
+  const fout = await savePrimeProductToCloud(rij);
+  if (fout) {
+    try { showToast(t('food.prime.saveFailed'), true); } catch (e) { console.error(e); }
+    return;
+  }
+  primeProducts = primeProducts.filter(r => !(r && r.id === rij.id)).concat([rij]);
+  _bewaarPrimeProductenLokaal();
+  customProducts = customProducts.filter(x => x.id !== id);
+  syncSet('prime_custom_products', customProducts);
+  applyPrimeProducts();
+  renderAddProductTab();
+  renderProducts();
+  try { showToast(t('food.prime.sharedOwnDone')); } catch (e) { console.error(e); }
+}
+
+// Vult het formulier met een kopie van een eigen product. De coach geeft het een
+// andere naam en kiest met het vinkje of het voor iedereen of eigen wordt.
+function kopieerEigenProduct(id) {
+  if (!isPrimeCoach()) return;
+  const p = customProducts.find(x => x.id === id);
+  if (!p) return;
+  resetAddProductForm();
+  _apCopyOwn = true;
+
+  document.getElementById('ap-name').value = p.name;
+  document.getElementById('ap-cat').value = p.cat || 'overig';
+  document.getElementById('ap-prot').value = p.prot || 0;
+  document.getElementById('ap-carb').value = p.carb || 0;
+  document.getElementById('ap-fat').value = p.fat || 0;
+  updateAddProductKcal();
+  _apPhotoData = p.photo || null;
+  document.getElementById('ap-photo-preview').innerHTML = p.photo
+    ? '<img src="' + p.photo + '" style="width:100%;height:100%;object-fit:cover">'
+    : '🍽️';
+  document.getElementById('ap-form-title').textContent = t('food.prime.copyOwnTitle');
+  document.getElementById('ap-cancel-btn').style.display = 'inline-block';
+  updateApShareRow();
+  apNaamInput();
+  const naamEl = document.getElementById('ap-name');
+  naamEl.focus();
+  naamEl.select();
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
