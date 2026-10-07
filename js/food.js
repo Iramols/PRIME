@@ -329,6 +329,8 @@ function resetAddProductForm() {
   if (_pa) _pa.style.display = 'none';
   const _sh = document.getElementById('ap-share');
   if (_sh) _sh.checked = true;
+  const _hint = document.getElementById('ap-hint');
+  if (_hint) _hint.style.display = 'none';
   document.getElementById('ap-submit-btn').classList.remove('coach-only-btn');
   updateApShareRow();
 
@@ -2100,7 +2102,8 @@ function copyPrimeProduct() {
   _apPrimeId = null;
   document.getElementById('ap-form-title').textContent = t('food.prime.copyTitle');
   document.getElementById('ap-prime-actions').style.display = 'none';
-  document.getElementById('ap-error').textContent = t('food.prime.copyHint');
+  document.getElementById('ap-error').textContent = '';
+  apNaamInput();
   updateApShareRow();
   const naamEl = document.getElementById('ap-name');
   naamEl.focus();
@@ -2137,4 +2140,18 @@ async function savePrimeProductNew() {
   resetAddProductForm();
   switchFoodTab('basis');
   try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.savedNew'), !!fout); } catch (e) { console.error(e); }
+}
+
+// Live naamcontrole terwijl de coach typt: de melding verschijnt alleen zolang de
+// naam nog bij een bestaand product hoort en verdwijnt zodra hij uniek is.
+function apNaamInput() {
+  const hint = document.getElementById('ap-hint');
+  if (!hint) return;
+  const actief = !!(_apCopyOf || _apPrimeId || _apGedeeld());
+  const naam = document.getElementById('ap-name').value;
+  const bestaat = actief && productNaamBestaat(naam, _apPrimeId);
+  hint.textContent = bestaat ? t('food.prime.nameExists') : '';
+  hint.style.display = bestaat ? 'block' : 'none';
+  const errorEl = document.getElementById('ap-error');
+  if (!bestaat && errorEl && errorEl.textContent === t('food.prime.nameExists')) errorEl.textContent = '';
 }
