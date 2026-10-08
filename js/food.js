@@ -2427,14 +2427,17 @@ async function startBarcodeCamera() {
     return;
   }
   try {
+    const desktop = !!(window.matchMedia && matchMedia('(pointer: fine)').matches && !matchMedia('(pointer: coarse)').matches);
     let native = false;
-    if ('BarcodeDetector' in window) {
+    if (!desktop && 'BarcodeDetector' in window) {
       try {
         const formaten = await BarcodeDetector.getSupportedFormats();
         native = formaten.indexOf('ean_13') !== -1;
       } catch (e) { native = false; }
     }
-    if (native) {
+    if (desktop) {
+      await _bcDesktopLus(video);
+    } else if (native) {
       _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
       video.srcObject = _bcStream;
       await video.play();
@@ -2816,4 +2819,55 @@ function _bcFocus(video) {
     const track = video && video.srcObject && video.srcObject.getVideoTracks()[0];
     if (track && track.applyConstraints) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
   } catch (e) { /* niet ondersteund */ }
+}
+
+
+// Computer (webcam): in plaats van de standaardlezer proberen we elk ~120 ms een ander
+// beeld: het hele beeld en middenuitsneden (uitvergroot), met twee manieren van zwart-
+// wit maken en een contrastversie. Webcambeelden zijn vaak zacht, ruizig of vlak, en
+// één vaste aanpak mist dan de code terwijl je het beeld "heel duidelijk" ziet.
+async function _bcDesktopLus(video) {
+  await _laadZxing();
+  const hints = new Map();
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
+  hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+  const lezer = new ZXing.MultiFormatReader();
+  lezer.setHints(hints);
+
+  _bcStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+  video.srcObject = _bcStream;
+  await video.play();
+  _bcFocus(video);
+
+  const canvas = document.createElement('canvas');
+  const c2 = canvas.getContext('2d', { willReadFrequently: true });
+  const varianten = [
+    { crop: 1, bin: 'hybrid' },
+    { crop: 0.6, bin: 'hybrid' },
+    { crop: 1, bin: 'global' },
+    { crop: 0.6, bin: 'global', contrast: true },
+    { crop: 0.4, bin: 'hybrid' },
+    { crop: 1, bin: 'hybrid', contrast: true }
+  ];
+  let tik = 0;
+  _bcTimer = setInterval(() => {
+    if (_bcBezig || !video.videoWidth) return;
+    const v = varianten[tik % varianten.length];
+    tik++;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const sw = Math.round(vw * v.crop), sh = Math.round(vh * v.crop);
+    const sx = Math.round((vw - sw) / 2), sy = Math.round((vh - sh) / 2);
+    const schaal = Math.min(2, 1280 / sw);
+    canvas.width = Math.round(sw * schaal);
+    canvas.height = Math.round(sh * schaal);
+    try { c2.filter = v.contrast ? 'grayscale(1) contrast(1.8)' : 'none'; } catch (e) { /* oudere browser */ }
+    c2.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+    try {
+      const bron = new ZXing.HTMLCanvasElementLuminanceSource(canvas);
+      const bin = v.bin === 'global' ? new ZXing.GlobalHistogramBinarizer(bron) : new ZXing.HybridBinarizer(bron);
+      const resultaat = lezer.decode(new ZXing.BinaryBitmap(bin));
+      if (resultaat) bcGevonden(resultaat.getText());
+    } catch (e) { /* niets gevonden in dit beeld: volgende ronde */ }
+    if (tik === 50) _bcStatus(t('food.scan.noLuck'));
+  }, 120);
 }
