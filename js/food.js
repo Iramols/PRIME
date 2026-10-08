@@ -2558,7 +2558,8 @@ async function bcZoek(code) {
     '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">' + t('food.scan.per100') + '</div>' +
     (ontbreekt.length ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: ontbreekt.join(', ') }) + '</div>' : '') +
     '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:12px">' + t('food.scan.unverified') + '</div>' +
-    (_bcModus === 'dag' ? '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--charcoal);margin-bottom:14px;cursor:pointer"><input type="checkbox" id="bc-bewaar" checked style="margin-top:3px"><span>' + t('food.scan.keep') + '</span></label>' : '') +
+    (_bcModus === 'dag' ? '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px">' + t('food.scan.saveTitle') + '</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
+      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"' + (x[0] === 'eigen' ? ' checked' : '') + '><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
       '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + (_bcModus === 'dag' ? t('food.scan.next') : t('food.scan.use')) + '</button>' +
       '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
@@ -2620,7 +2621,7 @@ function scanEtenVoorDag(dateStr) {
 // Na "Verder": het gescande product bewaren als eigen product (met de barcode, zodat
 // het de volgende keer meteen gevonden wordt) en het portiescherm openen. De coach
 // kiest daar hoeveelheid en moment; afvinken als gegeten doet hij zelf in de lijst.
-function bcVoegToeAanDag(p) {
+async function bcVoegToeAanDag(p) {
   if (!p || p.leeg) { closeBarcodeScanner(); return; }
   const basis = (p.naam || '').trim() || ('Product ' + p.code);
   let naam = basis;
@@ -2630,12 +2631,34 @@ function bcVoegToeAanDag(p) {
   const carb = p.carb === null ? 0 : p.carb;
   const fat = p.fat === null ? 0 : p.fat;
   const kcal = p.kcal !== null ? p.kcal : Math.round(prot * 4 + carb * 4 + fat * 9);
-  const bewaarEl = document.getElementById('bc-bewaar');
-  if (bewaarEl && !bewaarEl.checked) {
+  const keuzeEl = document.querySelector('input[name="bc-bewaar"]:checked');
+  const keuze = keuzeEl ? keuzeEl.value : 'eigen';
+  if (keuze === 'nee') {
     // Alleen loggen: het product komt niet in de productlijst.
     const tijdelijk = { id: 'scan-' + Date.now(), icon: '🍽️', name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat, _tijdelijk: true };
     closeBarcodeScanner(true);
     openPortionModal(tijdelijk.id, tijdelijk);
+    return;
+  }
+  if (keuze === 'iedereen') {
+    // Voor iedereen: een nieuw basisproduct (zie de PRIME-producten hierboven).
+    const rij = {
+      id: 'prime-' + Date.now() + Math.floor(Math.random() * 1000), op: 'new',
+      icon: '🍽️', name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat,
+      photo: null, barcode: p.code
+    };
+    const fout = await savePrimeProductToCloud(rij);
+    if (fout) {
+      // Niets bewaard en je blijft in het scanscherm: opnieuw proberen of een andere keuze maken.
+      try { showToast(t('food.prime.saveFailed'), true); } catch (e) { console.error(e); }
+      return;
+    }
+    primeProducts = primeProducts.concat([rij]);
+    _bewaarPrimeProductenLokaal();
+    applyPrimeProducts();
+    closeBarcodeScanner(true);
+    openPortionModal(rij.id);
+    try { showToast(t('food.scan.savedAll')); } catch (e) { console.error(e); }
     return;
   }
   const nieuw = {
