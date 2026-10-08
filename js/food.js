@@ -1282,7 +1282,7 @@ function openPortionModal(productId) {
   updatePmDateLabel();
   updatePortionPreview();
   const _editBtn = document.getElementById('pm-edit-btn');
-  if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p.custom) ? 'inline-block' : 'none';
+  if (_editBtn) _editBtn.style.display = isPrimeCoach() ? 'inline-block' : 'none';
   document.getElementById('portion-modal').classList.add('open');
 }
 
@@ -2463,7 +2463,12 @@ async function bcZoek(code) {
   _bcStatus(t('food.scan.lookup'));
   const bestaand = getAllProducts().find(p => p.barcode && _bcNorm(p.barcode) === _bcNorm(code));
   if (bestaand) {
-    if (_bcModus === 'dag') { closeBarcodeScanner(true); openPortionModal(bestaand.id); return; }
+    if (_bcModus === 'dag') {
+      closeBarcodeScanner(true);
+      openPortionModal(bestaand.id);
+      try { showToast(t('food.scan.existsOpen', { name: dispName(bestaand) })); } catch (e) { console.error(e); }
+      return;
+    }
     view.style.display = 'none';
     res.style.display = 'block';
     _bcProduct = { code: code, leeg: true };
@@ -2645,4 +2650,12 @@ function _bcLeesInvoer(p) {
     carb: g('bc-e-carb'),
     fat: g('bc-e-fat')
   });
+}
+
+// ✏️ Aanpassen in het portiescherm (coach): een eigen product opent het gewone
+// bewerkformulier, een basisproduct het formulier om het voor iedereen aan te passen.
+function editProductFromPortion(id) {
+  if (!isPrimeCoach() || !id) return;
+  if (customProducts.some(p => p.id === id)) { closePortionModal(); editCustomProduct(id); }
+  else editPrimeProduct(id);
 }
