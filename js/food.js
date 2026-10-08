@@ -2374,6 +2374,7 @@ let _bcTimer = null;
 let _bcReader = null;
 let _bcBezig = false;
 let _bcProduct = null;
+let _bcDeviceId = null; // gekozen camera (bij meerdere achtercamera's), alleen voor de ingebouwde lezer
 let _bcModus = 'product'; // 'product' = nieuw basisproduct maken, 'dag' = gescand eten aan een dag toevoegen
 let _bcVorigeDatum = null;
 let _apBarcode = null; // barcode van het product dat nu in het formulier staat (na scannen)
@@ -2381,6 +2382,7 @@ let _apBarcode = null; // barcode van het product dat nu in het formulier staat 
 function openBarcodeScanner(modus) {
   if (!isPrimeCoach()) return;
   _bcModus = modus === 'dag' ? 'dag' : 'product';
+  _bcDeviceId = null;
   _bcBezig = false;
   _bcProduct = null;
   document.getElementById('bc-result').style.display = 'none';
@@ -2420,6 +2422,8 @@ function _laadZxing() {
 
 async function startBarcodeCamera() {
   stopBarcodeCamera();
+  const camKnop = document.getElementById('bc-cam-btn');
+  if (camKnop) camKnop.style.display = 'none';
   _bcStatus(t('food.scan.starting'));
   const video = document.getElementById('bc-video');
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -2438,9 +2442,25 @@ async function startBarcodeCamera() {
     if (desktop) {
       await _bcDesktopLus(video);
     } else if (native) {
-      _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      // Hogere resolutie dan de standaard (vaak 640x480) en continu scherpstellen: de
+      // ingebouwde lezer van Android gebruikt dat goed. Op een telefoon met meerdere
+      // achtercamera's kan de coach een andere lens kiezen (zie bcAndereCamera()).
+      const videoEis = { width: { ideal: 1280 }, height: { ideal: 720 } };
+      if (_bcDeviceId) videoEis.deviceId = { exact: _bcDeviceId };
+      else videoEis.facingMode = { ideal: 'environment' };
+      try {
+        _bcStream = await navigator.mediaDevices.getUserMedia({ video: videoEis, audio: false });
+      } catch (e) {
+        _bcDeviceId = null;
+        _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      }
       video.srcObject = _bcStream;
       await video.play();
+      _bcFocus(video);
+      try {
+        const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+        if (camKnop && cams.length > 1) camKnop.style.display = 'inline-block';
+      } catch (e) { /* geen lijst beschikbaar */ }
       const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
       _bcTimer = setInterval(async () => {
         if (_bcBezig) return;
@@ -2448,7 +2468,7 @@ async function startBarcodeCamera() {
           const gevonden = await detector.detect(video);
           if (gevonden.length) bcGevonden(gevonden[0].rawValue);
         } catch (e) { /* volgende ronde */ }
-      }, 300);
+      }, 200);
     } else {
       await _laadZxing();
       const hints = new Map();
@@ -2866,4 +2886,20 @@ async function _bcDesktopLus(video) {
     } catch (e) { /* niets gevonden in dit beeld: volgende ronde */ }
     if (tik === 50) _bcStatus(t('food.scan.noLuck'));
   }, 120);
+}
+
+
+// Telefoon met meerdere achtercamera's (bv. groothoek, ultragroothoek, tele): wisselt naar de
+// volgende lens. Sommige telefoons kiezen standaard een lens die niet goed scherpstelt op
+// dichtbij, waardoor een barcode wazig blijft.
+async function bcAndereCamera() {
+  try {
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+    if (cams.length < 2) return;
+    const huidig = _bcStream && _bcStream.getVideoTracks()[0] ? (_bcStream.getVideoTracks()[0].getSettings().deviceId || '') : '';
+    const idx = cams.findIndex(c => c.deviceId === huidig);
+    _bcDeviceId = cams[(idx + 1) % cams.length].deviceId;
+  } catch (e) { console.error('bcAndereCamera:', e); return; }
+  _bcBezig = false;
+  startBarcodeCamera();
 }
