@@ -2520,13 +2520,26 @@ async function bcZoek(code) {
   _bcProduct = { code: code, naam: naam, cat: _bcCategorie(product.categories_tags), kcal: kcal, prot: prot, carb: carb, fat: fat };
 
   const waarde = (v, eenheid) => v === null ? '<span style="color:var(--accent)">—</span>' : v + eenheid;
-  res.innerHTML =
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + t('food.scan.found') + ' · ' + escapeHtml(code) + '</div>' +
+
+  const veldHtml = (id, label, waardeStr, stap, oninput) => '<div style="text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">' + label + '</div><input type="number" id="' + id + '" min="0" step="' + stap + '" value="' + waardeStr + '"' + (oninput ? ' oninput="' + oninput + '"' : '') + ' style="width:100%;box-sizing:border-box;padding:8px 4px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;text-align:center;font-family:inherit"></div>';
+  const kopGrid = _bcModus === 'dag'
+    ? ('<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">' + t('food.scan.name') + '</div><input type="text" id="bc-e-naam" value="' + escapeHtml(naam || '') + '" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:15px;font-family:inherit"></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">' +
+        veldHtml('bc-e-kcal', t('portion.kcal'), kcal === null ? '' : kcal, 1, '') +
+        veldHtml('bc-e-prot', t('portion.protein'), prot === null ? '' : prot, 0.1, 'bcMacroInput()') +
+        veldHtml('bc-e-carb', t('portion.carbs'), carb === null ? '' : carb, 0.1, 'bcMacroInput()') +
+        veldHtml('bc-e-fat', t('portion.fat'), fat === null ? '' : fat, 0.1, 'bcMacroInput()') +
+      '</div>')
+    : (
     '<div style="font-family:\'DM Serif Display\',serif;font-size:19px;margin-bottom:10px">' + escapeHtml(naam || '—') + '</div>' +
     '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center">' +
       [[t('portion.kcal'), waarde(kcal, '')], [t('portion.protein'), waarde(prot, ' g')], [t('portion.carbs'), waarde(carb, ' g')], [t('portion.fat'), waarde(fat, ' g')]]
         .map(x => '<div style="background:var(--sand);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--muted)">' + x[0] + '</div><div style="font-size:14px;font-weight:600">' + x[1] + '</div></div>').join('') +
-    '</div>' +
+    '</div>'
+    );
+  res.innerHTML =
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + t('food.scan.found') + ' · ' + escapeHtml(code) + '</div>' +
+    kopGrid +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">' + t('food.scan.per100') + '</div>' +
     (ontbreekt.length ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: ontbreekt.join(', ') }) + '</div>' : '') +
     '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:14px">' + t('food.scan.unverified') + '</div>' +
@@ -2548,7 +2561,7 @@ function bcOpnieuw() {
 // Na bevestiging: formulier voor een nieuw product openen met de gevonden waardes.
 function bcGebruik() {
   const p = _bcProduct;
-  if (_bcModus === 'dag') { bcVoegToeAanDag(p); return; }
+  if (_bcModus === 'dag') { bcVoegToeAanDag(_bcLeesInvoer(p)); return; }
   closeBarcodeScanner();
   if (!p) return;
   openAddProductForm();
@@ -2612,4 +2625,24 @@ function bcVoegToeAanDag(p) {
   try { renderAddProductTab(); } catch (e) { console.error(e); }
   openPortionModal(nieuw.id);
   try { showToast(t('food.scan.savedOwn')); } catch (e) { console.error(e); }
+}
+
+
+// Dag-modus: de coach kan naam en waardes van het gescande product eerst aanpassen.
+function bcMacroInput() {
+  const g = id => parseFloat(document.getElementById(id).value) || 0;
+  document.getElementById('bc-e-kcal').value = Math.round(g('bc-e-prot') * 4 + g('bc-e-carb') * 4 + g('bc-e-fat') * 9);
+}
+
+function _bcLeesInvoer(p) {
+  const naamEl = document.getElementById('bc-e-naam');
+  if (!p || !naamEl) return p;
+  const g = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : Math.round(v * 10) / 10; };
+  return Object.assign({}, p, {
+    naam: naamEl.value.trim(),
+    kcal: Math.round(g('bc-e-kcal')),
+    prot: g('bc-e-prot'),
+    carb: g('bc-e-carb'),
+    fat: g('bc-e-fat')
+  });
 }
