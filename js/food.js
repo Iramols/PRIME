@@ -207,21 +207,36 @@ function toggleMeal(id, category) {
 // ========== PRODUCT FUNCTIONS ==========
 function filterCat(cat, btn) {
   currentCat = cat;
-  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#cat-tabs .cat-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   renderProducts();
 }
 
 function renderProducts() {
   const q = (document.getElementById('product-search')?.value || '').toLowerCase();
+  // Chips "Eigen" en "PRIME" alleen tonen als er zulke producten zijn; verdwijnt
+  // het gekozen filter, dan terug naar "Alle".
+  const heeftEigen = customProducts.length > 0;
+  const heeftPrime = PRODUCTS.some(p => p.primeShared);
+  const _ce = document.getElementById('cat-chip-eigen');
+  if (_ce) _ce.style.display = heeftEigen ? '' : 'none';
+  const _cp = document.getElementById('cat-chip-prime');
+  if (_cp) _cp.style.display = heeftPrime ? '' : 'none';
+  if ((currentCat === 'eigen' && !heeftEigen) || (currentCat === 'prime' && !heeftPrime)) {
+    currentCat = 'alle';
+    document.querySelectorAll('#cat-tabs .cat-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
+  }
   let list = getAllProducts();
-  if (currentCat !== 'alle') list = list.filter(p => p.cat === currentCat);
+  if (currentCat === 'eigen') list = list.filter(p => p.custom);
+  else if (currentCat === 'prime') list = list.filter(p => p.primeShared);
+  else if (currentCat !== 'alle') list = list.filter(p => p.cat === currentCat);
   if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q));
   document.getElementById('product-grid').innerHTML = `<div class="product-grid">` +
     list.map(p => `
       <div class="product-card" onclick="openPortionModal('${p.id}')">
+        ${productLabelHtml(p)}
         ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
-        <div class="product-name">${dispName(p)}${p.custom ? ' <span style="font-size:9px;color:var(--sage);font-weight:600">(' + t('food.add.own') + ')</span>' : ''}</div>
+        <div class="product-name">${dispName(p)}</div>
         <div class="product-per">${t('food.per100')}</div>
         <div class="product-macros">
           <span class="product-pill">${p.kcal} kcal</span>
@@ -395,6 +410,7 @@ function renderAddProductTab() {
     </div>`;
   el.innerHTML = `<div class="product-grid">` + tegel + lijst.map(p => `
     <div class="product-card" onclick="openOwnProductModal('${p.id}')">
+      <span class="prod-label prod-label-own">${t('food.label.own')}</span>
       ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
       <div class="product-name">${dispName(p)}</div>
       <div class="product-per">${t('food.per100')}</div>
@@ -2286,4 +2302,14 @@ function kopieerEigenProduct(id) {
   naamEl.focus();
   naamEl.select();
   naamEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+
+// Label op de foto van een product: groen "Eigen" bij een eigen product, oranje
+// "PRIME" bij een product dat de coach voor iedereen heeft toegevoegd. Vaste
+// basisproducten krijgen geen label.
+function productLabelHtml(p) {
+  if (p.custom) return '<span class="prod-label prod-label-own">' + t('food.label.own') + '</span>';
+  if (p.primeShared) return '<span class="prod-label prod-label-prime">' + t('food.label.prime') + '</span>';
+  return '';
 }

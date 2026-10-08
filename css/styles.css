@@ -422,7 +422,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 
 /* PRODUCT GRID */
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-.product-card { background: var(--white); border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 12px 10px; cursor: pointer; transition: all 0.15s; text-align: center; }
+.product-card { position: relative; background: var(--white); border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 12px 10px; cursor: pointer; transition: all 0.15s; text-align: center; }
 .product-card:hover { border-color: var(--sage-mid); background: var(--sage-light); transform: translateY(-1px); }
 .product-icon { font-size: 26px; margin-bottom: 6px; }
 
@@ -746,3 +746,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   select,
   textarea { font-size: 16px !important; }
 }
+
+/* Herkenbare productlabels: "Eigen" (groen) en "PRIME" (oranje, door de coach toegevoegd). */
+.prod-label { position: absolute; top: 6px; left: 6px; z-index: 1; font-size: 10px; font-weight: 600; line-height: 1.4; padding: 2px 8px; border-radius: 100px; color: var(--white); }
+.prod-label-own { background: var(--sage); }
+.prod-label-prime { background: var(--coach-only); }
+.cat-tab.chip-own { border-color: var(--sage); color: var(--sage); }
+.cat-tab.chip-prime { border-color: var(--coach-only); color: var(--coach-only); }
+.cat-tab.chip-prime.active { background: var(--coach-only-light); border-color: var(--coach-only); color: var(--coach-only); }
