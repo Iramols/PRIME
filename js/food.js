@@ -1236,8 +1236,8 @@ function addMealToLog() {
 // bewerking nooit een gewone "nieuw item toevoegen"-actie kan besmetten.
 let _editingLogId = null;
 
-function openPortionModal(productId) {
-  currentPortionProduct = getAllProducts().find(p => p.id === productId);
+function openPortionModal(productId, tijdelijk) {
+  currentPortionProduct = tijdelijk || getAllProducts().find(p => p.id === productId);
   if (!currentPortionProduct) return;
   _editingLogId = null;
   document.getElementById('pm-submit-btn').textContent = t('portion.addToDay');
@@ -1282,7 +1282,7 @@ function openPortionModal(productId) {
   updatePmDateLabel();
   updatePortionPreview();
   const _editBtn = document.getElementById('pm-edit-btn');
-  if (_editBtn) _editBtn.style.display = isPrimeCoach() ? 'inline-block' : 'none';
+  if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p._tijdelijk) ? 'inline-block' : 'none';
   document.getElementById('portion-modal').classList.add('open');
 }
 
@@ -1482,6 +1482,16 @@ function editLogItem(dateStr, logId) {
 
   if (item.productId) {
     openPortionModal(item.productId);
+    if (!currentPortionProduct && item.gram > 0) {
+      // Niet bewaard (bv. gescand zonder "Bewaren als eigen product") of verwijderd: de
+      // waardes per 100 g herleiden uit het gelogde item zelf.
+      const per100 = 100 / item.gram;
+      openPortionModal(item.productId, {
+        id: item.productId, name: item.name, icon: item.icon || '🍽️', cat: 'overig', _tijdelijk: true,
+        kcal: Math.round(item.kcal * per100), prot: Math.round(item.prot * per100 * 10) / 10,
+        carb: Math.round(item.carb * per100 * 10) / 10, fat: Math.round(item.fat * per100 * 10) / 10
+      });
+    }
     if (!currentPortionProduct) { alert(t('food.edit.noLongerAvailable')); return; }
     _editingLogId = logId;
     const _editBtn2 = document.getElementById('pm-edit-btn');
@@ -2547,7 +2557,8 @@ async function bcZoek(code) {
     kopGrid +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">' + t('food.scan.per100') + '</div>' +
     (ontbreekt.length ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: ontbreekt.join(', ') }) + '</div>' : '') +
-    '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:14px">' + t('food.scan.unverified') + '</div>' +
+    '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:12px">' + t('food.scan.unverified') + '</div>' +
+    (_bcModus === 'dag' ? '<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--charcoal);margin-bottom:14px;cursor:pointer"><input type="checkbox" id="bc-bewaar" checked style="margin-top:3px"><span>' + t('food.scan.keep') + '</span></label>' : '') +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
       '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + (_bcModus === 'dag' ? t('food.scan.next') : t('food.scan.use')) + '</button>' +
       '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
@@ -2619,6 +2630,14 @@ function bcVoegToeAanDag(p) {
   const carb = p.carb === null ? 0 : p.carb;
   const fat = p.fat === null ? 0 : p.fat;
   const kcal = p.kcal !== null ? p.kcal : Math.round(prot * 4 + carb * 4 + fat * 9);
+  const bewaarEl = document.getElementById('bc-bewaar');
+  if (bewaarEl && !bewaarEl.checked) {
+    // Alleen loggen: het product komt niet in de productlijst.
+    const tijdelijk = { id: 'scan-' + Date.now(), icon: '🍽️', name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat, _tijdelijk: true };
+    closeBarcodeScanner(true);
+    openPortionModal(tijdelijk.id, tijdelijk);
+    return;
+  }
   const nieuw = {
     id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
     icon: '🍽️', custom: true, barcode: p.code,
