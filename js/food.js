@@ -2438,10 +2438,9 @@ async function startBarcodeCamera() {
     if (desktop) {
       await _bcDesktopLus(video);
     } else if (native) {
-      _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
       video.srcObject = _bcStream;
       await video.play();
-      _bcFocus(video);
       const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
       _bcTimer = setInterval(async () => {
         if (_bcBezig) return;
@@ -2449,18 +2448,15 @@ async function startBarcodeCamera() {
           const gevonden = await detector.detect(video);
           if (gevonden.length) bcGevonden(gevonden[0].rawValue);
         } catch (e) { /* volgende ronde */ }
-      }, 200);
+      }, 300);
     } else {
       await _laadZxing();
       const hints = new Map();
       hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
-      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
       _bcReader = new ZXing.BrowserMultiFormatReader(hints);
-      _bcReader.timeBetweenDecodingAttempts = 120;
-      _bcReader.decodeFromConstraints({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }, video, (resultaat) => {
+      _bcReader.decodeFromConstraints({ video: { facingMode: 'environment' }, audio: false }, video, (resultaat) => {
         if (resultaat && !_bcBezig) bcGevonden(resultaat.getText());
       });
-      setTimeout(() => _bcFocus(video), 1200);
     }
     _bcStatus(t('food.scan.hint'));
   } catch (e) {
