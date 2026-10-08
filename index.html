@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261008-2048';
+window.PRIME_BUILD = '20261008-2053';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261008-2048">
+<link rel="stylesheet" href="css/styles.css?v=20261008-2053">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261008-2048"></script>
-<script src="js/translations.js?v=20261008-2048"></script>
-<script src="js/i18n.js?v=20261008-2048"></script>
+<script src="js/cloud.js?v=20261008-2053"></script>
+<script src="js/translations.js?v=20261008-2053"></script>
+<script src="js/i18n.js?v=20261008-2053"></script>
 </head>
 <body>
 
@@ -793,6 +793,12 @@ if ('serviceWorker' in navigator) {
           <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--coach-only);font-weight:600;cursor:pointer">
             <input type="checkbox" id="ap-share" checked onchange="updateApShareRow()" style="margin-top:3px">
             <span data-i18n="food.prime.shareLabel">Voor iedereen zichtbaar bij Basisproducten (alleen coach). Haal het vinkje weg om het alleen als eigen basisproduct te bewaren.</span>
+          </label>
+        </div>
+        <div id="ap-share-edit-row" style="display:none;margin-bottom:12px;padding:10px 12px;border:1px solid var(--coach-only);border-radius:10px;background:var(--coach-only-light)">
+          <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--coach-only);font-weight:600;cursor:pointer">
+            <input type="checkbox" id="ap-share-edit" onchange="updateApShareRow()" style="margin-top:3px">
+            <span data-i18n="food.prime.shareEditLabel">Ook voor iedereen beschikbaar maken. Het product verhuist dan naar Basisproducten.</span>
           </label>
         </div>
         <div id="ap-hint" style="display:none;font-size:12px;font-weight:600;color:var(--coach-only);margin-bottom:10px"></div>
@@ -1655,6 +1661,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261008-2048"></script>
+<script src="js/auth.js?v=20261008-2053"></script>
 </body>
 </html>

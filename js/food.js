@@ -305,10 +305,13 @@ function addCustomProduct() {
   };
   if (_apBarcode) velden.barcode = _apBarcode;
 
+  let deelId = null;
   if (_apEditingId) {
     // Bewerken: bestaand product bijwerken, id/custom-vlag blijven staan.
     const product = customProducts.find(p => p.id === _apEditingId);
     if (product) Object.assign(product, velden);
+    const deelVinkje = document.getElementById('ap-share-edit');
+    if (isPrimeCoach() && deelVinkje && deelVinkje.checked) deelId = _apEditingId;
   } else {
     customProducts.push({
       id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
@@ -322,6 +325,8 @@ function addCustomProduct() {
   resetAddProductForm();
   renderAddProductTab();
   renderProducts();
+  // Coach koos "ook voor iedereen": het (zojuist bijgewerkte) product verhuist naar Basisproducten.
+  if (deelId) deelEigenProduct(deelId, true);
 }
 
 // Zelfde patroon als resetMealForm(): leegt het formulier en zet het terug
@@ -347,6 +352,8 @@ function resetAddProductForm() {
   if (_pa) _pa.style.display = 'none';
   const _sh = document.getElementById('ap-share');
   if (_sh) _sh.checked = true;
+  const _se = document.getElementById('ap-share-edit');
+  if (_se) _se.checked = false;
   const _hint = document.getElementById('ap-hint');
   if (_hint) _hint.style.display = 'none';
   document.getElementById('ap-submit-btn').classList.remove('coach-only-btn');
@@ -2173,6 +2180,15 @@ function updateApShareRow() {
   if (!row || !btn) return;
   const nieuwStand = isPrimeCoach() && !_apEditingId && !_apPrimeId && !_apCopyOf;
   row.style.display = nieuwStand ? 'block' : 'none';
+  const rijE = document.getElementById('ap-share-edit-row');
+  const eigenBewerken = isPrimeCoach() && !!_apEditingId && !_apPrimeId;
+  if (rijE) rijE.style.display = eigenBewerken ? 'block' : 'none';
+  if (eigenBewerken) {
+    const deel = !!(document.getElementById('ap-share-edit') || {}).checked;
+    btn.classList.toggle('coach-only-btn', deel);
+    btn.textContent = deel ? t('food.prime.saveShare') : t('food.add.update');
+    return;
+  }
   if (_apPrimeId) return; // oranje + tekst worden door editPrimeProduct() gezet
   const gedeeld = _apCopyOf ? true : _apGedeeld();
   btn.classList.toggle('coach-only-btn', gedeeld);
@@ -2266,12 +2282,12 @@ async function _fotoNaarStorage(foto) {
 // hetzelfde, zodat al gelogde items het product (en de foto) blijven terugvinden.
 // Pas als het opslaan in de cloud lukt verdwijnt het uit "Mijn eigen producten";
 // anders blijft alles zoals het was.
-async function deelEigenProduct(id) {
+async function deelEigenProduct(id, zonderBevestiging) {
   if (!isPrimeCoach()) return;
   const p = customProducts.find(x => x.id === id);
   if (!p) return;
   if (productNaamBestaat(p.name, id)) { alert(t('food.prime.shareNameExists')); return; }
-  if (!confirm(t('food.prime.shareConfirm'))) return;
+  if (!zonderBevestiging && !confirm(t('food.prime.shareConfirm'))) return;
   const foto = await _fotoNaarStorage(p.photo);
   const rij = {
     id: p.id, op: 'new', icon: p.icon || '🍽️', name: p.name, cat: p.cat,
