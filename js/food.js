@@ -235,6 +235,7 @@ let _apPhotoData = null;
 let _apEditingId = null; // id van het product dat bewerkt wordt, null = nieuw product
 let _apPrimeId = null; // id van het basisproduct dat de coach voor iedereen aanpast, anders null
 let _apCopyOf = null; // id van het basisproduct waarvan de coach een kopie maakt, anders null
+let ownCat = 'alle'; // gekozen categorie in de tab "Eigen basisproducten"
 let _apCopyOwn = false; // true = kopie van een eigen product (de coach kiest zelf: voor iedereen of eigen)
 
 function updateAddProductKcal() {
@@ -328,6 +329,7 @@ function resetAddProductForm() {
   _apPrimeId = null;
   _apCopyOf = null;
   _apCopyOwn = false;
+  showApForm(false);
   const _pa = document.getElementById('ap-prime-actions');
   if (_pa) _pa.style.display = 'none';
   const _sh = document.getElementById('ap-share');
@@ -348,6 +350,7 @@ function editCustomProduct(id) {
   const product = customProducts.find(p => p.id === id);
   if (!product) return;
   _apEditingId = id;
+  showApForm(true);
   updateApShareRow();
 
   document.getElementById('ap-name').value = product.name;
@@ -381,11 +384,16 @@ function renderAddProductTab() {
   updateApShareRow();
   const el = document.getElementById('own-products-list');
   if (!el) return;
-  if (!customProducts.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('food.add.noOwnProducts') + '</div>';
-    return;
-  }
-  el.innerHTML = `<div class="product-grid">` + customProducts.map(p => `
+  let lijst = customProducts;
+  if (ownCat !== 'alle') lijst = lijst.filter(p => p.cat === ownCat);
+  const q = (document.getElementById('own-product-search')?.value || '').toLowerCase();
+  if (q) lijst = lijst.filter(p => p.name.toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q));
+  const tegel = `
+    <div class="product-card" onclick="openAddProductForm()" style="border-style:dashed;border-color:var(--sage);background:var(--sage-light);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px">
+      <div style="font-size:34px;line-height:1;color:var(--sage);margin-bottom:8px">➕</div>
+      <div class="product-name" style="color:var(--sage)">${t('food.add.tile')}</div>
+    </div>`;
+  el.innerHTML = `<div class="product-grid">` + tegel + lijst.map(p => `
     <div class="product-card" onclick="openOwnProductModal('${p.id}')">
       ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
       <div class="product-name">${dispName(p)}</div>
@@ -394,7 +402,30 @@ function renderAddProductTab() {
         <span class="product-pill">${p.kcal} kcal</span>
         <span class="product-pill">${t('food.macroAbbr.protein')}${p.prot}g</span>
       </div>
-    </div>`).join('') + `</div>`;
+    </div>`).join('') + `</div>` +
+    (!customProducts.length ? '<div style="font-size:13px;color:var(--muted);margin-top:12px">' + t('food.add.noOwnProducts') + '</div>' : '');
+}
+
+// Eigen-producten-tab: categoriefilter (zelfde chips als bij Basisproducten) en
+// het formulier, dat pas opent zodra je op de tegel "Product toevoegen" tikt.
+function filterOwnCat(cat, btn) {
+  ownCat = cat;
+  document.querySelectorAll('#own-cat-tabs .cat-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderAddProductTab();
+}
+
+function showApForm(toon) {
+  const kaart = document.getElementById('ap-form-card');
+  if (kaart) kaart.style.display = toon ? 'block' : 'none';
+}
+
+function openAddProductForm() {
+  resetAddProductForm();
+  showApForm(true);
+  const naamEl = document.getElementById('ap-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
 }
 
 // Klik op een eigen product: scherm met alle functies (inplannen, bewerken,
@@ -1959,6 +1990,7 @@ function editPrimeProduct(id) {
   closePortionModal();
   resetAddProductForm();
   _apPrimeId = id;
+  showApForm(true);
   updateApShareRow();
 
   document.getElementById('ap-name').value = p.name;
@@ -2234,6 +2266,7 @@ function kopieerEigenProduct(id) {
   if (!p) return;
   resetAddProductForm();
   _apCopyOwn = true;
+  showApForm(true);
 
   document.getElementById('ap-name').value = p.name;
   document.getElementById('ap-cat').value = p.cat || 'overig';
