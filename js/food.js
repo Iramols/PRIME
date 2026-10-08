@@ -1281,6 +1281,9 @@ function openPortionModal(productId, tijdelijk) {
   document.getElementById('pm-date').value = currentLogDate;
   updatePmDateLabel();
   updatePortionPreview();
+  const _rescanBtn = document.getElementById('pm-rescan-btn');
+  if (_rescanBtn) _rescanBtn.style.display = (_pmViaScan && isPrimeCoach()) ? 'inline-block' : 'none';
+  _pmViaScan = false;
   const _editBtn = document.getElementById('pm-edit-btn');
   if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p._tijdelijk) ? 'inline-block' : 'none';
   document.getElementById('portion-modal').classList.add('open');
@@ -2365,7 +2368,7 @@ function closeBarcodeScanner(doorNaarPortie) {
     _portionReturnTab = null;
     if (_bcVorigeDatum && _bcVorigeDatum !== currentLogDate) switchLogDate(_bcVorigeDatum);
   }
-  _bcVorigeDatum = null;
+  if (!doorNaarPortie) _bcVorigeDatum = null;
 }
 
 function _bcStatus(tekst) {
@@ -2474,9 +2477,24 @@ async function bcZoek(code) {
   const bestaand = getAllProducts().find(p => p.barcode && _bcNorm(p.barcode) === _bcNorm(code));
   if (bestaand) {
     if (_bcModus === 'dag') {
-      closeBarcodeScanner(true);
-      openPortionModal(bestaand.id);
-      try { showToast(t('food.scan.existsOpen', { name: dispName(bestaand) })); } catch (e) { console.error(e); }
+      view.style.display = 'none';
+      res.style.display = 'block';
+      _bcProduct = { code: code, leeg: true, bestaandId: bestaand.id };
+      const wb = (x, eenheid) => (x === undefined || x === null ? '—' : x + eenheid);
+      res.innerHTML =
+        '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + escapeHtml(t('food.scan.existsShort')) + ' · ' + escapeHtml(code) + '</div>' +
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:19px;margin-bottom:10px">' + escapeHtml(dispName(bestaand)) + '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center">' +
+          [[t('portion.kcal'), wb(bestaand.kcal, '')], [t('portion.protein'), wb(bestaand.prot, ' g')], [t('portion.carbs'), wb(bestaand.carb, ' g')], [t('portion.fat'), wb(bestaand.fat, ' g')]]
+            .map(x => '<div style="background:var(--sand);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--muted)">' + x[0] + '</div><div style="font-size:14px;font-weight:600">' + x[1] + '</div></div>').join('') +
+        '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">' + t('food.scan.per100') + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px">' +
+          '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcVerderBestaand()">' + t('food.scan.next') + '</button>' +
+          '<button class="btn-sm coach-only-btn" onclick="bcBewerkBestaand()">✏️ ' + t('common.edit') + '</button>' +
+          '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+          '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.scan.close') + '</button>' +
+        '</div>';
       return;
     }
     view.style.display = 'none';
@@ -2637,7 +2655,7 @@ async function bcVoegToeAanDag(p) {
     // Alleen loggen: het product komt niet in de productlijst.
     const tijdelijk = { id: 'scan-' + Date.now(), icon: '🍽️', name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat, _tijdelijk: true };
     closeBarcodeScanner(true);
-    openPortionModal(tijdelijk.id, tijdelijk);
+    openPortionViaScan(tijdelijk.id, tijdelijk);
     return;
   }
   if (keuze === 'iedereen') {
@@ -2657,7 +2675,7 @@ async function bcVoegToeAanDag(p) {
     _bewaarPrimeProductenLokaal();
     applyPrimeProducts();
     closeBarcodeScanner(true);
-    openPortionModal(rij.id);
+    openPortionViaScan(rij.id);
     try { showToast(t('food.scan.savedAll')); } catch (e) { console.error(e); }
     return;
   }
@@ -2670,7 +2688,7 @@ async function bcVoegToeAanDag(p) {
   syncSet('prime_custom_products', customProducts);
   closeBarcodeScanner(true);
   try { renderAddProductTab(); } catch (e) { console.error(e); }
-  openPortionModal(nieuw.id);
+  openPortionViaScan(nieuw.id);
   try { showToast(t('food.scan.savedOwn')); } catch (e) { console.error(e); }
 }
 
@@ -2700,4 +2718,35 @@ function editProductFromPortion(id) {
   if (!isPrimeCoach() || !id) return;
   if (customProducts.some(p => p.id === id)) { closePortionModal(); editCustomProduct(id); }
   else editPrimeProduct(id);
+}
+
+
+// Portiescherm geopend vanuit de scanner: toont de knop "📷 Opnieuw scannen".
+let _pmViaScan = false;
+function openPortionViaScan(id, tijdelijk) {
+  _pmViaScan = true;
+  openPortionModal(id, tijdelijk);
+}
+
+// Vanuit het portiescherm terug naar de scanner (dag en terugkeer-tabblad blijven staan).
+function portieOpnieuwScannen() {
+  if (!isPrimeCoach()) return;
+  const terug = _portionReturnTab;
+  closePortionModal();
+  _portionReturnTab = terug;
+  openBarcodeScanner('dag');
+}
+
+// Al bewaard product (resultaatscherm in dag-modus): verder naar de hoeveelheid, of bewerken.
+function bcVerderBestaand() {
+  const id = _bcProduct && _bcProduct.bestaandId;
+  if (!id) { closeBarcodeScanner(); return; }
+  closeBarcodeScanner(true);
+  openPortionViaScan(id);
+}
+
+function bcBewerkBestaand() {
+  const id = _bcProduct && _bcProduct.bestaandId;
+  closeBarcodeScanner();
+  if (id) editProductFromPortion(id);
 }
