@@ -404,7 +404,12 @@ function renderAddProductTab() {
       <div style="font-size:34px;line-height:1;color:var(--sage);margin-bottom:8px">➕</div>
       <div class="product-name" style="color:var(--sage)">${t('food.add.tile')}</div>
     </div>`;
-  el.innerHTML = `<div class="product-grid">` + tegel + lijst.map(p => `
+  const scanTegel = isPrimeCoach() ? `
+    <div class="product-card coach-only-btn" onclick="openBarcodeScanner()" style="border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px">
+      <div style="font-size:34px;line-height:1;margin-bottom:8px">📷</div>
+      <div class="product-name">${t('food.scan.tile')}</div>
+    </div>` : '';
+  el.innerHTML = `<div class="product-grid">` + tegel + scanTegel + lijst.map(p => `
     <div class="product-card" onclick="openOwnProductModal('${p.id}')">
       <span class="prod-label prod-label-own">${t('food.label.own')}</span>
       ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
@@ -2307,4 +2312,223 @@ function kopieerEigenProduct(id) {
 function productLabelHtml(p) {
   if (p.custom) return '<span class="prod-label prod-label-own">' + t('food.label.own') + '</span>';
   return '';
+}
+
+
+// ========== BARCODE SCANNEN (alleen coach) ==========
+// De camera leest de barcode (EAN) en het nummer wordt opgezocht in Open Food
+// Facts (gratis, door gebruikers ingevuld, dus NIET geverifieerd). De gevonden
+// waardes worden eerst getoond; pas na "Gebruiken" vult het formulier zich en
+// controleert de coach het alsnog voordat hij opslaat. De foto voegt de coach
+// zelf toe. Eigen foto, dus er wordt bewust geen plaatje uit de database gebruikt.
+let _bcStream = null;
+let _bcTimer = null;
+let _bcReader = null;
+let _bcBezig = false;
+let _bcProduct = null;
+
+function openBarcodeScanner() {
+  if (!isPrimeCoach()) return;
+  _bcBezig = false;
+  _bcProduct = null;
+  document.getElementById('bc-result').style.display = 'none';
+  document.getElementById('bc-view').style.display = 'block';
+  document.getElementById('bc-manual').value = '';
+  document.getElementById('barcode-modal').classList.add('open');
+  startBarcodeCamera();
+}
+
+function closeBarcodeScanner() {
+  stopBarcodeCamera();
+  document.getElementById('barcode-modal').classList.remove('open');
+}
+
+function _bcStatus(tekst) {
+  const el = document.getElementById('bc-status');
+  if (el) el.textContent = tekst || '';
+}
+
+function _laadZxing() {
+  return new Promise((resolve, reject) => {
+    if (window.ZXing) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js';
+    s.onload = () => (window.ZXing ? resolve() : reject(new Error('zxing')));
+    s.onerror = () => reject(new Error('zxing laden mislukt'));
+    document.head.appendChild(s);
+  });
+}
+
+async function startBarcodeCamera() {
+  stopBarcodeCamera();
+  _bcStatus(t('food.scan.starting'));
+  const video = document.getElementById('bc-video');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    _bcStatus(t('food.scan.noCamera'));
+    return;
+  }
+  try {
+    let native = false;
+    if ('BarcodeDetector' in window) {
+      try {
+        const formaten = await BarcodeDetector.getSupportedFormats();
+        native = formaten.indexOf('ean_13') !== -1;
+      } catch (e) { native = false; }
+    }
+    if (native) {
+      _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      video.srcObject = _bcStream;
+      await video.play();
+      const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+      _bcTimer = setInterval(async () => {
+        if (_bcBezig) return;
+        try {
+          const gevonden = await detector.detect(video);
+          if (gevonden.length) bcGevonden(gevonden[0].rawValue);
+        } catch (e) { /* volgende ronde */ }
+      }, 300);
+    } else {
+      await _laadZxing();
+      const hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
+      _bcReader = new ZXing.BrowserMultiFormatReader(hints);
+      _bcReader.decodeFromConstraints({ video: { facingMode: 'environment' }, audio: false }, video, (resultaat) => {
+        if (resultaat && !_bcBezig) bcGevonden(resultaat.getText());
+      });
+    }
+    _bcStatus(t('food.scan.hint'));
+  } catch (e) {
+    console.error('startBarcodeCamera:', e);
+    _bcStatus(t('food.scan.permission'));
+  }
+}
+
+function stopBarcodeCamera() {
+  if (_bcTimer) { clearInterval(_bcTimer); _bcTimer = null; }
+  if (_bcReader) { try { _bcReader.reset(); } catch (e) {} _bcReader = null; }
+  if (_bcStream) { _bcStream.getTracks().forEach(tr => tr.stop()); _bcStream = null; }
+  const video = document.getElementById('bc-video');
+  if (video) { try { video.pause(); } catch (e) {} video.srcObject = null; }
+}
+
+function bcGevonden(code) {
+  if (_bcBezig) return;
+  const cijfers = String(code || '').replace(/\D/g, '');
+  if (cijfers.length < 8) return;
+  _bcBezig = true;
+  stopBarcodeCamera();
+  bcZoek(cijfers);
+}
+
+function bcManueel() {
+  const cijfers = String(document.getElementById('bc-manual').value || '').replace(/\D/g, '');
+  if (cijfers.length < 8) { _bcStatus(t('food.scan.tooShort')); return; }
+  _bcBezig = true;
+  stopBarcodeCamera();
+  bcZoek(cijfers);
+}
+
+// Vertaalt de categorieën van Open Food Facts grof naar onze categorieën; de coach
+// kan het in het formulier altijd nog aanpassen.
+function _bcCategorie(tags) {
+  const s = (tags || []).join(' ').toLowerCase();
+  if (/dairies|milks|cheeses|yogurts|yoghurts|creams|butters/.test(s)) return 'zuivel';
+  if (/fishes|seafood|fish-/.test(s)) return 'vis';
+  if (/meats|sausages|poultr|hams|charcuterie/.test(s)) return 'vlees';
+  if (/nuts|seeds|peanut/.test(s)) return 'noten';
+  if (/cereals|breads|pastas|rice|flours|oat|biscuits|crackers/.test(s)) return 'granen';
+  if (/vegetables/.test(s)) return 'groente';
+  if (/fruits/.test(s)) return 'fruit';
+  return 'overig';
+}
+
+async function bcZoek(code) {
+  const view = document.getElementById('bc-view');
+  const res = document.getElementById('bc-result');
+  _bcStatus(t('food.scan.lookup'));
+  let product = null;
+  let netFout = false;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' + code + '.json?fields=product_name,product_name_nl,brands,nutriments,categories_tags', { signal: ctrl.signal });
+    clearTimeout(timer);
+    const j = await r.json();
+    if (j && j.status === 1 && j.product) product = j.product;
+  } catch (e) {
+    console.error('bcZoek:', e);
+    netFout = true;
+  }
+
+  view.style.display = 'none';
+  res.style.display = 'block';
+  if (!product) {
+    _bcProduct = { code: code, leeg: true };
+    res.innerHTML =
+      '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(netFout ? t('food.scan.netError') : t('food.scan.notFound', { code: code })) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' +
+        '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + t('food.scan.manual') + '</button>' +
+        '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+      '</div>';
+    return;
+  }
+
+  const n = product.nutriments || {};
+  const getal = (v) => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : Math.round(Number(v) * 10) / 10;
+  let kcal = getal(n['energy-kcal_100g']);
+  if (kcal === null && getal(n['energy_100g']) !== null) kcal = Math.round(getal(n['energy_100g']) / 4.184);
+  const prot = getal(n['proteins_100g']);
+  const carb = getal(n['carbohydrates_100g']);
+  const fat = getal(n['fat_100g']);
+  let naam = (product.product_name_nl || product.product_name || '').trim();
+  const merk = ((product.brands || '').split(',')[0] || '').trim();
+  if (merk && naam.toLowerCase().indexOf(merk.toLowerCase()) === -1) naam = (merk + ' ' + naam).trim();
+  const ontbreekt = [];
+  if (prot === null) ontbreekt.push(t('portion.protein'));
+  if (carb === null) ontbreekt.push(t('portion.carbs'));
+  if (fat === null) ontbreekt.push(t('portion.fat'));
+  _bcProduct = { code: code, naam: naam, cat: _bcCategorie(product.categories_tags), kcal: kcal, prot: prot, carb: carb, fat: fat };
+
+  const waarde = (v, eenheid) => v === null ? '<span style="color:var(--accent)">—</span>' : v + eenheid;
+  res.innerHTML =
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + t('food.scan.found') + ' · ' + escapeHtml(code) + '</div>' +
+    '<div style="font-family:\'DM Serif Display\',serif;font-size:19px;margin-bottom:10px">' + escapeHtml(naam || '—') + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center">' +
+      [[t('portion.kcal'), waarde(kcal, '')], [t('portion.protein'), waarde(prot, ' g')], [t('portion.carbs'), waarde(carb, ' g')], [t('portion.fat'), waarde(fat, ' g')]]
+        .map(x => '<div style="background:var(--sand);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--muted)">' + x[0] + '</div><div style="font-size:14px;font-weight:600">' + x[1] + '</div></div>').join('') +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">' + t('food.scan.per100') + '</div>' +
+    (ontbreekt.length ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: ontbreekt.join(', ') }) + '</div>' : '') +
+    '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:14px">' + t('food.scan.unverified') + '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+      '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + t('food.scan.use') + '</button>' +
+      '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+    '</div>';
+}
+
+function bcOpnieuw() {
+  _bcBezig = false;
+  _bcProduct = null;
+  document.getElementById('bc-result').style.display = 'none';
+  document.getElementById('bc-view').style.display = 'block';
+  document.getElementById('bc-manual').value = '';
+  startBarcodeCamera();
+}
+
+// Na bevestiging: formulier voor een nieuw product openen met de gevonden waardes.
+function bcGebruik() {
+  const p = _bcProduct;
+  closeBarcodeScanner();
+  if (!p) return;
+  openAddProductForm();
+  if (!p.leeg) {
+    document.getElementById('ap-name').value = p.naam || '';
+    document.getElementById('ap-cat').value = p.cat || 'overig';
+    document.getElementById('ap-prot').value = p.prot === null ? 0 : p.prot;
+    document.getElementById('ap-carb').value = p.carb === null ? 0 : p.carb;
+    document.getElementById('ap-fat').value = p.fat === null ? 0 : p.fat;
+    updateAddProductKcal();
+    apNaamInput();
+    try { showToast(t('food.scan.filled')); } catch (e) { console.error(e); }
+  }
 }
