@@ -303,6 +303,7 @@ function addCustomProduct() {
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
     photo: _apPhotoData || null
   };
+  if (_apBarcode) velden.barcode = _apBarcode;
 
   if (_apEditingId) {
     // Bewerken: bestaand product bijwerken, id/custom-vlag blijven staan.
@@ -340,6 +341,7 @@ function resetAddProductForm() {
   _apPrimeId = null;
   _apCopyOf = null;
   _apCopyOwn = false;
+  _apBarcode = null;
   showApForm(false);
   const _pa = document.getElementById('ap-prime-actions');
   if (_pa) _pa.style.display = 'none';
@@ -1685,6 +1687,7 @@ function renderLogItemsHtml(dateStr, items) {
 }
 
 function renderDayLog() {
+  document.querySelectorAll('.food-scan-btn').forEach(b => { b.style.display = isPrimeCoach() ? '' : 'none'; });
   const empty = document.getElementById('day-log-empty');
   const list = document.getElementById('day-log-list');
   const totals = document.getElementById('day-log-totals');
@@ -2203,6 +2206,7 @@ async function savePrimeProductNew() {
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
     photo: _apPhotoData || null
   };
+  if (_apBarcode) rij.barcode = _apBarcode;
   primeProducts = primeProducts.concat([rij]);
   _bewaarPrimeProductenLokaal();
   applyPrimeProducts();
@@ -2326,9 +2330,13 @@ let _bcTimer = null;
 let _bcReader = null;
 let _bcBezig = false;
 let _bcProduct = null;
+let _bcModus = 'product'; // 'product' = nieuw basisproduct maken, 'dag' = gescand eten aan een dag toevoegen
+let _bcVorigeDatum = null;
+let _apBarcode = null; // barcode van het product dat nu in het formulier staat (na scannen)
 
-function openBarcodeScanner() {
+function openBarcodeScanner(modus) {
   if (!isPrimeCoach()) return;
+  _bcModus = modus === 'dag' ? 'dag' : 'product';
   _bcBezig = false;
   _bcProduct = null;
   document.getElementById('bc-result').style.display = 'none';
@@ -2338,9 +2346,16 @@ function openBarcodeScanner() {
   startBarcodeCamera();
 }
 
-function closeBarcodeScanner() {
+// doorNaarPortie = true als we meteen het portiescherm openen (dan blijft de dag
+// en het terugkeer-tabblad staan); anders (annuleren) zetten we alles terug.
+function closeBarcodeScanner(doorNaarPortie) {
   stopBarcodeCamera();
   document.getElementById('barcode-modal').classList.remove('open');
+  if (_bcModus === 'dag' && !doorNaarPortie) {
+    _portionReturnTab = null;
+    if (_bcVorigeDatum && _bcVorigeDatum !== currentLogDate) switchLogDate(_bcVorigeDatum);
+  }
+  _bcVorigeDatum = null;
 }
 
 function _bcStatus(tekst) {
@@ -2446,6 +2461,20 @@ async function bcZoek(code) {
   const view = document.getElementById('bc-view');
   const res = document.getElementById('bc-result');
   _bcStatus(t('food.scan.lookup'));
+  const bestaand = getAllProducts().find(p => p.barcode && _bcNorm(p.barcode) === _bcNorm(code));
+  if (bestaand) {
+    if (_bcModus === 'dag') { closeBarcodeScanner(true); openPortionModal(bestaand.id); return; }
+    view.style.display = 'none';
+    res.style.display = 'block';
+    _bcProduct = { code: code, leeg: true };
+    res.innerHTML =
+      '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(t('food.scan.exists', { name: dispName(bestaand) })) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' +
+        '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+        '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.scan.close') + '</button>' +
+      '</div>';
+    return;
+  }
   let product = null;
   let netFout = false;
   try {
@@ -2467,8 +2496,9 @@ async function bcZoek(code) {
     res.innerHTML =
       '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(netFout ? t('food.scan.netError') : t('food.scan.notFound', { code: code })) + '</div>' +
       '<div style="display:flex;flex-direction:column;gap:8px">' +
-        '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + t('food.scan.manual') + '</button>' +
+        (_bcModus === 'dag' ? '' : '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + t('food.scan.manual') + '</button>') +
         '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+        (_bcModus === 'dag' ? '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.scan.close') + '</button>' : '') +
       '</div>';
     return;
   }
@@ -2501,7 +2531,7 @@ async function bcZoek(code) {
     (ontbreekt.length ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: ontbreekt.join(', ') }) + '</div>' : '') +
     '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:14px">' + t('food.scan.unverified') + '</div>' +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
-      '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + t('food.scan.use') + '</button>' +
+      '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + (_bcModus === 'dag' ? t('food.scan.next') : t('food.scan.use')) + '</button>' +
       '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
     '</div>';
 }
@@ -2518,9 +2548,11 @@ function bcOpnieuw() {
 // Na bevestiging: formulier voor een nieuw product openen met de gevonden waardes.
 function bcGebruik() {
   const p = _bcProduct;
+  if (_bcModus === 'dag') { bcVoegToeAanDag(p); return; }
   closeBarcodeScanner();
   if (!p) return;
   openAddProductForm();
+  _apBarcode = p.code || null;
   if (!p.leeg) {
     document.getElementById('ap-name').value = p.naam || '';
     document.getElementById('ap-cat').value = p.cat || 'overig';
@@ -2531,4 +2563,53 @@ function bcGebruik() {
     apNaamInput();
     try { showToast(t('food.scan.filled')); } catch (e) { console.error(e); }
   }
+}
+
+
+// ----- Eten scannen voor een dag (Mijn dag en Weekplanning), alleen coach -----
+
+// Barcodes vergelijken zonder voorloopnullen (UPC-A en EAN-13 verschillen daarin).
+function _bcNorm(code) { return String(code || '').replace(/\D/g, '').replace(/^0+/, ''); }
+
+// "Mijn dag": voegt toe aan de dag die nu open staat (meestal vandaag).
+function scanEtenVandaag() {
+  if (!isPrimeCoach()) return;
+  _bcVorigeDatum = null;
+  _portionReturnTab = 'log';
+  openBarcodeScanner('dag');
+}
+
+// Weekplanning: voegt toe aan de gekozen dag.
+function scanEtenVoorDag(dateStr) {
+  if (!isPrimeCoach()) return;
+  _bcVorigeDatum = currentLogDate;
+  _portionReturnTab = 'week';
+  switchLogDate(dateStr);
+  openBarcodeScanner('dag');
+}
+
+// Na "Verder": het gescande product bewaren als eigen product (met de barcode, zodat
+// het de volgende keer meteen gevonden wordt) en het portiescherm openen. De coach
+// kiest daar hoeveelheid en moment; afvinken als gegeten doet hij zelf in de lijst.
+function bcVoegToeAanDag(p) {
+  if (!p || p.leeg) { closeBarcodeScanner(); return; }
+  const basis = (p.naam || '').trim() || ('Product ' + p.code);
+  let naam = basis;
+  let teller = 2;
+  while (productNaamBestaat(naam, null)) { naam = basis + ' (' + teller + ')'; teller++; }
+  const prot = p.prot === null ? 0 : p.prot;
+  const carb = p.carb === null ? 0 : p.carb;
+  const fat = p.fat === null ? 0 : p.fat;
+  const kcal = p.kcal !== null ? p.kcal : Math.round(prot * 4 + carb * 4 + fat * 9);
+  const nieuw = {
+    id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
+    icon: '🍽️', custom: true, barcode: p.code,
+    name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat, photo: null
+  };
+  customProducts.push(nieuw);
+  syncSet('prime_custom_products', customProducts);
+  closeBarcodeScanner(true);
+  try { renderAddProductTab(); } catch (e) { console.error(e); }
+  openPortionModal(nieuw.id);
+  try { showToast(t('food.scan.savedOwn')); } catch (e) { console.error(e); }
 }

@@ -160,6 +160,7 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
         : `<div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','basis')">${t('foodweek.addProductForDay')}</button>
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','plan')">${t('foodweek.addMealForDay')}</button>
+        ${isPrimeCoach() ? `<button class="btn-sm coach-only-btn" style="flex:1" onclick="scanEtenVoorDag('${dateStr}')">📷 ${t('food.scan.btn')}</button>` : ''}
       </div>`}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button></div>` : ''}
       ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
