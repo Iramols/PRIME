@@ -1,5 +1,6 @@
 // ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
+  if (tab !== 'add') _apTerug = null;
   ['plan','basis','primemeals','log','add','addmeal','week'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
@@ -245,6 +246,7 @@ function renderProducts() {
 let _apPhotoData = null;
 let _apEditingId = null; // id van het product dat bewerkt wordt, null = nieuw product
 let _apPrimeId = null; // id van het basisproduct dat de coach voor iedereen aanpast, anders null
+let _apTerug = null; // {tab, datum, productId}: waar de coach vandaan kwam (Mijn dag/Weekplanning) toen hij een product ging aanpassen
 let _apCopyOf = null; // id van het basisproduct waarvan de coach een kopie maakt, anders null
 let ownCat = 'alle'; // gekozen categorie in de tab "Eigen basisproducten"
 let _apCopyOwn = false; // true = kopie van een eigen product (de coach kiest zelf: voor iedereen of eigen)
@@ -326,7 +328,8 @@ function addCustomProduct() {
   renderAddProductTab();
   renderProducts();
   // Coach koos "ook voor iedereen": het (zojuist bijgewerkte) product verhuist naar Basisproducten.
-  if (deelId) deelEigenProduct(deelId, true);
+  if (deelId) deelEigenProduct(deelId, true).then(() => apTerugNaarDag());
+  else apTerugNaarDag();
 }
 
 // Zelfde patroon als resetMealForm(): leegt het formulier en zet het terug
@@ -2099,8 +2102,11 @@ async function savePrimeProductEdit() {
 
   if (!bestaand && rij.op === 'edit' && Object.keys(rij).length === 2) {
     // Niets veranderd: er valt niets op te slaan.
+    const _t0 = _apTerug;
     resetAddProductForm();
     switchFoodTab('basis');
+    _apTerug = _t0;
+    apTerugNaarDag();
     return;
   }
 
@@ -2108,9 +2114,12 @@ async function savePrimeProductEdit() {
   _bewaarPrimeProductenLokaal();
   applyPrimeProducts();
   const fout = await savePrimeProductToCloud(rij);
+  const _t1 = _apTerug;
   resetAddProductForm();
   switchFoodTab('basis');
+  _apTerug = _t1;
   try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.saved'), !!fout); } catch (e) { console.error(e); }
+  apTerugNaarDag();
 }
 
 // Coach: aangepast basisproduct terugzetten naar de oorspronkelijke waarden.
@@ -2122,9 +2131,12 @@ async function resetPrimeProduct() {
   _bewaarPrimeProductenLokaal();
   applyPrimeProducts();
   const fout = await deletePrimeProductFromCloud(id);
+  const _t2 = _apTerug;
   resetAddProductForm();
   switchFoodTab('basis');
+  _apTerug = _t2;
   try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.resetDone'), !!fout); } catch (e) { console.error(e); }
+  apTerugNaarDag();
 }
 
 // Coach: basisproduct voor iedereen verwijderen (vaste producten worden
@@ -2145,9 +2157,12 @@ async function deletePrimeProduct() {
   }
   _bewaarPrimeProductenLokaal();
   applyPrimeProducts();
+  const _t3 = _apTerug;
   resetAddProductForm();
   switchFoodTab('basis');
+  _apTerug = _t3;
   try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.deleted'), !!fout); } catch (e) { console.error(e); }
+  apTerugNaarDag();
 }
 
 
@@ -2732,6 +2747,7 @@ function _bcLeesInvoer(p) {
 // bewerkformulier, een basisproduct het formulier om het voor iedereen aan te passen.
 function editProductFromPortion(id) {
   if (!isPrimeCoach() || !id) return;
+  if (_portionReturnTab) _apTerug = { tab: _portionReturnTab, datum: currentLogDate, productId: id };
   if (customProducts.some(p => p.id === id)) { closePortionModal(); editCustomProduct(id); }
   else editPrimeProduct(id);
 }
@@ -2763,6 +2779,28 @@ function bcVerderBestaand() {
 
 function bcBewerkBestaand() {
   const id = _bcProduct && _bcProduct.bestaandId;
-  closeBarcodeScanner();
+  closeBarcodeScanner(true);
   if (id) editProductFromPortion(id);
+  else closeBarcodeScanner();
+}
+
+
+// Na opslaan, annuleren of verwijderen van een product dat de coach vanuit Mijn dag of
+// Weekplanning ging aanpassen: terug naar die dag, en het portiescherm van het product
+// weer openen (als het nog bestaat), zodat hij verder kan met toevoegen.
+function apTerugNaarDag() {
+  const z = _apTerug;
+  _apTerug = null;
+  if (!z) return false;
+  switchLogDate(z.datum);
+  switchFoodTab(z.tab);
+  _portionReturnTab = z.tab;
+  if (getAllProducts().some(p => p.id === z.productId)) openPortionModal(z.productId);
+  return true;
+}
+
+function annuleerAddProduct() {
+  const heeftTerug = !!_apTerug;
+  resetAddProductForm();
+  if (heeftTerug) apTerugNaarDag();
 }
