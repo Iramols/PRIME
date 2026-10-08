@@ -214,21 +214,17 @@ function filterCat(cat, btn) {
 
 function renderProducts() {
   const q = (document.getElementById('product-search')?.value || '').toLowerCase();
-  // Chips "Eigen" en "PRIME" alleen tonen als er zulke producten zijn; verdwijnt
-  // het gekozen filter, dan terug naar "Alle".
+  // Chip "Eigen" alleen tonen als er eigen producten zijn; verdwijnt het gekozen
+  // filter, dan terug naar "Alle".
   const heeftEigen = customProducts.length > 0;
-  const heeftPrime = PRODUCTS.some(p => p.primeShared);
   const _ce = document.getElementById('cat-chip-eigen');
   if (_ce) _ce.style.display = heeftEigen ? '' : 'none';
-  const _cp = document.getElementById('cat-chip-prime');
-  if (_cp) _cp.style.display = heeftPrime ? '' : 'none';
-  if ((currentCat === 'eigen' && !heeftEigen) || (currentCat === 'prime' && !heeftPrime)) {
+  if (currentCat === 'eigen' && !heeftEigen) {
     currentCat = 'alle';
     document.querySelectorAll('#cat-tabs .cat-tab').forEach((b, i) => b.classList.toggle('active', i === 0));
   }
   let list = getAllProducts();
   if (currentCat === 'eigen') list = list.filter(p => p.custom);
-  else if (currentCat === 'prime') list = list.filter(p => p.primeShared);
   else if (currentCat !== 'alle') list = list.filter(p => p.cat === currentCat);
   if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q));
   document.getElementById('product-grid').innerHTML = `<div class="product-grid">` +
@@ -2305,11 +2301,10 @@ function kopieerEigenProduct(id) {
 }
 
 
-// Label op de foto van een product: groen "Eigen" bij een eigen product, oranje
-// "PRIME" bij een product dat de coach voor iedereen heeft toegevoegd. Vaste
-// basisproducten krijgen geen label.
+// Label op de foto van een product: groen "Eigen" bij een eigen product. Producten
+// van de coach (voor iedereen) en vaste basisproducten krijgen geen label: voor
+// klanten zijn dat gewoon basisproducten.
 function productLabelHtml(p) {
   if (p.custom) return '<span class="prod-label prod-label-own">' + t('food.label.own') + '</span>';
-  if (p.primeShared) return '<span class="prod-label prod-label-prime">' + t('food.label.prime') + '</span>';
   return '';
 }

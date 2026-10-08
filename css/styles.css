@@ -747,10 +747,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   textarea { font-size: 16px !important; }
 }
 
-/* Herkenbare productlabels: "Eigen" (groen) en "PRIME" (oranje, door de coach toegevoegd). */
+/* Herkenbaar productlabel: "Eigen" (groen) op eigen producten. */
 .prod-label { position: absolute; top: 6px; left: 6px; z-index: 1; font-size: 10px; font-weight: 600; line-height: 1.4; padding: 2px 8px; border-radius: 100px; color: var(--white); }
 .prod-label-own { background: var(--sage); }
-.prod-label-prime { background: var(--coach-only); }
 .cat-tab.chip-own { border-color: var(--sage); color: var(--sage); }
-.cat-tab.chip-prime { border-color: var(--coach-only); color: var(--coach-only); }
-.cat-tab.chip-prime.active { background: var(--coach-only-light); border-color: var(--coach-only); color: var(--coach-only); }
