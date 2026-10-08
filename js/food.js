@@ -385,24 +385,38 @@ function renderAddProductTab() {
     el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('food.add.noOwnProducts') + '</div>';
     return;
   }
-  el.innerHTML = customProducts.map(p => `
-    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
-      ${p.photo
-        ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
-        : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${p.icon || '🍽️'}</div>`}
-      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px">
-        <div style="flex:1;min-width:120px">
-          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(p)}</div>
-          <div style="font-size:11px;color:var(--muted)">${t('cat.' + p.cat)} · ${p.kcal} kcal · ${t('food.macroAbbr.protein')}${p.prot}g ${t('food.macroAbbr.carbs')}${p.carb}g ${t('food.macroAbbr.fat')}${p.fat}g</div>
-        </div>
-        <button onclick="editCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
-        <button onclick="removeCustomProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
-        ${isPrimeCoach() ? `<div style="width:100%;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="coach-only-btn" onclick="deelEigenProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--coach-only);cursor:pointer;font-weight:600">${t('food.prime.shareOwn')}</button>
-          <button class="coach-only-btn" onclick="kopieerEigenProduct('${p.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--coach-only);cursor:pointer;font-weight:600">${t('food.prime.copyOwn')}</button>
-        </div>` : ''}
+  el.innerHTML = `<div class="product-grid">` + customProducts.map(p => `
+    <div class="product-card" onclick="openOwnProductModal('${p.id}')">
+      ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
+      <div class="product-name">${dispName(p)}</div>
+      <div class="product-per">${t('food.per100')}</div>
+      <div class="product-macros">
+        <span class="product-pill">${p.kcal} kcal</span>
+        <span class="product-pill">${t('food.macroAbbr.protein')}${p.prot}g</span>
       </div>
-    </div>`).join('');
+    </div>`).join('') + `</div>`;
+}
+
+// Klik op een eigen product: scherm met alle functies (inplannen, bewerken,
+// verwijderen en voor de coach ook voor iedereen beschikbaar maken / kopiëren).
+function openOwnProductModal(id) {
+  const p = customProducts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('opm-name').textContent = (p.icon || '') + ' ' + dispName(p);
+  document.getElementById('opm-per100').textContent = `per 100g: ${p.kcal} kcal · ${p.prot}g ${t('portion.protein')} · ${p.carb}g ${t('portion.carbs')} · ${p.fat}g ${t('portion.fat')}`;
+  const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
+  const nu = isPrimeCoach();
+  document.getElementById('opm-actions').innerHTML =
+    `<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnProductModal();openPortionModal('${p.id}')">${t('portion.addToDay')}</button>` +
+    `<button style="${knop};border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnProductModal();editCustomProduct('${p.id}')">✏️ ${t('common.edit')}</button>` +
+    (nu ? `<button class="coach-only-btn" style="${knop};border:1px solid var(--coach-only)" onclick="closeOwnProductModal();deelEigenProduct('${p.id}')">${t('food.prime.shareOwn')}</button>` : '') +
+    (nu ? `<button class="coach-only-btn" style="${knop};border:1px solid var(--coach-only)" onclick="closeOwnProductModal();kopieerEigenProduct('${p.id}')">${t('food.prime.copyOwn')}</button>` : '') +
+    `<button style="${knop};border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnProductModal();removeCustomProduct('${p.id}')">🗑️ ${t('common.delete')}</button>`;
+  document.getElementById('own-product-modal').classList.add('open');
+}
+
+function closeOwnProductModal() {
+  document.getElementById('own-product-modal').classList.remove('open');
 }
 
 // ========== PRIME-GERECHTEN (gedeeld, alleen coach kan bewerken) ==========
