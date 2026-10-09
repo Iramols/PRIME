@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261008-2147';
+window.PRIME_BUILD = '20261009-0733';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261008-2147">
+<link rel="stylesheet" href="css/styles.css?v=20261009-0733">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261008-2147"></script>
-<script src="js/translations.js?v=20261008-2147"></script>
-<script src="js/i18n.js?v=20261008-2147"></script>
+<script src="js/cloud.js?v=20261009-0733"></script>
+<script src="js/translations.js?v=20261009-0733"></script>
+<script src="js/i18n.js?v=20261009-0733"></script>
 </head>
 <body>
 
@@ -1350,6 +1350,17 @@ if ('serviceWorker' in navigator) {
     <div id="bc-view">
       <video id="bc-video" playsinline muted style="width:100%;max-height:45vh;border-radius:12px;background:#000;object-fit:cover"></video>
       <div id="bc-status" style="font-size:12px;color:var(--muted);margin:8px 0 12px"></div>
+      <div id="bc-info" style="font-size:11px;color:var(--muted);margin:-6px 0 10px"></div>
+      <button id="bc-inst-btn" class="btn-sm" onclick="bcInstToggle()" style="margin-bottom:10px" data-i18n="food.scan.inst">⚙️ Camera-instellingen</button>
+      <div id="bc-inst" style="display:none;margin-bottom:12px;padding:10px 12px;background:var(--sand);border-radius:10px">
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--charcoal);margin-bottom:8px"><span data-i18n="food.scan.instRes">Resolutie</span><select id="bci-res" onchange="bcInstWijzig()" style="max-width:55%;padding:6px 8px;border:1.5px solid var(--sand-dark);border-radius:8px;font-family:inherit;font-size:12px;background:var(--white)"><option value="auto" data-i18n="food.scan.auto">Automatisch</option><option value="480">640×480</option><option value="720">1280×720 (HD)</option><option value="1080">1920×1080 (Full HD)</option></select></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--charcoal);margin-bottom:8px"><span data-i18n="food.scan.instSps">Scans per seconde</span><select id="bci-sps" onchange="bcInstWijzig()" style="max-width:55%;padding:6px 8px;border:1.5px solid var(--sand-dark);border-radius:8px;font-family:inherit;font-size:12px;background:var(--white)"><option value="auto" data-i18n="food.scan.auto">Automatisch</option><option value="2">2</option><option value="3">3</option><option value="5">5</option><option value="8">8</option><option value="12">12</option></select></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--charcoal);margin-bottom:8px"><span data-i18n="food.scan.instCam">Camera</span><select id="bci-cam" onchange="bcInstWijzig()" style="max-width:55%;padding:6px 8px;border:1.5px solid var(--sand-dark);border-radius:8px;font-family:inherit;font-size:12px;background:var(--white)"><option value="" data-i18n="food.scan.auto">Automatisch</option></select></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--charcoal);margin-bottom:8px"><span data-i18n="food.scan.instFocus">Scherpstellen</span><select id="bci-focus" onchange="bcInstWijzig()" style="max-width:55%;padding:6px 8px;border:1.5px solid var(--sand-dark);border-radius:8px;font-family:inherit;font-size:12px;background:var(--white)"><option value="auto" data-i18n="food.scan.auto">Automatisch</option><option value="on" data-i18n="food.scan.focusOn">Continu</option><option value="off" data-i18n="food.scan.off">Uit</option></select></label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--charcoal);margin-bottom:8px"><span data-i18n="food.scan.instHard">Grondig lezen</span><select id="bci-hard" onchange="bcInstWijzig()" style="max-width:55%;padding:6px 8px;border:1.5px solid var(--sand-dark);border-radius:8px;font-family:inherit;font-size:12px;background:var(--white)"><option value="auto" data-i18n="food.scan.auto">Automatisch</option><option value="on" data-i18n="food.scan.on">Aan</option><option value="off" data-i18n="food.scan.off">Uit</option></select></label>
+        <label id="bci-var-row" style="display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--charcoal);margin-bottom:8px"><span data-i18n="food.scan.instVar">Beeldvarianten (computer)</span><select id="bci-var" onchange="bcInstWijzig()" style="max-width:55%;padding:6px 8px;border:1.5px solid var(--sand-dark);border-radius:8px;font-family:inherit;font-size:12px;background:var(--white)"><option value="alle" data-i18n="food.scan.varAll">Alle</option><option value="enkel" data-i18n="food.scan.varOne">Alleen hele beeld</option></select></label>
+        <button class="btn-sm" onclick="bcInstReset()" style="width:100%" data-i18n="food.scan.reset">Terug naar standaard</button>
+      </div>
       <button id="bc-cam-btn" class="btn-sm" style="display:none;margin-bottom:12px" onclick="bcAndereCamera()" data-i18n="food.scan.otherCamera">🔄 Andere camera</button>
       <div style="display:flex;gap:8px">
         <input type="text" id="bc-manual" inputmode="numeric" data-i18n-placeholder="food.scan.manualPlaceholder" placeholder="Of typ de barcode" style="flex:1;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px">
@@ -1662,6 +1673,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261008-2147"></script>
+<script src="js/auth.js?v=20261009-0733"></script>
 </body>
 </html>

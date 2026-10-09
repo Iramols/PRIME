@@ -2374,7 +2374,12 @@ let _bcTimer = null;
 let _bcReader = null;
 let _bcBezig = false;
 let _bcProduct = null;
-let _bcDeviceId = null; // gekozen camera (bij meerdere achtercamera's), alleen voor de ingebouwde lezer
+// Camera-instellingen van de coach, per toestel onthouden. 'auto' = de standaard van de
+// gebruikte leesmethode (ingebouwde lezer, software-lezer op telefoon of computer-lus).
+const BC_INST_STANDAARD = { res: 'auto', sps: 'auto', cam: '', focus: 'auto', hard: 'auto', variants: 'alle' };
+let _bcInst = Object.assign({}, BC_INST_STANDAARD);
+try { Object.assign(_bcInst, JSON.parse(localStorage.getItem('prime_scan_inst') || '{}')); } catch (e) { /* standaard */ }
+function _bcBewaarInst() { try { localStorage.setItem('prime_scan_inst', JSON.stringify(_bcInst)); } catch (e) { console.error(e); } }
 let _bcModus = 'product'; // 'product' = nieuw basisproduct maken, 'dag' = gescand eten aan een dag toevoegen
 let _bcVorigeDatum = null;
 let _apBarcode = null; // barcode van het product dat nu in het formulier staat (na scannen)
@@ -2382,7 +2387,6 @@ let _apBarcode = null; // barcode van het product dat nu in het formulier staat 
 function openBarcodeScanner(modus) {
   if (!isPrimeCoach()) return;
   _bcModus = modus === 'dag' ? 'dag' : 'product';
-  _bcDeviceId = null;
   _bcBezig = false;
   _bcProduct = null;
   document.getElementById('bc-result').style.display = 'none';
@@ -2424,6 +2428,8 @@ async function startBarcodeCamera() {
   stopBarcodeCamera();
   const camKnop = document.getElementById('bc-cam-btn');
   if (camKnop) camKnop.style.display = 'none';
+  const infoEl = document.getElementById('bc-info');
+  if (infoEl) infoEl.textContent = '';
   _bcStatus(t('food.scan.starting'));
   const video = document.getElementById('bc-video');
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -2439,28 +2445,18 @@ async function startBarcodeCamera() {
         native = formaten.indexOf('ean_13') !== -1;
       } catch (e) { native = false; }
     }
+    let methode, ms;
     if (desktop) {
-      await _bcDesktopLus(video);
+      methode = 'desktop';
+      ms = _bcIntervalMs(120);
+      await _bcDesktopLus(video, ms);
     } else if (native) {
-      // Hogere resolutie dan de standaard (vaak 640x480) en continu scherpstellen: de
-      // ingebouwde lezer van Android gebruikt dat goed. Op een telefoon met meerdere
-      // achtercamera's kan de coach een andere lens kiezen (zie bcAndereCamera()).
-      const videoEis = { width: { ideal: 1280 }, height: { ideal: 720 } };
-      if (_bcDeviceId) videoEis.deviceId = { exact: _bcDeviceId };
-      else videoEis.facingMode = { ideal: 'environment' };
-      try {
-        _bcStream = await navigator.mediaDevices.getUserMedia({ video: videoEis, audio: false });
-      } catch (e) {
-        _bcDeviceId = null;
-        _bcStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
-      }
+      methode = 'native';
+      ms = _bcIntervalMs(200);
+      _bcStream = await _bcOpenStream({ w: 1280, h: 720 }, { ideal: 'environment' });
       video.srcObject = _bcStream;
       await video.play();
-      _bcFocus(video);
-      try {
-        const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
-        if (camKnop && cams.length > 1) camKnop.style.display = 'inline-block';
-      } catch (e) { /* geen lijst beschikbaar */ }
+      if (_bcFocusActief(true)) _bcFocus(video);
       const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
       _bcTimer = setInterval(async () => {
         if (_bcBezig) return;
@@ -2468,19 +2464,28 @@ async function startBarcodeCamera() {
           const gevonden = await detector.detect(video);
           if (gevonden.length) bcGevonden(gevonden[0].rawValue);
         } catch (e) { /* volgende ronde */ }
-      }, 200);
+      }, ms);
     } else {
+      methode = 'zxing';
+      ms = _bcInst.sps === 'auto' ? 500 : _bcIntervalMs(500);
       await _laadZxing();
       const hints = new Map();
       hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
+      if (_bcHardActief(false)) hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
       _bcReader = new ZXing.BrowserMultiFormatReader(hints);
-      _bcReader.decodeFromConstraints({ video: { facingMode: 'environment' }, audio: false }, video, (resultaat) => {
+      if (_bcInst.sps !== 'auto') _bcReader.timeBetweenDecodingAttempts = ms;
+      _bcReader.decodeFromConstraints({ video: _bcVideoEis(null, 'environment'), audio: false }, video, (resultaat) => {
         if (resultaat && !_bcBezig) bcGevonden(resultaat.getText());
       });
+      if (_bcFocusActief(false)) setTimeout(() => _bcFocus(video), 1200);
     }
     _bcStatus(t('food.scan.hint'));
+    _bcToonInfo(video, methode, ms);
+    _bcVulCamLijst();
   } catch (e) {
     console.error('startBarcodeCamera:', e);
+    // Een opgeslagen camera die niet meer bestaat mag het scannen niet blijven blokkeren.
+    if (_bcInst.cam) { _bcInst.cam = ''; _bcBewaarInst(); }
     _bcStatus(t('food.scan.permission'));
   }
 }
@@ -2842,22 +2847,22 @@ function _bcFocus(video) {
 // beeld: het hele beeld en middenuitsneden (uitvergroot), met twee manieren van zwart-
 // wit maken en een contrastversie. Webcambeelden zijn vaak zacht, ruizig of vlak, en
 // één vaste aanpak mist dan de code terwijl je het beeld "heel duidelijk" ziet.
-async function _bcDesktopLus(video) {
+async function _bcDesktopLus(video, ms) {
   await _laadZxing();
   const hints = new Map();
   hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
-  hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+  if (_bcHardActief(true)) hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
   const lezer = new ZXing.MultiFormatReader();
   lezer.setHints(hints);
 
-  _bcStream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+  _bcStream = await _bcOpenStream({ w: 1920, h: 1080 }, null);
   video.srcObject = _bcStream;
   await video.play();
-  _bcFocus(video);
+  if (_bcFocusActief(true)) _bcFocus(video);
 
   const canvas = document.createElement('canvas');
   const c2 = canvas.getContext('2d', { willReadFrequently: true });
-  const varianten = [
+  const alleVarianten = [
     { crop: 1, bin: 'hybrid' },
     { crop: 0.6, bin: 'hybrid' },
     { crop: 1, bin: 'global' },
@@ -2865,6 +2870,7 @@ async function _bcDesktopLus(video) {
     { crop: 0.4, bin: 'hybrid' },
     { crop: 1, bin: 'hybrid', contrast: true }
   ];
+  const varianten = _bcInst.variants === 'enkel' ? [alleVarianten[0]] : alleVarianten;
   let tik = 0;
   _bcTimer = setInterval(() => {
     if (_bcBezig || !video.videoWidth) return;
@@ -2885,7 +2891,7 @@ async function _bcDesktopLus(video) {
       if (resultaat) bcGevonden(resultaat.getText());
     } catch (e) { /* niets gevonden in dit beeld: volgende ronde */ }
     if (tik === 50) _bcStatus(t('food.scan.noLuck'));
-  }, 120);
+  }, ms);
 }
 
 
@@ -2898,8 +2904,112 @@ async function bcAndereCamera() {
     if (cams.length < 2) return;
     const huidig = _bcStream && _bcStream.getVideoTracks()[0] ? (_bcStream.getVideoTracks()[0].getSettings().deviceId || '') : '';
     const idx = cams.findIndex(c => c.deviceId === huidig);
-    _bcDeviceId = cams[(idx + 1) % cams.length].deviceId;
+    _bcInst.cam = cams[(idx + 1) % cams.length].deviceId;
+    _bcBewaarInst();
   } catch (e) { console.error('bcAndereCamera:', e); return; }
+  _bcBezig = false;
+  startBarcodeCamera();
+}
+
+
+// ----- Camera-instellingen (coach) -----
+
+function _bcResEis(standaard) {
+  const m = { '480': [640, 480], '720': [1280, 720], '1080': [1920, 1080] };
+  const k = (_bcInst.res !== 'auto' && m[_bcInst.res]) ? m[_bcInst.res] : (standaard ? [standaard.w, standaard.h] : null);
+  return k ? { width: { ideal: k[0] }, height: { ideal: k[1] } } : {};
+}
+function _bcIntervalMs(standaardMs) {
+  const n = parseInt(_bcInst.sps, 10);
+  return n > 0 ? Math.round(1000 / n) : standaardMs;
+}
+function _bcFocusActief(standaard) { return _bcInst.focus === 'on' ? true : (_bcInst.focus === 'off' ? false : standaard); }
+function _bcHardActief(standaard) { return _bcInst.hard === 'on' ? true : (_bcInst.hard === 'off' ? false : standaard); }
+
+// Camera-eisen: gekozen resolutie, en de gekozen camera of anders de standaard (achtercamera).
+function _bcVideoEis(standaardRes, facing) {
+  const eis = _bcResEis(standaardRes);
+  if (_bcInst.cam) eis.deviceId = { exact: _bcInst.cam };
+  else if (facing) eis.facingMode = facing;
+  return eis;
+}
+
+// Opent de camera; bestaat de opgeslagen camera niet meer, dan terug naar de standaardcamera.
+async function _bcOpenStream(standaardRes, facing) {
+  try {
+    return await navigator.mediaDevices.getUserMedia({ video: _bcVideoEis(standaardRes, facing), audio: false });
+  } catch (e) {
+    if (!_bcInst.cam) throw e;
+    _bcInst.cam = '';
+    _bcBewaarInst();
+    return await navigator.mediaDevices.getUserMedia({ video: _bcVideoEis(standaardRes, facing), audio: false });
+  }
+}
+
+// Toont wat de camera werkelijk levert, zodat je ziet of een instelling echt wordt uitgevoerd.
+function _bcToonInfo(video, methode, ms) {
+  setTimeout(() => {
+    const el = document.getElementById('bc-info');
+    if (!el || !video.videoWidth) return;
+    el.textContent = t('food.scan.infoLine', {
+      method: t('food.scan.m_' + methode), w: video.videoWidth, h: video.videoHeight, sps: Math.round(10000 / ms) / 10
+    });
+  }, 1500);
+}
+
+async function _bcVulCamLijst() {
+  try {
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+    const knop = document.getElementById('bc-cam-btn');
+    if (knop) knop.style.display = cams.length > 1 ? 'inline-block' : 'none';
+    const sel = document.getElementById('bci-cam');
+    if (sel) {
+      sel.innerHTML = '<option value="">' + t('food.scan.auto') + '</option>' +
+        cams.map((c, i) => '<option value="' + escapeHtml(c.deviceId) + '">' + escapeHtml(c.label || ('Camera ' + (i + 1))) + '</option>').join('');
+      sel.value = _bcInst.cam || '';
+    }
+  } catch (e) { /* geen lijst beschikbaar */ }
+}
+
+function bcInstVul() {
+  const zet = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  zet('bci-res', _bcInst.res);
+  zet('bci-sps', _bcInst.sps);
+  zet('bci-cam', _bcInst.cam);
+  zet('bci-focus', _bcInst.focus);
+  zet('bci-hard', _bcInst.hard);
+  zet('bci-var', _bcInst.variants);
+  const desktop = !!(window.matchMedia && matchMedia('(pointer: fine)').matches && !matchMedia('(pointer: coarse)').matches);
+  const rij = document.getElementById('bci-var-row');
+  if (rij) rij.style.display = desktop ? 'flex' : 'none';
+}
+
+function bcInstToggle() {
+  const p = document.getElementById('bc-inst');
+  if (!p) return;
+  const open = p.style.display === 'none';
+  p.style.display = open ? 'block' : 'none';
+  if (open) { bcInstVul(); _bcVulCamLijst().then(bcInstVul); }
+}
+
+// Elke wijziging wordt meteen opgeslagen en de camera start opnieuw met de nieuwe instellingen.
+function bcInstWijzig() {
+  const lees = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  _bcInst.res = lees('bci-res') || 'auto';
+  _bcInst.sps = lees('bci-sps') || 'auto';
+  _bcInst.cam = lees('bci-cam');
+  _bcInst.focus = lees('bci-focus') || 'auto';
+  _bcInst.hard = lees('bci-hard') || 'auto';
+  _bcInst.variants = lees('bci-var') || 'alle';
+  _bcBewaarInst();
+  _bcBezig = false;
+  startBarcodeCamera();
+}
+
+function bcInstReset() {
+  _bcInst = Object.assign({}, BC_INST_STANDAARD);
+  _bcBewaarInst();
+  bcInstVul();
   _bcBezig = false;
   startBarcodeCamera();
 }
