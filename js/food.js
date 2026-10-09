@@ -2378,6 +2378,7 @@ let _bcProduct = null;
 // gebruikte leesmethode (ingebouwde lezer, software-lezer op telefoon of computer-lus).
 const BC_INST_STANDAARD = { res: 'auto', sps: 'auto', cam: '', focus: 'auto', hard: 'auto', variants: 'alle' };
 let _bcInst = Object.assign({}, BC_INST_STANDAARD);
+let _bcMethode = 'zxing'; // leesmethode van de laatste start: 'native', 'zxing' (telefoon) of 'desktop'
 try { Object.assign(_bcInst, JSON.parse(localStorage.getItem('prime_scan_inst') || '{}')); } catch (e) { /* standaard */ }
 function _bcBewaarInst() { try { localStorage.setItem('prime_scan_inst', JSON.stringify(_bcInst)); } catch (e) { console.error(e); } }
 let _bcModus = 'product'; // 'product' = nieuw basisproduct maken, 'dag' = gescand eten aan een dag toevoegen
@@ -2479,9 +2480,10 @@ async function startBarcodeCamera() {
       });
       if (_bcFocusActief(false)) setTimeout(() => _bcFocus(video), 1200);
     }
+    _bcMethode = methode;
     _bcStatus(t('food.scan.hint'));
     _bcToonInfo(video, methode, ms);
-    _bcVulCamLijst();
+    _bcVulCamLijst().then(bcInstVul);
   } catch (e) {
     console.error('startBarcodeCamera:', e);
     // Een opgeslagen camera die niet meer bestaat mag het scannen niet blijven blokkeren.
@@ -2964,12 +2966,22 @@ async function _bcVulCamLijst() {
     if (knop) knop.style.display = cams.length > 1 ? 'inline-block' : 'none';
     const sel = document.getElementById('bci-cam');
     if (sel) {
-      sel.innerHTML = '<option value="">' + t('food.scan.auto') + '</option>' +
+      sel.innerHTML = '<option value="">' + escapeHtml(t('food.scan.auto') + ' (' + _bcCamAutoTekst() + ')') + '</option>' +
         cams.map((c, i) => '<option value="' + escapeHtml(c.deviceId) + '">' + escapeHtml(c.label || ('Camera ' + (i + 1))) + '</option>').join('');
       sel.value = _bcInst.cam || '';
     }
   } catch (e) { /* geen lijst beschikbaar */ }
 }
+
+// Wat "Automatisch" per leesmethode betekent; null = niet gebruikt bij deze lezer.
+function _bcAutoWaarden() {
+  const aan = t('food.scan.on'), uit = t('food.scan.off'), cont = t('food.scan.focusOn');
+  if (_bcMethode === 'native') return { res: '1280×720', sps: '5', focus: cont, hard: null, variants: null };
+  if (_bcMethode === 'desktop') return { res: '1920×1080', sps: '8', focus: cont, hard: aan, variants: t('food.scan.varAll') };
+  return { res: t('food.scan.camDefault'), sps: '2', focus: uit, hard: uit, variants: null };
+}
+
+function _bcCamAutoTekst() { return _bcMethode === 'desktop' ? t('food.scan.camStd') : t('food.scan.camBack'); }
 
 function bcInstVul() {
   const zet = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
@@ -2979,9 +2991,28 @@ function bcInstVul() {
   zet('bci-focus', _bcInst.focus);
   zet('bci-hard', _bcInst.hard);
   zet('bci-var', _bcInst.variants);
-  const desktop = !!(window.matchMedia && matchMedia('(pointer: fine)').matches && !matchMedia('(pointer: coarse)').matches);
+  // Bij elke "Automatisch" laten zien wat dat voor deze leesmethode is; een instelling
+  // die de gebruikte lezer niet kent, staat uit (grijs) met de melding "niet gebruikt".
+  const aw = _bcAutoWaarden();
+  const autoTekst = (id, w) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const optie = sel.querySelector('option[value="auto"]');
+    if (optie) optie.textContent = w === null ? t('food.scan.na') : t('food.scan.auto') + ' (' + w + ')';
+    sel.disabled = (w === null);
+  };
+  autoTekst('bci-res', aw.res);
+  autoTekst('bci-sps', aw.sps);
+  autoTekst('bci-focus', aw.focus);
+  autoTekst('bci-hard', aw.hard);
+  const camOptie = document.querySelector('#bci-cam option[value=""]');
+  if (camOptie) camOptie.textContent = t('food.scan.auto') + ' (' + _bcCamAutoTekst() + ')';
+  const varSel = document.getElementById('bci-var');
+  if (varSel) varSel.disabled = (_bcMethode !== 'desktop');
   const rij = document.getElementById('bci-var-row');
-  if (rij) rij.style.display = desktop ? 'flex' : 'none';
+  if (rij) rij.style.display = (_bcMethode === 'desktop') ? 'flex' : 'none';
+  const lez = document.getElementById('bci-lezer');
+  if (lez) lez.textContent = t('food.scan.activeReader', { method: t('food.scan.m_' + _bcMethode) });
 }
 
 function bcInstToggle() {
