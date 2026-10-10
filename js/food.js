@@ -421,7 +421,8 @@ function renderAddProductTab() {
       <div style="font-size:34px;line-height:1;margin-bottom:8px">📷</div>
       <div class="product-name">${t('food.scan.tile')}</div>
     </div>` : '';
-  el.innerHTML = `<div class="product-grid">` + tegel + scanTegel + lijst.map(p => `
+  // Bovenaan een eigen rij met de acties (toevoegen, scannen); daaronder de opgeslagen producten.
+  el.innerHTML = `<div class="product-grid">` + tegel + scanTegel + `</div><div class="product-grid" style="margin-top:8px">` + lijst.map(p => `
     <div class="product-card" onclick="openOwnProductModal('${p.id}')">
       <span class="prod-label prod-label-own">${t('food.label.own')}</span>
       ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
