@@ -411,18 +411,18 @@ function renderAddProductTab() {
   if (ownCat !== 'alle') lijst = lijst.filter(p => p.cat === ownCat);
   const q = (document.getElementById('own-product-search')?.value || '').toLowerCase();
   if (q) lijst = lijst.filter(p => p.name.toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q));
+  // Twee smalle actiebalken (toevoegen, scannen) naast elkaar, onder elkaar op een heel smal scherm.
+  const balkStijl = 'display:flex;align-items:center;justify-content:center;gap:8px;flex:1 1 150px;min-height:44px;padding:8px 12px;border:1.5px dashed;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer';
   const tegel = `
-    <div class="product-card" onclick="openAddProductForm()" style="border-style:dashed;border-color:var(--sage);background:var(--sage-light);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px">
-      <div style="font-size:34px;line-height:1;color:var(--sage);margin-bottom:8px">➕</div>
-      <div class="product-name" style="color:var(--sage)">${t('food.add.tile')}</div>
+    <div onclick="openAddProductForm()" style="${balkStijl};border-color:var(--sage);background:var(--sage-light);color:var(--sage)">
+      <span style="font-size:18px;line-height:1">➕</span><span>${t('food.add.tile')}</span>
     </div>`;
   const scanTegel = isPrimeCoach() ? `
-    <div class="product-card coach-only-btn" onclick="openBarcodeScanner()" style="border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:130px">
-      <div style="font-size:34px;line-height:1;margin-bottom:8px">📷</div>
-      <div class="product-name">${t('food.scan.tile')}</div>
+    <div class="coach-only-btn" onclick="openBarcodeScanner()" style="${balkStijl};border-color:var(--coach-only)">
+      <span style="font-size:18px;line-height:1">📷</span><span>${t('food.scan.tile')}</span>
     </div>` : '';
   // Bovenaan een eigen rij met de acties (toevoegen, scannen); daaronder de opgeslagen producten.
-  el.innerHTML = `<div class="product-grid">` + tegel + scanTegel + `</div><div class="product-grid" style="margin-top:8px">` + lijst.map(p => `
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">` + tegel + scanTegel + `</div><div class="product-grid">` + lijst.map(p => `
     <div class="product-card" onclick="openOwnProductModal('${p.id}')">
       <span class="prod-label prod-label-own">${t('food.label.own')}</span>
       ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
