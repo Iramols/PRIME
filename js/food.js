@@ -3356,8 +3356,11 @@ function vzLeesStuk(stuk) {
 // Hele tekst -> { moment, regels: [{bron, naam, aantal, eenheid}] }
 function vzLeesTekst(tekst) {
   const t = String(tekst || '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/(\d),(\d)/g, '$1.$2').replace(/\s+/g, ' ');
-  // Momenten ("ontbijt", "'s avonds", "vanochtend", "avondtussendoortje"): wat erna komt hoort bij dat
-  // moment, tot het volgende moment genoemd wordt. Zo kun je een hele dag in één keer inspreken.
+  // Momenten ("ontbijt", "'s avonds", "vanochtend", "avondtussendoortje") kunnen vóór of ná de producten staan:
+  //   "ontbijt skyr banaan lunch brood"   -> het moment geldt voor wat erna komt;
+  //   "skyr ochtend banaan avond"         -> het moment geldt voor wat ervoor staat.
+  // Begint de tekst met een product, dan gelden de momenten voor wat ervoor staat; begint hij met een
+  // moment, dan voor wat erna komt.
   const marks = [];
   const re = new RegExp('(?:(?:als|voor|bij|tijdens|in|van|na)\\s+(?:de|het|mijn)?\\s*)?(?:' + VZ_MOMENTEN.map(x => '(' + x[1] + ')').join('|') + ')', 'g');
   let m;
@@ -3368,20 +3371,31 @@ function vzLeesTekst(tekst) {
     const gi = m.slice(1).findIndex(x => x !== undefined);
     if (gi >= 0) marks.push({ start: m.index, end: m.index + m[0].length, moment: VZ_MOMENTEN[gi][0] });
   }
-  const stukken = [];
-  let pos = 0, huidig = null;
-  marks.forEach(k => { stukken.push({ tekst: t.slice(pos, k.start), moment: huidig }); pos = k.end; huidig = k.moment; });
-  stukken.push({ tekst: t.slice(pos), moment: huidig });
+  const chunks = [];
+  let pos = 0;
+  marks.forEach(k => { chunks.push(t.slice(pos, k.start)); pos = k.end; });
+  chunks.push(t.slice(pos));
 
-  const regels = [];
-  stukken.forEach(ch => {
-    const c = ch.tekst.replace(VZ_VULWOORDEN, ' ').replace(/[:!?]/g, ' ');
-    const delen = c.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
-    delen.reduce((acc, s) => acc.concat(vzSplitsOpAantal(s)), []).forEach(s => {
-      const r = vzLeesStuk(s);
-      if (r.naam) regels.push({ bron: s, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: ch.moment });
+  const regelsPerChunk = chunks.map(tekstDeel => {
+    const c = tekstDeel.replace(VZ_VULWOORDEN, ' ').replace(/[:!?]/g, ' ');
+    const delen = c.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    const uit = [];
+    delen.reduce((acc, x) => acc.concat(vzSplitsOpAantal(x)), []).forEach(x => {
+      const r = vzLeesStuk(x);
+      if (r.naam) uit.push({ bron: x, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: null });
     });
+    return uit;
   });
+
+  if (marks.length) {
+    const naModus = regelsPerChunk[0].length > 0;
+    regelsPerChunk.forEach((rs, idx) => {
+      const mm = naModus ? (marks[idx] ? marks[idx].moment : null) : (idx > 0 ? marks[idx - 1].moment : null);
+      rs.forEach(r => { r.moment = mm; });
+    });
+  }
+  const regels = [];
+  regelsPerChunk.forEach(rs => rs.forEach(r => regels.push(r)));
   return { moment: marks.length ? marks[0].moment : null, regels: regels };
 }
 
