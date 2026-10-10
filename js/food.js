@@ -3699,9 +3699,11 @@ function vzMicToggle() {
   rec.interimResults = true;
   rec.continuous = true;
   rec.onresult = function(ev) {
-    let tekst = '';
-    for (let i = 0; i < ev.results.length; i++) tekst += ev.results[i][0].transcript + ' ';
-    veld.value = (_vzBasisTekst ? _vzBasisTekst + ' ' : '') + tekst.trim();
+    // Elke pauze levert een nieuw resultaat op: die zetten we met een komma achter elkaar, zodat de
+    // producten die je na elkaar noemt ook in de tekst gescheiden staan.
+    const delen = [];
+    for (let i = 0; i < ev.results.length; i++) { const d = ev.results[i][0].transcript.trim(); if (d) delen.push(d); }
+    veld.value = (_vzBasisTekst ? _vzBasisTekst + ', ' : '') + delen.join(', ');
   };
   rec.onerror = function(ev) {
     const fout = ev && ev.error;
