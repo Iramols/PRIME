@@ -3596,11 +3596,9 @@ function vzHerken() {
   document.getElementById('vz-invoer').style.display = 'none';
   document.getElementById('vz-resultaat').style.display = 'block';
   const standaardMoment = lijst.moment || 'ontbijt';
-  document.getElementById('vz-moment').value = standaardMoment;
   _vzRegels.forEach(r => { if (!r.moment) r.moment = standaardMoment; });
   const standaardDatum = _vzBron === 'week' ? currentLogDate : fdTodayStr();
   _vzRegels.forEach(r => { if (!r.datum) r.datum = standaardDatum; });
-  document.getElementById('vz-datum').value = _vzBron === 'week' ? currentLogDate : fdTodayStr();
   vzTekenRegels();
 }
 
@@ -3964,16 +3962,6 @@ function vzMomentRegel(id) {
   if (r && el) r.moment = el.value;
 }
 
-function vzMomentAlle() {
-  const waarde = document.getElementById('vz-moment').value;
-  _vzRegels.forEach(r => {
-    r.moment = waarde;
-    const el = document.getElementById('vz-m-' + r.id);
-    if (el) el.value = waarde;
-  });
-}
-
-
 // Dag per regel: de herkende of gekozen dag. De dag onderaan geldt voor alle regels.
 function vzDatumRegel(id) {
   const r = _vzRegels.find(x => x.id === id);
@@ -3981,12 +3969,3 @@ function vzDatumRegel(id) {
   if (r && el) r.datum = el.value;
 }
 
-function vzDatumAlle() {
-  const waarde = document.getElementById('vz-datum').value;
-  if (!waarde) return;
-  _vzRegels.forEach(r => {
-    r.datum = waarde;
-    const el = document.getElementById('vz-d-' + r.id);
-    if (el) el.value = waarde;
-  });
-}
