@@ -3550,6 +3550,20 @@ let _vzSpraak = null;
 let _vzLuistert = false;
 let _vzBasisTekst = '';
 
+// 'mob' = telefoon of tablet, 'pc' = computer: de adviezen bij een fout verschillen.
+function vzV() { return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '') ? 'mob' : 'pc'; }
+
+// Tekst wissen (bijvoorbeeld als de spraak verkeerd is herkend): stopt het luisteren en leegt het veld.
+function vzWis() {
+  vzMicStop();
+  const veld = document.getElementById('vz-tekst');
+  veld.value = '';
+  _vzBasisTekst = '';
+  vzMicStatus('');
+  document.getElementById('vz-fout').textContent = '';
+  try { veld.focus(); } catch (e) { /* geen focus */ }
+}
+
 function vzMicBeschikbaar() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
 
 function vzMicKnop(aan) {
@@ -3572,7 +3586,7 @@ function vzMicStatus(tekst, isFout) {
 function vzMicToggle() {
   if (_vzLuistert) { vzMicStop(); return; }
   const Spraak = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Spraak) { vzMicStatus(t('food.voice.micNoSupport'), true); return; }
+  if (!Spraak) { vzMicStatus(t('food.voice.micNoSupport.' + vzV()), true); return; }
   const veld = document.getElementById('vz-tekst');
   _vzBasisTekst = veld.value.trim();
   const rec = new Spraak();
@@ -3586,12 +3600,12 @@ function vzMicToggle() {
   };
   rec.onerror = function(ev) {
     const fout = ev && ev.error;
-    if (fout === 'not-allowed' || fout === 'service-not-allowed') vzMicStatus(t('food.voice.micDenied'), true);
-    else if (fout === 'no-speech') vzMicStatus(t('food.voice.micNone'), true);
-    else if (fout === 'audio-capture') vzMicStatus(t('food.voice.micNoDevice'), true);
-    else if (fout === 'network') vzMicStatus(t('food.voice.micNetwork'), true);
-    else if (fout === 'language-not-supported') vzMicStatus(t('food.voice.micLang'), true);
-    else vzMicStatus(t('food.voice.micError', { fout: fout || '?' }), true);
+    if (fout === 'not-allowed' || fout === 'service-not-allowed') vzMicStatus(t('food.voice.micDenied.' + vzV()), true);
+    else if (fout === 'no-speech') vzMicStatus(t('food.voice.micNone.' + vzV()), true);
+    else if (fout === 'audio-capture') vzMicStatus(t('food.voice.micNoDevice.' + vzV()), true);
+    else if (fout === 'network') vzMicStatus(t('food.voice.micNetwork.' + vzV()), true);
+    else if (fout === 'language-not-supported') vzMicStatus(t('food.voice.micLang.' + vzV()), true);
+    else vzMicStatus(t('food.voice.micError.' + vzV(), { fout: fout || '?' }), true);
     vzMicKnop(false);
   };
   rec.onend = function() {
@@ -3607,7 +3621,7 @@ function vzMicToggle() {
     vzMicStatus(t('food.voice.listening'));
   } catch (e) {
     console.error('vzMicToggle:', e);
-    vzMicStatus(t('food.voice.micError', { fout: 'start' }), true);
+    vzMicStatus(t('food.voice.micError.' + vzV(), { fout: 'start' }), true);
   }
 }
 
