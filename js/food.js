@@ -3257,6 +3257,51 @@ function vzGetalWoord(woord) {
   return x === null || x === 0 ? null : x;
 }
 
+// Datumwoorden: gisteren, vandaag, morgen, weekdagen en datums als "12 oktober" of "12-10".
+const VZ_DATUMS = [
+  ['rel', 'eergisteren|gisteren|overmorgen|vandaag|morgen'],
+  ['wd', 'maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag'],
+  ['dm', '\\d{1,2}\\s(?:januari|jan|februari|feb|maart|mrt|april|apr|mei|juni|jun|juli|jul|augustus|aug|september|sept|sep|oktober|okt|november|nov|december|dec)|\\d{1,2}[-/]\\d{1,2}(?:[-/]\\d{2,4})?']
+];
+const VZ_MAANDEN = { jan: 1, feb: 2, mrt: 3, maa: 3, apr: 4, mei: 5, jun: 6, jul: 7, aug: 8, sep: 9, okt: 10, nov: 11, dec: 12 };
+const VZ_WEEKDAGEN = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];
+
+// Datumwoord -> 'JJJJ-MM-DD'. gisteren/vandaag/morgen gaan altijd uit van de echte dag van vandaag; een weekdag is
+// die van de huidige week (maandag t/m zondag) rond de dag die open staat (Weekplanning) of vandaag.
+function vzDatumWaarde(soort, woord) {
+  const dagStr = (d) => localDateStr(d);
+  const op = (str, dagen) => { const d = new Date(str + 'T12:00:00'); d.setDate(d.getDate() + dagen); return dagStr(d); };
+  const vandaag = fdTodayStr();
+  if (soort === 'rel') {
+    const verschil = { eergisteren: -2, gisteren: -1, vandaag: 0, morgen: 1, overmorgen: 2 }[woord];
+    return verschil === undefined ? null : op(vandaag, verschil);
+  }
+  if (soort === 'wd') {
+    const k = VZ_WEEKDAGEN.indexOf(woord);
+    if (k < 0) return null;
+    const ref = new Date(((typeof _vzBron !== 'undefined' && _vzBron === 'week') ? currentLogDate : vandaag) + 'T12:00:00');
+    const maandag = new Date(ref.getTime());
+    maandag.setDate(ref.getDate() - ((ref.getDay() + 6) % 7));
+    maandag.setDate(maandag.getDate() + k);
+    return dagStr(maandag);
+  }
+  // dm: "12 oktober" of "12-10" (of "12-10-2026")
+  const jaarNu = parseInt(vandaag.slice(0, 4), 10);
+  let d, mnd, jaar = jaarNu;
+  let mm = /^(\d{1,2})\s([a-z]+)$/.exec(woord);
+  if (mm) { d = parseInt(mm[1], 10); mnd = VZ_MAANDEN[mm[2].slice(0, 3)]; }
+  else {
+    mm = /^(\d{1,2})[-/](\d{1,2})(?:[-/](\d{2,4}))?$/.exec(woord);
+    if (!mm) return null;
+    d = parseInt(mm[1], 10); mnd = parseInt(mm[2], 10);
+    if (mm[3]) jaar = mm[3].length === 2 ? 2000 + parseInt(mm[3], 10) : parseInt(mm[3], 10);
+  }
+  if (!mnd || d < 1 || d > 31 || mnd < 1 || mnd > 12) return null;
+  const x = new Date(jaar, mnd - 1, d, 12);
+  if (x.getMonth() !== mnd - 1) return null; // bv. 31 november
+  return dagStr(x);
+}
+
 function vzNorm(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9+%.\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -3356,20 +3401,24 @@ function vzLeesStuk(stuk) {
 // Hele tekst -> { moment, regels: [{bron, naam, aantal, eenheid}] }
 function vzLeesTekst(tekst) {
   const t = String(tekst || '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/(\d),(\d)/g, '$1.$2').replace(/\s+/g, ' ');
-  // Momenten ("ontbijt", "'s avonds", "vanochtend", "avondtussendoortje") kunnen vóór of ná de producten staan:
-  //   "ontbijt skyr banaan lunch brood"   -> het moment geldt voor wat erna komt;
-  //   "skyr ochtend banaan avond"         -> het moment geldt voor wat ervoor staat.
-  // Begint de tekst met een product, dan gelden de momenten voor wat ervoor staat; begint hij met een
-  // moment, dan voor wat erna komt.
+  // Momenten ("ontbijt", "'s avonds") en datums ("gisteren", "maandag", "12 oktober") kunnen vóór of ná de
+  // producten staan. Begint de tekst met zo'n woord, dan geldt het voor wat erna komt, tot het volgende; begint hij
+  // met een product, dan geldt het voor wat ervoor staat. Moment en datum worden los van elkaar bekeken.
+  const soorten = VZ_MOMENTEN.map(x => ({ type: 'moment', val: x[0], pat: x[1] })).concat(VZ_DATUMS.map(x => ({ type: 'datum', val: x[0], pat: x[1] })));
   const marks = [];
-  const re = new RegExp('(?:(?:als|voor|bij|tijdens|in|van|na)\\s+(?:de|het|mijn)?\\s*)?(?:' + VZ_MOMENTEN.map(x => '(' + x[1] + ')').join('|') + ')', 'g');
+  const re = new RegExp('(?:(?:als|voor|bij|tijdens|in|van|na|op|om)\\s+(?:de|het|mijn)?\\s*)?(?:' + soorten.map(x => '(' + x.pat + ')').join('|') + ')', 'g');
   let m;
   while ((m = re.exec(t))) {
     if (!m[0]) { re.lastIndex++; continue; }
     const vooraan = t.charAt(m.index - 1), achteraan = t.charAt(m.index + m[0].length);
     if ((vooraan && /[a-z]/.test(vooraan)) || (achteraan && /[a-z]/.test(achteraan))) continue;
     const gi = m.slice(1).findIndex(x => x !== undefined);
-    if (gi >= 0) marks.push({ start: m.index, end: m.index + m[0].length, moment: VZ_MOMENTEN[gi][0] });
+    if (gi < 0) continue;
+    const soort = soorten[gi];
+    const kern = m[gi + 1];
+    const waarde = soort.type === 'moment' ? soort.val : vzDatumWaarde(soort.val, kern);
+    if (soort.type === 'datum' && !waarde) continue;
+    marks.push({ start: m.index, end: m.index + m[0].length, type: soort.type, waarde: waarde });
   }
   const chunks = [];
   let pos = 0;
@@ -3382,21 +3431,28 @@ function vzLeesTekst(tekst) {
     const uit = [];
     delen.reduce((acc, x) => acc.concat(vzSplitsOpAantal(x)), []).forEach(x => {
       const r = vzLeesStuk(x);
-      if (r.naam) uit.push({ bron: x, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: null });
+      if (r.naam) uit.push({ bron: x, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: null, datum: null });
     });
     return uit;
   });
 
-  if (marks.length) {
-    const naModus = regelsPerChunk[0].length > 0;
-    regelsPerChunk.forEach((rs, idx) => {
-      const mm = naModus ? (marks[idx] ? marks[idx].moment : null) : (idx > 0 ? marks[idx - 1].moment : null);
-      rs.forEach(r => { r.moment = mm; });
+  ['moment', 'datum'].forEach(typ => {
+    const idxs = [];
+    marks.forEach((k, i) => { if (k.type === typ) idxs.push(i); });
+    if (!idxs.length) return;
+    let itemsVoor = false;
+    for (let c = 0; c <= idxs[0]; c++) if (regelsPerChunk[c].length) itemsVoor = true;
+    regelsPerChunk.forEach((rs, c) => {
+      let waarde = null;
+      if (itemsVoor) { const j = idxs.find(i => i >= c); if (j !== undefined) waarde = marks[j].waarde; }
+      else idxs.forEach(i => { if (i < c) waarde = marks[i].waarde; });
+      rs.forEach(r => { r[typ] = waarde; });
     });
-  }
+  });
   const regels = [];
   regelsPerChunk.forEach(rs => rs.forEach(r => regels.push(r)));
-  return { moment: marks.length ? marks[0].moment : null, regels: regels };
+  const eersteMoment = marks.find(k => k.type === 'moment');
+  return { moment: eersteMoment ? eersteMoment.waarde : null, regels: regels };
 }
 
 // Hoeveelheid in gram: gram/ml/maat uit de tekst, of de portie van het product. geschat = true
@@ -3459,6 +3515,7 @@ function vzMaakLijst(tekst, producten) {
       gram: g.gram,
       geschat: g.geschat,
       moment: r.moment || null,
+      datum: r.datum || null,
       onbekend: !goed && !kiesSoort,
       kiesSoort: kiesSoort,
       algemeen: algemeen,
@@ -3541,6 +3598,8 @@ function vzHerken() {
   const standaardMoment = lijst.moment || 'ontbijt';
   document.getElementById('vz-moment').value = standaardMoment;
   _vzRegels.forEach(r => { if (!r.moment) r.moment = standaardMoment; });
+  const standaardDatum = _vzBron === 'week' ? currentLogDate : fdTodayStr();
+  _vzRegels.forEach(r => { if (!r.datum) r.datum = standaardDatum; });
   document.getElementById('vz-datum').value = _vzBron === 'week' ? currentLogDate : fdTodayStr();
   vzTekenRegels();
 }
@@ -3570,6 +3629,7 @@ function vzTekenRegels() {
       '</div>' +
       (sugg.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center"><span style="font-size:11px;color:var(--muted)">' + (r.kiesSoort ? t('food.voice.pick') : t('food.voice.suggest')) + '</span>' +
         sugg.map(x => '<button class="cat-tab" onclick="vzKies(' + r.id + ',\'' + x.id + '\')">' + escapeHtml(dispName(x)) + '</button>').join('') + '</div>' : '') +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--muted)">' + t('food.voice.day') + '</span><span class="date-icon-wrap" style="flex:1"><input type="date" id="vz-d-' + r.id + '" value="' + (r.datum || '') + '" onchange="vzDatumRegel(' + r.id + ')" style="width:100%;' + stijl + '"><span class="date-icon" aria-hidden="true">📅</span></span></div>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--muted)">' + t('food.scan.moment') + '</span><select id="vz-m-' + r.id + '" onchange="vzMomentRegel(' + r.id + ')" style="flex:1;' + stijl + '">' + VZ_MOMENT_LIJST.map(mm => '<option value="' + mm + '"' + (mm === r.moment ? ' selected' : '') + '>' + t('moment.' + mm) + '</option>').join('') + '</select></div>' +
       '<div id="vz-o-' + r.id + '" style="display:none;margin-top:6px"></div>' +
       '<div id="vz-pv-' + r.id + '" style="font-size:11px;color:var(--muted);margin-top:6px"></div>' +
@@ -3647,17 +3707,28 @@ function vzToevoegen() {
     const gram = parseFloat(document.getElementById('vz-g-' + r.id).value);
     if (!p) { fout.textContent = t('food.voice.chooseAll'); return; }
     if (!(gram > 0)) { fout.textContent = t('food.scan.gramInvalid'); return; }
-    klaar.push({ p: p, gram: gram, moment: document.getElementById('vz-m-' + r.id).value });
+    const datum = document.getElementById('vz-d-' + r.id).value;
+    if (!datum) { fout.textContent = t('food.scan.dayRequired'); return; }
+    klaar.push({ p: p, gram: gram, moment: document.getElementById('vz-m-' + r.id).value, datum: datum });
   }
-  const datum = document.getElementById('vz-datum').value;
-  if (!datum) { fout.textContent = t('food.scan.dayRequired'); return; }
-  if (isDagAfgesloten(datum)) { alert(t('weekplan.dayLocked')); return; }
-  klaar.forEach(x => bcLogItem(x.p, x.gram, x.moment, datum));
+  // Een afgesloten dag kan niet meer worden aangepast: die regels slaan we over, de rest wordt toegevoegd.
+  const toe = klaar.filter(x => !isDagAfgesloten(x.datum));
+  const overgeslagen = klaar.length - toe.length;
+  if (!toe.length) { fout.textContent = t('food.voice.allClosed'); return; }
+  toe.forEach(x => bcLogItem(x.p, x.gram, x.moment, x.datum));
+  const dagen = {};
+  toe.forEach(x => { dagen[x.datum] = true; });
+  const aantalDagen = Object.keys(dagen).length;
   const bron = _vzBron;
   sluitSpraak(true);
   _portionReturnTab = null;
   switchFoodTab(bron === 'week' ? 'week' : 'log');
-  try { showToast(t('food.voice.added', { n: klaar.length, date: formatPickerDateLabel(datum) })); } catch (e) { console.error(e); }
+  try {
+    showToast(aantalDagen === 1
+      ? t('food.voice.added', { n: toe.length, date: formatPickerDateLabel(Object.keys(dagen)[0]) })
+      : t('food.voice.addedMulti', { n: toe.length, days: aantalDagen }));
+  } catch (e) { console.error(e); }
+  if (overgeslagen) alert(t('food.voice.skippedClosed', { n: overgeslagen }));
 }
 
 
@@ -3878,7 +3949,7 @@ function vzSplitsRegels(regels, producten) {
     let herkend = 0;
     for (let i = n; i > 0; i = vorige[i]) { groepen.unshift(woorden.slice(vorige[i], i).join(' ')); if (geldigHier[i]) herkend++; }
     if (beste[n] === Infinity || groepen.length < 2 || herkend < 2) { uit.push(r); return; }
-    groepen.forEach((g, idx) => uit.push({ bron: r.bron, naam: g, aantal: idx === 0 ? r.aantal : null, eenheid: idx === 0 ? r.eenheid : null, moment: r.moment }));
+    groepen.forEach((g, idx) => uit.push({ bron: r.bron, naam: g, aantal: idx === 0 ? r.aantal : null, eenheid: idx === 0 ? r.eenheid : null, moment: r.moment, datum: r.datum }));
   });
   return uit;
 }
@@ -3898,6 +3969,24 @@ function vzMomentAlle() {
   _vzRegels.forEach(r => {
     r.moment = waarde;
     const el = document.getElementById('vz-m-' + r.id);
+    if (el) el.value = waarde;
+  });
+}
+
+
+// Dag per regel: de herkende of gekozen dag. De dag onderaan geldt voor alle regels.
+function vzDatumRegel(id) {
+  const r = _vzRegels.find(x => x.id === id);
+  const el = document.getElementById('vz-d-' + id);
+  if (r && el) r.datum = el.value;
+}
+
+function vzDatumAlle() {
+  const waarde = document.getElementById('vz-datum').value;
+  if (!waarde) return;
+  _vzRegels.forEach(r => {
+    r.datum = waarde;
+    const el = document.getElementById('vz-d-' + r.id);
     if (el) el.value = waarde;
   });
 }
