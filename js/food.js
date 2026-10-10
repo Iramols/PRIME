@@ -3250,7 +3250,7 @@ function vzScore(vraag, product) {
   const q = vzNorm(vraag);
   if (!q) return 0;
   const alias = VZ_ALIAS[q] || VZ_ALIAS[vzStam(q)];
-  const namen = [product.name, product.name_en].filter(Boolean);
+  const namen = vzNamen(product);
   let beste = 0;
   for (const n of namen) {
     const volledig = vzNorm(n);
@@ -3353,17 +3353,37 @@ function vzGram(regel, product) {
 function vzMaakLijst(tekst, producten) {
   const gelezen = vzLeesTekst(tekst);
   const regels = gelezen.regels.map(r => {
+    let goed = null, geleerd = false, klank = false;
+    // 1) een eerder onthouden correctie ("skeer" = Skyr) gaat voor
+    const leerId = _vzCorr[vzNorm(r.naam)];
+    if (leerId) {
+      const lp = producten.find(p => p.id === leerId);
+      if (lp) { goed = { p: lp, score: 100 }; geleerd = true; }
+    }
+    // 2) gewone herkenning op de naam
     const treffers = vzZoekProducten(r.naam, producten);
-    const goed = treffers.length && treffers[0].score >= 55 ? treffers[0] : null;
+    if (!goed && treffers.length && treffers[0].score >= 55) goed = treffers[0];
+    const suggesties = treffers.slice(0, 4).map(x => x.p.id);
+    // 3) klinkt als een product: alleen als er precies één kandidaat is, anders alleen suggesties
+    if (!goed) {
+      const kl = vzKlankKandidaten(r.naam, producten);
+      const woorden = {};
+      kl.forEach(x => { woorden[x.tok] = true; });
+      if (kl.length && Object.keys(woorden).length === 1) { goed = { p: kl[0].p, score: 56 }; klank = true; }
+      kl.forEach(x => { if (suggesties.indexOf(x.p.id) === -1) suggesties.push(x.p.id); });
+    }
     const g = vzGram(r, goed ? goed.p : null);
     return {
       bron: r.bron,
       zoek: r.naam,
       productId: goed ? goed.p.id : '',
+      origProductId: goed ? goed.p.id : '',
       gram: g.gram,
       geschat: g.geschat,
       onbekend: !goed,
-      suggesties: treffers.slice(0, 4).map(x => x.p.id)
+      geleerd: geleerd,
+      klank: klank,
+      suggesties: suggesties.slice(0, 4)
     };
   });
   return { moment: gelezen.moment, regels: regels };
@@ -3452,7 +3472,9 @@ function vzTekenRegels() {
       '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">' +
         '<div style="font-size:11px;color:var(--muted)">' + (r.bron ? '“' + escapeHtml(r.bron) + '”' : '') +
           (r.onbekend && !naam ? ' · <span style="color:#c0392b;font-weight:600">' + t('food.voice.unknown') + '</span>' : '') +
-          (r.geschat ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.guess') + '</span>' : '') + '</div>' +
+          (r.geschat ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.guess') + '</span>' : '') +
+          (r.klank ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.byEar') + '</span>' : '') +
+          (r.geleerd ? ' · <span style="color:var(--sage);font-weight:600">' + t('food.voice.learned') + '</span> <a href="#" onclick="vzVergeet(' + r.id + ');return false" style="color:var(--muted)">' + t('food.voice.forget') + '</a>' : '') + '</div>' +
         '<button onclick="vzVerwijder(' + r.id + ')" aria-label="' + t('common.delete') + '" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>' +
       '</div>' +
       '<div style="display:flex;gap:8px;align-items:center">' +
@@ -3461,6 +3483,7 @@ function vzTekenRegels() {
       '</div>' +
       (sugg.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center"><span style="font-size:11px;color:var(--muted)">' + t('food.voice.suggest') + '</span>' +
         sugg.map(x => '<button class="cat-tab" onclick="vzKies(' + r.id + ',\'' + x.id + '\')">' + escapeHtml(dispName(x)) + '</button>').join('') + '</div>' : '') +
+      '<div id="vz-o-' + r.id + '" style="display:none;margin-top:6px"></div>' +
       '<div id="vz-pv-' + r.id + '" style="font-size:11px;color:var(--muted);margin-top:6px"></div>' +
     '</div>';
   }).join('');
@@ -3498,6 +3521,15 @@ function vzPreview() {
     if (!pe) return;
     const p = vzProductBijNaam(document.getElementById('vz-p-' + r.id).value);
     const gram = parseFloat(document.getElementById('vz-g-' + r.id).value) || 0;
+    // Corrigeerde de coach een regel (of is hij op klank herkend), dan kan de app dat onthouden.
+    const oEl = document.getElementById('vz-o-' + r.id);
+    if (oEl) {
+      const sleutel = vzNorm(r.zoek || '');
+      const toon = !!(p && sleutel && sleutel !== vzNorm(p.name) && sleutel !== vzNorm(dispName(p)) &&
+        _vzCorr[sleutel] !== p.id && (p.id !== r.origProductId || r.klank));
+      oEl.style.display = toon ? 'block' : 'none';
+      if (toon) oEl.innerHTML = '<button class="cat-tab" onclick="vzOnthoud(' + r.id + ')">💾 ' + escapeHtml(t('food.voice.remember', { from: r.zoek, to: dispName(p) })) + '</button>';
+    }
     if (!p) { pe.textContent = ''; return; }
     const f = gram / 100;
     const k = Math.round(p.kcal * f), e = Math.round(p.prot * f * 10) / 10, c = Math.round(p.carb * f * 10) / 10, v = Math.round(p.fat * f * 10) / 10;
@@ -3628,4 +3660,69 @@ function vzMicToggle() {
 function vzMicStop() {
   if (_vzSpraak) { try { _vzSpraak.stop(); } catch (e) { /* al gestopt */ } _vzSpraak = null; }
   if (_vzLuistert) vzMicKnop(false);
+}
+
+
+// ----- Correcties onthouden en klinken-als (coach) -----
+// "skeer" is door het dicteren geen Nederlands woord, maar de coach bedoelde Skyr. Corrigeert de
+// coach zo'n regel, dan kan hij "onthouden" kiezen: de koppeling woord -> product wordt bewaard
+// (per persoon, synchroon met de cloud) en geldt de volgende keer meteen.
+let _vzCorr = {};
+try { _vzCorr = JSON.parse(localStorage.getItem('prime_spraak_correcties') || '{}') || {}; } catch (e) { _vzCorr = {}; }
+
+// Klinkskelet van een woord: klinkers weg, klankverwante letters samengevoegd. "skyr" en
+// "skeer" geven allebei "skr".
+function vzSkelet(woord) {
+  let x = vzNorm(woord).replace(/\s+/g, '');
+  x = x.replace(/sch/g, 'sg').replace(/ph/g, 'f').replace(/ch/g, 'g').replace(/ck/g, 'k').replace(/qu/g, 'kw')
+    .replace(/c/g, 'k').replace(/q/g, 'k').replace(/x/g, 'ks').replace(/z/g, 's').replace(/v/g, 'f');
+  x = x.replace(/[aeiouy]/g, '').replace(/(.)\1+/g, '$1');
+  return x;
+}
+
+// Producten waarvan een naamdeel net zo klinkt als wat er gezegd is. Alleen voor een enkel woord,
+// met dezelfde beginletter en een vergelijkbare lengte, zodat het niet te los wordt.
+function vzKlankKandidaten(naam, producten) {
+  const q = vzNorm(naam);
+  if (!q || q.indexOf(' ') !== -1) return [];
+  const sq = vzSkelet(q);
+  if (sq.length < 3) return [];
+  const uit = [];
+  producten.forEach(p => {
+    for (const n of vzNamen(p)) {
+      const tok = vzNorm(n).split(' ').find(w => w.length >= 4 && w[0] === q[0] && Math.abs(w.length - q.length) <= 2 && vzSkelet(w) === sq);
+      if (tok) { uit.push({ p: p, tok: tok }); break; }
+    }
+  });
+  return uit.sort((a, b) => a.p.name.length - b.p.name.length);
+}
+
+// Namen waarop gezocht wordt: de Nederlandse, en de Engelse alleen als de app op Engels staat.
+function vzNamen(p) {
+  const engels = (typeof currentLang !== 'undefined' && currentLang === 'en');
+  return [p.name, engels ? p.name_en : null].filter(Boolean);
+}
+
+function vzOnthoud(id) {
+  const r = _vzRegels.find(x => x.id === id);
+  if (!r) return;
+  const p = vzProductBijNaam(document.getElementById('vz-p-' + id).value);
+  const sleutel = vzNorm(r.zoek || '');
+  if (!p || !sleutel) return;
+  _vzCorr[sleutel] = p.id;
+  syncSet('prime_spraak_correcties', _vzCorr);
+  r.geleerd = true;
+  r.klank = false;
+  r.origProductId = p.id;
+  vzTekenRegels();
+  try { showToast(t('food.voice.remembered', { from: r.zoek, to: dispName(p) })); } catch (e) { console.error(e); }
+}
+
+function vzVergeet(id) {
+  const r = _vzRegels.find(x => x.id === id);
+  if (!r) return;
+  delete _vzCorr[vzNorm(r.zoek || '')];
+  syncSet('prime_spraak_correcties', _vzCorr);
+  r.geleerd = false;
+  vzTekenRegels();
 }
