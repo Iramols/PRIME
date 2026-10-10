@@ -3325,7 +3325,7 @@ function vzLeesTekst(tekst) {
   t = t.replace(/[:!?]/g, ' ');
   const stukken = t.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
   const regels = [];
-  stukken.forEach(s => {
+  stukken.reduce((acc, s) => acc.concat(vzSplitsOpAantal(s)), []).forEach(s => {
     const r = vzLeesStuk(s);
     if (r.naam) regels.push({ bron: s, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid });
   });
@@ -3352,7 +3352,7 @@ function vzGram(regel, product) {
 // Regels van de tekst -> lijst met gevonden producten en hoeveelheden.
 function vzMaakLijst(tekst, producten) {
   const gelezen = vzLeesTekst(tekst);
-  const regels = gelezen.regels.map(r => {
+  const regels = vzSplitsRegels(gelezen.regels, producten).map(r => {
     let goed = null, geleerd = false, klank = false, algemeen = false, kiesSoort = false;
     let suggesties = [];
     // 1) een eerder onthouden correctie ("skeer" = Arla skyr) gaat voor
@@ -3740,4 +3740,65 @@ function vzVergeet(id) {
   syncSet('prime_spraak_correcties', _vzCorr);
   r.geleerd = false;
   vzTekenRegels();
+}
+
+
+// ----- Meerdere producten achter elkaar zonder "en" (dicteren zet zelden komma's) -----
+
+// Een nieuw getal of aantal ("200 gram", "twee", "een") na een productnaam begint een nieuw product:
+// "twee eieren een appel 200 gram kwark" -> "twee eieren" / "een appel" / "200 gram kwark".
+function vzSplitsOpAantal(stuk) {
+  const w = stuk.split(' ').filter(Boolean);
+  const delen = [];
+  let huidig = [];
+  let heeftNaam = false;
+  for (let i = 0; i < w.length; i++) {
+    const x = w[i];
+    const isGetal = /^\d+(\.\d+)?$/.test(x) || /^\d+(\.\d+)?(gram|gr|g|kg|kilo|ml|l|dl|cl)$/.test(x) ||
+      (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && ['half', 'halve', 'kwart', 'anderhalf', 'anderhalve', 'driekwart'].indexOf(x) === -1);
+    const isEenheid = !!vzEenheid(x);
+    if (isGetal && heeftNaam) { delen.push(huidig.join(' ')); huidig = []; heeftNaam = false; }
+    huidig.push(x);
+    if (!isGetal && !isEenheid && VZ_STOPWOORDEN.indexOf(x) === -1 && !Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x)) heeftNaam = true;
+  }
+  if (huidig.length) delen.push(huidig.join(' '));
+  return delen;
+}
+
+// Een regel waarvan de naam uit meerdere woorden bestaat die samen geen product zijn, maar
+// die wel volledig in herkenbare producten uit te splitsen zijn ("skyr aardbeien banaan"),
+// wordt in meerdere regels gesplitst. Het aantal blijft bij het eerste product.
+function vzSplitsRegels(regels, producten) {
+  const uit = [];
+  regels.forEach(r => {
+    const woorden = r.naam.split(' ').filter(Boolean);
+    if (woorden.length < 2 || woorden.length > 8) { uit.push(r); return; }
+    const heel = vzZoekProducten(r.naam, producten);
+    // Alleen een (bijna) volledige naam telt als "dit is al één product"; een product dat slechts in de tekst voorkomt niet.
+    if (_vzCorr[vzNorm(r.naam)] || (heel.length && heel[0].score >= 90)) { uit.push(r); return; }
+    const geldig = (gr) => {
+      const zin = gr.join(' ');
+      if (_vzCorr[vzNorm(zin)]) return true;
+      const tr = vzZoekProducten(zin, producten);
+      if (tr.length && tr[0].score >= (gr.length === 1 ? 70 : 85)) return true;
+      return gr.length === 1 && vzKlankKandidaten(zin, producten).length > 0;
+    };
+    // kleinste aantal groepen (van maximaal 3 woorden) waarmee alle woorden gedekt zijn
+    const n = woorden.length;
+    const beste = [0];
+    const vorige = [-1];
+    for (let i = 1; i <= n; i++) {
+      beste[i] = Infinity;
+      for (let l = 1; l <= 3 && l <= i; l++) {
+        if (beste[i - l] === Infinity) continue;
+        if (!geldig(woorden.slice(i - l, i))) continue;
+        if (beste[i - l] + 1 < beste[i] || (beste[i - l] + 1 === beste[i] && l > i - vorige[i])) { beste[i] = beste[i - l] + 1; vorige[i] = i - l; }
+      }
+    }
+    if (beste[n] === Infinity || beste[n] < 2) { uit.push(r); return; }
+    const groepen = [];
+    for (let i = n; i > 0; i = vorige[i]) groepen.unshift(woorden.slice(vorige[i], i).join(' '));
+    groepen.forEach((g, idx) => uit.push({ bron: r.bron, naam: g, aantal: idx === 0 ? r.aantal : null, eenheid: idx === 0 ? r.eenheid : null }));
+  });
+  return uit;
 }
