@@ -2673,7 +2673,6 @@ async function _bcDesktopLus(video, ms) {
       const resultaat = lezer.decode(new ZXing.BinaryBitmap(bin));
       if (resultaat) bcGevonden(resultaat.getText());
     } catch (e) { /* niets gevonden in dit beeld: volgende ronde */ }
-    if (tik === 50) _bcStatus(t('food.scan.noLuck'));
   }, ms);
 }
 
