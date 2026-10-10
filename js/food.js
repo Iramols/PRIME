@@ -3588,6 +3588,9 @@ function vzMicToggle() {
     const fout = ev && ev.error;
     if (fout === 'not-allowed' || fout === 'service-not-allowed') vzMicStatus(t('food.voice.micDenied'), true);
     else if (fout === 'no-speech') vzMicStatus(t('food.voice.micNone'), true);
+    else if (fout === 'audio-capture') vzMicStatus(t('food.voice.micNoDevice'), true);
+    else if (fout === 'network') vzMicStatus(t('food.voice.micNetwork'), true);
+    else if (fout === 'language-not-supported') vzMicStatus(t('food.voice.micLang'), true);
     else vzMicStatus(t('food.voice.micError', { fout: fout || '?' }), true);
     vzMicKnop(false);
   };
