@@ -3187,3 +3187,339 @@ function _bcTerugInfo() {
   if (_bcBron !== 'vandaag' && _bcBron !== 'week') return null;
   return { tab: _bcBron === 'week' ? 'week' : 'log', datum: currentLogDate, productId: null };
 }
+
+
+// ========== ETEN INTYPEN OF DICTEREN (alleen coach) ==========
+// De coach typt of dicteert (microfoon op het toetsenbord) wat er gegeten is. De tekst wordt
+// in regels gesplitst (product + hoeveelheid), de producten worden gezocht in PRIME, en de
+// coach controleert het lijstje voordat het als gepland in een dag komt. Alles gebeurt met
+// vaste regels op het toestel zelf; er wordt niets naar een externe dienst gestuurd.
+
+const VZ_GETALLEN = {
+  een: 1, 'één': 1, 'eén': 1, twee: 2, drie: 3, vier: 4, vijf: 5, zes: 6, zeven: 7, acht: 8, negen: 9, tien: 10,
+  elf: 11, twaalf: 12, anderhalf: 1.5, anderhalve: 1.5, half: 0.5, halve: 0.5, kwart: 0.25, driekwart: 0.75
+};
+// gram per eenheid; null = de portie van het product (of 100 g als dat ontbreekt)
+const VZ_EENHEDEN = {
+  gram: 1, g: 1, gr: 1, kilo: 1000, kg: 1000, ml: 1, milliliter: 1, liter: 1000, l: 1000, dl: 100, cl: 10,
+  glas: 200, glazen: 200, kopje: 150, kop: 150, mok: 250, beker: 250, bekertje: 150, schaaltje: 150, bakje: 150,
+  eetlepel: 15, el: 15, theelepel: 5, tl: 5, lepel: 15,
+  sneetje: 35, snee: 35, boterham: 35, plak: 20, plakje: 20, handje: 30, handvol: 30,
+  stuk: null, stuks: null, portie: null
+};
+const VZ_SNEE = ['sneetje', 'snee', 'boterham'];
+// veelgebruikte woorden naar de producten die in Nederland het vaakst bedoeld worden
+const VZ_ALIAS = {
+  ei: 'eieren', eitje: 'eieren', eitjes: 'eieren', boterham: 'volkoren brood', brood: 'volkoren brood',
+  melk: 'halfvolle melk', yoghurt: 'yoghurt (halfvol)', kaas: 'kaas 45+', 'griekse yoghurt': 'griekse yoghurt (0%)',
+  rijst: 'witte rijst (gekookt)', pasta: 'pasta (gekookt)', aardappel: 'aardappel (gekookt)', aardappelen: 'aardappel (gekookt)',
+  noten: 'walnoten', whey: 'eiwitpoeder (whey)', eiwitpoeder: 'eiwitpoeder (whey)', chocolade: 'pure chocolade'
+};
+const VZ_STOPWOORDEN = ['de', 'het', 'een', 'van', 'wat', 'paar', 'wel', 'ook', 'nog', 'dan', 'toen', 'zo', 'zon', 'ongeveer', 'ca', 'circa', 'beetje'];
+const VZ_VULWOORDEN = /\b(ik|heb|had|hebben|gegeten|gedronken|genomen|vandaag|gisteren|zojuist|net|eerst|daarna|vanochtend|vanmiddag|vanavond|als|voor|bij|tijdens|mijn|ik)\b/g;
+
+function vzNorm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9+%.\s]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// grove stam: eieren -> eier, boterhammen -> boterham, kaasjes -> kaas
+function vzStam(w) {
+  let x = w;
+  if (x.length > 5 && /(tjes|jes)$/.test(x)) x = x.replace(/(tjes|jes)$/, '');
+  else if (x.length > 4 && /en$/.test(x)) x = x.slice(0, -2);
+  else if (x.length > 3 && /s$/.test(x)) x = x.slice(0, -1);
+  return x;
+}
+function vzAfstand(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return 2;
+  const d = [];
+  for (let i = 0; i <= a.length; i++) { d[i] = [i]; }
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+function vzEenheid(woord) {
+  if (Object.prototype.hasOwnProperty.call(VZ_EENHEDEN, woord)) return woord;
+  const kandidaten = [woord.replace(/([a-z])\1en$/, '$1'), woord.replace(/en$/, ''),woord.replace(/s$/, ''), woord.replace(/jes$/, 'je'), woord.replace(/tjes$/, 'tje'), woord.replace(/ammen$/, 'am')];
+  for (const k of kandidaten) if (Object.prototype.hasOwnProperty.call(VZ_EENHEDEN, k)) return k;
+  return null;
+}
+
+// Score hoe goed de gevraagde naam bij een product past (0-100).
+function vzScore(vraag, product) {
+  const q = vzNorm(vraag);
+  if (!q) return 0;
+  const alias = VZ_ALIAS[q] || VZ_ALIAS[vzStam(q)];
+  const namen = [product.name, product.name_en].filter(Boolean);
+  let beste = 0;
+  for (const n of namen) {
+    const volledig = vzNorm(n);
+    if (volledig === q) beste = Math.max(beste, 100);
+    if (alias && (vzNorm(n) === vzNorm(alias) || String(n).toLowerCase() === alias)) beste = Math.max(beste, 95);
+    const T = volledig.split(' ').filter(Boolean).map(vzStam);
+    const Q = q.split(' ').filter(Boolean).map(vzStam);
+    let treffers = 0, voorvoegsel = 0, samengesteld = 0;
+    Q.forEach(w => {
+      if (T.indexOf(w) !== -1) treffers++;
+      else if (w.length >= 3 && T.some(t => t.indexOf(w) === 0)) voorvoegsel++; // kip -> kipfilet
+      else if (w.length >= 5 && T.some(t => t.length >= 5 && vzAfstand(w, t) <= 1)) voorvoegsel++; // kwarg -> kwark
+      else if (T.some(t => t.length >= 4 && w.indexOf(t) === 0)) samengesteld++; // sinaasappelsap is niet sinaasappel
+    });
+    const alle = treffers + voorvoegsel;
+    if (alle + samengesteld === Q.length) {
+      // een samengesteld woord (sinaasappelsap) komt alleen als suggestie, niet als automatische keuze
+      beste = Math.max(beste, samengesteld ? 48 : 90 - 5 * Math.max(0, T.length - Q.length) - 6 * voorvoegsel);
+    } else if (alle > 0) beste = Math.max(beste, Math.round(40 * alle / Q.length));
+  }
+  return beste;
+}
+
+function vzZoekProducten(naam, lijst) {
+  return lijst.map(p => ({ p: p, score: vzScore(naam, p) })).filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.p.name.length - b.p.name.length);
+}
+
+// Eén stukje tekst (bijv. "twee sneetjes volkoren brood") -> { naam, aantal, eenheid }
+function vzLeesStuk(stuk) {
+  const woorden = stuk.split(' ').filter(Boolean);
+  let aantal = null, eenheid = null;
+  const naam = [];
+  for (let i = 0; i < woorden.length; i++) {
+    const w = woorden[i];
+    const plakt = /^(\d+(?:\.\d+)?)(gram|gr|g|kg|kilo|ml|l|dl|cl)$/.exec(w);
+    if (plakt) { aantal = parseFloat(plakt[1]); eenheid = vzEenheid(plakt[2]); continue; }
+    if (/^\d+(\.\d+)?$/.test(w)) { aantal = parseFloat(w); continue; }
+    if (w === 'een' && (woorden[i + 1] === 'half' || woorden[i + 1] === 'halve')) { aantal = 0.5; i++; continue; }
+    if (w === 'een' && woorden[i + 1] === 'paar') { aantal = 2; i++; continue; }
+    if (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, w)) { if (aantal === null || w !== 'een') aantal = VZ_GETALLEN[w]; continue; }
+    const e = vzEenheid(w);
+    if (e && eenheid === null && !(e === 'g' && w.length === 1 && naam.length === 0 && aantal === null)) { eenheid = e; if (VZ_SNEE.indexOf(e) !== -1 && w === 'boterham' || /^boterhammen$/.test(w)) naam.push('brood'); continue; }
+    if (VZ_STOPWOORDEN.indexOf(w) !== -1) continue;
+    naam.push(w);
+  }
+  if (!naam.length && eenheid && VZ_SNEE.indexOf(eenheid) !== -1) naam.push('brood');
+  return { naam: naam.join(' ').trim(), aantal: aantal, eenheid: eenheid };
+}
+
+// Hele tekst -> { moment, regels: [{bron, naam, aantal, eenheid}] }
+function vzLeesTekst(tekst) {
+  let t = String(tekst || '').toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/\s+/g, ' ');
+  let moment = null;
+  if (/ontbijt/.test(t)) moment = 'ontbijt';
+  else if (/lunch/.test(t)) moment = 'lunch';
+  else if (/avondeten|diner|avondmaal|avondmaaltijd/.test(t)) moment = 'avond';
+  else if (/tussendoor|snack/.test(t)) moment = 'tussendoorMiddag';
+  t = t.replace(/\b(het |mijn )?(ontbijt|lunch|avondeten|diner|avondmaal|avondmaaltijd|tussendoortje|tussendoor|snack)\b/g, ' ');
+  t = t.replace(VZ_VULWOORDEN, ' ');
+  t = t.replace(/[:!?]/g, ' ');
+  const stukken = t.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const regels = [];
+  stukken.forEach(s => {
+    const r = vzLeesStuk(s);
+    if (r.naam) regels.push({ bron: s, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid });
+  });
+  return { moment: moment, regels: regels };
+}
+
+// Hoeveelheid in gram: gram/ml/maat uit de tekst, of de portie van het product. geschat = true
+// als het een aanname is die de coach moet nalopen.
+function vzGram(regel, product) {
+  const n = regel.aantal === null ? 1 : regel.aantal;
+  const e = regel.eenheid;
+  const portie = product && product.portie && product.portie.gram;
+  if (e && VZ_EENHEDEN[e] !== null && VZ_EENHEDEN[e] !== undefined) {
+    // een sneetje/boterham: de portie van het product gaat voor als die er is
+    if (VZ_SNEE.indexOf(e) !== -1 && portie) return { gram: Math.round(n * portie), geschat: false };
+    return { gram: Math.round(n * VZ_EENHEDEN[e]), geschat: ['gram', 'g', 'gr', 'kilo', 'kg', 'ml', 'milliliter', 'liter', 'l', 'dl', 'cl'].indexOf(e) === -1 };
+  }
+  if (portie) return { gram: Math.round(n * portie), geschat: false };
+  // Geen maat en geen portie bekend: 100 g als voorstel (geen n x 100, "tien amandelen" is geen kilo).
+  return { gram: 100, geschat: true };
+}
+
+// Regels van de tekst -> lijst met gevonden producten en hoeveelheden.
+function vzMaakLijst(tekst, producten) {
+  const gelezen = vzLeesTekst(tekst);
+  const regels = gelezen.regels.map(r => {
+    const treffers = vzZoekProducten(r.naam, producten);
+    const goed = treffers.length && treffers[0].score >= 55 ? treffers[0] : null;
+    const g = vzGram(r, goed ? goed.p : null);
+    return {
+      bron: r.bron,
+      zoek: r.naam,
+      productId: goed ? goed.p.id : '',
+      gram: g.gram,
+      geschat: g.geschat,
+      onbekend: !goed,
+      suggesties: treffers.slice(0, 4).map(x => x.p.id)
+    };
+  });
+  return { moment: gelezen.moment, regels: regels };
+}
+
+
+// ----- Scherm: typen of dicteren, lijstje controleren, toevoegen -----
+let _vzBron = 'vandaag'; // 'vandaag' | 'week'
+let _vzVorigeDatum = null;
+let _vzRegels = [];
+
+// "Mijn dag": de dag die nu open staat (meestal vandaag).
+function spraakVandaag() {
+  if (!isPrimeCoach()) return;
+  _vzVorigeDatum = null;
+  _portionReturnTab = 'log';
+  openSpraak('vandaag');
+}
+
+// Weekplanning: de gekozen dag staat als voorinstelling klaar.
+function spraakVoorDag(dateStr) {
+  if (!isPrimeCoach()) return;
+  _vzVorigeDatum = currentLogDate;
+  _portionReturnTab = 'week';
+  switchLogDate(dateStr);
+  openSpraak('week');
+}
+
+function openSpraak(bron) {
+  _vzBron = bron;
+  _vzRegels = [];
+  document.getElementById('vz-producten').innerHTML = getAllProducts().map(p => '<option value="' + escapeHtml(dispName(p)) + '"></option>').join('');
+  document.getElementById('vz-tekst').value = '';
+  document.getElementById('vz-fout').textContent = '';
+  document.getElementById('vz-invoer').style.display = 'block';
+  document.getElementById('vz-resultaat').style.display = 'none';
+  document.getElementById('voice-modal').classList.add('open');
+  setTimeout(() => { try { document.getElementById('vz-tekst').focus(); } catch (e) { /* geen focus */ } }, 150);
+}
+
+// klaar = true na een geslaagde toevoeging; anders (annuleren) zetten we dag en tabblad terug.
+function sluitSpraak(klaar) {
+  document.getElementById('voice-modal').classList.remove('open');
+  if (!klaar) {
+    _portionReturnTab = null;
+    if (_vzVorigeDatum && _vzVorigeDatum !== currentLogDate) switchLogDate(_vzVorigeDatum);
+  }
+  _vzVorigeDatum = null;
+}
+
+// Zoekt een product op de naam zoals die in het veld staat (exacte naam, hoofdletters maken niet uit).
+function vzProductBijNaam(naam) {
+  const n = String(naam || '').trim().toLowerCase();
+  if (!n) return null;
+  return getAllProducts().find(p => [p.name, p.name_en, dispName(p)].some(x => x && String(x).trim().toLowerCase() === n)) || null;
+}
+
+function vzHerken() {
+  const fout = document.getElementById('vz-fout');
+  fout.textContent = '';
+  const tekst = document.getElementById('vz-tekst').value.trim();
+  if (!tekst) { fout.textContent = t('food.voice.empty'); return; }
+  const lijst = vzMaakLijst(tekst, getAllProducts());
+  if (!lijst.regels.length) { fout.textContent = t('food.voice.nothing'); return; }
+  _vzRegels = lijst.regels.map((r, i) => Object.assign({ id: i, weg: false }, r));
+  document.getElementById('vz-invoer').style.display = 'none';
+  document.getElementById('vz-resultaat').style.display = 'block';
+  document.getElementById('vz-moment').value = lijst.moment || 'ontbijt';
+  document.getElementById('vz-datum').value = _vzBron === 'week' ? currentLogDate : fdTodayStr();
+  vzTekenRegels();
+}
+
+function vzTekenRegels() {
+  const stijl = 'padding:8px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;font-family:inherit;background:var(--white);box-sizing:border-box';
+  document.getElementById('vz-regels').innerHTML = _vzRegels.map(r => {
+    if (r.weg) return '';
+    const p = r.productId ? getAllProducts().find(x => x.id === r.productId) : null;
+    const naam = p ? dispName(p) : '';
+    const sugg = (r.suggesties || []).map(id => getAllProducts().find(x => x.id === id)).filter(Boolean)
+      .filter(x => !p || x.id !== p.id).slice(0, 3);
+    return '<div style="border:1px solid var(--sand-dark);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--white)">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">' +
+        '<div style="font-size:11px;color:var(--muted)">' + (r.bron ? '“' + escapeHtml(r.bron) + '”' : '') +
+          (r.onbekend && !naam ? ' · <span style="color:#c0392b;font-weight:600">' + t('food.voice.unknown') + '</span>' : '') +
+          (r.geschat ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.guess') + '</span>' : '') + '</div>' +
+        '<button onclick="vzVerwijder(' + r.id + ')" aria-label="' + t('common.delete') + '" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<input type="text" list="vz-producten" id="vz-p-' + r.id + '" value="' + escapeHtml(naam) + '" placeholder="' + t('food.voice.choose') + '" oninput="vzPreview()" style="flex:1;min-width:0;' + stijl + '">' +
+        '<input type="number" id="vz-g-' + r.id + '" value="' + r.gram + '" min="1" step="1" oninput="vzPreview()" style="width:76px;' + stijl + '"><span style="font-size:12px;color:var(--muted)">g</span>' +
+      '</div>' +
+      (sugg.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center"><span style="font-size:11px;color:var(--muted)">' + t('food.voice.suggest') + '</span>' +
+        sugg.map(x => '<button class="cat-tab" onclick="vzKies(' + r.id + ',\'' + x.id + '\')">' + escapeHtml(dispName(x)) + '</button>').join('') + '</div>' : '') +
+      '<div id="vz-pv-' + r.id + '" style="font-size:11px;color:var(--muted);margin-top:6px"></div>' +
+    '</div>';
+  }).join('');
+  vzPreview();
+}
+
+function vzKies(id, productId) {
+  const r = _vzRegels.find(x => x.id === id);
+  if (!r) return;
+  r.productId = productId;
+  r.onbekend = false;
+  const p = getAllProducts().find(x => x.id === productId);
+  const el = document.getElementById('vz-p-' + id);
+  if (el && p) el.value = dispName(p);
+  vzPreview();
+}
+
+function vzVerwijder(id) {
+  const r = _vzRegels.find(x => x.id === id);
+  if (r) r.weg = true;
+  vzTekenRegels();
+}
+
+function vzRegelToevoegen() {
+  _vzRegels.push({ id: _vzRegels.length ? Math.max.apply(null, _vzRegels.map(r => r.id)) + 1 : 0, weg: false, bron: '', zoek: '', productId: '', gram: 100, geschat: false, onbekend: true, suggesties: [] });
+  vzTekenRegels();
+}
+
+// Per regel en in totaal laten zien wat de hoeveelheid oplevert.
+function vzPreview() {
+  let kcal = 0, prot = 0, carb = 0, fat = 0;
+  _vzRegels.forEach(r => {
+    if (r.weg) return;
+    const pe = document.getElementById('vz-pv-' + r.id);
+    if (!pe) return;
+    const p = vzProductBijNaam(document.getElementById('vz-p-' + r.id).value);
+    const gram = parseFloat(document.getElementById('vz-g-' + r.id).value) || 0;
+    if (!p) { pe.textContent = ''; return; }
+    const f = gram / 100;
+    const k = Math.round(p.kcal * f), e = Math.round(p.prot * f * 10) / 10, c = Math.round(p.carb * f * 10) / 10, v = Math.round(p.fat * f * 10) / 10;
+    kcal += k; prot += e; carb += c; fat += v;
+    pe.textContent = '= ' + k + ' kcal · ' + t('portion.protein') + ' ' + e + ' g · ' + t('portion.carbs') + ' ' + c + ' g · ' + t('portion.fat') + ' ' + v + ' g';
+  });
+  const tot = document.getElementById('vz-totaal');
+  if (tot) tot.textContent = t('food.voice.total') + ': ' + Math.round(kcal) + ' kcal · ' + t('portion.protein') + ' ' + (Math.round(prot * 10) / 10) + ' g · ' + t('portion.carbs') + ' ' + (Math.round(carb * 10) / 10) + ' g · ' + t('portion.fat') + ' ' + (Math.round(fat * 10) / 10) + ' g';
+}
+
+function vzOpnieuw() {
+  document.getElementById('vz-invoer').style.display = 'block';
+  document.getElementById('vz-resultaat').style.display = 'none';
+  document.getElementById('vz-fout').textContent = '';
+}
+
+// Zet de gecontroleerde regels als gepland (niet afgevinkt) in de gekozen dag.
+function vzToevoegen() {
+  const fout = document.getElementById('vz-fout2');
+  fout.textContent = '';
+  const actief = _vzRegels.filter(r => !r.weg);
+  if (!actief.length) { fout.textContent = t('food.voice.nothing'); return; }
+  const klaar = [];
+  for (const r of actief) {
+    const p = vzProductBijNaam(document.getElementById('vz-p-' + r.id).value);
+    const gram = parseFloat(document.getElementById('vz-g-' + r.id).value);
+    if (!p) { fout.textContent = t('food.voice.chooseAll'); return; }
+    if (!(gram > 0)) { fout.textContent = t('food.scan.gramInvalid'); return; }
+    klaar.push({ p: p, gram: gram });
+  }
+  const moment = document.getElementById('vz-moment').value;
+  const datum = document.getElementById('vz-datum').value;
+  if (!datum) { fout.textContent = t('food.scan.dayRequired'); return; }
+  if (isDagAfgesloten(datum)) { alert(t('weekplan.dayLocked')); return; }
+  klaar.forEach(x => bcLogItem(x.p, x.gram, moment, datum));
+  const bron = _vzBron;
+  sluitSpraak(true);
+  _portionReturnTab = null;
+  switchFoodTab(bron === 'week' ? 'week' : 'log');
+  try { showToast(t('food.voice.added', { n: klaar.length, date: formatPickerDateLabel(datum) })); } catch (e) { console.error(e); }
+}

@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261010-1342';
+window.PRIME_BUILD = '20261010-1420';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261010-1342">
+<link rel="stylesheet" href="css/styles.css?v=20261010-1420">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261010-1342"></script>
-<script src="js/translations.js?v=20261010-1342"></script>
-<script src="js/i18n.js?v=20261010-1342"></script>
+<script src="js/cloud.js?v=20261010-1420"></script>
+<script src="js/translations.js?v=20261010-1420"></script>
+<script src="js/i18n.js?v=20261010-1420"></script>
 </head>
 <body>
 
@@ -735,7 +735,10 @@ if ('serviceWorker' in navigator) {
         <div id="day-log-empty-addrow" style="display:flex;gap:8px">
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
-          <button class="btn-sm coach-only-btn food-scan-btn" style="flex:1;display:none" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
+        </div>
+        <div class="food-coach-row food-scan-btn" style="display:none">
+          <button class="btn-sm coach-only-btn" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
+          <button class="btn-sm coach-only-btn" onclick="spraakVandaag()">✍️ <span data-i18n="food.voice.btn">Typ/dicteer</span></button>
         </div>
       </div>
       <div id="day-log-list"></div>
@@ -746,7 +749,10 @@ if ('serviceWorker' in navigator) {
         <div id="day-log-totals-addrow" style="display:flex;gap:8px;margin-top:14px">
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
-          <button class="btn-sm coach-only-btn food-scan-btn" style="flex:1;display:none" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
+        </div>
+        <div class="food-coach-row food-scan-btn" style="display:none">
+          <button class="btn-sm coach-only-btn" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
+          <button class="btn-sm coach-only-btn" onclick="spraakVandaag()">✍️ <span data-i18n="food.voice.btn">Typ/dicteer</span></button>
         </div>
         <button class="btn-sm" style="width:100%;margin-top:8px" onclick="fwOpenCopyModal(currentLogDate)" data-i18n="foodweek.copy.button">📋 Kopieer maaltijden van deze dag</button>
         <button id="day-log-clear-btn" class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
@@ -1341,6 +1347,49 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- PORTION MODAL -->
+<div class="portion-modal-wrap" id="voice-modal">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div class="portion-product-name" data-i18n="food.voice.title">Wat heb je gegeten?</div>
+      <button onclick="sluitSpraak()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <datalist id="vz-producten"></datalist>
+    <div id="vz-invoer">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-i18n="food.voice.hint">Typ, of tik op de microfoon op je toetsenbord om te dicteren. Je controleert het lijstje daarna.</div>
+      <textarea id="vz-tekst" rows="4" lang="nl" data-i18n-placeholder="food.voice.placeholder" placeholder="Bijv. twee sneetjes volkoren brood met kaas, een appel en 200 gram kwark" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:10px;resize:vertical"></textarea>
+      <div id="vz-fout" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="vzHerken()" data-i18n="food.voice.read">Herkennen</button>
+        <button class="btn-sm" onclick="sluitSpraak()" data-i18n="food.addMeal.cancel">Annuleren</button>
+      </div>
+    </div>
+    <div id="vz-resultaat" style="display:none">
+      <div id="vz-regels"></div>
+      <button class="btn-sm" style="width:100%;margin-bottom:12px" onclick="vzRegelToevoegen()" data-i18n="food.voice.addRow">+ Regel toevoegen</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <label style="font-size:11px;color:var(--muted)"><span data-i18n="food.scan.moment">Moment</span>
+          <select id="vz-moment" style="width:100%;padding:9px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;font-family:inherit;background:var(--white);box-sizing:border-box">
+            <option value="ontbijt" data-i18n="moment.ontbijt">Ontbijt</option>
+            <option value="tussendoorOchtend" data-i18n="moment.tussendoorOchtend">Ochtendtussendoortje</option>
+            <option value="lunch" data-i18n="moment.lunch">Lunch</option>
+            <option value="tussendoorMiddag" data-i18n="moment.tussendoorMiddag">Middagtussendoortje</option>
+            <option value="avond" data-i18n="moment.avond">Avond</option>
+            <option value="tussendoorAvond" data-i18n="moment.tussendoorAvond">Avondtussendoortje</option>
+          </select></label>
+        <label style="font-size:11px;color:var(--muted)"><span data-i18n="food.voice.day">Dag</span>
+          <span class="date-icon-wrap"><input type="date" id="vz-datum" style="width:100%;padding:9px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;font-family:inherit;background:var(--white);box-sizing:border-box"><span class="date-icon" aria-hidden="true">📅</span></span></label>
+      </div>
+      <div id="vz-totaal" style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:10px"></div>
+      <div id="vz-fout2" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="vzToevoegen()" data-i18n="food.voice.add">Toevoegen aan de dag</button>
+        <button class="btn-sm" onclick="vzOpnieuw()" data-i18n="food.voice.again">Opnieuw invoeren</button>
+        <button class="btn-sm" onclick="sluitSpraak()" data-i18n="food.addMeal.cancel">Annuleren</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="portion-modal-wrap" id="barcode-modal">
   <div class="portion-modal">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -1675,6 +1724,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261010-1342"></script>
+<script src="js/auth.js?v=20261010-1420"></script>
 </body>
 </html>
