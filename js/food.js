@@ -3218,6 +3218,17 @@ const VZ_ALIAS = {
 const VZ_STOPWOORDEN = ['de', 'het', 'een', 'van', 'wat', 'paar', 'wel', 'ook', 'nog', 'dan', 'toen', 'zo', 'zon', 'ongeveer', 'ca', 'circa', 'beetje'];
 const VZ_VULWOORDEN = /\b(ik|heb|had|hebben|gegeten|gedronken|genomen|vandaag|gisteren|zojuist|net|eerst|daarna|vanochtend|vanmiddag|vanavond|als|voor|bij|tijdens|mijn|ik)\b/g;
 
+// Woorden voor momenten, op volgorde van "specifiek" naar "algemeen" (per regel een eigen groep).
+const VZ_MOMENTEN = [
+  ['tussendoorOchtend', '(?:ochtend|morgen)\\s?(?:tussendoortjes?|tussendoor|snacks?)|tussendoortjes?\\s+(?:in de|van de)\\s+ochtend'],
+  ['tussendoorMiddag', 'middag\\s?(?:tussendoortjes?|tussendoor|snacks?)|tussendoortjes?\\s+(?:in de|van de)\\s+middag'],
+  ['tussendoorAvond', 'avond\\s?(?:tussendoortjes?|tussendoor|snacks?)|tussendoortjes?\\s+(?:in de|van de)\\s+avond|late snack|nachtsnack'],
+  ['tussendoorMiddag', 'tussendoortjes?|tussendoor|snacks?'],
+  ['ontbijt', "ontbijt|'?s ochtends|ochtends|vanochtend|vanmorgen|ochtend"],
+  ['lunch', "lunch|'?s middags|middags|vanmiddag|middag"],
+  ['avond', "avondeten|avondmaaltijd|avondmaal|diner|'?s avonds|avonds|vanavond|avond"]
+];
+
 function vzNorm(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9+%.\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -3314,22 +3325,34 @@ function vzLeesStuk(stuk) {
 
 // Hele tekst -> { moment, regels: [{bron, naam, aantal, eenheid}] }
 function vzLeesTekst(tekst) {
-  let t = String(tekst || '').toLowerCase().replace(/(\d),(\d)/g, '$1.$2').replace(/\s+/g, ' ');
-  let moment = null;
-  if (/ontbijt/.test(t)) moment = 'ontbijt';
-  else if (/lunch/.test(t)) moment = 'lunch';
-  else if (/avondeten|diner|avondmaal|avondmaaltijd/.test(t)) moment = 'avond';
-  else if (/tussendoor|snack/.test(t)) moment = 'tussendoorMiddag';
-  t = t.replace(/\b(het |mijn )?(ontbijt|lunch|avondeten|diner|avondmaal|avondmaaltijd|tussendoortje|tussendoor|snack)\b/g, ' ');
-  t = t.replace(VZ_VULWOORDEN, ' ');
-  t = t.replace(/[:!?]/g, ' ');
-  const stukken = t.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const t = String(tekst || '').toLowerCase().replace(/[\u2018\u2019]/g, "'").replace(/(\d),(\d)/g, '$1.$2').replace(/\s+/g, ' ');
+  // Momenten ("ontbijt", "'s avonds", "vanochtend", "avondtussendoortje"): wat erna komt hoort bij dat
+  // moment, tot het volgende moment genoemd wordt. Zo kun je een hele dag in één keer inspreken.
+  const marks = [];
+  const re = new RegExp('(?:(?:als|voor|bij|tijdens|in|van|na)\\s+(?:de|het|mijn)?\\s*)?(?:' + VZ_MOMENTEN.map(x => '(' + x[1] + ')').join('|') + ')', 'g');
+  let m;
+  while ((m = re.exec(t))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    const vooraan = t.charAt(m.index - 1), achteraan = t.charAt(m.index + m[0].length);
+    if ((vooraan && /[a-z]/.test(vooraan)) || (achteraan && /[a-z]/.test(achteraan))) continue;
+    const gi = m.slice(1).findIndex(x => x !== undefined);
+    if (gi >= 0) marks.push({ start: m.index, end: m.index + m[0].length, moment: VZ_MOMENTEN[gi][0] });
+  }
+  const stukken = [];
+  let pos = 0, huidig = null;
+  marks.forEach(k => { stukken.push({ tekst: t.slice(pos, k.start), moment: huidig }); pos = k.end; huidig = k.moment; });
+  stukken.push({ tekst: t.slice(pos), moment: huidig });
+
   const regels = [];
-  stukken.reduce((acc, s) => acc.concat(vzSplitsOpAantal(s)), []).forEach(s => {
-    const r = vzLeesStuk(s);
-    if (r.naam) regels.push({ bron: s, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid });
+  stukken.forEach(ch => {
+    const c = ch.tekst.replace(VZ_VULWOORDEN, ' ').replace(/[:!?]/g, ' ');
+    const delen = c.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+    delen.reduce((acc, s) => acc.concat(vzSplitsOpAantal(s)), []).forEach(s => {
+      const r = vzLeesStuk(s);
+      if (r.naam) regels.push({ bron: s, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: ch.moment });
+    });
   });
-  return { moment: moment, regels: regels };
+  return { moment: marks.length ? marks[0].moment : null, regels: regels };
 }
 
 // Hoeveelheid in gram: gram/ml/maat uit de tekst, of de portie van het product. geschat = true
@@ -3391,6 +3414,7 @@ function vzMaakLijst(tekst, producten) {
       origProductId: goed ? goed.p.id : '',
       gram: g.gram,
       geschat: g.geschat,
+      moment: r.moment || null,
       onbekend: !goed && !kiesSoort,
       kiesSoort: kiesSoort,
       algemeen: algemeen,
@@ -3468,7 +3492,9 @@ function vzHerken() {
   _vzRegels = lijst.regels.map((r, i) => Object.assign({ id: i, weg: false }, r));
   document.getElementById('vz-invoer').style.display = 'none';
   document.getElementById('vz-resultaat').style.display = 'block';
-  document.getElementById('vz-moment').value = lijst.moment || 'ontbijt';
+  const standaardMoment = lijst.moment || 'ontbijt';
+  document.getElementById('vz-moment').value = standaardMoment;
+  _vzRegels.forEach(r => { if (!r.moment) r.moment = standaardMoment; });
   document.getElementById('vz-datum').value = _vzBron === 'week' ? currentLogDate : fdTodayStr();
   vzTekenRegels();
 }
@@ -3498,6 +3524,7 @@ function vzTekenRegels() {
       '</div>' +
       (sugg.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center"><span style="font-size:11px;color:var(--muted)">' + (r.kiesSoort ? t('food.voice.pick') : t('food.voice.suggest')) + '</span>' +
         sugg.map(x => '<button class="cat-tab" onclick="vzKies(' + r.id + ',\'' + x.id + '\')">' + escapeHtml(dispName(x)) + '</button>').join('') + '</div>' : '') +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--muted)">' + t('food.scan.moment') + '</span><select id="vz-m-' + r.id + '" onchange="vzMomentRegel(' + r.id + ')" style="flex:1;' + stijl + '">' + VZ_MOMENT_LIJST.map(mm => '<option value="' + mm + '"' + (mm === r.moment ? ' selected' : '') + '>' + t('moment.' + mm) + '</option>').join('') + '</select></div>' +
       '<div id="vz-o-' + r.id + '" style="display:none;margin-top:6px"></div>' +
       '<div id="vz-pv-' + r.id + '" style="font-size:11px;color:var(--muted);margin-top:6px"></div>' +
     '</div>';
@@ -3574,13 +3601,12 @@ function vzToevoegen() {
     const gram = parseFloat(document.getElementById('vz-g-' + r.id).value);
     if (!p) { fout.textContent = t('food.voice.chooseAll'); return; }
     if (!(gram > 0)) { fout.textContent = t('food.scan.gramInvalid'); return; }
-    klaar.push({ p: p, gram: gram });
+    klaar.push({ p: p, gram: gram, moment: document.getElementById('vz-m-' + r.id).value });
   }
-  const moment = document.getElementById('vz-moment').value;
   const datum = document.getElementById('vz-datum').value;
   if (!datum) { fout.textContent = t('food.scan.dayRequired'); return; }
   if (isDagAfgesloten(datum)) { alert(t('weekplan.dayLocked')); return; }
-  klaar.forEach(x => bcLogItem(x.p, x.gram, moment, datum));
+  klaar.forEach(x => bcLogItem(x.p, x.gram, x.moment, datum));
   const bron = _vzBron;
   sluitSpraak(true);
   _portionReturnTab = null;
@@ -3783,22 +3809,47 @@ function vzSplitsRegels(regels, producten) {
       if (tr.length && tr[0].score >= (gr.length === 1 ? 70 : 85)) return true;
       return gr.length === 1 && vzKlankKandidaten(zin, producten).length > 0;
     };
-    // kleinste aantal groepen (van maximaal 3 woorden) waarmee alle woorden gedekt zijn
+    // Zo weinig mogelijk groepen (van maximaal 3 woorden) die alle woorden dekken. Een herkenbaar product
+    // kost 1, een los onbekend woord (koffie) kost 2. Gesplitst wordt alleen als er minstens twee
+    // herkenbare producten in zitten ("skyr banaan koffie"), niet bij "magere kwark" of "sinaasappel sap".
     const n = woorden.length;
     const beste = [0];
     const vorige = [-1];
+    const geldigHier = [true];
     for (let i = 1; i <= n; i++) {
       beste[i] = Infinity;
       for (let l = 1; l <= 3 && l <= i; l++) {
         if (beste[i - l] === Infinity) continue;
-        if (!geldig(woorden.slice(i - l, i))) continue;
-        if (beste[i - l] + 1 < beste[i] || (beste[i - l] + 1 === beste[i] && l > i - vorige[i])) { beste[i] = beste[i - l] + 1; vorige[i] = i - l; }
+        const ok = geldig(woorden.slice(i - l, i));
+        if (!ok && l > 1) continue;
+        const kosten = beste[i - l] + (ok ? 1 : 2);
+        if (kosten < beste[i] || (kosten === beste[i] && l > i - vorige[i])) { beste[i] = kosten; vorige[i] = i - l; geldigHier[i] = ok; }
       }
     }
-    if (beste[n] === Infinity || beste[n] < 2) { uit.push(r); return; }
     const groepen = [];
-    for (let i = n; i > 0; i = vorige[i]) groepen.unshift(woorden.slice(vorige[i], i).join(' '));
-    groepen.forEach((g, idx) => uit.push({ bron: r.bron, naam: g, aantal: idx === 0 ? r.aantal : null, eenheid: idx === 0 ? r.eenheid : null }));
+    let herkend = 0;
+    for (let i = n; i > 0; i = vorige[i]) { groepen.unshift(woorden.slice(vorige[i], i).join(' ')); if (geldigHier[i]) herkend++; }
+    if (beste[n] === Infinity || groepen.length < 2 || herkend < 2) { uit.push(r); return; }
+    groepen.forEach((g, idx) => uit.push({ bron: r.bron, naam: g, aantal: idx === 0 ? r.aantal : null, eenheid: idx === 0 ? r.eenheid : null, moment: r.moment }));
   });
   return uit;
+}
+
+
+// Moment per regel: de gekozen of herkende maaltijd. Het moment onderaan geldt voor alle regels.
+const VZ_MOMENT_LIJST = ['ontbijt', 'tussendoorOchtend', 'lunch', 'tussendoorMiddag', 'avond', 'tussendoorAvond'];
+
+function vzMomentRegel(id) {
+  const r = _vzRegels.find(x => x.id === id);
+  const el = document.getElementById('vz-m-' + id);
+  if (r && el) r.moment = el.value;
+}
+
+function vzMomentAlle() {
+  const waarde = document.getElementById('vz-moment').value;
+  _vzRegels.forEach(r => {
+    r.moment = waarde;
+    const el = document.getElementById('vz-m-' + r.id);
+    if (el) el.value = waarde;
+  });
 }

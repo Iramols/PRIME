@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261010-1613';
+window.PRIME_BUILD = '20261010-1619';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261010-1613">
+<link rel="stylesheet" href="css/styles.css?v=20261010-1619">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261010-1613"></script>
-<script src="js/translations.js?v=20261010-1613"></script>
-<script src="js/i18n.js?v=20261010-1613"></script>
+<script src="js/cloud.js?v=20261010-1619"></script>
+<script src="js/translations.js?v=20261010-1619"></script>
+<script src="js/i18n.js?v=20261010-1619"></script>
 </head>
 <body>
 
@@ -1372,8 +1372,8 @@ if ('serviceWorker' in navigator) {
       <div id="vz-regels"></div>
       <button class="btn-sm" style="width:100%;margin-bottom:12px" onclick="vzRegelToevoegen()" data-i18n="food.voice.addRow">+ Regel toevoegen</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-        <label style="font-size:11px;color:var(--muted)"><span data-i18n="food.scan.moment">Moment</span>
-          <select id="vz-moment" style="width:100%;padding:9px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;font-family:inherit;background:var(--white);box-sizing:border-box">
+        <label style="font-size:11px;color:var(--muted)"><span data-i18n="food.voice.momentAll">Moment (alle regels)</span>
+          <select id="vz-moment" onchange="vzMomentAlle()" style="width:100%;padding:9px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;font-family:inherit;background:var(--white);box-sizing:border-box">
             <option value="ontbijt" data-i18n="moment.ontbijt">Ontbijt</option>
             <option value="tussendoorOchtend" data-i18n="moment.tussendoorOchtend">Ochtendtussendoortje</option>
             <option value="lunch" data-i18n="moment.lunch">Lunch</option>
@@ -1729,6 +1729,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261010-1613"></script>
+<script src="js/auth.js?v=20261010-1619"></script>
 </body>
 </html>
