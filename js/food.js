@@ -3229,6 +3229,34 @@ const VZ_MOMENTEN = [
   ['avond', "avondeten|avondmaaltijd|avondmaal|diner|'?s avonds|avonds|vanavond|avond"]
 ];
 
+const VZ_EENTALLEN = { nul: 0, een: 1, twee: 2, drie: 3, vier: 4, vijf: 5, zes: 6, zeven: 7, acht: 8, negen: 9, tien: 10, elf: 11, twaalf: 12,
+  dertien: 13, veertien: 14, vijftien: 15, zestien: 16, zeventien: 17, achttien: 18, negentien: 19 };
+const VZ_TIENTALLEN = { twintig: 20, dertig: 30, veertig: 40, vijftig: 50, zestig: 60, zeventig: 70, tachtig: 80, negentig: 90 };
+
+// Nederlands getalwoord (honderd, tweehonderd, honderdvijftig, vijfentwintig) -> getal, of null.
+function vzGetalWoord(woord) {
+  const w = String(woord || '').replace(/\u00eb/g, 'e').replace(/\u00e9/g, 'e');
+  if (!w) return null;
+  const onder100 = (s) => {
+    if (s === '') return 0;
+    if (Object.prototype.hasOwnProperty.call(VZ_EENTALLEN, s)) return VZ_EENTALLEN[s];
+    if (Object.prototype.hasOwnProperty.call(VZ_TIENTALLEN, s)) return VZ_TIENTALLEN[s];
+    const m = /^([a-z]+?)(?:en|ën)([a-z]+)$/.exec(s);
+    if (m && Object.prototype.hasOwnProperty.call(VZ_EENTALLEN, m[1]) && VZ_EENTALLEN[m[1]] > 0 && VZ_EENTALLEN[m[1]] < 10 && Object.prototype.hasOwnProperty.call(VZ_TIENTALLEN, m[2])) return VZ_EENTALLEN[m[1]] + VZ_TIENTALLEN[m[2]];
+    return null;
+  };
+  const h = /^(?:([a-z]*?))honderd(.*)$/.exec(w);
+  if (h) {
+    const voor = h[1] === '' ? 1 : (VZ_EENTALLEN[h[1]] > 0 && VZ_EENTALLEN[h[1]] < 10 ? VZ_EENTALLEN[h[1]] : null);
+    const rest = onder100(h[2]);
+    if (voor === null || rest === null) return null;
+    return voor * 100 + rest;
+  }
+  if (w === 'een') return null; // "een" blijft een lidwoord/aantal van 1, zie VZ_GETALLEN
+  const x = onder100(w);
+  return x === null || x === 0 ? null : x;
+}
+
 function vzNorm(s) {
   return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\([^)]*\)/g, ' ').replace(/[^a-z0-9+%.\s]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -3314,6 +3342,8 @@ function vzLeesStuk(stuk) {
     if (w === 'een' && (woorden[i + 1] === 'half' || woorden[i + 1] === 'halve')) { aantal = 0.5; i++; continue; }
     if (w === 'een' && woorden[i + 1] === 'paar') { aantal = 2; i++; continue; }
     if (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, w)) { if (aantal === null || w !== 'een') aantal = VZ_GETALLEN[w]; continue; }
+    const gw = vzGetalWoord(w);
+    if (gw !== null) { aantal = gw; continue; }
     const e = vzEenheid(w);
     if (e && eenheid === null && !(e === 'g' && w.length === 1 && naam.length === 0 && aantal === null)) { eenheid = e; if (VZ_SNEE.indexOf(e) !== -1 && w === 'boterham' || /^boterhammen$/.test(w)) naam.push('brood'); continue; }
     if (VZ_STOPWOORDEN.indexOf(w) !== -1) continue;
@@ -3455,6 +3485,8 @@ function openSpraak(bron) {
   document.getElementById('vz-producten').innerHTML = getAllProducts().map(p => '<option value="' + escapeHtml(dispName(p)) + '"></option>').join('');
   document.getElementById('vz-tekst').value = '';
   document.getElementById('vz-fout').textContent = '';
+  const ver = document.getElementById('vz-versie');
+  if (ver) ver.textContent = 'versie ' + (window.PRIME_BUILD || '?');
   vzMicStatus('');
   vzMicKnop(false);
   document.getElementById('vz-invoer').style.display = 'block';
@@ -3781,11 +3813,11 @@ function vzSplitsOpAantal(stuk) {
   for (let i = 0; i < w.length; i++) {
     const x = w[i];
     const isGetal = /^\d+(\.\d+)?$/.test(x) || /^\d+(\.\d+)?(gram|gr|g|kg|kilo|ml|l|dl|cl)$/.test(x) ||
-      (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && ['half', 'halve', 'kwart', 'anderhalf', 'anderhalve', 'driekwart'].indexOf(x) === -1);
+      (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && ['half', 'halve', 'kwart', 'anderhalf', 'anderhalve', 'driekwart'].indexOf(x) === -1) || vzGetalWoord(x) !== null;
     const isEenheid = !!vzEenheid(x);
     if (isGetal && heeftNaam) { delen.push(huidig.join(' ')); huidig = []; heeftNaam = false; }
     huidig.push(x);
-    if (!isGetal && !isEenheid && VZ_STOPWOORDEN.indexOf(x) === -1 && !Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x)) heeftNaam = true;
+    if (!isGetal && !isEenheid && VZ_STOPWOORDEN.indexOf(x) === -1 && !Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && vzGetalWoord(x) === null) heeftNaam = true;
   }
   if (huidig.length) delen.push(huidig.join(' '));
   return delen;
