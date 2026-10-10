@@ -2978,8 +2978,8 @@ function bcToonKaart() {
     '</div>' +
     '<label style="display:block;font-size:11px;color:var(--muted);margin-bottom:8px">' + t('food.scan.day') + '<input type="date" id="bc-datum" value="' + standaardDatum + '" style="width:100%;' + stijlInvoer + '"></label>' +
     '<div id="bc-prev" style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:12px"></div>' +
-    (!bestaand ? '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px">' + t('food.scan.saveTitle') + '</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
-      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"' + (x[0] === 'eigen' ? ' checked' : '') + '><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
+    (!bestaand ? '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px">' + t('food.scan.saveTitle') + '</div><div id="bc-bewaar-groep" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;padding:4px 0">' +
+      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
     '<div id="bc-kaart-fout" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>' +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
       acties.map(a => a[1]).join('') +
@@ -3034,7 +3034,7 @@ function _bcKaartLees(metGram) {
     datum = document.getElementById('bc-datum').value;
   }
   const keuzeEl = document.querySelector('input[name="bc-bewaar"]:checked');
-  return { p: p, gram: gram, moment: moment, datum: datum, keuze: keuzeEl ? keuzeEl.value : 'eigen' };
+  return { p: p, gram: gram, moment: moment, datum: datum, keuze: keuzeEl ? keuzeEl.value : null };
 }
 
 // Maakt van het gescande product een product volgens de keuze: eigen, voor iedereen of niet
@@ -3128,6 +3128,13 @@ async function bcActieToevoegen(doel) {
   const datum = doel === 'vandaag' ? fdTodayStr() : k.datum;
   if (!datum) { if (fout) fout.textContent = t('food.scan.dayRequired'); return; }
   if (isDagAfgesloten(datum)) { alert(t('weekplan.dayLocked')); return; }
+  if (!_bcBestaand && !k.keuze) {
+    // Een nieuw product wordt nooit vanzelf opgeslagen: de coach kiest eerst wat ermee gebeurt.
+    if (fout) fout.textContent = t('food.scan.chooseSave');
+    const groep = document.getElementById('bc-bewaar-groep');
+    if (groep) groep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   const product = _bcBestaand || await bcMaakProduct(k.p, k.keuze);
   if (!product) return;
   bcLogItem(product, k.gram, k.moment, datum);
