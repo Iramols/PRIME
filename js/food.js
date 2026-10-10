@@ -452,6 +452,7 @@ function showApForm(toon) {
 function openAddProductForm() {
   resetAddProductForm();
   showApForm(true);
+  document.getElementById('ap-cancel-btn').style.display = 'inline-block';
   const naamEl = document.getElementById('ap-name');
   naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   naamEl.focus();
@@ -2255,9 +2256,12 @@ async function savePrimeProductNew() {
   _bewaarPrimeProductenLokaal();
   applyPrimeProducts();
   const fout = await savePrimeProductToCloud(rij);
+  const _tn = _apTerug;
   resetAddProductForm();
   switchFoodTab('basis');
+  _apTerug = _tn;
   try { showToast(fout ? t('food.prime.saveFailed') : t('food.prime.savedNew'), !!fout); } catch (e) { console.error(e); }
+  apTerugNaarDag();
 }
 
 // Live naamcontrole terwijl de coach typt: de melding verschijnt alleen zolang de
@@ -3147,9 +3151,11 @@ async function bcActieToevoegen(doel) {
 function bcActieOpslaan() {
   const k = _bcKaartLees(false);
   if (!k) return;
+  const terug = _bcTerugInfo();
   closeBarcodeScanner();
   switchFoodTab('add');
   openAddProductForm();
+  _apTerug = terug;
   _apBarcode = k.p.code || null;
   document.getElementById('ap-name').value = k.p.naam || '';
   document.getElementById('ap-cat').value = k.p.cat || 'overig';
@@ -3167,8 +3173,16 @@ function bcActieOpslaan() {
 // Niet herkend: handmatig invoeren in een leeg formulier, met de barcode al bewaard.
 function bcActieHandmatig() {
   const code = _bcProduct && _bcProduct.code;
+  const terug = _bcTerugInfo();
   closeBarcodeScanner();
   switchFoodTab('add');
   openAddProductForm();
+  _apTerug = terug;
   _apBarcode = code || null;
+}
+
+// Scan vanuit Mijn dag of Weekplanning: na opslaan of annuleren van het formulier terug naar die dag.
+function _bcTerugInfo() {
+  if (_bcBron !== 'vandaag' && _bcBron !== 'week') return null;
+  return { tab: _bcBron === 'week' ? 'week' : 'log', datum: currentLogDate, productId: null };
 }
