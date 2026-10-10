@@ -3256,20 +3256,31 @@ function vzScore(vraag, product) {
     const volledig = vzNorm(n);
     if (volledig === q) beste = Math.max(beste, 100);
     if (alias && (vzNorm(n) === vzNorm(alias) || String(n).toLowerCase() === alias)) beste = Math.max(beste, 95);
+    // Dicteren knipt Nederlandse samenstellingen vaak in stukken ("herten hamburger" i.p.v.
+    // "hertenhamburger"): ook de varianten met aaneengeplakte buurwoorden meenemen.
+    if (volledig.replace(/ /g, '') === q.replace(/ /g, '')) beste = Math.max(beste, 98);
     const T = volledig.split(' ').filter(Boolean).map(vzStam);
-    const Q = q.split(' ').filter(Boolean).map(vzStam);
-    let treffers = 0, voorvoegsel = 0, samengesteld = 0;
-    Q.forEach(w => {
-      if (T.indexOf(w) !== -1) treffers++;
-      else if (w.length >= 3 && T.some(t => t.indexOf(w) === 0)) voorvoegsel++; // kip -> kipfilet
-      else if (w.length >= 5 && T.some(t => t.length >= 5 && vzAfstand(w, t) <= 1)) voorvoegsel++; // kwarg -> kwark
-      else if (T.some(t => t.length >= 4 && w.indexOf(t) === 0)) samengesteld++; // sinaasappelsap is niet sinaasappel
+    const ruw = q.split(' ').filter(Boolean);
+    const varianten = [ruw];
+    for (let i = 0; i + 1 < ruw.length; i++) varianten.push(ruw.slice(0, i).concat([ruw[i] + ruw[i + 1]], ruw.slice(i + 2)));
+    if (ruw.length > 2) varianten.push([ruw.join('')]);
+    varianten.forEach(woorden => {
+      const Q = woorden.map(vzStam);
+      let treffers = 0, voorvoegsel = 0, samengesteld = 0;
+      Q.forEach(w => {
+        if (T.indexOf(w) !== -1) treffers++;
+        else if (w.length >= 3 && T.some(t => t.indexOf(w) === 0)) voorvoegsel++; // kip -> kipfilet
+        else if (w.length >= 5 && T.some(t => t.length >= 5 && vzAfstand(w, t) <= 1)) voorvoegsel++; // kwarg -> kwark
+        else if (T.some(t => t.length >= 4 && w.indexOf(t) === 0)) samengesteld++; // sinaasappelsap is niet sinaasappel
+      });
+      const alle = treffers + voorvoegsel;
+      // Het hele productnaam zit in wat je zei ("magere kwark" voor "Kwark"): extra bijvoeglijke woorden mogen.
+      if (T.length && T.every(t => Q.indexOf(t) !== -1) && Q.length > T.length) beste = Math.max(beste, 72 - 4 * (Q.length - T.length));
+      if (alle + samengesteld === Q.length) {
+        // een samengesteld woord (sinaasappelsap) komt alleen als suggestie, niet als automatische keuze
+        beste = Math.max(beste, samengesteld ? 48 : 90 - 5 * Math.max(0, T.length - Q.length) - 6 * voorvoegsel);
+      } else if (alle > 0) beste = Math.max(beste, Math.round(40 * alle / Q.length));
     });
-    const alle = treffers + voorvoegsel;
-    if (alle + samengesteld === Q.length) {
-      // een samengesteld woord (sinaasappelsap) komt alleen als suggestie, niet als automatische keuze
-      beste = Math.max(beste, samengesteld ? 48 : 90 - 5 * Math.max(0, T.length - Q.length) - 6 * voorvoegsel);
-    } else if (alle > 0) beste = Math.max(beste, Math.round(40 * alle / Q.length));
   }
   return beste;
 }
@@ -3312,7 +3323,7 @@ function vzLeesTekst(tekst) {
   t = t.replace(/\b(het |mijn )?(ontbijt|lunch|avondeten|diner|avondmaal|avondmaaltijd|tussendoortje|tussendoor|snack)\b/g, ' ');
   t = t.replace(VZ_VULWOORDEN, ' ');
   t = t.replace(/[:!?]/g, ' ');
-  const stukken = t.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const stukken = t.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean);
   const regels = [];
   stukken.forEach(s => {
     const r = vzLeesStuk(s);
@@ -3333,8 +3344,9 @@ function vzGram(regel, product) {
     return { gram: Math.round(n * VZ_EENHEDEN[e]), geschat: ['gram', 'g', 'gr', 'kilo', 'kg', 'ml', 'milliliter', 'liter', 'l', 'dl', 'cl'].indexOf(e) === -1 };
   }
   if (portie) return { gram: Math.round(n * portie), geschat: false };
-  // Geen maat en geen portie bekend: 100 g als voorstel (geen n x 100, "tien amandelen" is geen kilo).
-  return { gram: 100, geschat: true };
+  // Geen maat en geen portie bekend: tot 4 stuks rekenen we 100 g per stuk (twee hamburgers), meer
+  // stuks krijgen 100 g als voorstel ("tien amandelen" is geen kilo). De coach loopt het na.
+  return { gram: n >= 2 && n <= 4 ? Math.round(n * 100) : 100, geschat: true };
 }
 
 // Regels van de tekst -> lijst met gevonden producten en hoeveelheden.
