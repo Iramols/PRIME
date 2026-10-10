@@ -3353,25 +3353,36 @@ function vzGram(regel, product) {
 function vzMaakLijst(tekst, producten) {
   const gelezen = vzLeesTekst(tekst);
   const regels = gelezen.regels.map(r => {
-    let goed = null, geleerd = false, klank = false;
-    // 1) een eerder onthouden correctie ("skeer" = Skyr) gaat voor
+    let goed = null, geleerd = false, klank = false, algemeen = false, kiesSoort = false;
+    let suggesties = [];
+    // 1) een eerder onthouden correctie ("skeer" = Arla skyr) gaat voor
     const leerId = _vzCorr[vzNorm(r.naam)];
     if (leerId) {
       const lp = producten.find(p => p.id === leerId);
       if (lp) { goed = { p: lp, score: 100 }; geleerd = true; }
     }
-    // 2) gewone herkenning op de naam
+    // 2) herkenning op de naam
     const treffers = vzZoekProducten(r.naam, producten);
-    if (!goed && treffers.length && treffers[0].score >= 55) goed = treffers[0];
-    const suggesties = treffers.slice(0, 4).map(x => x.p.id);
-    // 3) klinkt als een product: alleen als er precies één kandidaat is, anders alleen suggesties
-    if (!goed) {
-      const kl = vzKlankKandidaten(r.naam, producten);
-      const woorden = {};
-      kl.forEach(x => { woorden[x.tok] = true; });
-      if (kl.length && Object.keys(woorden).length === 1) { goed = { p: kl[0].p, score: 56 }; klank = true; }
-      kl.forEach(x => { if (suggesties.indexOf(x.p.id) === -1) suggesties.push(x.p.id); });
+    const top = treffers[0];
+    if (!goed && top && top.score >= 55) {
+      if (top.score >= 95) {
+        // de volledige naam, of een algemeen woord (kaas, melk) met een vaste keuze
+        goed = top;
+        algemeen = top.score === 95;
+      } else {
+        // Passen er meerdere soorten even goed (Skyr, Boeren skyr, Arla skyr), dan kiest de app niet zelf.
+        const dicht = treffers.filter(x => x.score >= 55 && top.score - x.score <= 5);
+        if (dicht.length > 1) { kiesSoort = true; suggesties = dicht.slice(0, 8).map(x => x.p.id); }
+        else goed = top;
+      }
     }
+    // 3) klinkt als een product: precies één product -> kiezen; meerdere soorten -> de coach kiest
+    if (!goed && !kiesSoort) {
+      const kl = vzKlankKandidaten(r.naam, producten);
+      if (kl.length === 1) { goed = { p: kl[0].p, score: 56 }; klank = true; }
+      else if (kl.length > 1) { kiesSoort = true; suggesties = kl.slice(0, 8).map(x => x.p.id); }
+    }
+    if (!suggesties.length) suggesties = treffers.slice(0, 4).map(x => x.p.id);
     const g = vzGram(r, goed ? goed.p : null);
     return {
       bron: r.bron,
@@ -3380,10 +3391,12 @@ function vzMaakLijst(tekst, producten) {
       origProductId: goed ? goed.p.id : '',
       gram: g.gram,
       geschat: g.geschat,
-      onbekend: !goed,
+      onbekend: !goed && !kiesSoort,
+      kiesSoort: kiesSoort,
+      algemeen: algemeen,
       geleerd: geleerd,
       klank: klank,
-      suggesties: suggesties.slice(0, 4)
+      suggesties: suggesties.slice(0, 8)
     };
   });
   return { moment: gelezen.moment, regels: regels };
@@ -3467,12 +3480,14 @@ function vzTekenRegels() {
     const p = r.productId ? getAllProducts().find(x => x.id === r.productId) : null;
     const naam = p ? dispName(p) : '';
     const sugg = (r.suggesties || []).map(id => getAllProducts().find(x => x.id === id)).filter(Boolean)
-      .filter(x => !p || x.id !== p.id).slice(0, 3);
-    return '<div style="border:1px solid var(--sand-dark);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--white)">' +
+      .filter(x => !p || x.id !== p.id).slice(0, r.kiesSoort ? 8 : 3);
+    return '<div style="border:1.5px solid ' + (r.kiesSoort && !p ? 'var(--accent)' : 'var(--sand-dark)') + ';border-radius:10px;padding:10px;margin-bottom:8px;background:var(--white)">' +
       '<div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px">' +
         '<div style="font-size:11px;color:var(--muted)">' + (r.bron ? '“' + escapeHtml(r.bron) + '”' : '') +
           (r.onbekend && !naam ? ' · <span style="color:#c0392b;font-weight:600">' + t('food.voice.unknown') + '</span>' : '') +
           (r.geschat ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.guess') + '</span>' : '') +
+          (r.kiesSoort ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.which', { word: r.zoek }) + '</span>' : '') +
+          (r.algemeen ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.generic') + '</span>' : '') +
           (r.klank ? ' · <span style="color:var(--accent);font-weight:600">' + t('food.voice.byEar') + '</span>' : '') +
           (r.geleerd ? ' · <span style="color:var(--sage);font-weight:600">' + t('food.voice.learned') + '</span> <a href="#" onclick="vzVergeet(' + r.id + ');return false" style="color:var(--muted)">' + t('food.voice.forget') + '</a>' : '') + '</div>' +
         '<button onclick="vzVerwijder(' + r.id + ')" aria-label="' + t('common.delete') + '" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--muted);line-height:1">✕</button>' +
@@ -3481,7 +3496,7 @@ function vzTekenRegels() {
         '<input type="text" list="vz-producten" id="vz-p-' + r.id + '" value="' + escapeHtml(naam) + '" placeholder="' + t('food.voice.choose') + '" oninput="vzPreview()" style="flex:1;min-width:0;' + stijl + '">' +
         '<input type="number" id="vz-g-' + r.id + '" value="' + r.gram + '" min="1" step="1" oninput="vzPreview()" style="width:76px;' + stijl + '"><span style="font-size:12px;color:var(--muted)">g</span>' +
       '</div>' +
-      (sugg.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center"><span style="font-size:11px;color:var(--muted)">' + t('food.voice.suggest') + '</span>' +
+      (sugg.length ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center"><span style="font-size:11px;color:var(--muted)">' + (r.kiesSoort ? t('food.voice.pick') : t('food.voice.suggest')) + '</span>' +
         sugg.map(x => '<button class="cat-tab" onclick="vzKies(' + r.id + ',\'' + x.id + '\')">' + escapeHtml(dispName(x)) + '</button>').join('') + '</div>' : '') +
       '<div id="vz-o-' + r.id + '" style="display:none;margin-top:6px"></div>' +
       '<div id="vz-pv-' + r.id + '" style="font-size:11px;color:var(--muted);margin-top:6px"></div>' +
