@@ -2385,17 +2385,7 @@ let _bcModus = 'product'; // 'product' = nieuw basisproduct maken, 'dag' = gesca
 let _bcVorigeDatum = null;
 let _apBarcode = null; // barcode van het product dat nu in het formulier staat (na scannen)
 
-function openBarcodeScanner(modus) {
-  if (!isPrimeCoach()) return;
-  _bcModus = modus === 'dag' ? 'dag' : 'product';
-  _bcBezig = false;
-  _bcProduct = null;
-  document.getElementById('bc-result').style.display = 'none';
-  document.getElementById('bc-view').style.display = 'block';
-  document.getElementById('bc-manual').value = '';
-  document.getElementById('barcode-modal').classList.add('open');
-  startBarcodeCamera();
-}
+
 
 // doorNaarPortie = true als we meteen het portiescherm openen (dan blijft de dag
 // en het terugkeer-tabblad staan); anders (annuleren) zetten we alles terug.
@@ -2531,123 +2521,12 @@ function _bcCategorie(tags) {
   return 'overig';
 }
 
-async function bcZoek(code) {
-  const view = document.getElementById('bc-view');
-  const res = document.getElementById('bc-result');
-  _bcStatus(t('food.scan.lookup'));
-  const bestaand = getAllProducts().find(p => p.barcode && _bcNorm(p.barcode) === _bcNorm(code));
-  if (bestaand) {
-    if (_bcModus === 'dag') {
-      view.style.display = 'none';
-      res.style.display = 'block';
-      _bcProduct = { code: code, leeg: true, bestaandId: bestaand.id };
-      const wb = (x, eenheid) => (x === undefined || x === null ? '—' : x + eenheid);
-      res.innerHTML =
-        '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + escapeHtml(t('food.scan.existsShort')) + ' · ' + escapeHtml(code) + '</div>' +
-        '<div style="font-family:\'DM Serif Display\',serif;font-size:19px;margin-bottom:10px">' + escapeHtml(dispName(bestaand)) + '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center">' +
-          [[t('portion.kcal'), wb(bestaand.kcal, '')], [t('portion.protein'), wb(bestaand.prot, ' g')], [t('portion.carbs'), wb(bestaand.carb, ' g')], [t('portion.fat'), wb(bestaand.fat, ' g')]]
-            .map(x => '<div style="background:var(--sand);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--muted)">' + x[0] + '</div><div style="font-size:14px;font-weight:600">' + x[1] + '</div></div>').join('') +
-        '</div>' +
-        '<div style="font-size:11px;color:var(--muted);margin-bottom:14px">' + t('food.scan.per100') + '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:8px">' +
-          '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcVerderBestaand()">' + t('food.scan.next') + '</button>' +
-          '<button class="btn-sm coach-only-btn" onclick="bcBewerkBestaand()">✏️ ' + t('common.edit') + '</button>' +
-          '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
-          '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.scan.close') + '</button>' +
-        '</div>';
-      return;
-    }
-    view.style.display = 'none';
-    res.style.display = 'block';
-    _bcProduct = { code: code, leeg: true };
-    res.innerHTML =
-      '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(t('food.scan.exists', { name: dispName(bestaand) })) + '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:8px">' +
-        '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
-        '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.scan.close') + '</button>' +
-      '</div>';
-    return;
-  }
-  let product = null;
-  let netFout = false;
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
-    const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' + code + '.json?fields=product_name,product_name_nl,brands,nutriments,categories_tags', { signal: ctrl.signal });
-    clearTimeout(timer);
-    const j = await r.json();
-    if (j && j.status === 1 && j.product) product = j.product;
-  } catch (e) {
-    console.error('bcZoek:', e);
-    netFout = true;
-  }
 
-  view.style.display = 'none';
-  res.style.display = 'block';
-  if (!product) {
-    _bcProduct = { code: code, leeg: true };
-    res.innerHTML =
-      '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(netFout ? t('food.scan.netError') : t('food.scan.notFound', { code: code })) + '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:8px">' +
-        (_bcModus === 'dag' ? '' : '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + t('food.scan.manual') + '</button>') +
-        '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
-        (_bcModus === 'dag' ? '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.scan.close') + '</button>' : '') +
-      '</div>';
-    return;
-  }
-
-  const n = product.nutriments || {};
-  const getal = (v) => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : Math.round(Number(v) * 10) / 10;
-  let kcal = getal(n['energy-kcal_100g']);
-  if (kcal === null && getal(n['energy_100g']) !== null) kcal = Math.round(getal(n['energy_100g']) / 4.184);
-  const prot = getal(n['proteins_100g']);
-  const carb = getal(n['carbohydrates_100g']);
-  const fat = getal(n['fat_100g']);
-  let naam = (product.product_name_nl || product.product_name || '').trim();
-  const merk = ((product.brands || '').split(',')[0] || '').trim();
-  if (merk && naam.toLowerCase().indexOf(merk.toLowerCase()) === -1) naam = (merk + ' ' + naam).trim();
-  const ontbreekt = [];
-  if (prot === null) ontbreekt.push(t('portion.protein'));
-  if (carb === null) ontbreekt.push(t('portion.carbs'));
-  if (fat === null) ontbreekt.push(t('portion.fat'));
-  _bcProduct = { code: code, naam: naam, cat: _bcCategorie(product.categories_tags), kcal: kcal, prot: prot, carb: carb, fat: fat };
-
-  const waarde = (v, eenheid) => v === null ? '<span style="color:var(--accent)">—</span>' : v + eenheid;
-
-  const veldHtml = (id, label, waardeStr, stap, oninput) => '<div style="text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">' + label + '</div><input type="number" id="' + id + '" min="0" step="' + stap + '" value="' + waardeStr + '"' + (oninput ? ' oninput="' + oninput + '"' : '') + ' style="width:100%;box-sizing:border-box;padding:8px 4px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;text-align:center;font-family:inherit"></div>';
-  const kopGrid = _bcModus === 'dag'
-    ? ('<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">' + t('food.scan.name') + '</div><input type="text" id="bc-e-naam" value="' + escapeHtml(naam || '') + '" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:15px;font-family:inherit"></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">' +
-        veldHtml('bc-e-kcal', t('portion.kcal'), kcal === null ? '' : kcal, 1, '') +
-        veldHtml('bc-e-prot', t('portion.protein'), prot === null ? '' : prot, 0.1, 'bcMacroInput()') +
-        veldHtml('bc-e-carb', t('portion.carbs'), carb === null ? '' : carb, 0.1, 'bcMacroInput()') +
-        veldHtml('bc-e-fat', t('portion.fat'), fat === null ? '' : fat, 0.1, 'bcMacroInput()') +
-      '</div>')
-    : (
-    '<div style="font-family:\'DM Serif Display\',serif;font-size:19px;margin-bottom:10px">' + escapeHtml(naam || '—') + '</div>' +
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;text-align:center">' +
-      [[t('portion.kcal'), waarde(kcal, '')], [t('portion.protein'), waarde(prot, ' g')], [t('portion.carbs'), waarde(carb, ' g')], [t('portion.fat'), waarde(fat, ' g')]]
-        .map(x => '<div style="background:var(--sand);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--muted)">' + x[0] + '</div><div style="font-size:14px;font-weight:600">' + x[1] + '</div></div>').join('') +
-    '</div>'
-    );
-  res.innerHTML =
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + t('food.scan.found') + ' · ' + escapeHtml(code) + '</div>' +
-    kopGrid +
-    '<div style="font-size:11px;color:var(--muted);margin-bottom:6px">' + t('food.scan.per100') + '</div>' +
-    (ontbreekt.length ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: ontbreekt.join(', ') }) + '</div>' : '') +
-    '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:12px">' + t('food.scan.unverified') + '</div>' +
-    (_bcModus === 'dag' ? '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px">' + t('food.scan.saveTitle') + '</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
-      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"' + (x[0] === 'eigen' ? ' checked' : '') + '><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
-    '<div style="display:flex;flex-direction:column;gap:8px">' +
-      '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcGebruik()">' + (_bcModus === 'dag' ? t('food.scan.next') : t('food.scan.use')) + '</button>' +
-      '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
-    '</div>';
-}
 
 function bcOpnieuw() {
   _bcBezig = false;
   _bcProduct = null;
+  _bcBestaand = null;
   document.getElementById('bc-result').style.display = 'none';
   document.getElementById('bc-view').style.display = 'block';
   document.getElementById('bc-manual').value = '';
@@ -2655,24 +2534,7 @@ function bcOpnieuw() {
 }
 
 // Na bevestiging: formulier voor een nieuw product openen met de gevonden waardes.
-function bcGebruik() {
-  const p = _bcProduct;
-  if (_bcModus === 'dag') { bcVoegToeAanDag(_bcLeesInvoer(p)); return; }
-  closeBarcodeScanner();
-  if (!p) return;
-  openAddProductForm();
-  _apBarcode = p.code || null;
-  if (!p.leeg) {
-    document.getElementById('ap-name').value = p.naam || '';
-    document.getElementById('ap-cat').value = p.cat || 'overig';
-    document.getElementById('ap-prot').value = p.prot === null ? 0 : p.prot;
-    document.getElementById('ap-carb').value = p.carb === null ? 0 : p.carb;
-    document.getElementById('ap-fat').value = p.fat === null ? 0 : p.fat;
-    updateAddProductKcal();
-    apNaamInput();
-    try { showToast(t('food.scan.filled')); } catch (e) { console.error(e); }
-  }
-}
+
 
 
 // ----- Eten scannen voor een dag (Mijn dag en Weekplanning), alleen coach -----
@@ -2681,97 +2543,21 @@ function bcGebruik() {
 function _bcNorm(code) { return String(code || '').replace(/\D/g, '').replace(/^0+/, ''); }
 
 // "Mijn dag": voegt toe aan de dag die nu open staat (meestal vandaag).
-function scanEtenVandaag() {
-  if (!isPrimeCoach()) return;
-  _bcVorigeDatum = null;
-  _portionReturnTab = 'log';
-  openBarcodeScanner('dag');
-}
+
 
 // Weekplanning: voegt toe aan de gekozen dag.
-function scanEtenVoorDag(dateStr) {
-  if (!isPrimeCoach()) return;
-  _bcVorigeDatum = currentLogDate;
-  _portionReturnTab = 'week';
-  switchLogDate(dateStr);
-  openBarcodeScanner('dag');
-}
+
 
 // Na "Verder": het gescande product bewaren als eigen product (met de barcode, zodat
 // het de volgende keer meteen gevonden wordt) en het portiescherm openen. De coach
 // kiest daar hoeveelheid en moment; afvinken als gegeten doet hij zelf in de lijst.
-async function bcVoegToeAanDag(p) {
-  if (!p || p.leeg) { closeBarcodeScanner(); return; }
-  const basis = (p.naam || '').trim() || ('Product ' + p.code);
-  let naam = basis;
-  let teller = 2;
-  while (productNaamBestaat(naam, null)) { naam = basis + ' (' + teller + ')'; teller++; }
-  const prot = p.prot === null ? 0 : p.prot;
-  const carb = p.carb === null ? 0 : p.carb;
-  const fat = p.fat === null ? 0 : p.fat;
-  const kcal = p.kcal !== null ? p.kcal : Math.round(prot * 4 + carb * 4 + fat * 9);
-  const keuzeEl = document.querySelector('input[name="bc-bewaar"]:checked');
-  const keuze = keuzeEl ? keuzeEl.value : 'eigen';
-  if (keuze === 'nee') {
-    // Alleen loggen: het product komt niet in de productlijst.
-    const tijdelijk = { id: 'scan-' + Date.now(), icon: '🍽️', name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat, _tijdelijk: true };
-    closeBarcodeScanner(true);
-    openPortionViaScan(tijdelijk.id, tijdelijk);
-    return;
-  }
-  if (keuze === 'iedereen') {
-    // Voor iedereen: een nieuw basisproduct (zie de PRIME-producten hierboven).
-    const rij = {
-      id: 'prime-' + Date.now() + Math.floor(Math.random() * 1000), op: 'new',
-      icon: '🍽️', name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat,
-      photo: null, barcode: p.code
-    };
-    const fout = await savePrimeProductToCloud(rij);
-    if (fout) {
-      // Niets bewaard en je blijft in het scanscherm: opnieuw proberen of een andere keuze maken.
-      try { showToast(t('food.prime.saveFailed'), true); } catch (e) { console.error(e); }
-      return;
-    }
-    primeProducts = primeProducts.concat([rij]);
-    _bewaarPrimeProductenLokaal();
-    applyPrimeProducts();
-    closeBarcodeScanner(true);
-    openPortionViaScan(rij.id);
-    try { showToast(t('food.scan.savedAll')); } catch (e) { console.error(e); }
-    return;
-  }
-  const nieuw = {
-    id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
-    icon: '🍽️', custom: true, barcode: p.code,
-    name: naam, cat: p.cat || 'overig', kcal: kcal, prot: prot, carb: carb, fat: fat, photo: null
-  };
-  customProducts.push(nieuw);
-  syncSet('prime_custom_products', customProducts);
-  closeBarcodeScanner(true);
-  try { renderAddProductTab(); } catch (e) { console.error(e); }
-  openPortionViaScan(nieuw.id);
-  try { showToast(t('food.scan.savedOwn')); } catch (e) { console.error(e); }
-}
+
 
 
 // Dag-modus: de coach kan naam en waardes van het gescande product eerst aanpassen.
-function bcMacroInput() {
-  const g = id => parseFloat(document.getElementById(id).value) || 0;
-  document.getElementById('bc-e-kcal').value = Math.round(g('bc-e-prot') * 4 + g('bc-e-carb') * 4 + g('bc-e-fat') * 9);
-}
 
-function _bcLeesInvoer(p) {
-  const naamEl = document.getElementById('bc-e-naam');
-  if (!p || !naamEl) return p;
-  const g = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : Math.round(v * 10) / 10; };
-  return Object.assign({}, p, {
-    naam: naamEl.value.trim(),
-    kcal: Math.round(g('bc-e-kcal')),
-    prot: g('bc-e-prot'),
-    carb: g('bc-e-carb'),
-    fat: g('bc-e-fat')
-  });
-}
+
+
 
 // ✏️ Aanpassen in het portiescherm (coach): een eigen product opent het gewone
 // bewerkformulier, een basisproduct het formulier om het voor iedereen aan te passen.
@@ -2800,15 +2586,10 @@ function portieOpnieuwScannen() {
 }
 
 // Al bewaard product (resultaatscherm in dag-modus): verder naar de hoeveelheid, of bewerken.
-function bcVerderBestaand() {
-  const id = _bcProduct && _bcProduct.bestaandId;
-  if (!id) { closeBarcodeScanner(); return; }
-  closeBarcodeScanner(true);
-  openPortionViaScan(id);
-}
+
 
 function bcBewerkBestaand() {
-  const id = _bcProduct && _bcProduct.bestaandId;
+  const id = _bcBestaand && _bcBestaand.id;
   closeBarcodeScanner(true);
   if (id) editProductFromPortion(id);
   else closeBarcodeScanner();
@@ -3043,4 +2824,345 @@ function bcInstReset() {
   bcInstVul();
   _bcBezig = false;
   startBarcodeCamera();
+}
+
+
+// ========== GEDEELDE SCANKAART (Mijn dag, Weekplanning en Producten) ==========
+// Na een scan (of als de barcode al in PRIME staat) altijd dezelfde kaart: naam en waardes
+// per 100 g, hoeveelheid (standaard 100 g), moment en dag, en de keuzes
+// Opslaan in mijn producten / Toevoegen aan vandaag / Toevoegen aan weekplanning /
+// Opnieuw scannen / Annuleren. Welke knop vooraan staat hangt af van waar je scant.
+// Toegevoegd wordt altijd als gepland (niet afgevinkt); afvinken doet de coach zelf.
+let _bcBron = 'producten'; // 'vandaag' | 'week' | 'producten'
+let _bcBestaand = null;    // product dat al in PRIME staat (gevonden op barcode), anders null
+
+function openBarcodeScanner(bron) {
+  if (!isPrimeCoach()) return;
+  _bcBron = (bron === 'vandaag' || bron === 'week') ? bron : 'producten';
+  _bcModus = 'dag';
+  _bcBezig = false;
+  _bcProduct = null;
+  _bcBestaand = null;
+  document.getElementById('bc-result').style.display = 'none';
+  document.getElementById('bc-view').style.display = 'block';
+  document.getElementById('bc-manual').value = '';
+  document.getElementById('barcode-modal').classList.add('open');
+  startBarcodeCamera();
+}
+
+// "Mijn dag": de dag die nu open staat (meestal vandaag).
+function scanEtenVandaag() {
+  if (!isPrimeCoach()) return;
+  _bcVorigeDatum = null;
+  _portionReturnTab = 'log';
+  openBarcodeScanner('vandaag');
+}
+
+// Weekplanning: de gekozen dag staat als voorinstelling op de kaart.
+function scanEtenVoorDag(dateStr) {
+  if (!isPrimeCoach()) return;
+  _bcVorigeDatum = currentLogDate;
+  _portionReturnTab = 'week';
+  switchLogDate(dateStr);
+  openBarcodeScanner('week');
+}
+
+async function bcZoek(code) {
+  const view = document.getElementById('bc-view');
+  _bcStatus(t('food.scan.lookup'));
+  const bestaand = getAllProducts().find(p => p.barcode && _bcNorm(p.barcode) === _bcNorm(code));
+  if (bestaand) {
+    view.style.display = 'none';
+    _bcBestaand = bestaand;
+    _bcProduct = { code: code, naam: dispName(bestaand), cat: bestaand.cat, kcal: bestaand.kcal, prot: bestaand.prot, carb: bestaand.carb, fat: bestaand.fat };
+    bcToonKaart();
+    return;
+  }
+
+  let product = null;
+  let netFout = false;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch('https://world.openfoodfacts.org/api/v2/product/' + code + '.json?fields=product_name,product_name_nl,brands,nutriments,categories_tags', { signal: ctrl.signal });
+    clearTimeout(timer);
+    const j = await r.json();
+    if (j && j.status === 1 && j.product) product = j.product;
+  } catch (e) {
+    console.error('bcZoek:', e);
+    netFout = true;
+  }
+
+  view.style.display = 'none';
+  _bcBestaand = null;
+  if (!product) {
+    // Niet herkend: opnieuw scannen, handmatig invoeren of annuleren.
+    _bcProduct = { code: code, leeg: true };
+    const res = document.getElementById('bc-result');
+    res.style.display = 'block';
+    res.innerHTML =
+      '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(netFout ? t('food.scan.netError') : t('food.scan.notFound', { code: code })) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' +
+        '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+        '<button class="btn-sm" onclick="bcActieHandmatig()">' + t('food.scan.manualEntry') + '</button>' +
+        '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.addMeal.cancel') + '</button>' +
+      '</div>';
+    return;
+  }
+
+  const n = product.nutriments || {};
+  const getal = (v) => (v === undefined || v === null || v === '' || isNaN(Number(v))) ? null : Math.round(Number(v) * 10) / 10;
+  let kcal = getal(n['energy-kcal_100g']);
+  if (kcal === null && getal(n['energy_100g']) !== null) kcal = Math.round(getal(n['energy_100g']) / 4.184);
+  const prot = getal(n['proteins_100g']);
+  const carb = getal(n['carbohydrates_100g']);
+  const fat = getal(n['fat_100g']);
+  let naam = (product.product_name_nl || product.product_name || '').trim();
+  const merk = ((product.brands || '').split(',')[0] || '').trim();
+  if (merk && naam.toLowerCase().indexOf(merk.toLowerCase()) === -1) naam = (merk + ' ' + naam).trim();
+  const ontbreekt = [];
+  if (prot === null) ontbreekt.push(t('portion.protein'));
+  if (carb === null) ontbreekt.push(t('portion.carbs'));
+  if (fat === null) ontbreekt.push(t('portion.fat'));
+  _bcProduct = { code: code, naam: naam, cat: _bcCategorie(product.categories_tags), kcal: kcal, prot: prot, carb: carb, fat: fat, ontbreekt: ontbreekt };
+  bcToonKaart();
+}
+
+function bcToonKaart() {
+  const p = _bcProduct;
+  const bestaand = _bcBestaand;
+  const res = document.getElementById('bc-result');
+  res.style.display = 'block';
+
+  const veld = (id, label, waarde, stap, oninput) => '<div style="text-align:center"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">' + label + '</div><input type="number" id="' + id + '" min="0" step="' + stap + '" value="' + (waarde === null || waarde === undefined ? '' : waarde) + '" oninput="' + oninput + '" style="width:100%;box-sizing:border-box;padding:8px 4px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;text-align:center;font-family:inherit"></div>';
+  const vast = (label, waarde) => '<div style="background:var(--sand);border-radius:8px;padding:8px 4px;text-align:center"><div style="font-size:10px;color:var(--muted)">' + label + '</div><div style="font-size:14px;font-weight:600">' + waarde + '</div></div>';
+  const wb = (x, eenheid) => (x === undefined || x === null ? '—' : x + eenheid);
+
+  let waardenHtml;
+  if (bestaand) {
+    waardenHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px">' +
+      vast(t('portion.kcal'), wb(p.kcal, '')) + vast(t('portion.protein'), wb(p.prot, ' g')) + vast(t('portion.carbs'), wb(p.carb, ' g')) + vast(t('portion.fat'), wb(p.fat, ' g')) + '</div>';
+  } else {
+    waardenHtml = '<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--muted);margin-bottom:2px">' + t('food.scan.name') + '</div><input type="text" id="bc-e-naam" value="' + escapeHtml(p.naam || '') + '" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:15px;font-family:inherit"></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px">' +
+      veld('bc-e-kcal', t('portion.kcal'), p.kcal, 1, 'bcKaartRekenen()') +
+      veld('bc-e-prot', t('portion.protein'), p.prot, 0.1, 'bcMacroInput()') +
+      veld('bc-e-carb', t('portion.carbs'), p.carb, 0.1, 'bcMacroInput()') +
+      veld('bc-e-fat', t('portion.fat'), p.fat, 0.1, 'bcMacroInput()') + '</div>';
+  }
+
+  const momenten = ['ontbijt', 'tussendoorOchtend', 'lunch', 'tussendoorMiddag', 'avond', 'tussendoorAvond'];
+  const standaardDatum = _bcBron === 'week' ? currentLogDate : fdTodayStr();
+  const stijlInvoer = 'padding:9px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;font-size:14px;font-family:inherit;background:var(--white);box-sizing:border-box';
+
+  // Welke actie vooraan staat, hangt af van waar je scant.
+  const knop = (fn, tekst, primair) => primair
+    ? '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="' + fn + '">' + tekst + '</button>'
+    : '<button class="btn-sm coach-only-btn" onclick="' + fn + '">' + tekst + '</button>';
+  const voorkeur = (_bcBron === 'producten' && !bestaand) ? 'opslaan' : (_bcBron === 'week' ? 'week' : (_bcBron === 'producten' ? 'vandaag' : 'vandaag'));
+  const acties = [];
+  if (!bestaand) acties.push(['opslaan', knop('bcActieOpslaan()', t('food.scan.saveMine'), voorkeur === 'opslaan')]);
+  acties.push(['vandaag', knop("bcActieToevoegen('vandaag')", t('food.scan.addToday'), voorkeur === 'vandaag')]);
+  acties.push(['week', knop("bcActieToevoegen('week')", t('food.scan.addWeek'), voorkeur === 'week')]);
+  acties.sort((a, b) => (a[0] === voorkeur ? -1 : 0) - (b[0] === voorkeur ? -1 : 0));
+
+  res.innerHTML =
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:4px">' + escapeHtml(bestaand ? t('food.scan.existsShort') : t('food.scan.found')) + ' · ' + escapeHtml(p.code) + '</div>' +
+    (bestaand ? '<div style="font-family:\'DM Serif Display\',serif;font-size:19px;margin-bottom:10px">' + escapeHtml(dispName(bestaand)) + '</div>' : '') +
+    waardenHtml +
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">' + t('food.scan.per100') + '</div>' +
+    ((!bestaand && p.ontbreekt && p.ontbreekt.length) ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: p.ontbreekt.join(', ') }) + '</div>' : '') +
+    (!bestaand ? '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:12px">' + t('food.scan.unverified') + '</div>' : '') +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
+      '<label style="font-size:11px;color:var(--muted)">' + t('food.scan.gram') + '<input type="number" id="bc-gram" min="1" step="1" value="100" oninput="bcKaartRekenen()" style="width:100%;' + stijlInvoer + '"></label>' +
+      '<label style="font-size:11px;color:var(--muted)">' + t('food.scan.moment') + '<select id="bc-moment" style="width:100%;' + stijlInvoer + '">' + momenten.map(m => '<option value="' + m + '">' + t('moment.' + m) + '</option>').join('') + '</select></label>' +
+    '</div>' +
+    '<label style="display:block;font-size:11px;color:var(--muted);margin-bottom:8px">' + t('food.scan.day') + '<input type="date" id="bc-datum" value="' + standaardDatum + '" style="width:100%;' + stijlInvoer + '"></label>' +
+    '<div id="bc-prev" style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:12px"></div>' +
+    (!bestaand ? '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px">' + t('food.scan.saveTitle') + '</div><div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">' +
+      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"' + (x[0] === 'eigen' ? ' checked' : '') + '><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
+    '<div id="bc-kaart-fout" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+      acties.map(a => a[1]).join('') +
+      '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+      (bestaand ? '<button class="btn-sm coach-only-btn" onclick="bcBewerkBestaand()">✏️ ' + t('common.edit') + '</button>' : '') +
+      '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.addMeal.cancel') + '</button>' +
+    '</div>';
+  bcKaartRekenen();
+}
+
+// Eiwit, koolhydraten of vet gewijzigd: kcal opnieuw uitrekenen (4/4/9), daarna de totalen.
+function bcMacroInput() {
+  const g = id => parseFloat(document.getElementById(id).value) || 0;
+  document.getElementById('bc-e-kcal').value = Math.round(g('bc-e-prot') * 4 + g('bc-e-carb') * 4 + g('bc-e-fat') * 9);
+  bcKaartRekenen();
+}
+
+// Toont wat de gekozen hoeveelheid oplevert.
+function bcKaartRekenen() {
+  const el = document.getElementById('bc-prev');
+  if (!el) return;
+  const gram = parseFloat(document.getElementById('bc-gram').value) || 0;
+  let w;
+  if (_bcBestaand) w = { kcal: _bcBestaand.kcal, prot: _bcBestaand.prot, carb: _bcBestaand.carb, fat: _bcBestaand.fat };
+  else {
+    const g = id => parseFloat(document.getElementById(id).value) || 0;
+    w = { kcal: g('bc-e-kcal'), prot: g('bc-e-prot'), carb: g('bc-e-carb'), fat: g('bc-e-fat') };
+  }
+  const f = gram / 100;
+  el.textContent = '= ' + Math.round((w.kcal || 0) * f) + ' kcal · ' + t('portion.protein') + ' ' + (Math.round((w.prot || 0) * f * 10) / 10) +
+    ' g · ' + t('portion.carbs') + ' ' + (Math.round((w.carb || 0) * f * 10) / 10) + ' g · ' + t('portion.fat') + ' ' + (Math.round((w.fat || 0) * f * 10) / 10) + ' g';
+}
+
+// Leest de kaart; geeft null (met een melding op de kaart) als er iets ontbreekt.
+function _bcKaartLees(metGram) {
+  const fout = document.getElementById('bc-kaart-fout');
+  if (fout) fout.textContent = '';
+  let p = _bcProduct;
+  if (!_bcBestaand) {
+    const g = id => { const v = parseFloat(document.getElementById(id).value); return isNaN(v) ? 0 : Math.round(v * 10) / 10; };
+    p = Object.assign({}, _bcProduct, {
+      naam: document.getElementById('bc-e-naam').value.trim(),
+      kcal: Math.round(g('bc-e-kcal')), prot: g('bc-e-prot'), carb: g('bc-e-carb'), fat: g('bc-e-fat')
+    });
+    if (!p.naam) { if (fout) fout.textContent = t('food.add.nameRequired'); return null; }
+  }
+  let gram = 0, moment = '', datum = '';
+  if (metGram) {
+    gram = parseFloat(document.getElementById('bc-gram').value);
+    if (!(gram > 0)) { if (fout) fout.textContent = t('food.scan.gramInvalid'); return null; }
+    moment = document.getElementById('bc-moment').value;
+    datum = document.getElementById('bc-datum').value;
+  }
+  const keuzeEl = document.querySelector('input[name="bc-bewaar"]:checked');
+  return { p: p, gram: gram, moment: moment, datum: datum, keuze: keuzeEl ? keuzeEl.value : 'eigen' };
+}
+
+// Maakt van het gescande product een product volgens de keuze: eigen, voor iedereen of niet
+// bewaren (dan alleen een tijdelijk product voor het loggen). Geeft het product terug, of null.
+async function bcMaakProduct(p, keuze) {
+  const basis = (p.naam || '').trim() || ('Product ' + p.code);
+  let naam = basis;
+  let teller = 2;
+  while (productNaamBestaat(naam, null)) { naam = basis + ' (' + teller + ')'; teller++; }
+  const prot = p.prot === null || p.prot === undefined ? 0 : p.prot;
+  const carb = p.carb === null || p.carb === undefined ? 0 : p.carb;
+  const fat = p.fat === null || p.fat === undefined ? 0 : p.fat;
+  const kcal = (p.kcal !== null && p.kcal !== undefined) ? p.kcal : Math.round(prot * 4 + carb * 4 + fat * 9);
+  const cat = p.cat || 'overig';
+
+  if (keuze === 'nee') {
+    return { id: 'scan-' + Date.now(), icon: '🍽️', name: naam, cat: cat, kcal: kcal, prot: prot, carb: carb, fat: fat, _tijdelijk: true };
+  }
+  if (keuze === 'iedereen') {
+    const rij = {
+      id: 'prime-' + Date.now() + Math.floor(Math.random() * 1000), op: 'new',
+      icon: '🍽️', name: naam, cat: cat, kcal: kcal, prot: prot, carb: carb, fat: fat, photo: null, barcode: p.code
+    };
+    const fout = await savePrimeProductToCloud(rij);
+    if (fout) {
+      try { showToast(t('food.prime.saveFailed'), true); } catch (e) { console.error(e); }
+      return null;
+    }
+    primeProducts = primeProducts.concat([rij]);
+    _bewaarPrimeProductenLokaal();
+    applyPrimeProducts();
+    return PRODUCTS.find(x => x.id === rij.id) || rij;
+  }
+  const nieuw = {
+    id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
+    icon: '🍽️', custom: true, barcode: p.code,
+    name: naam, cat: cat, kcal: kcal, prot: prot, carb: carb, fat: fat, photo: null
+  };
+  customProducts.push(nieuw);
+  syncSet('prime_custom_products', customProducts);
+  try { renderAddProductTab(); } catch (e) { console.error(e); }
+  return nieuw;
+}
+
+// Zet een product als gepland (niet afgevinkt) in de lijst van een dag.
+function bcLogItem(product, gram, moment, dateStr) {
+  const f = gram / 100;
+  const item = {
+    logId: newLogId(),
+    productId: product.id,
+    name: dispName(product),
+    icon: product.icon,
+    moment: moment,
+    gram: gram,
+    kcal: Math.round(product.kcal * f),
+    prot: Math.round(product.prot * f * 10) / 10,
+    carb: Math.round(product.carb * f * 10) / 10,
+    fat: Math.round(product.fat * f * 10) / 10,
+    type: 'product',
+    eaten: false
+  };
+  if (dateStr === currentLogDate) {
+    dayLog.push(item);
+    foodDays[currentLogDate] = dayLog;
+  } else {
+    foodDays[dateStr] = [...(foodDays[dateStr] || []), item];
+  }
+  syncSet('prime_food_days', foodDays);
+  updateMacroTotals();
+  updateLogBadge();
+  renderDayLog();
+  if (document.getElementById('foodweek-content')) renderFoodWeek();
+}
+
+// Scanner sluiten na een geslaagde actie en terug naar het scherm waar je was.
+function bcKlaar() {
+  const bron = _bcBron;
+  stopBarcodeCamera();
+  document.getElementById('barcode-modal').classList.remove('open');
+  _portionReturnTab = null;
+  _bcVorigeDatum = null;
+  if (bron === 'week') switchFoodTab('week');
+  else if (bron === 'vandaag') switchFoodTab('log');
+  else { try { renderAddProductTab(); renderProducts(); } catch (e) { console.error(e); } }
+}
+
+async function bcActieToevoegen(doel) {
+  const k = _bcKaartLees(true);
+  if (!k) return;
+  const fout = document.getElementById('bc-kaart-fout');
+  const datum = doel === 'vandaag' ? fdTodayStr() : k.datum;
+  if (!datum) { if (fout) fout.textContent = t('food.scan.dayRequired'); return; }
+  if (isDagAfgesloten(datum)) { alert(t('weekplan.dayLocked')); return; }
+  const product = _bcBestaand || await bcMaakProduct(k.p, k.keuze);
+  if (!product) return;
+  bcLogItem(product, k.gram, k.moment, datum);
+  bcKlaar();
+  try { showToast(t('food.scan.addedTo', { date: formatPickerDateLabel(datum) })); } catch (e) { console.error(e); }
+}
+
+// Opslaan in mijn producten: opent het formulier (met categorie en foto), ingevuld met de
+// gescande gegevens. De keuze eigen/voor iedereen bepaalt het vinkje in dat formulier.
+function bcActieOpslaan() {
+  const k = _bcKaartLees(false);
+  if (!k) return;
+  closeBarcodeScanner();
+  switchFoodTab('add');
+  openAddProductForm();
+  _apBarcode = k.p.code || null;
+  document.getElementById('ap-name').value = k.p.naam || '';
+  document.getElementById('ap-cat').value = k.p.cat || 'overig';
+  document.getElementById('ap-prot').value = k.p.prot === null ? 0 : k.p.prot;
+  document.getElementById('ap-carb').value = k.p.carb === null ? 0 : k.p.carb;
+  document.getElementById('ap-fat').value = k.p.fat === null ? 0 : k.p.fat;
+  const deel = document.getElementById('ap-share');
+  if (deel) deel.checked = (k.keuze === 'iedereen');
+  updateAddProductKcal();
+  updateApShareRow();
+  apNaamInput();
+  try { showToast(t('food.scan.filled')); } catch (e) { console.error(e); }
+}
+
+// Niet herkend: handmatig invoeren in een leeg formulier, met de barcode al bewaard.
+function bcActieHandmatig() {
+  const code = _bcProduct && _bcProduct.code;
+  closeBarcodeScanner();
+  switchFoodTab('add');
+  openAddProductForm();
+  _apBarcode = code || null;
 }
