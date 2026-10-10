@@ -3398,6 +3398,8 @@ function openSpraak(bron) {
   document.getElementById('vz-producten').innerHTML = getAllProducts().map(p => '<option value="' + escapeHtml(dispName(p)) + '"></option>').join('');
   document.getElementById('vz-tekst').value = '';
   document.getElementById('vz-fout').textContent = '';
+  vzMicStatus('');
+  vzMicKnop(false);
   document.getElementById('vz-invoer').style.display = 'block';
   document.getElementById('vz-resultaat').style.display = 'none';
   document.getElementById('voice-modal').classList.add('open');
@@ -3406,6 +3408,7 @@ function openSpraak(bron) {
 
 // klaar = true na een geslaagde toevoeging; anders (annuleren) zetten we dag en tabblad terug.
 function sluitSpraak(klaar) {
+  vzMicStop();
   document.getElementById('voice-modal').classList.remove('open');
   if (!klaar) {
     _portionReturnTab = null;
@@ -3422,6 +3425,7 @@ function vzProductBijNaam(naam) {
 }
 
 function vzHerken() {
+  vzMicStop();
   const fout = document.getElementById('vz-fout');
   fout.textContent = '';
   const tekst = document.getElementById('vz-tekst').value.trim();
@@ -3505,6 +3509,7 @@ function vzPreview() {
 }
 
 function vzOpnieuw() {
+  vzMicStop();
   document.getElementById('vz-invoer').style.display = 'block';
   document.getElementById('vz-resultaat').style.display = 'none';
   document.getElementById('vz-fout').textContent = '';
@@ -3534,4 +3539,76 @@ function vzToevoegen() {
   _portionReturnTab = null;
   switchFoodTab(bron === 'week' ? 'week' : 'log');
   try { showToast(t('food.voice.added', { n: klaar.length, date: formatPickerDateLabel(datum) })); } catch (e) { console.error(e); }
+}
+
+
+// ----- Microfoonknop in het scherm (spraakherkenning van de browser) -----
+// Gebruikt de spraakherkenning van de browser (Nederlands). Die stuurt de audio naar de
+// server van Google of Apple; daarom alleen op een tik van de coach. Werkt niet in elke
+// browser of als app vanaf het beginscherm; dan blijft het microfoontje van het toetsenbord.
+let _vzSpraak = null;
+let _vzLuistert = false;
+let _vzBasisTekst = '';
+
+function vzMicBeschikbaar() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+
+function vzMicKnop(aan) {
+  const knop = document.getElementById('vz-mic');
+  if (!knop) return;
+  _vzLuistert = aan;
+  knop.textContent = aan ? '⏹ ' + t('food.voice.stop') : '🎤 ' + t('food.voice.mic');
+  knop.style.background = aan ? '#c0392b' : '';
+  knop.style.color = aan ? '#fff' : '';
+  knop.style.borderColor = aan ? '#c0392b' : '';
+}
+
+function vzMicStatus(tekst, isFout) {
+  const el = document.getElementById('vz-mic-status');
+  if (!el) return;
+  el.textContent = tekst || '';
+  el.style.color = isFout ? '#c0392b' : 'var(--muted)';
+}
+
+function vzMicToggle() {
+  if (_vzLuistert) { vzMicStop(); return; }
+  const Spraak = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Spraak) { vzMicStatus(t('food.voice.micNoSupport'), true); return; }
+  const veld = document.getElementById('vz-tekst');
+  _vzBasisTekst = veld.value.trim();
+  const rec = new Spraak();
+  rec.lang = 'nl-NL';
+  rec.interimResults = true;
+  rec.continuous = true;
+  rec.onresult = function(ev) {
+    let tekst = '';
+    for (let i = 0; i < ev.results.length; i++) tekst += ev.results[i][0].transcript + ' ';
+    veld.value = (_vzBasisTekst ? _vzBasisTekst + ' ' : '') + tekst.trim();
+  };
+  rec.onerror = function(ev) {
+    const fout = ev && ev.error;
+    if (fout === 'not-allowed' || fout === 'service-not-allowed') vzMicStatus(t('food.voice.micDenied'), true);
+    else if (fout === 'no-speech') vzMicStatus(t('food.voice.micNone'), true);
+    else vzMicStatus(t('food.voice.micError', { fout: fout || '?' }), true);
+    vzMicKnop(false);
+  };
+  rec.onend = function() {
+    vzMicKnop(false);
+    if (_vzSpraak === rec) _vzSpraak = null;
+    const el = document.getElementById('vz-mic-status');
+    if (el && el.textContent === t('food.voice.listening')) vzMicStatus('');
+  };
+  try {
+    rec.start();
+    _vzSpraak = rec;
+    vzMicKnop(true);
+    vzMicStatus(t('food.voice.listening'));
+  } catch (e) {
+    console.error('vzMicToggle:', e);
+    vzMicStatus(t('food.voice.micError', { fout: 'start' }), true);
+  }
+}
+
+function vzMicStop() {
+  if (_vzSpraak) { try { _vzSpraak.stop(); } catch (e) { /* al gestopt */ } _vzSpraak = null; }
+  if (_vzLuistert) vzMicKnop(false);
 }
