@@ -3425,13 +3425,15 @@ function vzLeesTekst(tekst) {
   marks.forEach(k => { chunks.push(t.slice(pos, k.start)); pos = k.end; });
   chunks.push(t.slice(pos));
 
+  let laatsteRegel = null; // voor een hoeveelheid die ná een moment- of datumwoord komt ("wokgroenten avond 400 gram")
   const regelsPerChunk = chunks.map(tekstDeel => {
     const c = tekstDeel.replace(VZ_VULWOORDEN, ' ').replace(/[:!?]/g, ' ');
     const delen = c.split(/[;,\n]|\.(?=\s|$)|\s(?:en|plus|met|op|daarna|ook|erbij)\s|\s&\s/).map(x => x.replace(/\s+/g, ' ').trim()).filter(Boolean);
     const uit = [];
     delen.reduce((acc, x) => acc.concat(vzSplitsOpAantal(x)), []).forEach(x => {
       const r = vzLeesStuk(x);
-      if (r.naam) uit.push({ bron: x, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: null, datum: null });
+      if (r.naam) { uit.push({ bron: x, naam: r.naam, aantal: r.aantal, eenheid: r.eenheid, moment: null, datum: null }); laatsteRegel = uit[uit.length - 1]; }
+      else if (r.aantal !== null && laatsteRegel && laatsteRegel.aantal === null) { laatsteRegel.aantal = r.aantal; laatsteRegel.eenheid = r.eenheid; }
     });
     return uit;
   });
@@ -3892,17 +3894,38 @@ function vzVergeet(id) {
 // "twee eieren een appel 200 gram kwark" -> "twee eieren" / "een appel" / "200 gram kwark".
 function vzSplitsOpAantal(stuk) {
   const w = stuk.split(' ').filter(Boolean);
+  const isGetal = (x) => /^\d+(\.\d+)?$/.test(x) || /^\d+(\.\d+)?(gram|gr|g|kg|kilo|ml|l|dl|cl)$/.test(x) ||
+    (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && ['half', 'halve', 'kwart', 'anderhalf', 'anderhalve', 'driekwart'].indexOf(x) === -1) || vzGetalWoord(x) !== null;
+  const isEenheid = (x) => !!vzEenheid(x);
+  if (!w.length) return [];
+
+  // Staat de hoeveelheid ná het product ("wokgroenten 400 gram", "kwark 200 gram banaan 100 gram"), dan
+  // sluit elke hoeveelheid het product ervoor af. Begint het stuk met een hoeveelheid, dan begint er bij elke
+  // nieuwe hoeveelheid een nieuw product ("twee eieren een appel 200 gram kwark").
+  if (!isGetal(w[0]) && !isEenheid(w[0]) && w.some(isGetal)) {
+    const delen = [];
+    let huidig = [];
+    for (let i = 0; i < w.length; i++) {
+      huidig.push(w[i]);
+      if (isGetal(w[i])) {
+        if (i + 1 < w.length && isEenheid(w[i + 1])) { huidig.push(w[i + 1]); i++; }
+        delen.push(huidig.join(' '));
+        huidig = [];
+      }
+    }
+    if (huidig.length) delen.push(huidig.join(' '));
+    return delen;
+  }
+
   const delen = [];
   let huidig = [];
   let heeftNaam = false;
   for (let i = 0; i < w.length; i++) {
     const x = w[i];
-    const isGetal = /^\d+(\.\d+)?$/.test(x) || /^\d+(\.\d+)?(gram|gr|g|kg|kilo|ml|l|dl|cl)$/.test(x) ||
-      (Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && ['half', 'halve', 'kwart', 'anderhalf', 'anderhalve', 'driekwart'].indexOf(x) === -1) || vzGetalWoord(x) !== null;
-    const isEenheid = !!vzEenheid(x);
-    if (isGetal && heeftNaam) { delen.push(huidig.join(' ')); huidig = []; heeftNaam = false; }
+    const getal = isGetal(x);
+    if (getal && heeftNaam) { delen.push(huidig.join(' ')); huidig = []; heeftNaam = false; }
     huidig.push(x);
-    if (!isGetal && !isEenheid && VZ_STOPWOORDEN.indexOf(x) === -1 && !Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && vzGetalWoord(x) === null) heeftNaam = true;
+    if (!getal && !isEenheid(x) && VZ_STOPWOORDEN.indexOf(x) === -1 && !Object.prototype.hasOwnProperty.call(VZ_GETALLEN, x) && vzGetalWoord(x) === null) heeftNaam = true;
   }
   if (huidig.length) delen.push(huidig.join(' '));
   return delen;
