@@ -242,14 +242,14 @@ const EXTRA_EXERCISES = [
     { id:"ex-acirc", name:"Arm Circles", icon:"🔄", sets:2, reps:"15 per richting", rest:"30 sec", tip:"Maak grote cirkels met gestrekte armen, eerst vooruit en dan achteruit.", tip_en:"Make big circles with straight arms, first forward then backward.", youtube:"https://www.youtube.com/results?search_query=Arm%20Circles%20proper%20form", photo:"images/oefeningen/arm-circles.jpg"},
     { id:"ex-lswing", name:"Leg Swings", icon:"🦵", sets:2, reps:"10 per been", rest:"30 sec", tip:"Zwaai je been gecontroleerd voor-achter en houd je ergens aan vast.", tip_en:"Swing your leg forward and back under control while holding a support.", youtube:"https://www.youtube.com/results?search_query=Leg%20Swings%20proper%20form", photo:"images/oefeningen/leg-swings.jpg"},
     { id:"ex-bpa", name:"Band Pull-apart", icon:"🎗️", sets:3, reps:"15", rest:"30 sec", tip:"Trek de band met gestrekte armen uit elkaar tot borsthoogte.", tip_en:"Pull the band apart with straight arms at chest height.", youtube:"https://www.youtube.com/results?search_query=Band%20Pull-apart%20proper%20form", photo:"images/oefeningen/band-pull-apart.jpg"},
-    { id:"ex-gact", name:"Glute Activation (banded)", icon:"🍑", sets:2, reps:"15", rest:"30 sec", tip:"Band boven je knieën; duw je knieën naar buiten tijdens een glute bridge of squat.", tip_en:"Band above your knees; push your knees out during a glute bridge or squat.", youtube:"https://www.youtube.com/results?search_query=Glute%20Activation%20(banded)%20proper%20form"},
-    { id:"ex-sdis", name:"Shoulder Dislocates (band)", icon:"🔄", sets:2, reps:"10", rest:"30 sec", tip:"Houd een band breed vast en breng hem met gestrekte armen van voor naar achter je lichaam.", tip_en:"Hold a band wide and bring it from front to back over your head with straight arms.", youtube:"https://www.youtube.com/results?search_query=Shoulder%20Dislocates%20(band)%20proper%20form"},
+    { id:"ex-gact", name:"Glute Activation (banded)", icon:"🍑", sets:2, reps:"15", rest:"30 sec", tip:"Band boven je knieën; duw je knieën naar buiten tijdens een glute bridge of squat.", tip_en:"Band above your knees; push your knees out during a glute bridge or squat.", youtube:"https://www.youtube.com/results?search_query=Glute%20Activation%20(banded)%20proper%20form", photo:"images/oefeningen/glute-activation-banded.jpg"},
+    { id:"ex-sdis", name:"Shoulder Dislocates (band)", icon:"🔄", sets:2, reps:"10", rest:"30 sec", tip:"Houd een band breed vast en breng hem met gestrekte armen van voor naar achter je lichaam.", tip_en:"Hold a band wide and bring it from front to back over your head with straight arms.", youtube:"https://www.youtube.com/results?search_query=Shoulder%20Dislocates%20(band)%20proper%20form", photo:"images/oefeningen/shoulder-dislocates-band.jpg"},
   ]},
 ];
 
 // Cache-busting: zelfde reden als PRODUCT_PHOTO_VERSION hierboven -- ophogen
 // zodra een foto in EXTRA_EXERCISES vervangen wordt.
-const EXTRA_EXERCISE_PHOTO_VERSION = 22;
+const EXTRA_EXERCISE_PHOTO_VERSION = 23;
 EXTRA_EXERCISES.forEach(group => group.exercises.forEach(ex => { if (ex.photo && ex.photo.startsWith('images/')) ex.photo += '?v=' + EXTRA_EXERCISE_PHOTO_VERSION; }));
 
 
