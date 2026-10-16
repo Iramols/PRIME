@@ -502,7 +502,7 @@ function renderPrimeMealPlan() {
     list.map(m => {
       const tot = mealTotals(m);
       return `
-      <div class="product-card" onclick="openMealPortionModal('${m.id}')">
+      <div class="product-card" onclick="openPrimeMealModal('${m.id}')">
         ${m.photo ? `<div class="product-photo"><img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">🍽️</div>`}
         <div class="product-name">${dispName(m)}</div>
         <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
@@ -510,16 +510,26 @@ function renderPrimeMealPlan() {
           <span class="product-pill">${tot.kcal} kcal</span>
           <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
         </div>
-        <div style="display:flex;gap:6px;margin-top:8px" onclick="event.stopPropagation()">
-          ${canEdit ? `
-          <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('common.edit')}</button>
-          <button class="btn-sm coach-only-btn" style="flex:1;font-size:11px;padding:5px 6px;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="removePrimeMeal('${m.id}')">🗑️ ${t('common.delete')}</button>
-          ` : `
-          <button class="btn-sm" style="flex:1;font-size:11px;padding:5px 6px" onclick="editPrimeMeal('${m.id}')">${t('programmas.view')}</button>
-          `}
-        </div>
       </div>`;
     }).join('') + `</div>`;
+}
+
+// Klik op een PRIME-gerecht: zelfde keuzevenster als bij eigen gerechten
+// (Inplannen / Bewerken / Verwijderen). De coach bewerkt en verwijdert;
+// iedereen anders ziet in plaats van Bewerken "Bekijken" (alleen-lezen).
+function openPrimeMealModal(id) {
+  const dish = primeMeals.find(m => m.id === id);
+  if (!dish) return;
+  const tot = mealTotals(dish);
+  const nu = isPrimeCoach();
+  document.getElementById('omm-name').textContent = dispName(dish);
+  document.getElementById('omm-info').textContent = t('food.addMeal.totalWeightLine', { gram: tot.gram }) + ' · ' + tot.kcal + ' kcal';
+  const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
+  document.getElementById('omm-actions').innerHTML =
+    '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();openMealPortionModal(\'' + dish.id + '\')">' + t('portion.addToDay') + '</button>' +
+    '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();editPrimeMeal(\'' + dish.id + '\')">' + (nu ? '✏️ ' + t('common.edit') : '👁️ ' + t('programmas.view')) + '</button>' +
+    (nu ? '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();removePrimeMeal(\'' + dish.id + '\')">🗑️ ' + t('common.delete') + '</button>' : '');
+  document.getElementById('own-meal-modal').classList.add('open');
 }
 
 // Verwijdert een PRIME-gerecht -- coach-only (de knop ernaartoe is al
