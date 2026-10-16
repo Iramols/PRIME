@@ -843,7 +843,7 @@ function addCustomMeal() {
   if (_amNewPrime) {
     if (!isPrimeCoach()) return;
     // Naam krijgt altijd de vaste prefix 'PRIME-' (zelfde regel als bij "Opslaan als PRIME-gerecht").
-    if (/^prime-?s*$/i.test(name)) { // alleen de prefix ingevuld = nog geen echte naam
+    if (/^prime-?[ ]*$/i.test(name)) { // alleen de prefix ingevuld = nog geen echte naam
       showMealFormError(t('food.addMeal.nameRequired'));
       nameInput.style.borderColor = '#c0392b';
       return;
