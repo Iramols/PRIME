@@ -488,17 +488,18 @@ function renderPrimeMealPlan() {
   const el = document.getElementById('prime-meal-plan');
   if (!el) return;
   const canEdit = isPrimeCoach();
+  const balk = canEdit ? `<div onclick="openAddPrimeMealForm()" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px dashed var(--coach-only);border-radius:10px;background:rgba(230,126,34,0.08);color:var(--coach-only);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px"><span style="font-size:18px;line-height:1">➕</span><span>${t('food.primeMeals.addBtn')}</span></div>` : '';
   if (!primeMeals.length) {
-    el.innerHTML = `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.primeMeals.empty')}</div>`;
+    el.innerHTML = balk + `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.primeMeals.empty')}</div>`;
     return;
   }
   const q = (document.getElementById('primemeal-search')?.value || '').toLowerCase();
   const list = q ? primeMeals.filter(m => m.name.toLowerCase().includes(q) || dispName(m).toLowerCase().includes(q)) : primeMeals;
   if (!list.length) {
-    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">${t('common.noSearchResults')}</div>`;
+    el.innerHTML = balk + `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">${t('common.noSearchResults')}</div>`;
     return;
   }
-  el.innerHTML = `<div class="product-grid">` +
+  el.innerHTML = balk + `<div class="product-grid">` +
     list.map(m => {
       const tot = mealTotals(m);
       return `
@@ -654,6 +655,7 @@ let _amPhotoData = null;
 let _amRowCounter = 0;
 let _amEditingId = null;
 let _amEditingIsPrime = false; // true zolang het formulier een PRIME-gerecht bewerkt i.p.v. een eigen gerecht
+let _amNewPrime = false;       // true zolang de coach een NIEUW PRIME-gerecht invult (via de balk op PRIME gerechten)
 let _amFormReadOnly = false;   // true zolang een niet-coach een PRIME-gerecht alleen bekijkt (geen wijzigingen mogelijk)
 let _amReturnTab = null;       // welke foodtab "Terug"/"Annuleren" moet openen (null = op + Gerecht toevoegen blijven, zoals bij een eigen gerecht)
 
@@ -838,6 +840,26 @@ function addCustomMeal() {
   }
   showMealFormError('');
 
+  if (_amNewPrime) {
+    if (!isPrimeCoach()) return;
+    // Naam krijgt altijd de vaste prefix 'PRIME-' (zelfde regel als bij "Opslaan als PRIME-gerecht").
+    const primeNaam = /^prime-/i.test(name) ? name : 'PRIME-' + name;
+    const nieuwPrime = {
+      id: 'prime-meal-' + Date.now() + Math.floor(Math.random() * 1000),
+      name: primeNaam,
+      photo: _amPhotoData || null,
+      ingredients: ingredients
+    };
+    primeMeals.push(nieuwPrime);
+    try { localStorage.setItem('prime_prime_meals', JSON.stringify(primeMeals)); } catch(e) { console.error(e); }
+    savePrimeMealToCloud(nieuwPrime).then(fout => {
+      try { showToast(fout ? t('food.primeMeals.saveFailed') : t('food.primeMeals.saved'), !!fout); } catch(e) { console.error(e); }
+    });
+    resetMealForm(); // brengt je terug naar PRIME gerechten (zie _amReturnTab)
+    renderPrimeMealPlan();
+    return;
+  }
+
   const wasEditingPrime = _amEditingIsPrime;
   if (wasEditingPrime) {
     const dish = primeMeals.find(m => m.id === _amEditingId);
@@ -965,12 +987,36 @@ function editPrimeMeal(id) {
   document.getElementById('am-name').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// Coach-only: leeg formulier voor een NIEUW PRIME-gerecht, geopend vanaf de
+// balk op de PRIME gerechten-tab. Opslaan zet het meteen als gedeeld
+// PRIME-gerecht neer; Annuleren/Opslaan brengt je terug naar die tab.
+function openAddPrimeMealForm() {
+  if (!isPrimeCoach()) return;
+  _amReturnTab = null;
+  resetMealForm();
+  _amNewPrime = true;
+  _amReturnTab = 'primemeals';
+  document.getElementById('am-submit-btn').classList.add('coach-only-btn');
+  document.querySelectorAll('#am-ingredient-actions button').forEach(btn => btn.classList.add('coach-only-btn'));
+  const uploadSpan = document.querySelector('#am-photo-upload-label span');
+  if (uploadSpan) uploadSpan.classList.add('coach-only-btn');
+  document.getElementById('am-own-meals-section').style.display = 'none';
+  document.getElementById('am-form-title').textContent = t('food.primeMeals.newTitle');
+  document.getElementById('am-cancel-btn').style.display = 'inline-block';
+  switchFoodTab('addmeal');
+  showAmForm(true);
+  const naamEl = document.getElementById('am-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
+}
+
 // Reset het formulier naar "nieuw gerecht"-stand — zowel na een geslaagde
 // toevoeging/wijziging als bij het annuleren van een bewerking of het
 // sluiten van een alleen-lezen weergave. Navigeert daarbij terug naar
 // _amReturnTab als die gezet is (bv. de PRIME gerechten-tab).
 function resetMealForm() {
   showAmForm(false);
+  _amNewPrime = false;
   _amEditingId = null;
   _amEditingIsPrime = false;
   _amFormReadOnly = false;
