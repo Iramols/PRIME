@@ -159,7 +159,7 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
         ? `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">${t('weekplan.dayLocked')}</div>`
         : `<div style="display:flex;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','basis')">${t('foodweek.addProductForDay')}</button>
-        <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','plan')">${t('foodweek.addMealForDay')}</button>
+        <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','addmeal')">${t('foodweek.addMealForDay')}</button>
       </div>${isPrimeCoach() ? `<div class="food-coach-row"><button class="btn-sm coach-only-btn" onclick="scanEtenVoorDag('${dateStr}')">📷 ${t('food.scan.btn')}</button><button class="btn-sm coach-only-btn" onclick="spraakVoorDag('${dateStr}')">✍️ ${t('food.voice.btn')}</button></div>` : ''}`}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button></div>` : ''}
       ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
@@ -192,7 +192,7 @@ function fwRemoveItem(dateStr, logId) {
 }
 
 // Zet de actieve log-datum op deze dag en springt naar Basisproducten of
-// Gerechten (tab: 'basis' of 'plan'), zodat de bestaande product/gerecht-
+// Gerechten (tab: 'basis' of 'addmeal'), zodat de bestaande product/gerecht-
 // selectie + portiemodal hergebruikt wordt om voor déze dag iets toe te
 // voegen i.p.v. voor vandaag.
 function fwAddForDay(dateStr, tab) {

@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261015-2144';
+window.PRIME_BUILD = '20261016-1927';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261015-2144">
+<link rel="stylesheet" href="css/styles.css?v=20261016-1927">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261015-2144"></script>
-<script src="js/translations.js?v=20261015-2144"></script>
-<script src="js/i18n.js?v=20261015-2144"></script>
+<script src="js/cloud.js?v=20261016-1927"></script>
+<script src="js/translations.js?v=20261016-1927"></script>
+<script src="js/i18n.js?v=20261016-1927"></script>
 </head>
 <body>
 
@@ -664,7 +664,6 @@ if ('serviceWorker' in navigator) {
       <button class="food-tab" id="tab-week" onclick="switchFoodTab('week')" data-i18n="food.tab.week">Weekplanning</button>
       <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
       <button class="food-tab" id="tab-primemeals" onclick="switchFoodTab('primemeals')" data-i18n="food.tab.primeMeals">PRIME gerechten</button>
-      <button class="food-tab" id="tab-plan" onclick="switchFoodTab('plan')" data-i18n="food.tab.plan">Maaltijdplan</button>
       <button class="food-tab" id="tab-add" onclick="switchFoodTab('add')" data-i18n="food.tab.add">+ Eigen basisproducten</button>
       <button class="food-tab" id="tab-addmeal" onclick="switchFoodTab('addmeal')" data-i18n="food.tab.addMeal">+ Gerecht toevoegen</button>
     </div>
@@ -681,20 +680,6 @@ if ('serviceWorker' in navigator) {
       </div>
       <div style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
       <div id="prime-meal-plan"></div>
-    </div>
-
-    <!-- TAB: MAALTIJDPLAN -->
-    <div id="foodtab-plan" style="display:none">
-      <div class="card" style="margin-bottom:16px;padding:14px 16px;display:flex;align-items:center;gap:10px;background:var(--sage-light);border-color:var(--sage-mid)">
-        <div style="font-size:20px">💡</div>
-        <div style="font-size:13px;color:var(--charcoal)" data-i18n-html="food.plan.hintCard">Klik op een gerecht om het toe te voegen aan <strong>Mijn dag</strong>. Je kunt de portie aanpassen.</div>
-      </div>
-      <div class="search-bar" style="margin-bottom:16px">
-        <span style="font-size:15px;color:var(--muted)">🔍</span>
-        <input type="text" id="mealplan-search" data-i18n-placeholder="food.search.mealPlaceholder" placeholder="Zoek gerecht..." oninput="renderMealPlan()" style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;background:none;color:var(--charcoal)">
-      </div>
-      <div id="meal-count" style="font-size:13px;color:var(--muted);margin-bottom:16px" data-i18n="food.plan.hint">Klik op een maaltijd om hem toe te voegen aan je dag</div>
-      <div id="meal-plan"></div>
     </div>
 
     <!-- TAB: WEEKPLANNING -->
@@ -734,7 +719,7 @@ if ('serviceWorker' in navigator) {
         <div style="margin-bottom:16px" data-i18n="food.log.empty">Nog niets gelogd. Voeg maaltijden of producten toe via de andere tabbladen.</div>
         <div id="day-log-empty-addrow" style="display:flex;gap:8px">
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
-          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
+          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('addmeal')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
         <div class="food-coach-row food-scan-btn" style="display:none">
           <button class="btn-sm coach-only-btn" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
@@ -748,7 +733,7 @@ if ('serviceWorker' in navigator) {
         <div id="log-summary"></div>
         <div id="day-log-totals-addrow" style="display:flex;gap:8px;margin-top:14px">
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
-          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('plan')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
+          <button class="btn-sm" style="flex:1" onclick="foodAddForDay('addmeal')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
         <div class="food-coach-row food-scan-btn" style="display:none">
           <button class="btn-sm coach-only-btn" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
@@ -841,6 +826,7 @@ if ('serviceWorker' in navigator) {
 
     <!-- TAB: EIGEN GERECHT TOEVOEGEN -->
     <div id="foodtab-addmeal" style="display:none">
+      <div id="am-form-wrap" style="display:none">
       <div class="prog-info-wrap">
       <div class="card prog-info-kaart" style="margin-bottom:0;flex:1;min-width:0">
         <div class="card-label" style="margin-bottom:14px" id="am-form-title" data-i18n="food.addMeal.formTitle">Nieuw gerecht</div>
@@ -895,6 +881,7 @@ if ('serviceWorker' in navigator) {
       <div class="prog-info-side" id="am-prime-side" style="display:none">
         <div class="prog-info-side-label" data-i18n="programmas.prime.sideLabel">Coach-actie</div>
         <button class="btn-sm coach-only-btn" style="width:100%" onclick="openPrimeMealSaveModal()" data-i18n="food.primeMeals.saveAs">⭐ Opslaan als PRIME-gerecht</button>
+      </div>
       </div>
       </div>
 
@@ -1415,6 +1402,19 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<div class="portion-modal-wrap" id="own-meal-modal" onclick="if(event.target===this)closeOwnMealModal()">
+  <div class="portion-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div class="portion-product-name" id="omm-name">Gerecht</div>
+        <div class="portion-per100" id="omm-info" style="margin-bottom:0"></div>
+      </div>
+      <button onclick="closeOwnMealModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);margin-top:-4px">×</button>
+    </div>
+    <div id="omm-actions" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
 <div class="portion-modal-wrap" id="own-product-modal" onclick="if(event.target===this)closeOwnProductModal()">
   <div class="portion-modal">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -1717,6 +1717,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261015-2144"></script>
+<script src="js/auth.js?v=20261016-1927"></script>
 </body>
 </html>

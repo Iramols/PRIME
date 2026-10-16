@@ -54,7 +54,6 @@ function go(screen) {
     renderFood();
     // Herbouw welke Voeding-tab nu ook actief is (bv. bij taalwissel),
     // i.p.v. altijd terug te springen naar de eerste tab.
-    if (document.getElementById('foodtab-plan')?.style.display !== 'none') renderMealPlan();
     if (document.getElementById('foodtab-basis')?.style.display !== 'none') renderProducts();
     if (document.getElementById('foodtab-log')?.style.display !== 'none') renderDayLog();
     if (document.getElementById('foodtab-week')?.style.display !== 'none') renderFoodWeek();

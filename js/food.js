@@ -1,7 +1,8 @@
 // ========== FOOD TAB SWITCHING ==========
 function switchFoodTab(tab) {
+  if (tab === 'plan') tab = 'addmeal'; // de losse Gerechten-tab bestaat niet meer
   if (tab !== 'add') _apTerug = null;
-  ['plan','basis','primemeals','log','add','addmeal','week'].forEach(t => {
+  ['basis','primemeals','log','add','addmeal','week'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
@@ -121,7 +122,6 @@ function renderFood() {
   // Vaste titel ({naam} — Maaltijdplanner), zelfde reden als bij Training.
   document.getElementById('food-screen-title').textContent = t('food.plannerTitle', { name: profile.name || t('history.defaultUserName') });
   document.getElementById('food-subtitle').textContent = t('food.subtitle');
-  renderMealPlan();
   updateMacroTotals();
 }
 
@@ -142,33 +142,7 @@ function foodVerwijderAlles() {
 
 // Zelfde opzet als de productengrid in Basisproducten: één platte lijst,
 // klikken opent de portiemodal waarin je gewicht én maaltijdmoment kiest.
-function renderMealPlan() {
-  if (!customMeals.length) {
-    document.getElementById('meal-plan').innerHTML =
-      `<div style="font-size:13px;color:var(--muted);padding:8px 0">${t('food.addMeal.noneYet')}</div>`;
-    return;
-  }
-  const q = (document.getElementById('mealplan-search')?.value || '').toLowerCase();
-  const list = q ? customMeals.filter(m => m.name.toLowerCase().includes(q) || dispName(m).toLowerCase().includes(q)) : customMeals;
-  if (!list.length) {
-    document.getElementById('meal-plan').innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">${t('common.noSearchResults')}</div>`;
-    return;
-  }
-  document.getElementById('meal-plan').innerHTML = `<div class="product-grid">` +
-    list.map(m => {
-      const tot = mealTotals(m);
-      return `
-      <div class="product-card" onclick="openMealPortionModal('${m.id}')">
-        ${m.photo ? `<div class="product-photo"><img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">🍽️</div>`}
-        <div class="product-name">${dispName(m)}</div>
-        <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
-        <div class="product-macros">
-          <span class="product-pill">${tot.kcal} kcal</span>
-          <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
-        </div>
-      </div>`;
-    }).join('') + `</div>`;
-}
+
 
 function toggleMeal(id, category) {
   const data = MEALS[trainingType];
@@ -890,7 +864,6 @@ function addCustomMeal() {
     // meteen klaar, zonder dat de coach het gerecht weer moet opzoeken.
     _populateMealForm(nieuw, false);
     renderOwnMealsList();
-    renderMealPlan();
     return;
   }
 
@@ -898,7 +871,6 @@ function addCustomMeal() {
   // die daarbij) als dit een PRIME-gerecht was -- zie _amReturnTab.
   resetMealForm();
   renderOwnMealsList();
-  renderMealPlan();
 }
 
 // Gedeeld tussen editCustomMeal (eigen gerecht, altijd bewerkbaar) en
@@ -907,6 +879,7 @@ function addCustomMeal() {
 // PRIME-gerecht zit, net als bij PRIME-programma's) -- vult het
 // "+ Gerecht toevoegen"-formulier met de gegevens van het gerecht.
 function _populateMealForm(dish, isPrime) {
+  showAmForm(true);
   _amEditingId = dish.id;
   _amEditingIsPrime = !!isPrime;
   _amFormReadOnly = _amEditingIsPrime && !isPrimeCoach();
@@ -987,6 +960,7 @@ function editPrimeMeal(id) {
 // sluiten van een alleen-lezen weergave. Navigeert daarbij terug naar
 // _amReturnTab als die gezet is (bv. de PRIME gerechten-tab).
 function resetMealForm() {
+  showAmForm(false);
   _amEditingId = null;
   _amEditingIsPrime = false;
   _amFormReadOnly = false;
@@ -1047,7 +1021,6 @@ function removeCustomMeal(id) {
   syncSet('prime_food_days', foodDays);
   dayLog = dayLog.filter(i => i.dishId !== id);
   renderOwnMealsList();
-  renderMealPlan();
   updateMacroTotals();
   updateLogBadge();
 }
@@ -1055,27 +1028,61 @@ function removeCustomMeal(id) {
 function renderOwnMealsList() {
   const el = document.getElementById('own-meals-list');
   if (!el) return;
+  // Zelfde opzet als "+ Eigen basisproducten": een smalle actiebalk en daaronder de gerechten als vierkante kaartjes.
+  const balk = '<div onclick="openAddMealForm()" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px dashed var(--sage);border-radius:10px;background:var(--sage-light);color:var(--sage);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px"><span style="font-size:18px;line-height:1">➕</span><span>' + t('food.addMeal.tile') + '</span></div>';
   if (!customMeals.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('food.addMeal.noOwnMeals') + '</div>';
+    el.innerHTML = balk + '<div style="font-size:13px;color:var(--muted)">' + t('food.addMeal.noOwnMeals') + '</div>';
     return;
   }
-  el.innerHTML = customMeals.map(dish => {
+  el.innerHTML = balk + '<div class="product-grid">' + customMeals.map(dish => {
     const tot = mealTotals(dish);
     return `
-    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
-      ${dish.photo
-        ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${dish.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
-        : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">🍽️</div>`}
-      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(dish)}</div>
-          <div style="font-size:11px;color:var(--muted)">${t('food.addMeal.totalWeightLine', { gram: tot.gram })} · ${tot.kcal} kcal</div>
-        </div>
-        <button onclick="editCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
-        <button onclick="removeCustomMeal('${dish.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
+    <div class="product-card" onclick="openOwnMealModal('${dish.id}')">
+      <span class="prod-label prod-label-own">${t('food.label.own')}</span>
+      ${dish.photo ? `<div class="product-photo"><img src="${dish.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">🍽️</div>`}
+      <div class="product-name">${dispName(dish)}</div>
+      <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
+      <div class="product-macros">
+        <span class="product-pill">${tot.kcal} kcal</span>
+        <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + '</div>';
+}
+
+// Het formulier is pas zichtbaar na een klik op "Gerecht toevoegen" (of bewerken), net als bij producten.
+function showAmForm(toon) {
+  const w = document.getElementById('am-form-wrap');
+  if (w) w.style.display = toon ? 'block' : 'none';
+}
+
+function openAddMealForm() {
+  _amReturnTab = null;
+  resetMealForm();
+  showAmForm(true);
+  document.getElementById('am-cancel-btn').style.display = 'inline-block';
+  const naamEl = document.getElementById('am-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
+}
+
+// Klik op een eigen gerecht: keuze uit inplannen, bewerken of verwijderen.
+function openOwnMealModal(id) {
+  const dish = customMeals.find(m => m.id === id);
+  if (!dish) return;
+  const tot = mealTotals(dish);
+  document.getElementById('omm-name').textContent = dispName(dish);
+  document.getElementById('omm-info').textContent = t('food.addMeal.totalWeightLine', { gram: tot.gram }) + ' · ' + tot.kcal + ' kcal';
+  const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
+  document.getElementById('omm-actions').innerHTML =
+    '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();openMealPortionModal(\'' + dish.id + '\')">' + t('portion.addToDay') + '</button>' +
+    '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();editCustomMeal(\'' + dish.id + '\')">✏️ ' + t('common.edit') + '</button>' +
+    '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();removeCustomMeal(\'' + dish.id + '\')">🗑️ ' + t('common.delete') + '</button>';
+  document.getElementById('own-meal-modal').classList.add('open');
+}
+
+function closeOwnMealModal() {
+  document.getElementById('own-meal-modal').classList.remove('open');
 }
 
 function renderAddMealTab() {

@@ -896,6 +896,7 @@ const I18N = {
 
     // Eigen gerechten (maaltijden opgebouwd uit ingrediënten)
     'food.tab.addMeal': '+ Gerecht toevoegen',
+    'food.addMeal.tile': "Gerecht toevoegen",
     'food.addMeal.formTitle': 'Nieuw gerecht',
     'food.addMeal.name': 'Naam',
     'food.addMeal.namePlaceholder': 'bijv. Kipcurry met rijst',
@@ -1847,6 +1848,7 @@ const I18N = {
 
     // Eigen gerechten (maaltijden opgebouwd uit ingrediënten)
     'food.tab.addMeal': '+ Add dish',
+    'food.addMeal.tile': "Add dish",
     'food.addMeal.formTitle': 'New dish',
     'food.addMeal.name': 'Name',
     'food.addMeal.namePlaceholder': 'e.g. Chicken curry with rice',
