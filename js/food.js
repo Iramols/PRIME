@@ -843,6 +843,11 @@ function addCustomMeal() {
   if (_amNewPrime) {
     if (!isPrimeCoach()) return;
     // Naam krijgt altijd de vaste prefix 'PRIME-' (zelfde regel als bij "Opslaan als PRIME-gerecht").
+    if (/^prime-?s*$/i.test(name)) { // alleen de prefix ingevuld = nog geen echte naam
+      showMealFormError(t('food.addMeal.nameRequired'));
+      nameInput.style.borderColor = '#c0392b';
+      return;
+    }
     const primeNaam = /^prime-/i.test(name) ? name : 'PRIME-' + name;
     const nieuwPrime = {
       id: 'prime-meal-' + Date.now() + Math.floor(Math.random() * 1000),
@@ -1006,8 +1011,10 @@ function openAddPrimeMealForm() {
   switchFoodTab('addmeal');
   showAmForm(true);
   const naamEl = document.getElementById('am-name');
+  naamEl.value = 'PRIME-'; // vaste prefix staat er al in; de coach typt er alleen de rest achter
   naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   naamEl.focus();
+  try { naamEl.setSelectionRange(naamEl.value.length, naamEl.value.length); } catch (e) {}
 }
 
 // Reset het formulier naar "nieuw gerecht"-stand — zowel na een geslaagde
