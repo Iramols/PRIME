@@ -172,8 +172,9 @@ function getActiveEx(i) {
 // de Programma's-tab kan springen MET het nieuwe programma meteen open,
 // i.p.v. dat de normale tabklik-reset (progActiefId = null) dat teniet doet.
 function _setActiveTrainingTabDom(tab) {
+  if (tab === 'programmas') tab = 'addprogram'; // de losse Programma's-tab bestaat niet meer: eigen programma's staan op + Programma toevoegen
   activeTrainingTab = tab;
-  ['programmas','primeprog','addprogram','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
+  ['primeprog','addprogram','weekplanning','oefeningen','addexercise','dag'].forEach(t => {
     const btn = document.getElementById(`ttab-${t}`);
     const content = document.getElementById(`ttab-content-${t}`);
     if (btn) btn.classList.toggle('active', t === tab);
@@ -182,19 +183,23 @@ function _setActiveTrainingTabDom(tab) {
 }
 
 function switchTrainingTab(tab) {
+  if (tab === 'programmas') tab = 'addprogram';
   // Vaste titel ({naam} — Trainingsplanner), ongeacht welke subtab open
   // staat -- zodat de coach altijd in één oogopslag ziet bij welke klant
   // hij/zij zit (belangrijk sinds het wisselen van klant meermaals tot
   // verwarring leidde).
   document.getElementById('training-screen-title').textContent = t('training.plannerTitle', { name: profile.name || t('history.defaultUserName') });
   _setActiveTrainingTabDom(tab);
-  if (tab === 'programmas') { progMode = 'normal'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null; renderProgrammas(); }
   if (tab === 'primeprog') {
     progMode = 'prime'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null;
     renderProgrammas();
     primeProgRefreshFromCloud(); // ververst op de achtergrond vanuit Supabase (gedeeld met alle klanten)
   }
-  if (tab === 'addprogram') resetNewProgramForm();
+  if (tab === 'addprogram') {
+    progMode = 'normal'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null;
+    progSluitNieuwFormulier();
+    renderProgrammas();
+  }
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'addexercise') renderAddExerciseTab();
   // "Vandaag" betekent altijd vandaag — verlaat een eventueel via
