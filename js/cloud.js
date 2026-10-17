@@ -463,6 +463,134 @@ window.addEventListener('online', function() {
 });
 document.addEventListener('DOMContentLoaded', updateConnBanner);
 
+// ========== AUTOMATISCH VERVERSEN BIJ TERUGKEREN NAAR DE APP ==========
+// Gebruik je PRIME op meerdere apparaten (telefoon, werk-pc, prive-pc), dan
+// toont een toestel dat al open stond nog de gegevens van het moment waarop
+// het geladen werd. Zodra je terugkeert naar de app (tabblad/venster weer
+// actief, telefoon uit de zak) wordt hier gecontroleerd of de cloud nieuwere
+// gegevens heeft. Zo ja: de pagina wordt herladen (dezelfde bewezen weg als
+// bij het opstarten en bij het terugkomen van internet), tenzij je midden in
+// een invoer zit; dan verschijnt alleen een banner met een knop.
+// Voorlopig alleen voor de coach (isPrimeCoach()).
+const TERUG_VERVERS_MIN_MS = 15000; // niet vaker dan eens per 15 seconden
+let _terugVerversBezig = false;
+let _terugVerversLaatst = 0;
+
+// Vergelijkt gegevens op inhoud, niet op tekst: Postgres (jsonb) geeft de
+// velden van een object in een andere volgorde terug dan JSON.stringify ze
+// lokaal wegschreef. Zonder dit zou elke keer terugkeren na een eigen
+// wijziging ten onrechte als "nieuwe gegevens" tellen.
+function _canonJson(v) {
+  if (Array.isArray(v)) return '[' + v.map(_canonJson).join(',') + ']';
+  if (v && typeof v === 'object') {
+    return '{' + Object.keys(v).sort().map(function(k) { return JSON.stringify(k) + ':' + _canonJson(v[k]); }).join(',') + '}';
+  }
+  return JSON.stringify(v);
+}
+function _clientDataSnapshotCanon() {
+  return CLOUD_KEYS.concat(['prime_prime_meals', 'prime_prime_programmas', 'prime_prime_products'])
+    .map(function(k) {
+      const raw = localStorage.getItem(k);
+      if (raw == null) return '';
+      try { return _canonJson(JSON.parse(raw)); } catch (e) { return raw; }
+    })
+    .join('|');
+}
+
+// True als je nu iets aan het invullen bent of een venster open hebt: dan
+// laten we de pagina met rust (een herlaad zou je invoer wegvegen).
+function _invoerBezig() {
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return true;
+  if (document.querySelector('.overlay.open, .portion-modal-wrap.open')) return true;
+  const am = document.getElementById('am-form-wrap');
+  const ap = document.getElementById('ap-form-card');
+  if (am && am.style.display === 'block') return true;
+  if (ap && ap.style.display === 'block') return true;
+  return false;
+}
+
+// Onthoudt waar je was (scherm, subtab, gekozen datum, scrollstand) zodat
+// herstelSchermStaat() in app.js je na het herladen op dezelfde plek terugzet.
+// sessionStorage: geldt alleen voor dit tabblad en alleen voor die ene herlaad.
+function bewaarSchermStaat() {
+  try {
+    const st = { scroll: Math.round(window.scrollY || 0) };
+    const scr = document.querySelector('.screen.active');
+    st.screen = scr ? scr.id.replace('screen-', '') : 'home';
+    if (st.screen === 'voeding') {
+      st.foodTab = ['basis', 'primemeals', 'log', 'add', 'addmeal', 'week'].find(function(x) {
+        const e = document.getElementById('foodtab-' + x);
+        return e && e.style.display !== 'none';
+      }) || null;
+      if (typeof currentLogDate !== 'undefined') st.foodDate = currentLogDate;
+    }
+    if (st.screen === 'training') {
+      if (typeof activeTrainingTab !== 'undefined') st.trainTab = activeTrainingTab;
+      if (typeof currentTrainingDate !== 'undefined') st.trainDate = currentTrainingDate;
+    }
+    if (st.screen === 'history') {
+      st.histTab = ['stats', 'voeding', 'programma'].find(function(x) {
+        const b = document.getElementById('htab-' + x);
+        return b && b.classList.contains('active');
+      }) || null;
+    }
+    if (st.screen === 'beheer') {
+      st.beheerTab = ['training', 'producten'].find(function(x) {
+        const b = document.getElementById('btab-' + x);
+        return b && b.classList.contains('active');
+      }) || null;
+    }
+    sessionStorage.setItem('prime_scherm_staat', JSON.stringify(st));
+  } catch (e) {}
+}
+
+// Herlaadt de pagina en keert daarna terug op dezelfde plek. Gebruikt door de
+// automatische verversing en door de knoppen in de update- en datameldingen.
+function verversNu(zonderMelding) {
+  bewaarSchermStaat();
+  if (!zonderMelding) { try { sessionStorage.setItem('prime_data_ververst', '1'); } catch (e) {} }
+  location.reload();
+}
+
+async function verversBijTerugkeer() {
+  if (_terugVerversBezig || !activeClientId) return;
+  if (typeof isPrimeCoach !== 'function' || !isPrimeCoach()) return; // voorlopig alleen coach
+  if (navigator.onLine === false) return;
+  const nu = Date.now();
+  if (nu - _terugVerversLaatst < TERUG_VERVERS_MIN_MS) return;
+  _terugVerversLaatst = nu;
+  _terugVerversBezig = true;
+  try {
+    _offlineProbePromise = null; // verse verbindingscheck, zie de 'online'-listener hierboven
+    const voor = _clientDataSnapshotCanon();
+    const taken = [hydrateFromCloud(activeClientId)];
+    if (typeof primeMealsRefreshFromCloud === 'function') taken.push(primeMealsRefreshFromCloud());
+    if (typeof primeProductsRefreshFromCloud === 'function') taken.push(primeProductsRefreshFromCloud());
+    if (typeof primeProgRefreshFromCloud === 'function') taken.push(primeProgRefreshFromCloud());
+    await Promise.all(taken.map(function(p) {
+      return Promise.resolve(p).catch(function(e) { console.error('verversBijTerugkeer:', e); });
+    }));
+    if (_clientDataSnapshotCanon() === voor) return; // niets nieuws
+    if (_invoerBezig()) {
+      const b = document.getElementById('data-banner');
+      if (b) b.style.display = '';
+      return;
+    }
+    verversNu();
+  } catch (e) {
+    console.error('verversBijTerugkeer faalde:', e);
+  } finally {
+    _terugVerversBezig = false;
+  }
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) verversBijTerugkeer();
+});
+window.addEventListener('focus', verversBijTerugkeer);
+window.addEventListener('pageshow', function(e) { if (e.persisted) verversBijTerugkeer(); });
+
 function syncSet(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));

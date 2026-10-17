@@ -212,6 +212,34 @@ function applyTrainingVisibility() {
   }
 }
 
+// Zet je na een automatische verversing (zie verversNu()/bewaarSchermStaat() in cloud.js) terug op het scherm, de subtab, de datum en de scrollstand waar je was.
+function herstelSchermStaat() {
+  let st = null;
+  try {
+    st = JSON.parse(sessionStorage.getItem('prime_scherm_staat') || 'null');
+    sessionStorage.removeItem('prime_scherm_staat');
+  } catch (e) {}
+  if (!st || !st.screen || st.screen === 'home' || !document.getElementById('screen-' + st.screen)) return;
+  try {
+    go(st.screen);
+    if (st.screen === 'voeding' && st.foodTab) {
+      switchFoodTab(st.foodTab);
+      if (st.foodTab === 'log' && st.foodDate && st.foodDate !== fdTodayStr()) { switchLogDate(st.foodDate); renderDayLog(); }
+    }
+    if (st.screen === 'training' && st.trainTab) {
+      switchTrainingTab(st.trainTab);
+      if (st.trainTab === 'dag' && st.trainDate && st.trainDate !== _trainingToday()) { switchTrainingLogDate(st.trainDate); renderTrainingDag(); }
+    }
+    if (st.screen === 'history' && st.histTab) switchHistoryTab(st.histTab);
+    if (st.screen === 'beheer' && st.beheerTab) switchBeheerTab(st.beheerTab);
+  } catch (e) { console.error('herstelSchermStaat:', e); }
+  const scroll = st.scroll || 0;
+  if (scroll > 0) {
+    setTimeout(function() { window.scrollTo(0, scroll); }, 150);
+    setTimeout(function() { window.scrollTo(0, scroll); }, 600);
+  }
+}
+
 // ========== INIT ==========
 function init() {
   try { initInner(); } finally { revealApp(); }
@@ -232,6 +260,16 @@ function initInner() {
 
   applyTrainingVisibility();
   renderHome();
+
+  // Na een automatische verversing (zie verversBijTerugkeer() in cloud.js) even melden dat er nieuwe gegevens zijn binnengehaald.
+  try {
+    if (sessionStorage.getItem('prime_data_ververst')) {
+      sessionStorage.removeItem('prime_data_ververst');
+      setTimeout(function() { try { showToast(t('app.dataRefreshed')); } catch (e) {} }, 1200);
+    }
+  } catch (e) {}
+
+  herstelSchermStaat();
 
   // Init coach chat
   const chat = document.getElementById('chat-area');

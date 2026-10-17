@@ -535,6 +535,9 @@ const I18N = {
     'pilotTips.update': 'Komt er een update? Je ziet dan een melding boven in de app met een knop "Herlaad nu" — klik daarop om de nieuwste versie te gebruiken.',
     'app.updateAvailable': 'Er is een update beschikbaar.',
     'app.updateReload': 'Herlaad nu',
+    'app.dataNewer': 'Er zijn nieuwere gegevens van een ander apparaat.',
+    'app.dataReload': 'Verversen',
+    'app.dataRefreshed': 'Bijgewerkt met de nieuwste gegevens.',
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -1491,6 +1494,9 @@ const I18N = {
     'pilotTips.update': 'Is there an update? You will see a notice at the top of the app with a "Reload now" button — click it to use the newest version.',
     'app.updateAvailable': 'An update is available.',
     'app.updateReload': 'Reload now',
+    'app.dataNewer': 'There is newer data from another device.',
+    'app.dataReload': 'Refresh',
+    'app.dataRefreshed': 'Updated with the latest data.',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
