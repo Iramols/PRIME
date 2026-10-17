@@ -88,6 +88,8 @@ function progBouwLijst() {
   const q = (document.getElementById(progMode === 'prime' ? 'primeprog-search' : 'programma-search')?.value || '').toLowerCase();
   const lijst = q ? progLijst.filter(p => (p.naam || '').toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q)) : progLijst;
 
+  if (progMode === 'prime') return progBouwPrimeTegels(lijst);
+
   if (!progLijst.length) {
     const hint = progMode === 'prime' ? t('programmas.prime.emptyHint') : t('programmas.empty.hint');
     return '<div class="card" style="text-align:center;padding:40px 20px">' +
@@ -146,6 +148,59 @@ function progBouwLijst() {
   }).join('');
 
   return '<div style="margin-bottom:4px">' + kaarten + '</div>';
+}
+
+// ─── PRIME-programma's als vierkante kaartjes ────────────────────────────────
+// Zelfde opzet als de PRIME gerechten (Voeding): een gestippelde balk om iets
+// toe te voegen (alleen coach), daaronder een grid van kaartjes. Een klik op
+// een kaartje opent een keuzevenster (zie openPrimeProgModal).
+function progBouwPrimeTegels(lijst) {
+  const balk = isPrimeCoach()
+    ? '<div onclick="progOpenNieuwPrimeModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px dashed var(--coach-only);border-radius:10px;background:rgba(230,126,34,0.08);color:var(--coach-only);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px"><span style="font-size:18px;line-height:1">➕</span><span>' + t('programmas.prime.addBtn') + '</span></div>'
+    : '';
+  if (!progLijst.length) {
+    return balk + '<div class="card" style="text-align:center;padding:40px 20px">' +
+      '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
+      '<div style="font-size:13px;color:var(--muted)">' + t('programmas.prime.emptyHint') + '</div>' +
+      '</div>';
+  }
+  if (!lijst.length) {
+    return balk + '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('common.noSearchResults') + '</div>';
+  }
+  return balk + '<div class="product-grid">' + lijst.map(prog => {
+    const aantalDagen = Object.keys(prog.dagen || {}).length;
+    const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
+    const pills = (prog.niveau ? '<span class="product-pill">' + t('programmas.level.' + prog.niveau.toLowerCase()) + '</span>' : '') +
+      (prog.dagenPerWeek ? '<span class="product-pill">' + prog.dagenPerWeek + '</span>' : '');
+    return '<div class="product-card" onclick="openPrimeProgModal(\'' + prog.id + '\')">' +
+      (prog.foto
+        ? '<div class="product-photo"><img src="' + prog.foto + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
+        : '<div class="product-icon">📋</div>') +
+      '<div class="product-name">' + dispName(prog) + '</div>' +
+      '<div class="product-per">' + t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef }) + '</div>' +
+      (pills ? '<div class="product-macros">' + pills + '</div>' : '') +
+      '</div>';
+  }).join('') + '</div>';
+}
+
+// Klik op een PRIME-programma: keuze uit inplannen, bewerken en verwijderen.
+// De coach bewerkt en verwijdert; iedereen anders ziet "Bekijken" (alleen
+// lezen). Hergebruikt het venster #own-meal-modal van de gerechten.
+function openPrimeProgModal(id) {
+  const prog = primeProgLijst.find(p => p.id === id);
+  if (!prog) return;
+  const aantalDagen = Object.keys(prog.dagen || {}).length;
+  const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
+  const nu = isPrimeCoach();
+  document.getElementById('omm-name').textContent = dispName(prog);
+  document.getElementById('omm-info').textContent = t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef });
+  const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
+  document.getElementById('omm-actions').innerHTML =
+    '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>' +
+    '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();progOpenEditor(\'' + prog.id + '\')">' + (nu ? '✏️ ' + t('common.edit') : '👁️ ' + t('programmas.view')) + '</button>' +
+    (nu ? '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();progVerwijder(\'' + prog.id + '\')">🗑️ ' + t('common.delete') + '</button>' : '');
+  document.getElementById('own-meal-modal').classList.add('open');
 }
 
 // ─── Programma editor: dagen | oefeningen naast elkaar ───────────────────────
@@ -741,6 +796,30 @@ function progOpenPrimeSaveModal() {
   if (!isPrimeCoach() || progMode !== 'normal') return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) return;
+  _primeProgNieuw = false;
+  _primeModalTeksten(false);
+  document.getElementById('prime-save-suffix').value = '';
+  document.getElementById('prime-save-error').textContent = '';
+  document.getElementById('prime-save-modal').classList.add('open');
+  document.getElementById('prime-save-suffix').focus();
+}
+
+// Hetzelfde naamvenster wordt ook gebruikt om een LEEG nieuw PRIME-programma
+// aan te maken (balk op de PRIME programma's-tab); alleen titel en knop
+// verschillen, het "PRIME-"-voorvoegsel staat in beide gevallen vast.
+let _primeProgNieuw = false;
+
+function _primeModalTeksten(nieuw) {
+  const titel = document.querySelector('#prime-save-modal .modal-title span');
+  const knop = document.querySelector('#prime-save-modal .btn-primary');
+  if (titel) titel.textContent = t(nieuw ? 'programmas.prime.newModalTitle' : 'programmas.prime.modalTitle');
+  if (knop) knop.textContent = t(nieuw ? 'programmas.prime.newConfirm' : 'programmas.prime.saveConfirm');
+}
+
+function progOpenNieuwPrimeModal() {
+  if (!isPrimeCoach()) return;
+  _primeProgNieuw = true;
+  _primeModalTeksten(true);
   document.getElementById('prime-save-suffix').value = '';
   document.getElementById('prime-save-error').textContent = '';
   document.getElementById('prime-save-modal').classList.add('open');
@@ -751,7 +830,45 @@ function closePrimeSaveModal() {
   document.getElementById('prime-save-modal').classList.remove('open');
 }
 
+// Maakt een leeg PRIME-programma aan en opent meteen de editor, zodat de
+// coach dagen en oefeningen kan toevoegen.
+async function confirmNieuwPrimeProgramma() {
+  if (!isPrimeCoach()) return;
+  const suffix = document.getElementById('prime-save-suffix').value.trim();
+  if (!suffix) {
+    document.getElementById('prime-save-error').textContent = t('programmas.prime.nameRequired');
+    return;
+  }
+  const nieuw = {
+    id: 'prime' + Date.now() + Math.floor(Math.random() * 1000),
+    naam: 'PRIME-' + suffix,
+    foto: null,
+    beschrijving: '',
+    doel: '',
+    niveau: '',
+    dagenPerWeek: '',
+    dagen: {}
+  };
+  primeProgLijst.push(nieuw);
+  try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch(e) { console.error(e); }
+  // Eerst wachten tot het in de cloud staat, anders kan de ververs-aanroep van
+  // de PRIME-tab het nieuwe programma weer laten verdwijnen (zie confirmPrimeSave).
+  const fout = await savePrimeProgramToCloud(nieuw);
+  closePrimeSaveModal();
+  _primeProgNieuw = false;
+  try { showToast(fout ? t('programmas.prime.saveFailed') : t('programmas.prime.saved'), !!fout); } catch(e) { console.error(e); }
+
+  progMode = 'prime';
+  progLaadData();
+  progActiefId = nieuw.id;
+  progActiefDagIdx = null;
+  progSelectedOefIdx = null;
+  _setActiveTrainingTabDom('primeprog');
+  renderProgrammas();
+}
+
 async function confirmPrimeSave() {
+  if (_primeProgNieuw) return confirmNieuwPrimeProgramma();
   if (!isPrimeCoach() || progMode !== 'normal') return;
   const prog = progLijst.find(p => p.id === progActiefId);
   if (!prog) return;

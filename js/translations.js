@@ -673,6 +673,10 @@ const I18N = {
     'programmas.prime.saveConfirm': 'Opslaan als PRIME-programma',
     'programmas.prime.nameRequired': 'Vul een naam in voor het PRIME-programma.',
     'programmas.prime.saved': 'PRIME-programma opgeslagen ✓',
+    'programmas.prime.addBtn': 'PRIME-programma toevoegen',
+    'programmas.prime.newModalTitle': 'Nieuw PRIME-programma',
+    'programmas.prime.newConfirm': 'Aanmaken',
+    'programmas.primeHint': 'Klik op een programma om het <strong>in te plannen</strong> of te bekijken.',
     'programmas.prime.saveFailed': 'Opslaan naar de cloud mislukt (geen internet?). Andere deelnemers zien dit programma dan nog niet -- probeer het later opnieuw.',
     'programmas.prime.deleteFailed': 'Verwijderen uit de cloud mislukt (geen internet?). Andere deelnemers zien dit programma nog wel -- probeer het later opnieuw.',
 
@@ -1634,6 +1638,10 @@ const I18N = {
     'programmas.prime.saveConfirm': 'Save as PRIME program',
     'programmas.prime.nameRequired': 'Enter a name for the PRIME program.',
     'programmas.prime.saved': 'PRIME program saved ✓',
+    'programmas.prime.addBtn': 'Add PRIME program',
+    'programmas.prime.newModalTitle': 'New PRIME program',
+    'programmas.prime.newConfirm': 'Create',
+    'programmas.primeHint': 'Click a program to <strong>schedule</strong> or view it.',
     'programmas.prime.saveFailed': 'Saving to the cloud failed (no internet?). Other participants will not see this program yet -- try again later.',
     'programmas.prime.deleteFailed': 'Deleting from the cloud failed (no internet?). Other participants will still see this program -- try again later.',
 
