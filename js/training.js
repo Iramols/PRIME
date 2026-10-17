@@ -384,6 +384,7 @@ function editCustomExercise(id) {
   const ex = customExercises.find(e => e.id === id);
   if (!ex) return;
   _aeEditingId = id;
+  showAeForm(true);
 
   document.getElementById('ae-name').value = ex.name;
   document.getElementById('ae-group').value = ex.group;
@@ -407,6 +408,7 @@ function editCustomExercise(id) {
 // Reset het formulier naar "nieuwe oefening"-stand — zowel na een geslaagde
 // toevoeging/wijziging als bij het annuleren van een bewerking.
 function resetExerciseForm() {
+  showAeForm(false);
   _aeEditingId = null;
   _aePhotoData = null;
   const nameInput = document.getElementById('ae-name');
@@ -438,24 +440,52 @@ function removeCustomExercise(id) {
 function renderAddExerciseTab() {
   const el = document.getElementById('own-exercises-list');
   if (!el) return;
+  // Zelfde opzet als + Programma toevoegen en + Gerecht toevoegen: een smalle
+  // actiebalk en daaronder de eigen oefeningen als vierkante kaartjes.
+  const balk = '<div onclick="openAddExerciseForm()" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px dashed var(--sage);border-radius:10px;background:var(--sage-light);color:var(--sage);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px"><span style="font-size:18px;line-height:1">➕</span><span>' + t('training.addExercise.bar') + '</span></div>';
   if (!customExercises.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--muted)">' + t('training.addExercise.noOwnExercises') + '</div>';
+    el.innerHTML = balk + '<div style="font-size:13px;color:var(--muted)">' + t('training.addExercise.noOwnExercises') + '</div>';
     return;
   }
-  el.innerHTML = customExercises.map(ex => `
-    <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden;display:flex;align-items:stretch">
-      ${ex.photo
-        ? `<div style="width:64px;min-height:60px;flex-shrink:0;overflow:hidden"><img src="${ex.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
-        : `<div style="width:64px;min-height:60px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--sand);flex-shrink:0">${ex.icon || '🏋️'}</div>`}
-      <div style="flex:1;padding:10px 14px;display:flex;align-items:center;gap:10px">
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:13px;margin-bottom:2px">${dispName(ex)}</div>
-          <div style="font-size:11px;color:var(--muted)">${ex.group} · ${ex.sets}${t('programmas.setsAbbr')} × ${ex.reps || '—'}${ex.rest ? ' · ' + t('training.restLabel') + ' ' + ex.rest : ''}</div>
-        </div>
-        <button onclick="editCustomExercise('${ex.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal);cursor:pointer;flex-shrink:0">${t('common.edit')}</button>
-        <button onclick="removeCustomExercise('${ex.id}')" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent);cursor:pointer;flex-shrink:0">🗑️ ${t('common.delete')}</button>
+  el.innerHTML = balk + '<div class="ex-grid">' + customExercises.map(ex => `
+    <div class="ex-sq-card" onclick="openOwnExerciseModal('${ex.id}')">
+      <span class="prod-label prod-label-own">${t('food.label.own')}</span>
+      ${ex.photo ? `<div class="ex-sq-photo"><img src="${ex.photo}"></div>` : `<div class="ex-sq-photo ex-sq-icon">${ex.icon || '🏋️'}</div>`}
+      <div class="ex-sq-body">
+        <div class="ex-extra-name">${dispName(ex)}</div>
+        <div class="ex-extra-meta">${ex.group} · ${ex.sets}${t('programmas.setsAbbr')} × ${ex.reps || '—'}${ex.rest ? ' · ' + t('training.restLabel') + ' ' + ex.rest : ''}</div>
       </div>
-    </div>`).join('');
+    </div>`).join('') + '</div>';
+}
+
+// Het formulier staat verborgen tot je op de balk klikt (of op Bewerken), net als bij Gerechten en Programma's.
+function showAeForm(toon) {
+  const w = document.getElementById('ae-form-wrap');
+  if (w) w.style.display = toon ? 'block' : 'none';
+}
+
+function openAddExerciseForm() {
+  resetExerciseForm();
+  showAeForm(true);
+  document.getElementById('ae-cancel-btn').style.display = 'inline-block';
+  const naamEl = document.getElementById('ae-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
+}
+
+// Klik op een eigen oefening: keuze uit inplannen, bewerken of verwijderen.
+// Hergebruikt het venster #own-meal-modal van de gerechten.
+function openOwnExerciseModal(id) {
+  const ex = customExercises.find(e => e.id === id);
+  if (!ex) return;
+  document.getElementById('omm-name').textContent = dispName(ex);
+  document.getElementById('omm-info').textContent = ex.group + ' · ' + ex.sets + t('programmas.setsAbbr') + ' × ' + (ex.reps || '—');
+  const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
+  document.getElementById('omm-actions').innerHTML =
+    '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();openExerciseAddModal(\'' + ex.id + '\')">' + t('portion.addToDay') + '</button>' +
+    '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();editCustomExercise(\'' + ex.id + '\')">✏️ ' + t('common.edit') + '</button>' +
+    '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();removeCustomExercise(\'' + ex.id + '\')">🗑️ ' + t('common.delete') + '</button>';
+  document.getElementById('own-meal-modal').classList.add('open');
 }
 
 // Zet een rust-label uit de vaste data ('90 sec', '3 min', '—') om naar een
