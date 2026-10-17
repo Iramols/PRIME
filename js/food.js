@@ -3634,6 +3634,8 @@ function openSpraak(bron) {
   vzMicKnop(false);
   document.getElementById('vz-invoer').style.display = 'block';
   document.getElementById('vz-resultaat').style.display = 'none';
+  document.getElementById('vz-kopie').style.display = 'none';
+  _vzKopie = null;
   document.getElementById('voice-modal').classList.add('open');
   setTimeout(() => { try { document.getElementById('vz-tekst').focus(); } catch (e) { /* geen focus */ } }, 150);
 }
@@ -3662,6 +3664,15 @@ function vzHerken() {
   fout.textContent = '';
   const tekst = document.getElementById('vz-tekst').value.trim();
   if (!tekst) { fout.textContent = t('food.voice.empty'); return; }
+  // Een opdracht als "kopieer afgelopen maandag naar a.s. maandag" kopieert een hele dag i.p.v. producten toe te voegen.
+  const kopie = vzLeesKopieer(tekst);
+  if (kopie) {
+    if (kopie.fout) { fout.textContent = kopie.fout; return; }
+    document.getElementById('vz-invoer').style.display = 'none';
+    document.getElementById('vz-kopie').style.display = 'block';
+    vzToonKopie(kopie);
+    return;
+  }
   const lijst = vzMaakLijst(tekst, getAllProducts());
   if (!lijst.regels.length) { fout.textContent = t('food.voice.nothing'); return; }
   _vzRegels = lijst.regels.map((r, i) => Object.assign({ id: i, weg: false }, r));
@@ -3799,6 +3810,149 @@ function vzToevoegen() {
       : t('food.voice.addedMulti', { n: toe.length, days: aantalDagen }));
   } catch (e) { console.error(e); }
   if (overgeslagen) alert(t('food.voice.skippedClosed', { n: overgeslagen }));
+}
+
+
+// ----- Voeding van een dag kopiëren met een gesproken opdracht -----
+// "Kopieer afgelopen maandag naar a.s. maandag", "kopieer gisteren naar morgen en overmorgen",
+// "kopieer maandag naar de komende 4 maandagen". Je krijgt eerst een bevestiging met de exacte
+// datums; het kopiëren zelf werkt zoals de knop "Kopieer" in de Weekplanning (nieuwe items,
+// nog niet afgevinkt; afgesloten dagen worden overgeslagen).
+const VZ_KOPIE_WOORD = /\b(?:kopieer|kopieert|kopieren|kopieeren|copieer|copieren|kopie)\b/;
+const VZ_KOPIE_TERUG = 'afgelopen|vorige|vorig|laatste';
+const VZ_KOPIE_VOORUIT = 'aanstaande|komende|volgende|aankomende|as';
+const VZ_KOPIE_AANTAL = { twee: 2, drie: 3, vier: 4, vijf: 5, zes: 6, zeven: 7, acht: 8 };
+
+let _vzKopie = null; // { bron: 'JJJJ-MM-DD', doelen: [...] }
+
+function vzDagVerschuiven(dagen) {
+  const d = new Date(fdTodayStr() + 'T12:00:00');
+  d.setDate(d.getDate() + dagen);
+  return localDateStr(d);
+}
+
+// Weekdag (0 = maandag) -> datum. mod: 'terug' (strikt voor vandaag), 'vooruit' (strikt na vandaag),
+// 'deze' (in de huidige week) of leeg: bij de bron de meest recente (vandaag telt mee),
+// bij het doel de eerstvolgende (vandaag telt mee).
+function vzKopieWeekdag(k, mod, rol) {
+  const nu = (new Date(fdTodayStr() + 'T12:00:00').getDay() + 6) % 7;
+  let diff = k - nu;
+  if (mod === 'terug') { if (diff >= 0) diff -= 7; }
+  else if (mod === 'vooruit') { if (diff <= 0) diff += 7; }
+  else if (mod === 'deze') { /* dag in de huidige week */ }
+  else if (rol === 'bron') { if (diff > 0) diff -= 7; }
+  else { if (diff < 0) diff += 7; }
+  return vzDagVerschuiven(diff);
+}
+
+// Tekstdeel -> lijst met datums ('JJJJ-MM-DD'), op volgorde en zonder dubbelen.
+function vzKopieDagen(frase, rol) {
+  const f = ' ' + String(frase || '').replace(/a\.s\.?/g, 'aanstaande').replace(/[,;]/g, ' ') + ' ';
+  const WD = VZ_DATUMS[1][1], REL = VZ_DATUMS[0][1], DM = VZ_DATUMS[2][1];
+  const uit = [];
+  const voegToe = d => { if (d && uit.indexOf(d) === -1) uit.push(d); };
+
+  // "de komende 4 maandagen": de eerstvolgende N keer die weekdag
+  const reN = new RegExp('(?:' + VZ_KOPIE_VOORUIT + ')\\s+(\\d{1,2}|' + Object.keys(VZ_KOPIE_AANTAL).join('|') + ')\\s+(' + WD + ')(?:en|s)?\\b', 'g');
+  let m, rest = f;
+  while ((m = reN.exec(f))) {
+    const n = /^\d/.test(m[1]) ? parseInt(m[1], 10) : VZ_KOPIE_AANTAL[m[1]];
+    const k = VZ_WEEKDAGEN.indexOf(m[2]);
+    if (k < 0 || !(n >= 1 && n <= 12)) continue;
+    const eerste = vzKopieWeekdag(k, 'vooruit', rol);
+    for (let i = 0; i < n; i++) {
+      const d = new Date(eerste + 'T12:00:00');
+      d.setDate(d.getDate() + i * 7);
+      voegToe(localDateStr(d));
+    }
+    rest = rest.replace(m[0], ' ');
+  }
+
+  const re = new RegExp('(?:(' + VZ_KOPIE_TERUG + '|' + VZ_KOPIE_VOORUIT + '|deze)\\s+)?(?:(' + WD + ')|(' + REL + ')|(' + DM + '))', 'g');
+  while ((m = re.exec(rest))) {
+    const vooraan = rest.charAt(m.index - 1), achteraan = rest.charAt(m.index + m[0].length);
+    if ((vooraan && /[a-z]/.test(vooraan)) || (achteraan && /[a-z]/.test(achteraan))) continue;
+    const modWoord = m[1] || '';
+    const mod = new RegExp('^(?:' + VZ_KOPIE_TERUG + ')$').test(modWoord) ? 'terug'
+      : new RegExp('^(?:' + VZ_KOPIE_VOORUIT + ')$').test(modWoord) ? 'vooruit'
+      : modWoord === 'deze' ? 'deze' : '';
+    if (m[2]) voegToe(vzKopieWeekdag(VZ_WEEKDAGEN.indexOf(m[2]), mod, rol));
+    else if (m[3]) voegToe(vzDatumWaarde('rel', m[3]));
+    else if (m[4]) voegToe(vzDatumWaarde('dm', m[4]));
+  }
+  return uit.sort();
+}
+
+// Is dit een kopieeropdracht? Zo ja: { bron, doelen } of { fout }. Zo nee: null.
+function vzLeesKopieer(tekst) {
+  const t0 = String(tekst || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9.\/\-\s]/g, ' ').replace(/a\s?\.\s?s\s?\.?(?=\s|$)/g, 'aanstaande').replace(/\s+/g, ' ').trim();
+  const m = VZ_KOPIE_WOORD.exec(t0);
+  if (!m) return null;
+  const na = t0.slice(m.index + m[0].length);
+  const sp = /\s(?:naar|op|voor)\s/.exec(na);
+  if (!sp) return { fout: t('food.voice.copyHelp') };
+  const bronDagen = vzKopieDagen(na.slice(0, sp.index), 'bron');
+  const doelen = vzKopieDagen(na.slice(sp.index + sp[0].length), 'doel');
+  if (bronDagen.length !== 1 || !doelen.length) return { fout: t('food.voice.copyHelp') };
+  return { bron: bronDagen[0], doelen: doelen };
+}
+
+function vzToonKopie(k) {
+  _vzKopie = null;
+  const fout = document.getElementById('vz-kopie-fout');
+  fout.textContent = '';
+  document.getElementById('vz-kopie-tekst').innerHTML = '';
+  document.getElementById('vz-kopie-go').style.display = 'none';
+  const bron = foodDays[k.bron] || [];
+  if (!bron.length) { fout.textContent = t('food.voice.copyEmptySource', { date: formatPickerDateLabel(k.bron) }); return; }
+  _vzKopie = k;
+  document.getElementById('vz-kopie-go').style.display = '';
+  document.getElementById('vz-kopie-tekst').innerHTML =
+    '<div style="font-size:13px;margin-bottom:8px">' + escapeHtml(t('food.voice.copyFrom', { date: formatPickerDateLabel(k.bron), n: bron.length })) + '</div>' +
+    k.doelen.map(d => {
+      const bestaand = (foodDays[d] || []).length;
+      let status, kleur = 'var(--muted)';
+      if (d === k.bron) { status = t('food.voice.copyTargetSame'); kleur = 'var(--accent)'; }
+      else if (isDagAfgesloten(d)) { status = t('food.voice.copyTargetClosed'); kleur = 'var(--accent)'; }
+      else if (bestaand) status = t('food.voice.copyTargetHas', { n: bestaand });
+      else status = t('food.voice.copyTargetEmpty');
+      return '<div style="padding:8px 10px;border:1.5px solid var(--sand-dark);border-radius:8px;margin-bottom:6px;background:var(--white);font-size:13px"><b>' +
+        escapeHtml(formatPickerDateLabel(d)) + '</b> <span style="color:' + kleur + ';font-size:12px">· ' + escapeHtml(status) + '</span></div>';
+    }).join('');
+}
+
+function vzKopieOpnieuw() {
+  _vzKopie = null;
+  document.getElementById('vz-kopie').style.display = 'none';
+  document.getElementById('vz-invoer').style.display = 'block';
+  document.getElementById('vz-fout').textContent = '';
+}
+
+function vzKopieUitvoeren() {
+  if (!isPrimeCoach() || !_vzKopie) return;
+  const fout = document.getElementById('vz-kopie-fout');
+  fout.textContent = '';
+  const k = _vzKopie;
+  const bron = foodDays[k.bron] || [];
+  if (!bron.length) { fout.textContent = t('food.voice.copyEmptySource', { date: formatPickerDateLabel(k.bron) }); return; }
+  let aantal = 0;
+  k.doelen.forEach(d => {
+    if (d === k.bron || isDagAfgesloten(d)) return; // voorbije/afgesloten dagen liggen vast
+    // Nieuwe items, nog niet gegeten op de nieuwe dag (zelfde regels als fwConfirmCopyInner in foodweek.js).
+    const kopieen = bron.map(item => ({ ...item, logId: newLogId(), eaten: false }));
+    foodDays[d] = [...(foodDays[d] || []), ...kopieen];
+    if (d === currentLogDate) dayLog = [...foodDays[d]];
+    aantal++;
+  });
+  if (!aantal) { fout.textContent = t('food.voice.copyNone'); return; }
+  syncSet('prime_food_days', foodDays);
+  const bronTab = _vzBron;
+  _vzKopie = null;
+  sluitSpraak(true);
+  _portionReturnTab = null;
+  try { updateMacroTotals(); } catch (e) { console.error('updateMacroTotals na kopieren:', e); }
+  try { switchFoodTab(bronTab === 'week' ? 'week' : 'log'); } catch (e) { console.error(e); }
+  try { showToast(aantal === 1 ? t('foodweek.copy.successOne') : t('foodweek.copy.successMany', { n: aantal })); } catch (e) { console.error(e); }
 }
 
 
