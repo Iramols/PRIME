@@ -473,7 +473,7 @@ document.addEventListener('DOMContentLoaded', updateConnBanner);
 // gegevens heeft. Zo ja: de pagina wordt herladen (dezelfde bewezen weg als
 // bij het opstarten en bij het terugkomen van internet), tenzij je midden in
 // een invoer zit; dan verschijnt alleen een banner met een knop.
-// Voorlopig alleen voor de coach (isPrimeCoach()).
+// Geldt voor coach en klanten.
 const TERUG_VERVERS_MIN_MS = 15000; // niet vaker dan eens per 15 seconden
 let _terugVerversBezig = false;
 let _terugVerversLaatst = 0;
@@ -582,7 +582,6 @@ function zetVerversBalkOpNieuw() {
 
 async function verversBijTerugkeer() {
   if (_terugVerversBezig || !activeClientId) return;
-  if (typeof isPrimeCoach !== 'function' || !isPrimeCoach()) return; // voorlopig alleen coach
   if (navigator.onLine === false) return;
   const nu = Date.now();
   if (nu - _terugVerversLaatst < TERUG_VERVERS_MIN_MS) return;

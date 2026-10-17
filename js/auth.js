@@ -319,8 +319,8 @@ async function bootApp(clientId, isCoach) {
   if (isCoach) document.getElementById('wis-training-btn').style.display = '';
   if (isCoach) document.getElementById('wis-voeding-btn').style.display = '';
   if (isCoach) document.getElementById('nav-btn-beheer').style.display = '';
-  // Groene verversbalk bovenin (voorlopig alleen coach); niet als er al een rode updatebalk is.
-  if (isCoach && !_updateBeschikbaar) document.getElementById('ververs-banner').style.display = '';
+  // Groene verversbalk bovenin (coach en klanten); niet als er al een rode updatebalk is.
+  if (!_updateBeschikbaar) document.getElementById('ververs-banner').style.display = '';
   if (isCoach) document.getElementById('bnav-more').style.display = '';
   loadAppScripts();
   // Vangnet: lukt init() om welke reden ook niet, toon de app dan toch.
