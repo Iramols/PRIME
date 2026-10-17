@@ -3624,6 +3624,8 @@ function spraakVoorDag(dateStr) {
 
 function openSpraak(bron) {
   _vzBron = bron;
+  vzMicStop(true);
+  _vzBasisTekst = '';
   _vzRegels = [];
   document.getElementById('vz-producten').innerHTML = getAllProducts().map(p => '<option value="' + escapeHtml(dispName(p)) + '"></option>').join('');
   document.getElementById('vz-tekst').value = '';
@@ -3642,7 +3644,15 @@ function openSpraak(bron) {
 
 // klaar = true na een geslaagde toevoeging; anders (annuleren) zetten we dag en tabblad terug.
 function sluitSpraak(klaar) {
-  vzMicStop();
+  vzMicStop(true);
+  // De ingesproken/getypte tekst en alle meldingen gaan weg, ook bij annuleren: de volgende keer begin je leeg.
+  _vzBasisTekst = '';
+  _vzKopie = null;
+  _vzRegels = [];
+  const veld = document.getElementById('vz-tekst');
+  if (veld) veld.value = '';
+  ['vz-fout', 'vz-fout2', 'vz-kopie-fout'].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = ''; });
+  vzMicStatus('');
   document.getElementById('voice-modal').classList.remove('open');
   if (!klaar) {
     _portionReturnTab = null;
@@ -3969,7 +3979,7 @@ function vzV() { return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || 
 
 // Tekst wissen (bijvoorbeeld als de spraak verkeerd is herkend): stopt het luisteren en leegt het veld.
 function vzWis() {
-  vzMicStop();
+  vzMicStop(true);
   const veld = document.getElementById('vz-tekst');
   veld.value = '';
   _vzBasisTekst = '';
@@ -4041,8 +4051,16 @@ function vzMicToggle() {
   }
 }
 
-function vzMicStop() {
-  if (_vzSpraak) { try { _vzSpraak.stop(); } catch (e) { /* al gestopt */ } _vzSpraak = null; }
+// afbreken = true bij annuleren/wissen/opnieuw openen: de microfoon wordt dan echt afgebroken en de
+// handlers losgekoppeld, zodat er geen late resultaten meer in het tekstvak terechtkomen. Zonder
+// afbreken (gewoon stoppen) mogen de laatste woorden nog binnenkomen.
+function vzMicStop(afbreken) {
+  if (_vzSpraak) {
+    const rec = _vzSpraak;
+    if (afbreken) { try { rec.onresult = null; rec.onerror = null; } catch (e) { /* negeren */ } }
+    try { if (afbreken && rec.abort) rec.abort(); else rec.stop(); } catch (e) { /* al gestopt */ }
+    _vzSpraak = null;
+  }
   if (_vzLuistert) vzMicKnop(false);
 }
 
