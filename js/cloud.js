@@ -390,6 +390,8 @@ async function checkForNewBuild() {
     _updateBeschikbaar = true;
     const el = document.getElementById('update-banner');
     if (el) el.style.display = '';
+    const groen = document.getElementById('ververs-banner');
+    if (groen) groen.style.display = 'none'; // rood (nieuwe versie) gaat voor groen
   } catch (e) {}
 }
 setInterval(checkForNewBuild, 5 * 60 * 1000);
@@ -553,6 +555,31 @@ function verversNu(zonderMelding) {
   location.reload();
 }
 
+// Haalt de nieuwste gegevens uit de cloud op. Geeft true terug als er iets
+// nieuws binnenkwam (dan moet het scherm opnieuw ingelezen worden).
+async function _haalNieuwsteGegevensOp() {
+  _offlineProbePromise = null; // verse verbindingscheck, zie de 'online'-listener hierboven
+  const voor = _clientDataSnapshotCanon();
+  const taken = [hydrateFromCloud(activeClientId)];
+  if (typeof primeMealsRefreshFromCloud === 'function') taken.push(primeMealsRefreshFromCloud());
+  if (typeof primeProductsRefreshFromCloud === 'function') taken.push(primeProductsRefreshFromCloud());
+  if (typeof primeProgRefreshFromCloud === 'function') taken.push(primeProgRefreshFromCloud());
+  await Promise.all(taken.map(function(p) {
+    return Promise.resolve(p).catch(function(e) { console.error('ververs:', e); });
+  }));
+  return _clientDataSnapshotCanon() !== voor;
+}
+
+// Zit je midden in een invoer terwijl er nieuwere gegevens zijn: de groene
+// verversbalk krijgt dan een andere tekst, i.p.v. dat de pagina herlaadt.
+function zetVerversBalkOpNieuw() {
+  const txt = document.getElementById('ververs-text');
+  if (txt) {
+    txt.setAttribute('data-i18n', 'app.dataNewer');
+    txt.textContent = t('app.dataNewer');
+  }
+}
+
 async function verversBijTerugkeer() {
   if (_terugVerversBezig || !activeClientId) return;
   if (typeof isPrimeCoach !== 'function' || !isPrimeCoach()) return; // voorlopig alleen coach
@@ -562,26 +589,37 @@ async function verversBijTerugkeer() {
   _terugVerversLaatst = nu;
   _terugVerversBezig = true;
   try {
-    _offlineProbePromise = null; // verse verbindingscheck, zie de 'online'-listener hierboven
-    const voor = _clientDataSnapshotCanon();
-    const taken = [hydrateFromCloud(activeClientId)];
-    if (typeof primeMealsRefreshFromCloud === 'function') taken.push(primeMealsRefreshFromCloud());
-    if (typeof primeProductsRefreshFromCloud === 'function') taken.push(primeProductsRefreshFromCloud());
-    if (typeof primeProgRefreshFromCloud === 'function') taken.push(primeProgRefreshFromCloud());
-    await Promise.all(taken.map(function(p) {
-      return Promise.resolve(p).catch(function(e) { console.error('verversBijTerugkeer:', e); });
-    }));
-    if (_clientDataSnapshotCanon() === voor) return; // niets nieuws
-    if (_invoerBezig()) {
-      const b = document.getElementById('data-banner');
-      if (b) b.style.display = '';
-      return;
-    }
+    if (!(await _haalNieuwsteGegevensOp())) return; // niets nieuws
+    if (_invoerBezig()) { zetVerversBalkOpNieuw(); return; }
     verversNu();
   } catch (e) {
     console.error('verversBijTerugkeer faalde:', e);
   } finally {
     _terugVerversBezig = false;
+  }
+}
+
+// De knop "Verversen" in de groene balk bovenin: altijd direct ophalen, ook
+// midden in een invoer (je tikt er bewust op) en zonder wachttijd.
+async function verversKnop() {
+  if (_terugVerversBezig || !activeClientId) return;
+  _terugVerversBezig = true;
+  const btn = document.getElementById('ververs-btn');
+  if (btn) btn.disabled = true;
+  try {
+    _offlineProbePromise = null;
+    if (navigator.onLine === false || await probeOffline()) {
+      showToast(t('app.refreshOffline'), true);
+      return;
+    }
+    if (await _haalNieuwsteGegevensOp()) { verversNu(); return; }
+    showToast(t('app.upToDate'));
+  } catch (e) {
+    console.error('verversKnop faalde:', e);
+    try { showToast(t('app.refreshFailed'), true); } catch (e2) {}
+  } finally {
+    _terugVerversBezig = false;
+    if (btn) btn.disabled = false;
   }
 }
 

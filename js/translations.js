@@ -538,6 +538,10 @@ const I18N = {
     'app.dataNewer': 'Er zijn nieuwere gegevens van een ander apparaat.',
     'app.dataReload': 'Verversen',
     'app.dataRefreshed': 'Bijgewerkt met de nieuwste gegevens.',
+    'app.refreshBar': 'Gebruik je PRIME ook op een ander apparaat? Ververs om zeker te stellen dat je de nieuwste gegevens ziet.',
+    'app.upToDate': 'Je gegevens zijn al up-to-date.',
+    'app.refreshOffline': 'Geen verbinding. Verversen lukt niet.',
+    'app.refreshFailed': 'Verversen is niet gelukt. Probeer het zo nog eens.',
 
     // Profiel
     'profile.title': 'Jouw profiel',
@@ -1497,6 +1501,10 @@ const I18N = {
     'app.dataNewer': 'There is newer data from another device.',
     'app.dataReload': 'Refresh',
     'app.dataRefreshed': 'Updated with the latest data.',
+    'app.refreshBar': 'Do you also use PRIME on another device? Refresh to make sure you see the latest data.',
+    'app.upToDate': 'Your data is already up to date.',
+    'app.refreshOffline': 'No connection. Refreshing is not possible.',
+    'app.refreshFailed': 'Refreshing failed. Please try again in a moment.',
 
     'profile.title': 'Your profile',
     'profile.lastUpdate': 'Last updated: June 13, 2026 · 14:00',
