@@ -320,6 +320,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .ex-schedule-badge:hover { background: var(--sage-mid); }
 .ex-extra-meta { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
 .ex-extra-video { display: inline-block; font-size: 10px; font-weight: 600; color: #ff0000; text-decoration: none; }
+/* Losse oefeningen: vierkante kaartjes in een grid, zelfde opzet als de producten bij Voeding */
+.ex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ex-sq-card { position: relative; display: flex; flex-direction: column; background: var(--white); border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; text-align: center; transition: all 0.15s; user-select: none; }
+.ex-sq-card:hover { border-color: var(--sage-mid); background: var(--sage-light); transform: translateY(-1px); }
+.ex-sq-photo { width: 100%; aspect-ratio: 4 / 3; background-color: var(--sand-dark); overflow: hidden; }
+.ex-sq-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ex-sq-photo.ex-sq-icon { display: flex; align-items: center; justify-content: center; font-size: 30px; }
+.ex-sq-body { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 8px 10px; }
 .ex-detail-btn { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--sand-dark); background: var(--sand); cursor: pointer; font-family: 'DM Sans', sans-serif; }
 .ex-detail-btn.has-data { border-color: var(--accent); background: var(--accent-light); }
 .ex-detail-icon { font-size: 15px; line-height: 1; }

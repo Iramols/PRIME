@@ -256,16 +256,14 @@ function renderExtraExercises() {
         <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--charcoal)">${dispField(group,'group')}</div>
         <div style="flex:1;height:1px;background:var(--sand-dark);margin-left:8px"></div>
       </div>
-      <div>
+      <div class="ex-grid">
         ${group.exercises.map(ex => `
-            <div class="ex-extra-card" onclick="openExerciseAddModal('${ex.id}')">
-              ${ex.photo ? `<div class="ex-extra-photo"><img src="${ex.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="ex-extra-photo ex-extra-icon">${ex.icon || '🏋️'}</div>`}
-              <div class="ex-extra-body">
-                <div class="ex-extra-name-row">
-                  <div class="ex-extra-name">${dispName(ex)}</div>
-                  <span class="ex-schedule-badge" onclick="event.stopPropagation();openExerciseAddModal('${ex.id}')">${t('portion.addToDay')}</span>
-                </div>
+            <div class="ex-sq-card" onclick="openExerciseAddModal('${ex.id}')">
+              ${ex.photo ? `<div class="ex-sq-photo"><img src="${ex.photo}"></div>` : `<div class="ex-sq-photo ex-sq-icon">${ex.icon || '🏋️'}</div>`}
+              <div class="ex-sq-body">
+                <div class="ex-extra-name">${dispName(ex)}</div>
                 <div class="ex-extra-meta">${dispField(ex,'stappen') || (ex.sets + '×' + ex.reps)}</div>
+                <span class="ex-schedule-badge" onclick="event.stopPropagation();openExerciseAddModal('${ex.id}')">${t('portion.addToDay')}</span>
                 ${ex.youtube ? `<a href="${ex.youtube}" target="_blank" onclick="event.stopPropagation()" class="ex-extra-video">▶ Video</a>` : ''}
               </div>
             </div>`).join('')}
