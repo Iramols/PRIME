@@ -80,6 +80,44 @@ function _markLocalSyncTs(key, clientId, ts) {
   try { localStorage.setItem(_syncTsKey(key, clientId), String(ts)); } catch (e) {}
 }
 
+// ---- "Nog niet bevestigd"-markering per sleutel (veilige synchronisatie, nu alleen coach) ----
+// Bugmelding: een telefoon die PRIME al open had en later opnieuw opstartte (bv. door
+// automatisch opnieuw inloggen), overschreef de voeding die intussen op een ander
+// apparaat was bijgewerkt. Oorzaak: hydrateFromCloud() liet "lokaal wint" afhangen van
+// een vergelijking van tijdstippen van twee verschillende apparaatklokken. Veiliger:
+// een toestel mag de cloud alleen overschrijven als het zelf een wijziging heeft die de
+// cloud nog niet bevestigd heeft. Die markering wordt gezet in syncSet()/syncRemove()
+// en pas gewist als de cloud de opslag bevestigt. Een toestel zonder zo'n openstaande
+// wijziging neemt bij het opstarten altijd de cloud over, wat de klokken ook zeggen.
+// Het token zorgt dat een bevestiging van een oudere opslag een nieuwere niet wist.
+function _dirtyKey(clientId) { return 'prime_dirty__' + clientId; }
+function _readDirty(clientId) {
+  try { return JSON.parse(localStorage.getItem(_dirtyKey(clientId)) || '{}'); } catch (e) { return {}; }
+}
+function _writeDirty(clientId, d) {
+  try { localStorage.setItem(_dirtyKey(clientId), JSON.stringify(d)); } catch (e) {}
+}
+function _markDirty(clientId, key) {
+  const d = _readDirty(clientId);
+  const tok = Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  d[key] = tok;
+  _writeDirty(clientId, d);
+  return tok;
+}
+function _clearDirty(clientId, key, tok) {
+  const d = _readDirty(clientId);
+  if (d[key] !== undefined && d[key] === tok) { delete d[key]; _writeDirty(clientId, d); }
+}
+// Heeft dit toestel voor deze sleutel een wijziging die de cloud nog niet bevestigd heeft?
+// De wachtrij van mislukte opslagen telt ook mee.
+function _isDirty(clientId, key) {
+  return _readDirty(clientId)[key] !== undefined || !!_readSyncQueue(clientId)[key];
+}
+// Alleen voor de coach (voorlopig); klanten houden de oude regel tot dit getest is.
+function _veiligeSyncActief() {
+  return typeof isPrimeCoach === 'function' && isPrimeCoach();
+}
+
 // Haalt alle client_state-rijen van de opgegeven klant op en zet ze in
 // localStorage onder dezelfde prime_*-sleutel, zodat de bestaande
 // state.js/init()-flow ongewijzigd kan blijven werken.
@@ -109,6 +147,8 @@ async function hydrateFromCloud(clientId) {
     throw error;
   }
 
+  // Veilige regel (nu alleen coach): lokaal wint alleen bij een echte, nog niet bevestigde wijziging.
+  const veilig = _veiligeSyncActief();
   const serverKeys = new Set();
   const teHerpushen = []; // sleutels waar de lokale versie "wint" en dus nog naar de cloud moet
 
@@ -117,7 +157,8 @@ async function hydrateFromCloud(clientId) {
     serverKeys.add(row.key);
     const serverTs = row.updated_at ? new Date(row.updated_at).getTime() : 0;
     const localTs  = _localSyncTs(row.key, clientId);
-    if (!SERVER_LEIDEND_KEYS.includes(row.key) && localTs > serverTs && localStorage.getItem(row.key) != null) {
+    const lokaalWint = veilig ? _isDirty(clientId, row.key) : (localTs > serverTs);
+    if (!SERVER_LEIDEND_KEYS.includes(row.key) && lokaalWint && localStorage.getItem(row.key) != null) {
       // Deze pagina heeft zelf recenter (mogelijk nog niet aangekomen)
       // lokaal geschreven dan wat er nu in de cloud staat -- niet
       // overschrijven, straks opnieuw proberen te versturen.
@@ -144,7 +185,8 @@ async function hydrateFromCloud(clientId) {
   // account voor DEZE klant-id, geen slachtoffer van dezelfde race).
   CLOUD_KEYS.forEach(key => {
     if (serverKeys.has(key)) return;
-    if (!SERVER_LEIDEND_KEYS.includes(key) && _localSyncTs(key, clientId) > 0 && localStorage.getItem(key) != null) {
+    const lokaalClaim = veilig ? _isDirty(clientId, key) : (_localSyncTs(key, clientId) > 0);
+    if (!SERVER_LEIDEND_KEYS.includes(key) && lokaalClaim && localStorage.getItem(key) != null) {
       teHerpushen.push(key);
       return;
     }
@@ -213,6 +255,7 @@ async function flushSyncQueue() {
   const sb = getSupabase();
   for (const key of keys) {
     const entry = q[key];
+    const tokVoor = _readDirty(activeClientId)[key];
     try {
       if (entry.type === 'delete' || localStorage.getItem(key) == null) {
         // 'delete' zelf, of inmiddels ook lokaal verwijderd (dan is de
@@ -232,6 +275,7 @@ async function flushSyncQueue() {
         if (error) throw error;
       }
       _dequeueSync(activeClientId, key);
+      _clearDirty(activeClientId, key, tokVoor);
     } catch (e) {
       console.error('flushSyncQueue: nog steeds mislukt voor ' + key + ':', e);
       // Niet stoppen: een andere sleutel zou wel kunnen lukken (bv. een
@@ -646,6 +690,8 @@ function syncSet(key, value) {
   // de upsert hieronder is aangekomen) vastleggen dat DEZE klant-sessie
   // deze sleutel zojuist lokaal heeft bijgewerkt -- zie hydrateFromCloud().
   _markLocalSyncTs(key, activeClientId, Date.now());
+  const cid = activeClientId;
+  const dirtyTok = _markDirty(cid, key);
 
   // De cloud-sync hieronder mag NOOIT de aanroeper laten crashen: syncSet()
   // wordt overal aangeroepen vlak vóór een DOM-update (bv. toggleFoodEaten,
@@ -658,6 +704,7 @@ function syncSet(key, value) {
     sb.from('client_state')
       .upsert({ client_id: activeClientId, key, value, updated_at: new Date().toISOString() })
       .then(({ error }) => {
+        if (!error) _clearDirty(cid, key, dirtyTok); // cloud heeft de opslag bevestigd
         if (error) console.error('syncSet upsert error voor ' + key + ':', error);
         // Netwerkfout: niet zomaar loggen en vergeten, maar in de wachtrij
         // zetten zodat flushSyncQueue() dit later (met de dan actuele
@@ -685,6 +732,8 @@ function syncRemove(key) {
   // Meteen vastleggen dat DEZE sessie de sleutel zojuist lokaal heeft
   // verwijderd -- zelfde reden als in syncSet() hierboven.
   _markLocalSyncTs(key, activeClientId, Date.now());
+  const cid = activeClientId;
+  const dirtyTok = _markDirty(cid, key);
 
   const sb = getSupabase();
   sb.from('client_state')
@@ -692,6 +741,7 @@ function syncRemove(key) {
     .eq('client_id', activeClientId)
     .eq('key', key)
     .then(({ error }) => {
+      if (!error) _clearDirty(cid, key, dirtyTok);
       if (error) console.error('syncRemove delete error voor ' + key + ':', error);
       if (error && isNetworkError(error)) _enqueueSync(activeClientId, key, 'delete');
       noteSyncResult(error);
