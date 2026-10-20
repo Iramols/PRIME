@@ -402,6 +402,11 @@ function updateConnBanner() {
   }
   el.textContent = msg;
   el.style.display = msg ? '' : 'none';
+  // De groene verversbalk (zelfde plek bovenin) verbergen zolang er een verbindings- of opslagmelding is,
+  // en bij een rode update-melding: anders ligt hij over de donkere melding heen en zie je die niet meer.
+  // Zonder verbinding kan Verversen toch niets, en met wachtende wijzigingen is verversen niet nuttig.
+  const groen = document.getElementById('ververs-banner');
+  if (groen) groen.style.display = (_verversBalkToegestaan && !msg && !_updateBeschikbaar) ? '' : 'none';
 }
 
 function noteSyncResult(error) {
@@ -424,6 +429,8 @@ window.addEventListener('offline', function() { _connOffline = true; updateConnB
 // iets kunnen gebeuren) tonen we een banner met een knop, zodat de gebruiker
 // zelf kiest wanneer hij herlaadt.
 let _updateBeschikbaar = false;
+// Wordt true na het inloggen (zie bootApp in auth.js): vanaf dan mag de groene verversbalk getoond worden.
+let _verversBalkToegestaan = false;
 async function checkForNewBuild() {
   if (_updateBeschikbaar || typeof window.PRIME_BUILD === 'undefined') return;
   try {
