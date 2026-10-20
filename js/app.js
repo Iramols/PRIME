@@ -177,6 +177,7 @@ function renderHome() {
   renderDagStatusKaart();
   renderCheckoutDagStatus();
   applyDagStatusTone();
+  applyDagStatusTraining();
 }
 
 // ========== TRAINING AAN/UIT (profielinstelling) ==========

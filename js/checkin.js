@@ -463,7 +463,7 @@ async function doCheckin() {
   document.getElementById('day-title').textContent = t('home.pilotThanks');
   document.getElementById('day-summary').innerHTML = t('day.summary.default');
   document.getElementById('hero-sub').innerHTML = t('day.summary.default');
-  try { applyDagStatusTone(); } catch (e) { console.error(e); }
+  try { applyDagStatusTone(); applyDagStatusTraining(); } catch (e) { console.error(e); }
 }
 
 async function doCheckout() {
@@ -640,7 +640,7 @@ function dagStatusKnoppenHtml(huidig, vast, handler) {
 
 function dagStatusGevolgenHtml(s) {
   if (s === 'normaal') return '<div class="ds-gevolg"><div class="ds-row">' + t('dagstatus.gevolg.normaal') + '</div></div>';
-  return '<div class="ds-gevolg">' + ['voeding', 'training', 'reeks', 'berichten'].map(function(k) {
+  return '<div class="ds-gevolg">' + ['voeding', 'training', 'reeks'].map(function(k) {
     return '<div class="ds-row"><b>' + t('dagstatus.k.' + k) + '</b><span>' + t('dagstatus.' + s + '.' + k) + '</span></div>';
   }).join('') + '</div>';
 }
@@ -681,6 +681,23 @@ function applyDagStatusTone() {
   if (s === 'normaal' || dagStatusVast(localDateStr())) return;
   const el = document.getElementById('hero-sub');
   if (el) el.innerHTML = t('dagstatus.sub.' + s);
+}
+
+// Bij Ziek slaan we de trainingsvraag in de check-out over (die past dan niet); de training telt toch niet mee.
+// Voor alle andere statussen komt het blok terug zoals het hoort (applyTrainingVisibility houdt rekening met
+// de profielinstelling "training uit").
+function applyDagStatusTraining() {
+  const blok = document.getElementById('training-summary-block');
+  const lijn = document.getElementById('divider-after-training-summary');
+  if (!blok) return;
+  if (getDagStatus(localDateStr()) === 'ziek') {
+    blok.style.display = 'none';
+    if (lijn) lijn.style.display = 'none';
+    if (!(checkout.training > 0)) checkout.training = 1; // geen antwoord nodig, zodat de dag afgerond kan worden
+  } else if (typeof applyTrainingVisibility === 'function') {
+    applyTrainingVisibility();
+  }
+  try { checkCheckoutReady(); } catch (e) { /* check-out nog niet zichtbaar */ }
 }
 
 function kiesDagStatus(s) {
