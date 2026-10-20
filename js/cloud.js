@@ -26,6 +26,7 @@ const CLOUD_KEYS = [
   'prime_spraak_correcties',
   'prime_custom_meals',
   'prime_food_days',
+  'prime_dagstatus',
   'prime_exercise_notes',
   'prime_custom_exercises',
   'prime_training_days',

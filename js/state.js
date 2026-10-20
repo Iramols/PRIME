@@ -73,5 +73,7 @@ let customExercises = JSON.parse(localStorage.getItem('prime_custom_exercises') 
 // Voeding per datum (t.b.v. Weekplanning): { 'YYYY-MM-DD': [logitem, ...] }.
 // dayLog is altijd de array voor currentLogDate — zie switchLogDate() in food.js.
 let foodDays = JSON.parse(localStorage.getItem('prime_food_days') || '{}');
+// Dagstatus per datum: { 'JJJJ-MM-DD': 'rust' | 'ziek' | 'vrij' }; ontbreekt een datum, dan is het een normale dag (zie checkin.js).
+let dagStatus = JSON.parse(localStorage.getItem('prime_dagstatus') || '{}');
 let currentLogDate = null; // wordt in app.js init() op vandaag gezet
 

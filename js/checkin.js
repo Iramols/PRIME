@@ -463,6 +463,7 @@ async function doCheckin() {
   document.getElementById('day-title').textContent = t('home.pilotThanks');
   document.getElementById('day-summary').innerHTML = t('day.summary.default');
   document.getElementById('hero-sub').innerHTML = t('day.summary.default');
+  try { applyDagStatusTone(); } catch (e) { console.error(e); }
 }
 
 async function doCheckout() {
@@ -544,6 +545,15 @@ async function doCheckout() {
     </div>`;
   container.appendChild(tomorrowDiv);
 
+  // Bij een rust-, ziekte- of vrije dag: een vaste, zachte afsluiting i.p.v. het standaardbericht.
+  const _dsCo = getDagStatus(_coToday);
+  if (_dsCo !== 'normaal') {
+    document.getElementById('afsluiting-text').textContent = t('dagstatus.closing.' + _dsCo);
+    updateStreak();
+    try { renderDagStatusKaart(); renderCheckoutDagStatus(); } catch (e) { console.error(e); }
+    return;
+  }
+
   // Call 1: afsluitend bericht (kort)
   try {
     const afsluiting = await callClaude(promptAfsluiting, [], 150);
@@ -554,6 +564,7 @@ async function doCheckout() {
   }
 
   updateStreak();
+  try { renderDagStatusKaart(); renderCheckoutDagStatus(); } catch (e) { console.error(e); }
 }
 
 function badgeHTML(type) {
@@ -563,4 +574,133 @@ function badgeHTML(type) {
     zwaar: ['badge-heavy', t('checkin.badge.heavy')]
   }[type];
   return `<div class="training-type-badge ${cfg[0]}">${cfg[1]}</div>`;
+}
+
+
+// ========== DAGSTATUS (Normaal / Rustdag / Ziek / Vrij) ==========
+// Per datum bewaard in dagStatus (state.js, key prime_dagstatus): { 'JJJJ-MM-DD': 'rust' | 'ziek' | 'vrij' };
+// ontbreekt een datum, dan is het een normale dag. Je kunt de status de hele dag aanpassen (Dashboard en
+// bij de check-out); na de check-out ligt hij vast en kan alleen de coach hem nog wijzigen.
+// Gevolgen: training telt niet als gemist (rust, ziek, vrij); voeding wordt bij ziek en vrij niet
+// beoordeeld en telt niet mee in gemiddelden (bij rust wel); de reeks blijft behouden; berichten
+// worden zachter.
+const DAGSTATUS_LIJST = ['normaal', 'rust', 'ziek', 'vrij'];
+const DAGSTATUS_ICOON = { normaal: '☀️', rust: '🛌', ziek: '🌡️', vrij: '🏖️' };
+
+function dagStatusVan(statusObj, dateStr) {
+  const s = statusObj && statusObj[dateStr];
+  return (s === 'rust' || s === 'ziek' || s === 'vrij') ? s : 'normaal';
+}
+function getDagStatus(dateStr) { return dagStatusVan(dagStatus, dateStr); }
+function dagStatusAfwijkend(dateStr) { return getDagStatus(dateStr) !== 'normaal'; }
+// Telt deze dag mee voor het beoordelen van voeding (doelen, percentages)? Rust: ja. Ziek en vrij: nee.
+function dagStatusVoedingTelt(dateStr) { const s = getDagStatus(dateStr); return s === 'normaal' || s === 'rust'; }
+// Telt een geplande training op deze dag mee (als gedaan of gemist)? Alleen op een normale dag.
+function dagStatusTrainingTelt(dateStr) { return getDagStatus(dateStr) === 'normaal'; }
+// Na de check-out ligt de dagstatus vast.
+function dagStatusVast(dateStr) { return history.some(function(h) { return h.date === dateStr; }); }
+function dagStatusKanWijzigen(dateStr) { return isPrimeCoach() || !dagStatusVast(dateStr); }
+
+// True als alle dagen tussen twee datums (zonder die twee zelf) een afwijkende dagstatus hebben, of als
+// de datums op elkaar aansluiten: zo'n gat onderbreekt de reeks niet. statusObj = dagstatus van die klant.
+function dagStatusGatOverbrugd(vanStr, totStr, statusObj) {
+  const a = new Date(vanStr + 'T12:00:00'), b = new Date(totStr + 'T12:00:00');
+  const n = Math.round((b - a) / 86400000);
+  if (n < 1) return false;
+  for (let i = 1; i < n; i++) {
+    const d = new Date(a.getTime()); d.setDate(d.getDate() + i);
+    if (dagStatusVan(statusObj, localDateStr(d)) === 'normaal') return false;
+  }
+  return true;
+}
+
+function setDagStatus(dateStr, status) {
+  if (DAGSTATUS_LIJST.indexOf(status) < 0) return false;
+  if (!dagStatusKanWijzigen(dateStr)) return false;
+  const nieuw = Object.assign({}, dagStatus);
+  if (status === 'normaal') delete nieuw[dateStr]; else nieuw[dateStr] = status;
+  dagStatus = nieuw;
+  syncSet('prime_dagstatus', dagStatus);
+  return true;
+}
+
+function dagStatusBadgeHtml(s) {
+  if (s === 'normaal') return '';
+  return '<span class="ds-badge ds-b-' + s + '">' + DAGSTATUS_ICOON[s] + ' ' + t('dagstatus.' + s) + '</span>';
+}
+
+function dagStatusKnoppenHtml(huidig, vast, handler) {
+  return '<div class="ds-chips">' + DAGSTATUS_LIJST.map(function(s) {
+    const sel = huidig === s;
+    return '<button type="button" class="ds-chip' + (sel ? ' sel ds-' + s : '') + '"' +
+      (vast ? ' disabled' : ' onclick="' + handler + '(\'' + s + '\')"') +
+      ' aria-pressed="' + sel + '"><span class="ds-emoji">' + DAGSTATUS_ICOON[s] + '</span><span>' + t('dagstatus.' + s) + '</span></button>';
+  }).join('') + '</div>';
+}
+
+function dagStatusGevolgenHtml(s) {
+  if (s === 'normaal') return '<div class="ds-gevolg"><div class="ds-row">' + t('dagstatus.gevolg.normaal') + '</div></div>';
+  return '<div class="ds-gevolg">' + ['voeding', 'training', 'reeks', 'berichten'].map(function(k) {
+    return '<div class="ds-row"><b>' + t('dagstatus.k.' + k) + '</b><span>' + t('dagstatus.' + s + '.' + k) + '</span></div>';
+  }).join('') + '</div>';
+}
+
+// Kaart op het Dashboard (de hele dag zichtbaar, ook vóór de check-in).
+function renderDagStatusKaart() {
+  const el = document.getElementById('dagstatus-card');
+  if (!el) return;
+  const dag = localDateStr();
+  const s = getDagStatus(dag);
+  const vast = dagStatusVast(dag);
+  el.innerHTML = '<div class="card ds-kaart">' +
+    '<div class="ds-kop"><span class="ds-titel">' + t('dagstatus.title') + '</span>' + (vast ? '<span aria-hidden="true">🔒</span>' : '') + '</div>' +
+    dagStatusKnoppenHtml(s, vast, 'kiesDagStatus') +
+    dagStatusGevolgenHtml(s) +
+    '<div class="ds-hint">' + t(vast ? 'dagstatus.hint.vast' : 'dagstatus.hint.open') + '</div>' +
+    '</div>';
+}
+
+// Zelfde keuze nog eens bij de avond check-out, met de gevolgen erbij.
+function renderCheckoutDagStatus() {
+  const el = document.getElementById('co-dagstatus');
+  if (!el) return;
+  const dag = localDateStr();
+  const s = getDagStatus(dag);
+  const vast = dagStatusVast(dag);
+  el.innerHTML = '<div class="ds-kop"><span class="ds-titel">' + t('dagstatus.checkout.title') + '</span>' + (vast ? '<span aria-hidden="true">🔒</span>' : '') + '</div>' +
+    dagStatusKnoppenHtml(s, vast, 'kiesDagStatus') +
+    dagStatusGevolgenHtml(s) +
+    '<div class="ds-hint">' + t(vast ? 'dagstatus.hint.vast' : 'dagstatus.checkout.hint') + '</div>';
+}
+
+// Zachtere toon onder de begroeting bij een rust-, ziekte- of vrije dag.
+function applyDagStatusTone() {
+  const s = getDagStatus(localDateStr());
+  if (s === 'normaal' || dagStatusVast(localDateStr())) return;
+  const el = document.getElementById('hero-sub');
+  if (el) el.innerHTML = t('dagstatus.sub.' + s);
+}
+
+function kiesDagStatus(s) {
+  if (!setDagStatus(localDateStr(), s)) return;
+  try { renderHome(); } catch (e) {
+    console.error('kiesDagStatus:', e);
+    renderDagStatusKaart(); renderCheckoutDagStatus();
+  }
+}
+
+// Coach: dagstatus van een willekeurige dag wijzigen (ook na de check-out), bv. in Weekplanning.
+function coachZetDagStatus(dateStr, s) {
+  if (!isPrimeCoach()) return;
+  if (!setDagStatus(dateStr, s)) return;
+  try { renderFoodWeek(); } catch (e) { console.error(e); }
+  try { if (dateStr === localDateStr()) renderHome(); else updateStreak(); } catch (e) { console.error(e); }
+}
+
+function dagStatusCoachRijHtml(dateStr) {
+  const s = getDagStatus(dateStr);
+  return '<div class="ds-coachrij"><span>' + t('dagstatus.coach.label') + '</span>' +
+    '<select class="coach-only-btn" onchange="coachZetDagStatus(\'' + dateStr + '\', this.value)">' +
+    DAGSTATUS_LIJST.map(function(x) { return '<option value="' + x + '"' + (x === s ? ' selected' : '') + '>' + DAGSTATUS_ICOON[x] + ' ' + t('dagstatus.' + x) + '</option>'; }).join('') +
+    '</select></div>';
 }

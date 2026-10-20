@@ -127,6 +127,7 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
         <div style="font-size:11px;color:var(--muted)">${dateLabel}</div>
       </div>
       ${isToday ? `<span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;flex-shrink:0">${t('weekplan.today')}</span>` : ''}
+      ${dagStatusBadgeHtml(getDagStatus(dateStr))}
       <div style="flex:1"></div>
       ${hasData
         ? `<div style="text-align:right">
@@ -161,6 +162,7 @@ function fwBouwDagKaart(dateStr, d, dayIdx, tot, hasData, isToday, isOpen) {
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','basis')">${t('foodweek.addProductForDay')}</button>
         <button class="btn-sm" style="flex:1" onclick="fwAddForDay('${dateStr}','addmeal')">${t('foodweek.addMealForDay')}</button>
       </div>${isPrimeCoach() ? `<div class="food-coach-row"><button class="btn-sm coach-only-btn" onclick="scanEtenVoorDag('${dateStr}')">📷 ${t('food.scan.btn')}</button><button class="btn-sm coach-only-btn" onclick="spraakVoorDag('${dateStr}')">✍️ ${t('food.voice.btn')}</button></div>` : ''}`}
+      ${isPrimeCoach() ? dagStatusCoachRijHtml(dateStr) : ''}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="fwOpenCopyModal('${dateStr}')">${t('foodweek.copy.button')}</button></div>` : ''}
       ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearFoodDay('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;

@@ -775,3 +775,28 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 /* Rij met coach-knoppen onder "+ Product" / "+ Gerecht" (Scan en Typ/dicteer). */
 .food-coach-row { display: flex; gap: 8px; margin-top: 8px; }
 .food-coach-row .btn-sm { flex: 1; }
+
+/* Dagstatus (Normaal / Rustdag / Ziek / Vrij) */
+.ds-kaart { margin-bottom: 16px; }
+.ds-kop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ds-titel { font-size: 15px; font-weight: 700; color: var(--charcoal); }
+.ds-chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ds-chip { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 4px; border: 1.5px solid var(--sand-dark); border-radius: 10px; background: var(--white); color: var(--charcoal); font-family: inherit; font-size: 12px; cursor: pointer; }
+.ds-chip:disabled { cursor: default; opacity: 0.6; }
+.ds-chip.sel:disabled { opacity: 1; }
+.ds-emoji { font-size: 20px; line-height: 1; }
+.ds-chip.sel { font-weight: 700; }
+.ds-chip.ds-normaal { background: var(--sand); border-color: var(--charcoal); }
+.ds-chip.ds-rust { background: #E6F1FB; border-color: #185FA5; color: #0C447C; }
+.ds-chip.ds-ziek { background: #FAEEDA; border-color: #BA7517; color: #633806; }
+.ds-chip.ds-vrij { background: #EAF3DE; border-color: #3B6D11; color: #27500A; }
+.ds-gevolg { margin-top: 12px; }
+.ds-row { display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--sand-dark); font-size: 13px; line-height: 1.5; }
+.ds-row b { font-weight: 600; min-width: 70px; flex-shrink: 0; color: var(--muted); }
+.ds-hint { font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+.ds-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 10px; flex-shrink: 0; }
+.ds-b-rust { background: #E6F1FB; color: #0C447C; }
+.ds-b-ziek { background: #FAEEDA; color: #633806; }
+.ds-b-vrij { background: #EAF3DE; color: #27500A; }
+.ds-coachrij { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.ds-coachrij select { padding: 6px 8px; border-radius: 8px; font-family: inherit; font-size: 13px; }

@@ -172,6 +172,11 @@ function renderHome() {
     }, { threshold: 0.1 });
     obs.observe(checkoutCard);
   }
+
+  // Dagstatus (Normaal/Rustdag/Ziek/Vrij): kaart bovenin, vraag bij de check-out en een zachtere toon.
+  renderDagStatusKaart();
+  renderCheckoutDagStatus();
+  applyDagStatusTone();
 }
 
 // ========== TRAINING AAN/UIT (profielinstelling) ==========

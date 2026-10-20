@@ -287,7 +287,8 @@ function wpVoortgangStats() {
   let geplanning = [];
   try { geplanning = JSON.parse(localStorage.getItem('prime_planning') || '[]'); } catch(e) {}
   const vandaag = localDateStr();
-  const verleden = geplanning.filter(p => p.date < vandaag);
+  // Dagen met rust, ziek of vrij tellen niet mee (niet als gemist en niet als gedaan).
+  const verleden = geplanning.filter(p => p.date < vandaag && dagStatusTrainingTelt(p.date));
   let totaalOef = 0, gedaanOef = 0, volledigDagen = 0;
   verleden.forEach(p => {
     const oefsNu       = wpGetZichtbareOefeningen(p.date, p.schemaId);

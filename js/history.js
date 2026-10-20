@@ -68,7 +68,8 @@ function renderHistory() {
   document.getElementById('h-trainings').textContent = volledig;
 
   // ── Energie, slaap, stress (gem. 7 dgn) ──
-  const recent7 = history.slice(0, 7);
+  // Zieke dagen vertekenen energie/slaap/stress, dus die tellen niet mee in het gemiddelde.
+  const recent7 = history.filter(h => getDagStatus(h.date) !== 'ziek').slice(0, 7);
   const avg = (arr, key) => {
     const vals = arr.map(h => h.checkin?.[key]).filter(v => v > 0);
     return vals.length > 0 ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '—';
@@ -130,11 +131,12 @@ function renderHistory() {
   const kcalDoelVoeding = getDagDoel().kcal;
   const kcalRangeVoeding = macroDoelRange(kcalDoelVoeding, 'kcal');
   const kcalOpCheckoutDag = h => { const s = splitTotals(foodDays[h.date] || []); return s.eaten.kcal + s.planned.kcal; };
-  const foodDaysHist = metCheckout.filter(h => h.checkout.food > 0);
+  const foodDaysHist = metCheckout.filter(h => h.checkout.food > 0 && dagStatusVoedingTelt(h.date));
+  const totalVoeding = history.filter(h => dagStatusVoedingTelt(h.date)).length; // ziek/vrij beoordelen we niet
   const opDoel   = foodDaysHist.filter(h => { const k = kcalOpCheckoutDag(h); return k >= kcalRangeVoeding.min && k <= kcalRangeVoeding.max; }).length;
   const teveel   = foodDaysHist.filter(h => kcalOpCheckoutDag(h) > kcalRangeVoeding.max).length;
   const teweinig = foodDaysHist.filter(h => kcalOpCheckoutDag(h) < kcalRangeVoeding.min).length;
-  const pctLog   = total > 0 ? Math.round(foodDaysHist.length / total * 100) : 0;
+  const pctLog   = totalVoeding > 0 ? Math.round(foodDaysHist.length / totalVoeding * 100) : 0;
   document.getElementById('h-food-ondoel').textContent  = foodDaysHist.length > 0 ? Math.round(opDoel/foodDaysHist.length*100)   + '%' : '—';
   document.getElementById('h-food-teveel').textContent  = foodDaysHist.length > 0 ? Math.round(teveel/foodDaysHist.length*100)   + '%' : '—';
   document.getElementById('h-food-teweinig').textContent = foodDaysHist.length > 0 ? Math.round(teweinig/foodDaysHist.length*100) + '%' : '—';
@@ -541,7 +543,7 @@ function calcBestStreak() {
       const prev = new Date(datums[i-1] + 'T00:00:00');
       const curr = new Date(datums[i] + 'T00:00:00');
       const diff = Math.round((curr - prev) / (1000*60*60*24));
-      current = diff === 1 ? current + 1 : 1;
+      current = dagStatusGatOverbrugd(datums[i-1], datums[i], dagStatus) ? current + 1 : 1;
     }
     if (current > best) best = current;
   }
@@ -554,7 +556,14 @@ function calcDagenZonderCheckin() {
   const vandaag = new Date();
   vandaag.setHours(0,0,0,0);
   laatste.setHours(0,0,0,0);
-  return Math.round((vandaag - laatste) / (1000*60*60*24));
+  // Dagen met rust, ziek of vrij tellen niet als "zonder check-in".
+  const totaal = Math.round((vandaag - laatste) / (1000*60*60*24));
+  let n = 0;
+  for (let i = 1; i <= totaal; i++) {
+    const d = new Date(laatste); d.setDate(laatste.getDate() + i);
+    if (!dagStatusAfwijkend(localDateStr(d))) n++;
+  }
+  return n;
 }
 
 
@@ -610,6 +619,7 @@ function renderVoedingVoortgang() {
     { key: 'fat',  label: t('history.macro.fat'), unit: 'g' },
   ];
 
+  const dagenTelt = dagen.filter(d => dagStatusVoedingTelt(d)); // ziek/vrij worden niet beoordeeld
   let doelGehaaldDagen = 0;
   const dagInfo = {};
   dagen.forEach(d => {
@@ -619,19 +629,19 @@ function renderVoedingVoortgang() {
       kcal: split.eaten.kcal + split.planned.kcal, prot: split.eaten.prot + split.planned.prot,
       carb: split.eaten.carb + split.planned.carb, fat: split.eaten.fat + split.planned.fat
     };
-    if (inRange(tot.kcal, doel.kcal, 'kcal')) doelGehaaldDagen++;
+    if (dagStatusVoedingTelt(d) && inRange(tot.kcal, doel.kcal, 'kcal')) doelGehaaldDagen++;
     dagInfo[d] = tot;
   });
-  const pct = dagen.length > 0 ? Math.round(doelGehaaldDagen / dagen.length * 100) : 0;
+  const pct = dagenTelt.length > 0 ? Math.round(doelGehaaldDagen / dagenTelt.length * 100) : 0;
 
   const statsHtml =
     '<div class="card" style="margin-bottom:14px">' +
     '<div class="card-label" style="margin-bottom:14px">' + t('history.foodOverview') + '</div>' +
     '<div class="stats-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:10px">' +
-      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + dagen.length + '</div><div class="stat-lbl">' + t('history.stat.logged') + '</div></div>' +
+      '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + dagenTelt.length + '</div><div class="stat-lbl">' + t('history.stat.logged') + '</div></div>' +
       '<div class="stat-card"><div class="stat-val" style="font-size:24px">' + doelGehaaldDagen + '</div><div class="stat-lbl">' + t('history.stat.goalMet') + '</div></div>' +
     '</div>' +
-    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.foodGoalMetSummary', { done: doelGehaaldDagen, total: dagen.length, pct }) + '</div>' +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">' + t('history.foodGoalMetSummary', { done: doelGehaaldDagen, total: dagenTelt.length, pct }) + '</div>' +
     '<div style="height:6px;background:var(--sand-dark);border-radius:100px;overflow:hidden">' +
       '<div style="height:100%;background:var(--sage);border-radius:100px;width:' + pct + '%;transition:width 0.5s"></div>' +
     '</div>' +
@@ -663,7 +673,8 @@ function renderVoedingVoortgang() {
       const kcalTekst = Math.round(tot.kcal) + ' kcal';
       const geslaagd = inRange(tot.kcal, doel.kcal, 'kcal');
       const bg = geslaagd ? 'var(--sage)' : '#c0392b';
-      const badge = '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
+      const telt = dagStatusVoedingTelt(d);
+      const badge = !telt ? dagStatusBadgeHtml(getDagStatus(d)) : '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
         (geslaagd ? '✓' : '✗') + ' ' + t('history.foodGoalBadge') + '</span>';
 
       const macroRij = macroDef.map(m => {
@@ -689,7 +700,7 @@ function renderVoedingVoortgang() {
         '</div>' +
         badge +
         '</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-left:90px">' + macroRij + '</div>' +
+        (telt ? '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding-left:90px">' + macroRij + '</div>' : '') +
         '</div>';
     }).join('');
 
@@ -811,7 +822,9 @@ function renderProgrammaVoortgang() {
       const isVerleden= item.date < vandaag;
 
       let badge = '';
-      if (total > 0) {
+      if (!dagStatusTrainingTelt(item.date) && (isVerleden || isVandaag)) {
+        badge = dagStatusBadgeHtml(getDagStatus(item.date)); // rust/ziek/vrij: niet als gemist tonen
+      } else if (total > 0) {
         if (isVerleden || isVandaag) {
           const allDone  = done.length >= total;
           const noneDone = done.length === 0;
@@ -857,7 +870,7 @@ function calcStreak() {
   let check = today;
   for (let i = 0; i < 60; i++) {
     if (dates.includes(check)) { streak++; }
-    else if (i > 0) break;
+    else if (i > 0 && !dagStatusAfwijkend(check)) break; // rust-, ziekte- of vrije dag onderbreekt de reeks niet
     const d = new Date(check + 'T00:00:00'); d.setDate(d.getDate() - 1);
     check = localDateStr(d);
   }
@@ -894,9 +907,9 @@ function updateStreak() {
 // meegestuurde prime_planning-data van de andere klant) -- zonder bevroren
 // snapshot kunnen we een dag niet narekenen zonder ook de programma's van
 // die andere klant op te halen, dus die tellen we dan simpelweg niet mee.
-function calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj) {
+function calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj, statusObj) {
   const vandaag = localDateStr();
-  const verleden = (geplanningArr || []).filter(p => p.date < vandaag);
+  const verleden = (geplanningArr || []).filter(p => p.date < vandaag && dagStatusVan(statusObj, p.date) === 'normaal');
   let volledigDagen = 0;
   verleden.forEach(p => {
     if (p.oefSnapshotKeys == null || !p.oefSnapshotKeys.length) return;
@@ -907,7 +920,7 @@ function calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj) {
   return { verledenCount: verleden.length, volledigDagen };
 }
 
-function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, profielObj) {
+function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, profielObj, statusObj) {
   const signals = [];
   hist = (hist || []).slice().sort((a, b) => b.date.localeCompare(a.date));
   const total = hist.length;
@@ -920,7 +933,7 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
     let check = vandaag;
     for (let i = 0; i < 60; i++) {
       if (dates.includes(check)) streak++;
-      else if (i > 0) break;
+      else if (i > 0 && dagStatusVan(statusObj, check) === 'normaal') break; // rust/ziek/vrij onderbreekt niet
       const d = new Date(check + 'T00:00:00'); d.setDate(d.getDate() - 1);
       check = localDateStr(d);
     }
@@ -929,10 +942,14 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
 
   const laatste = new Date(hist[0].date + 'T00:00:00');
   const vd = new Date(vandaag + 'T00:00:00');
-  const dagenWeg = Math.round((vd - laatste) / (1000 * 60 * 60 * 24));
+  let dagenWeg = 0;
+  for (let i = 1; i <= Math.round((vd - laatste) / (1000 * 60 * 60 * 24)); i++) {
+    const dd = new Date(laatste); dd.setDate(laatste.getDate() + i);
+    if (dagStatusVan(statusObj, localDateStr(dd)) === 'normaal') dagenWeg++; // dagen met rust/ziek/vrij tellen niet
+  }
   if (dagenWeg >= 2) signals.push({ kleur: '#E24B4A', tekst: t('history.signal.daysNoCheckin', { n: dagenWeg }) });
 
-  const recent7 = hist.slice(0, 7);
+  const recent7 = hist.filter(h => dagStatusVan(statusObj, h.date) !== 'ziek').slice(0, 7);
   const avg = key => {
     const vals = recent7.map(h => h.checkin?.[key]).filter(v => v > 0);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
@@ -941,7 +958,7 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
   if (energie !== null && energie < 2.0) signals.push({ kleur: '#f39c12', tekst: t('history.signal.lowEnergy') });
   if (stress !== null && stress < 2.0) signals.push({ kleur: '#f39c12', tekst: t('history.signal.highStress') });
 
-  const { verledenCount, volledigDagen } = calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj);
+  const { verledenCount, volledigDagen } = calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj, statusObj);
   if (verledenCount >= 3 && volledigDagen / verledenCount < 0.4) signals.push({ kleur: '#f39c12', tekst: t('history.signal.lowTrainingCompletion') });
 
   // Live herberekend uit de gelogde data van DEZE klant tegen ZIJN/HAAR
@@ -955,9 +972,10 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
   const kcalRangeKlant = macroDoelRange(kcalDoelKlant, 'kcal', profielObj || {});
   const kcalOpCheckoutDagKlant = h => { const s = splitTotals(foodDaysKlant[h.date] || []); return s.eaten.kcal + s.planned.kcal; };
   const metCheckout = hist.filter(h => h.checkout);
-  const foodDaysArr = metCheckout.filter(h => h.checkout.food > 0);
+  const foodDaysArr = metCheckout.filter(h => h.checkout.food > 0 && ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0);
+  const totalVoedingKlant = hist.filter(h => ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0).length;
   const opDoel = foodDaysArr.filter(h => { const k = kcalOpCheckoutDagKlant(h); return k >= kcalRangeKlant.min && k <= kcalRangeKlant.max; }).length;
-  const pctLog = total > 0 ? foodDaysArr.length / total * 100 : 0;
+  const pctLog = totalVoedingKlant > 0 ? foodDaysArr.length / totalVoedingKlant * 100 : 0;
   if (pctLog < 40 && total >= 3) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodRarelyLogged') });
   if (foodDaysArr.length >= 3) {
     const pctOpDoel = opDoel / foodDaysArr.length * 100;
@@ -973,7 +991,7 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
     else {
       const prev = new Date(datums[i-1] + 'T00:00:00'), curr = new Date(datums[i] + 'T00:00:00');
       const diff = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
-      cur = diff === 1 ? cur + 1 : 1;
+      cur = dagStatusGatOverbrugd(datums[i-1], datums[i], statusObj) ? cur + 1 : 1;
     }
     if (cur > bestStreak) bestStreak = cur;
   }
@@ -1124,8 +1142,8 @@ async function renderSignalenTab() {
   try { namen = await fetchProfileNames(); } catch (e) {}
   const resultaten = [];
   for (const c of clients) {
-    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile']);
-    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {});
+    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus']);
+    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {}, data.prime_dagstatus || {});
     if (signals.length) resultaten.push({ client: c, signals });
   }
   resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
