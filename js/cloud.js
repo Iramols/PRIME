@@ -80,7 +80,7 @@ function _markLocalSyncTs(key, clientId, ts) {
   try { localStorage.setItem(_syncTsKey(key, clientId), String(ts)); } catch (e) {}
 }
 
-// ---- "Nog niet bevestigd"-markering per sleutel (veilige synchronisatie, nu alleen coach) ----
+// ---- "Nog niet bevestigd"-markering per sleutel (veilige synchronisatie, coach en klanten) ----
 // Bugmelding: een telefoon die PRIME al open had en later opnieuw opstartte (bv. door
 // automatisch opnieuw inloggen), overschreef de voeding die intussen op een ander
 // apparaat was bijgewerkt. Oorzaak: hydrateFromCloud() liet "lokaal wint" afhangen van
@@ -113,9 +113,9 @@ function _clearDirty(clientId, key, tok) {
 function _isDirty(clientId, key) {
   return _readDirty(clientId)[key] !== undefined || !!_readSyncQueue(clientId)[key];
 }
-// Alleen voor de coach (voorlopig); klanten houden de oude regel tot dit getest is.
+// Geldt voor coach en klanten. (De oude regel op basis van klok-tijdstippen is vervangen.)
 function _veiligeSyncActief() {
-  return typeof isPrimeCoach === 'function' && isPrimeCoach();
+  return true;
 }
 
 // Haalt alle client_state-rijen van de opgegeven klant op en zet ze in
