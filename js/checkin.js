@@ -647,17 +647,19 @@ function dagStatusGevolgenHtml(s) {
 
 // Kaart op het Dashboard (de hele dag zichtbaar, ook vóór de check-in).
 function renderDagStatusKaart() {
-  const el = document.getElementById('dagstatus-card');
-  if (!el) return;
+  // De kaart staat op drie plekken (voor de check-in, onder het lichtgroene vlak na de check-in en na het afsluiten); alleen de zichtbare telt.
+  const slots = document.querySelectorAll('.dagstatus-slot');
+  if (!slots.length) return;
   const dag = localDateStr();
   const s = getDagStatus(dag);
   const vast = dagStatusVast(dag);
-  el.innerHTML = '<div class="card ds-kaart">' +
+  const html = '<div class="card ds-kaart">' +
     '<div class="ds-kop"><span class="ds-titel">' + t('dagstatus.title') + '</span>' + (vast ? '<span aria-hidden="true">🔒</span>' : '') + '</div>' +
     dagStatusKnoppenHtml(s, vast, 'kiesDagStatus') +
     dagStatusGevolgenHtml(s) +
     '<div class="ds-hint">' + t(vast ? 'dagstatus.hint.vast' : 'dagstatus.hint.open') + '</div>' +
     '</div>';
+  slots.forEach(function(el) { el.innerHTML = html; });
 }
 
 // Zelfde keuze nog eens bij de avond check-out, met de gevolgen erbij.
