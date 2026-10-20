@@ -130,7 +130,8 @@ function renderHistory() {
   // live berekend i.p.v. de oude vaste momentopname.
   const kcalDoelVoeding = getDagDoel().kcal;
   const kcalRangeVoeding = macroDoelRange(kcalDoelVoeding, 'kcal');
-  const kcalOpCheckoutDag = h => { const s = splitTotals(foodDays[h.date] || []); return s.eaten.kcal + s.planned.kcal; };
+  // Alleen werkelijk gegeten (afgevinkt) telt; wat alleen gepland stond telt niet als inname.
+  const kcalOpCheckoutDag = h => splitTotals(foodDays[h.date] || []).eaten.kcal;
   const foodDaysHist = metCheckout.filter(h => h.checkout.food > 0 && dagStatusVoedingTelt(h.date));
   const totalVoeding = history.filter(h => dagStatusVoedingTelt(h.date)).length; // ziek/vrij beoordelen we niet
   const opDoel   = foodDaysHist.filter(h => { const k = kcalOpCheckoutDag(h); return k >= kcalRangeVoeding.min && k <= kcalRangeVoeding.max; }).length;
@@ -340,18 +341,15 @@ function renderKcalTrendChart() {
   if (!el) return;
 
   const _tmVandaag = localDateStr();
-  // Gegeten + ingepland samen (sumItems() zonder isEatenItem-filter) --
-  // zelfde aanpak als de macrotrend-grafiek hieronder, zodat beide
-  // grafieken tijdens de lopende dag hetzelfde beeld geven i.p.v. dat kcal
-  // alleen het al-afgevinkte deel telt terwijl E/V/K ook het geplande deel
-  // meetellen.
+  // Alleen werkelijk gegeten (afgevinkt) -- zelfde regel als de macrotrend-grafiek hieronder en de
+  // Voeding-voortgang: een plan is geen inname.
   const data = Object.keys(foodDays)
-    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag && sumItems(foodDays[dateStr]).kcal > 0)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag && sumItems(foodDays[dateStr].filter(isEatenItem)).kcal > 0)
     .sort()
     .slice(-30)
     .map(dateStr => ({
       date: dateStr,
-      kcal: Math.round(sumItems(foodDays[dateStr]).kcal)
+      kcal: Math.round(sumItems(foodDays[dateStr].filter(isEatenItem)).kcal)
     }));
 
   if (data.length < 2) {
@@ -462,11 +460,11 @@ function renderMacroTrendChart() {
 
   const _tmVandaag = localDateStr();
   const data = Object.keys(foodDays)
-    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].length && dateStr <= _tmVandaag)
+    .filter(dateStr => foodDays[dateStr] && foodDays[dateStr].some(isEatenItem) && dateStr <= _tmVandaag)
     .sort()
     .slice(-30)
     .map(dateStr => {
-      const tot = foodDays[dateStr].reduce((a,i) => ({
+      const tot = foodDays[dateStr].filter(isEatenItem).reduce((a,i) => ({
         prot: a.prot + (i.prot||0), carb: a.carb + (i.carb||0), fat: a.fat + (i.fat||0)
       }), { prot:0, carb:0, fat:0 });
       return { date: dateStr, prot: Math.round(tot.prot), carb: Math.round(tot.carb), fat: Math.round(tot.fat) };
@@ -594,7 +592,8 @@ function renderVoedingVoortgang() {
   // weggehaald -- deze tab gaat puur over wat je al gegeten/gepland hebt
   // t/m vandaag, niet over wat er nog aankomt).
   const vandaag = localDateStr();
-  const dagen = Object.keys(foodDays).filter(d => d <= vandaag && (foodDays[d] || []).length > 0).sort();
+  // Alleen dagen waarop echt iets is gegeten (afgevinkt); wat alleen gepland stond telt niet als inname.
+  const dagen = Object.keys(foodDays).filter(d => d <= vandaag && (foodDays[d] || []).some(isEatenItem)).sort();
   if (!dagen.length) {
     el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F37D}️</div>' +
@@ -622,13 +621,12 @@ function renderVoedingVoortgang() {
   const dagenTelt = dagen.filter(d => dagStatusVoedingTelt(d)); // ziek/vrij worden niet beoordeeld
   let doelGehaaldDagen = 0;
   const dagInfo = {};
+  const dagPlan = {}; // kcal die die dag wel gepland maar niet afgevinkt was
   dagen.forEach(d => {
     const items = foodDays[d] || [];
     const split = splitTotals(items);
-    const tot = {
-      kcal: split.eaten.kcal + split.planned.kcal, prot: split.eaten.prot + split.planned.prot,
-      carb: split.eaten.carb + split.planned.carb, fat: split.eaten.fat + split.planned.fat
-    };
+    const tot = { kcal: split.eaten.kcal, prot: split.eaten.prot, carb: split.eaten.carb, fat: split.eaten.fat };
+    dagPlan[d] = Math.round(split.planned.kcal);
     if (dagStatusVoedingTelt(d) && inRange(tot.kcal, doel.kcal, 'kcal')) doelGehaaldDagen++;
     dagInfo[d] = tot;
   });
@@ -670,7 +668,7 @@ function renderVoedingVoortgang() {
       const tot = dagInfo[d];
       const isVandaag = d === vandaag;
       const isVerleden = d < vandaag;
-      const kcalTekst = Math.round(tot.kcal) + ' kcal';
+      const kcalTekst = Math.round(tot.kcal) + ' kcal' + (dagPlan[d] > 0 ? ' <span style="font-size:10px;font-weight:400;color:var(--muted)">' + t('history.plannedNotTicked', { kcal: dagPlan[d] }) + '</span>' : '');
       const geslaagd = inRange(tot.kcal, doel.kcal, 'kcal');
       const bg = geslaagd ? 'var(--sage)' : '#c0392b';
       const telt = dagStatusVoedingTelt(d);
@@ -970,7 +968,7 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
   const foodDaysKlant = foodDaysObj || {};
   const kcalDoelKlant = (profielObj && profielObj.calorieBehoefte && profielObj.calorieBehoefte > 0) ? profielObj.calorieBehoefte : 2000;
   const kcalRangeKlant = macroDoelRange(kcalDoelKlant, 'kcal', profielObj || {});
-  const kcalOpCheckoutDagKlant = h => { const s = splitTotals(foodDaysKlant[h.date] || []); return s.eaten.kcal + s.planned.kcal; };
+  const kcalOpCheckoutDagKlant = h => splitTotals(foodDaysKlant[h.date] || []).eaten.kcal; // alleen werkelijk gegeten
   const metCheckout = hist.filter(h => h.checkout);
   const foodDaysArr = metCheckout.filter(h => h.checkout.food > 0 && ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0);
   const totalVoedingKlant = hist.filter(h => ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0).length;

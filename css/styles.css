@@ -801,3 +801,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .ds-coachrij { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .ds-coachrij select { padding: 6px 8px; border-radius: 8px; font-family: inherit; font-size: 13px; }
 .ds-trainingnote { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 12px; border-radius: 10px; background: var(--sand); font-size: 13px; color: var(--charcoal); }
+.co-ob { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--sand); }
+.co-ob-titel { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--charcoal); }
+.co-ob-rij { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 3px 0; color: var(--charcoal); }
+.co-ob-vraag { font-size: 13px; margin: 10px 0 8px; color: var(--charcoal); }
+.co-ob-knoppen { display: flex; gap: 8px; flex-wrap: wrap; }
+.co-ob-knoppen .btn-sm { flex: 1; min-width: 130px; }

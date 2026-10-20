@@ -350,7 +350,7 @@ function buildFoodSummary() {
       </div>
     </div>
     ${macroHTML}
-    ${_split.planned.kcal > 0 ? '<div style="font-size:12px;color:var(--muted);margin-top:10px">' + t('checkin.food.plannedNote', { kcal: Math.round(_split.planned.kcal) }) + '</div>' : ''}`;
+    <div id="co-onbevestigd">${foodOnbevestigdHtml()}</div>`;
 
   // Coach bevestigingsvraag
   const qEl = document.getElementById('food-confirm-question');
@@ -723,4 +723,47 @@ function dagStatusCoachRijHtml(dateStr) {
     '<select class="coach-only-btn" onchange="coachZetDagStatus(\'' + dateStr + '\', this.value)">' +
     DAGSTATUS_LIJST.map(function(x) { return '<option value="' + x + '"' + (x === s ? ' selected' : '') + '>' + DAGSTATUS_ICOON[x] + ' ' + t('dagstatus.' + x) + '</option>'; }).join('') +
     '</select></div>';
+}
+
+// ----- Check-out: voeding die gepland maar niet afgevinkt is -----
+// Noemt de niet-afgevinkte items bij naam en laat je kiezen: alles afvinken (gegeten) of laten staan als
+// gepland (niet gegeten). Zo klopt de inname in de check-out en in de Voortgang, zonder dat je zelf moet zoeken.
+let _coNeeIds = []; // logIds waarvan je hebt gezegd "nee, niet gegeten"
+function foodOnbevestigdHtml() {
+  const dag = localDateStr();
+  const gepland = dayLog.filter(function(i) { return !isEatenItem(i); });
+  if (!gepland.length) return '';
+  const open = gepland.filter(function(i) { return _coNeeIds.indexOf(i.logId) < 0; });
+  if (!open.length || !magAfvinken(dag)) {
+    const kcal = Math.round(gepland.reduce(function(a, i) { return a + (i.kcal || 0); }, 0));
+    return '<div style="font-size:12px;color:var(--muted);margin-top:10px">' + t('checkin.food.plannedNote', { kcal: kcal }) + '</div>';
+  }
+  const rijen = open.map(function(i) {
+    return '<div class="co-ob-rij"><span>' + escapeHtml(dispName(i) || i.name || '') + '</span><span>' + Math.round(i.kcal || 0) + ' kcal</span></div>';
+  }).join('');
+  return '<div class="co-ob"><div class="co-ob-titel">' + t('checkin.food.unticked.title', { n: open.length }) + '</div>' + rijen +
+    '<div class="co-ob-vraag">' + t('checkin.food.unticked.question') + '</div>' +
+    '<div class="co-ob-knoppen"><button type="button" class="btn-sm" onclick="checkoutVinkAllesAf()">' + t('checkin.food.unticked.all') + '</button>' +
+    '<button type="button" class="btn-sm" onclick="checkoutPlannedBlijft()">' + t('checkin.food.unticked.no') + '</button></div></div>';
+}
+
+function checkoutVinkAllesAf() {
+  const dag = localDateStr();
+  if (!magAfvinken(dag)) return;
+  const items = dag === currentLogDate ? dayLog : (foodDays[dag] || []);
+  let n = 0;
+  items.forEach(function(i) { if (!isEatenItem(i)) { i.eaten = true; n++; } });
+  if (!n) return;
+  try { foodDays[dag] = items; syncSet('prime_food_days', foodDays); } catch (e) { console.error('checkoutVinkAllesAf opslaan mislukt:', e); }
+  try { updateMacroTotals(); } catch (e) { console.error(e); }
+  try { updateHomeMacros(); } catch (e) { console.error(e); }
+  try { if (document.getElementById('foodtab-log')?.style.display !== 'none') renderDayLog(); } catch (e) { console.error(e); }
+  try { if (document.getElementById('foodweek-content')) renderFoodWeek(); } catch (e) { console.error(e); }
+  buildFoodSummary(); // de inname en de status zijn nu anders
+}
+
+function checkoutPlannedBlijft() {
+  dayLog.forEach(function(i) { if (!isEatenItem(i) && _coNeeIds.indexOf(i.logId) < 0) _coNeeIds.push(i.logId); });
+  const el = document.getElementById('co-onbevestigd');
+  if (el) el.innerHTML = foodOnbevestigdHtml();
 }
