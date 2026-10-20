@@ -800,3 +800,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .ds-b-vrij { background: #EAF3DE; color: #27500A; }
 .ds-coachrij { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; font-size: 12px; color: var(--muted); }
 .ds-coachrij select { padding: 6px 8px; border-radius: 8px; font-family: inherit; font-size: 13px; }
+.ds-trainingnote { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 12px; border-radius: 10px; background: var(--sand); font-size: 13px; color: var(--charcoal); }

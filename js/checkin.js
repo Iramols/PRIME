@@ -694,6 +694,7 @@ function coachZetDagStatus(dateStr, s) {
   if (!isPrimeCoach()) return;
   if (!setDagStatus(dateStr, s)) return;
   try { renderFoodWeek(); } catch (e) { console.error(e); }
+  try { renderWeekplanning(); } catch (e) { console.error(e); }
   try { if (dateStr === localDateStr()) renderHome(); else updateStreak(); } catch (e) { console.error(e); }
 }
 

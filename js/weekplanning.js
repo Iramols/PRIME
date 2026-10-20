@@ -752,6 +752,7 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
         <div style="font-size:11px;color:var(--muted)">${dateLabel}</div>
       </div>
       ${isToday ? `<span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px;flex-shrink:0">${t('weekplan.today')}</span>` : ''}
+      ${dagStatusBadgeHtml(getDagStatus(dateStr))}
       <div style="flex:1"></div>
       ${hasData
         ? `<div style="text-align:right">
@@ -788,6 +789,7 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
         <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('programmas')">${t('training.dag.addProgramForDay')}</button>
         <button class="btn-sm" style="flex:1 1 100%" onclick="openSessieModal('${dateStr}')">${t('sessie.btn.add')}</button>
       </div>`}
+      ${isPrimeCoach() ? dagStatusCoachRijHtml(dateStr) : ''}
       ${hasData ? `<div style="margin-top:8px"><button class="btn-sm" style="width:100%" onclick="wpOpenTrainingCopyModal('${dateStr}')">${t('weekplan.trainingCopy.button')}</button></div>` : ''}
       ${hasData && !dagLigtVast ? `<button class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)" onclick="clearTrainingDag('${dateStr}')">${t('food.clearDay.button')}</button>` : ''}
     </div>`;

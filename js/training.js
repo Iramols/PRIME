@@ -868,6 +868,13 @@ function renderTrainingDag() {
   const totalEl = document.getElementById('training-dag-total');
   const progWrap = document.getElementById('dag-progress-wrap');
 
+  // Dagstatus van vandaag (Rustdag/Ziek/Vrij): training telt dan niet als gemist.
+  const dagStatusEl = document.getElementById('training-dag-status');
+  if (dagStatusEl) {
+    const _stNu = getDagStatus(localDateStr());
+    dagStatusEl.innerHTML = _stNu === 'normaal' ? '' : '<div class="ds-trainingnote">' + dagStatusBadgeHtml(_stNu) + '<span>' + t('dagstatus.training.note') + '</span></div>';
+  }
+
   // Zelfde vergrendel-indicatie als een dagkaart in Weekplanning
   // (wpdBouwDagKaart) -- hoorde hier voorheen niet bij, waardoor "Vandaag"
   // geen melding toonde terwijl Weekplanning dat wel deed.

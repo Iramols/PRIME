@@ -822,7 +822,7 @@ function renderProgrammaVoortgang() {
       const isVerleden= item.date < vandaag;
 
       let badge = '';
-      if (!dagStatusTrainingTelt(item.date) && (isVerleden || isVandaag)) {
+      if (!dagStatusTrainingTelt(item.date)) {
         badge = dagStatusBadgeHtml(getDagStatus(item.date)); // rust/ziek/vrij: niet als gemist tonen
       } else if (total > 0) {
         if (isVerleden || isVandaag) {
