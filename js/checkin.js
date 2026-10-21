@@ -236,7 +236,8 @@ function buildTrainingSummary() {
     + '<span class="training-status-icon">' + statusIcon + '</span>'
     + '<div><div class="training-status-text">' + status + '</div>'
     + '<div class="training-status-sub">' + typeLabel + '</div></div></div>'
-    + '<div class="training-done-list">' + doneTags + '</div>';
+    + '<div class="training-done-list">' + doneTags + '</div>'
+    + coTrainingLijstHtml(allItems, _btsItemDone);
 
   document.getElementById('training-confirm-question').textContent = coachQuestion;
   document.getElementById('training-confirm-question').style.display = 'block';
@@ -761,4 +762,40 @@ function coToggleItem(logId) {
   if (!magAfvinken(dag)) return;
   toggleFoodEaten(dag, logId);
   buildFoodSummary();
+}
+
+// ----- Check-out: training die gepland maar niet afgevinkt is -----
+// Zelfde idee als bij Voeding (foodOnbevestigdHtml): de oefeningen en sessies van vandaag die bij het openen nog
+// niet waren afgevinkt, als lijstje met een groen vinkje rechts dat je aan of uit kunt zetten. Een item blijft in
+// het lijstje staan nadat je het hebt afgevinkt, zodat je je altijd kunt corrigeren. Na het afronden ligt het vast.
+let _coTrIds = [];   // ex.id waarden die ooit niet-afgevinkt in dit lijstje zijn gekomen
+let _coTrItems = []; // huidige lijst, zodat de onclick met een volgnummer kan werken
+
+function coTrainingLijstHtml(allItems, isDone) {
+  const dag = localDateStr();
+  allItems.forEach(function(ex) { if (!isDone(ex) && _coTrIds.indexOf(ex.id) < 0) _coTrIds.push(ex.id); });
+  const lijst = allItems.filter(function(ex) { return _coTrIds.indexOf(ex.id) >= 0; });
+  _coTrItems = lijst;
+  if (!lijst.length || !magAfvinken(dag)) return '';
+  const open = lijst.filter(function(ex) { return !isDone(ex); });
+  const rijen = lijst.map(function(ex, idx) {
+    const naam = isSessie(ex) ? (sessieIcon(ex.sessieType) + ' ' + escapeHtml(ex.name)) : escapeHtml(dispName(ex) || ex.name || '');
+    return '<div class="co-vink-rij" onclick="coToggleTraining(' + idx + ')">' +
+      '<span class="co-vink-naam">' + naam + '</span>' +
+      '<div class="exercise-check co-vink-vink' + (isDone(ex) ? ' done' : '') + '">✓</div></div>';
+  }).join('');
+  return '<div class="co-ob"><div class="co-ob-titel">' +
+    (open.length ? t('checkin.food.list.titleOpen', { n: open.length }) : t('checkin.food.list.titleDone')) + '</div>' + rijen +
+    '<div class="co-ob-vraag">' + t('checkin.training.list.hint') + '</div></div>';
+}
+
+// Zet een oefening of sessie aan/uit als gedaan (op dezelfde manier als in Training zelf) en ververst de samenvatting.
+function coToggleTraining(idx) {
+  const ex = _coTrItems[idx];
+  const dag = localDateStr();
+  if (!ex || !magAfvinken(dag)) return;
+  if (isSessie(ex)) toggleSessieDone(dag, ex.id);
+  else if (String(ex.id).indexOf('wp-') === 0) toggleWpMijnDag(dag, ex._wpKey, parseInt(String(ex.id).slice(3), 10));
+  else toggleDagDone(ex.id);
+  buildTrainingSummary();
 }
