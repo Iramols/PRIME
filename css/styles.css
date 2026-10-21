@@ -786,7 +786,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .ds-chip.sel:disabled { opacity: 1; }
 .ds-emoji { font-size: 20px; line-height: 1; }
 .ds-chip.sel { font-weight: 700; }
-.ds-chip.ds-normaal { background: var(--sand); border-color: var(--charcoal); }
+.ds-chip.ds-normaal { background: var(--sage-light); border-color: var(--sage); color: var(--sage); }
 .ds-chip.ds-rust { background: #E6F1FB; border-color: #185FA5; color: #0C447C; }
 .ds-chip.ds-ziek { background: #FAEEDA; border-color: #BA7517; color: #633806; }
 .ds-chip.ds-vrij { background: #EAF3DE; border-color: #3B6D11; color: #27500A; }
