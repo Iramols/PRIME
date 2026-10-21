@@ -127,11 +127,37 @@ function checkCheckoutReady() {
 // Gedeeld door renderHome() (app.js) en de check-in (hieronder), die eerder
 // elk hun eigen kopie van deze regels hadden. Sessies staan vooraan.
 function homeTrainingPreviewHtml(dateStr, wpOef) {
-  const sessies = sessiesVoorDag(dateStr).map(function(s) { return sessieIcon(s.sessieType) + ' ' + escapeHtml(s.name) + (s.time ? ' ' + s.time : ''); });
-  const oefs = (wpOef || []).map(function(o) { return escapeHtml(dispName(o)); });
+  // Zoals bij Voeding: alleen wat nog te doen is. Afgevinkte oefeningen en sessies verdwijnen uit deze regel;
+  // zijn ze allemaal afgevinkt, dan staat er "Alles gedaan".
+  const gedaanKeys = wpGetDone(dateStr);
+  const sessiesAlle = sessiesVoorDag(dateStr);
+  const sessies = sessiesAlle.filter(function(s) { return !isSessieGedaan(dateStr, s.id); })
+    .map(function(s) { return sessieIcon(s.sessieType) + ' ' + escapeHtml(s.name) + (s.time ? ' ' + s.time : ''); });
+  let totaalOef = 0;
+  const oefs = [];
+  const entry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === dateStr; }) || null;
+  if (entry && (wpOef || []).length) {
+    // Zelfde sleutel als bij het afvinken (wpOefKey tegen de ONGEFILTERDE lijst met de originele index)
+    const volledig = wpGetOefeningen(entry.schemaId) || [];
+    const verwijderd = wpGetRemoved(dateStr);
+    volledig.forEach(function(o, i) {
+      if (verwijderd.includes(i)) return;
+      totaalOef++;
+      if (!gedaanKeys.includes(wpOefKey(o, i, volledig))) oefs.push(escapeHtml(dispName(o)));
+    });
+  }
+  if (!sessiesAlle.length && !totaalOef) return t('home.noTrainingToday');
   const alles = sessies.concat(oefs);
-  if (!alles.length) return t('home.noTrainingToday');
+  if (!alles.length) return '<span style="color:var(--sage);font-weight:600">✓ ' + t('home.trainingAllDone') + '</span>';
   return alles.slice(0, 3).join(' &nbsp;·&nbsp; ') + (alles.length > 3 ? ' &nbsp;+' + (alles.length - 3) + t('home.more') : '');
+}
+// Ververst alleen de preview-regel van de Dashboard-trainingskaart (na het afvinken in Training of de check-out).
+function updateHomeTrainingPreview() {
+  const el = document.getElementById('home-training-preview');
+  if (!el) return;
+  const vandaag = localDateStr();
+  const entry = (JSON.parse(localStorage.getItem('prime_planning') || '[]')).find(function(p) { return p.date === vandaag; }) || null;
+  el.innerHTML = homeTrainingPreviewHtml(vandaag, entry ? wpGetZichtbareOefeningen(vandaag, entry.schemaId) : []);
 }
 function homeNoPlanBadgeHtml(dateStr) {
   const sessies = sessiesVoorDag(dateStr);

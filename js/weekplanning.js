@@ -359,6 +359,8 @@ function wpToggleOefDone(dateStr, doneKey) {
   const row = document.getElementById('wp-oef-' + dateStr + '-' + doneKey);
   if (chk) chk.classList.toggle('done', isDone);
   if (row) row.style.opacity = isDone ? '0.45' : '1';
+  // Dashboard-trainingskaart toont alleen wat nog te doen is (zoals Voeding): meteen bijwerken.
+  try { if (dateStr === localDateStr()) updateHomeTrainingPreview(); } catch (e) { console.error(e); }
 }
 
 // Zelfde kaart-opzet als een oefening bij Vandaag (exCard in training.js):
