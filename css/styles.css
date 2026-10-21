@@ -810,3 +810,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .co-vink-rij { display: flex; align-items: center; gap: 10px; padding: 8px 0; cursor: pointer; }
 .co-vink-naam { font-size: 13px; font-weight: 600; color: var(--charcoal); }
 .co-vink-kcal { font-size: 12px; color: var(--muted); }
+.co-vink-vink { margin-left: auto; }

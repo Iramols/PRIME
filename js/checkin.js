@@ -746,9 +746,9 @@ function foodOnbevestigdHtml() {
   const rijen = lijst.map(function(i) {
     const gegeten = isEatenItem(i);
     return '<div class="co-vink-rij" onclick="coToggleItem(' + i.logId + ')">' +
-      '<div class="exercise-check' + (gegeten ? ' done' : '') + '">✓</div>' +
       '<span class="co-vink-naam">' + escapeHtml(dispName(i) || i.name || '') + '</span>' +
-      '<span class="co-vink-kcal">' + Math.round(i.kcal || 0) + ' kcal</span></div>';
+      '<span class="co-vink-kcal">' + Math.round(i.kcal || 0) + ' kcal</span>' +
+      '<div class="exercise-check co-vink-vink' + (gegeten ? ' done' : '') + '">✓</div></div>';
   }).join('');
   return '<div class="co-ob"><div class="co-ob-titel">' +
     (open.length ? t('checkin.food.list.titleOpen', { n: open.length }) : t('checkin.food.list.titleDone')) + '</div>' + rijen +
