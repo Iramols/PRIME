@@ -12,7 +12,7 @@ function switchFoodTab(tab) {
   if (tab === 'basis') { renderProducts(); primeProductsRefreshFromCloud(); }
   if (tab === 'primemeals') { renderPrimeMealPlan(); primeMealsRefreshFromCloud(); }
   if (tab === 'add') { renderAddProductTab(); primeProductsRefreshFromCloud(); }
-  if (tab === 'addmeal') renderAddMealTab();
+  if (tab === 'addmeal') { renderAddMealTab(); if (_portionReturnTab) primeMealsRefreshFromCloud(); }
   if (tab === 'week') renderFoodWeek();
 }
 
@@ -476,6 +476,7 @@ async function primeMealsRefreshFromCloud() {
     primeMeals = list;
     warmPhotoCache(list.map(m => m.photo));
     if (document.getElementById('foodtab-primemeals')?.style.display !== 'none') renderPrimeMealPlan();
+    if (document.getElementById('foodtab-addmeal')?.style.display === 'block') renderOwnMealsList();
   }
 }
 
@@ -1093,15 +1094,11 @@ function renderOwnMealsList() {
   if (!el) return;
   // Zelfde opzet als "+ Eigen basisproducten": een smalle actiebalk en daaronder de gerechten als vierkante kaartjes.
   const balk = '<div onclick="openAddMealForm()" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px dashed var(--sage);border-radius:10px;background:var(--sage-light);color:var(--sage);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px"><span style="font-size:18px;line-height:1">➕</span><span>' + t('food.addMeal.tile') + '</span></div>';
-  if (!customMeals.length) {
-    el.innerHTML = balk + '<div style="font-size:13px;color:var(--muted)">' + t('food.addMeal.noOwnMeals') + '</div>';
-    return;
-  }
-  el.innerHTML = balk + '<div class="product-grid">' + customMeals.map(dish => {
+  const kaart = (dish, klik, label) => {
     const tot = mealTotals(dish);
     return `
-    <div class="product-card" onclick="openOwnMealModal('${dish.id}')">
-      <span class="prod-label prod-label-own">${t('food.label.own')}</span>
+    <div class="product-card" onclick="${klik}('${dish.id}')">
+      ${label ? `<span class="prod-label prod-label-own">${label}</span>` : ''}
       ${dish.photo ? `<div class="product-photo"><img src="${dish.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">🍽️</div>`}
       <div class="product-name">${dispName(dish)}</div>
       <div class="product-per">${t('food.addMeal.totalWeightLine', { gram: tot.gram })}</div>
@@ -1110,7 +1107,20 @@ function renderOwnMealsList() {
         <span class="product-pill">${t('food.macroAbbr.protein')}${Math.round(tot.prot)}g</span>
       </div>
     </div>`;
-  }).join('') + '</div>';
+  };
+  let html = balk;
+  if (!customMeals.length) {
+    html += '<div style="font-size:13px;color:var(--muted)">' + t('food.addMeal.noOwnMeals') + '</div>';
+  } else {
+    html += '<div class="product-grid">' + customMeals.map(dish => kaart(dish, 'openOwnMealModal', t('food.label.own'))).join('') + '</div>';
+  }
+  // Kom je hier via "+ Gerecht" (iets inplannen voor Mijn dag of een dag in Weekplanning), dan horen de
+  // PRIME gerechten er ook bij: je kiest uit je eigen en uit de PRIME gerechten.
+  if (typeof _portionReturnTab !== 'undefined' && _portionReturnTab && primeMeals.length) {
+    html += '<div class="card-label" style="margin:20px 0 10px">' + t('food.tab.primeMeals') + '</div>' +
+      '<div class="product-grid">' + primeMeals.map(dish => kaart(dish, 'openPrimeMealModal', '')).join('') + '</div>';
+  }
+  el.innerHTML = html;
 }
 
 // Het formulier is pas zichtbaar na een klik op "Gerecht toevoegen" (of bewerken), net als bij producten.
