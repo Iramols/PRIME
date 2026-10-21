@@ -811,3 +811,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .co-vink-naam { font-size: 13px; font-weight: 600; color: var(--charcoal); }
 .co-vink-kcal { font-size: 12px; color: var(--muted); }
 .co-vink-vink { margin-left: auto; }
+.co-ob.co-ob-open { background: #fdecea; border: 1.5px solid #e8a39b; }
+.co-ob.co-ob-open .co-ob-titel { color: #c0392b; }
+.co-ob.co-ob-klaar { background: var(--sage-light); border: 1.5px solid var(--sage-mid); }
+.co-ob.co-ob-klaar .co-ob-titel { color: var(--sage); }
+.exercise-check.co-vink-open { border-color: #c0392b; background: #fdecea; color: #c0392b; font-weight: 700; }

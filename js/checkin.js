@@ -749,9 +749,9 @@ function foodOnbevestigdHtml() {
     return '<div class="co-vink-rij" onclick="coToggleItem(' + i.logId + ')">' +
       '<span class="co-vink-naam">' + escapeHtml(dispName(i) || i.name || '') + '</span>' +
       '<span class="co-vink-kcal">' + Math.round(i.kcal || 0) + ' kcal</span>' +
-      '<div class="exercise-check co-vink-vink' + (gegeten ? ' done' : '') + '">✓</div></div>';
+      '<div class="exercise-check co-vink-vink' + (gegeten ? ' done' : ' co-vink-open') + '">' + (gegeten ? '✓' : '✗') + '</div></div>';
   }).join('');
-  return '<div class="co-ob"><div class="co-ob-titel">' +
+  return '<div class="co-ob ' + (open.length ? 'co-ob-open' : 'co-ob-klaar') + '"><div class="co-ob-titel">' +
     (open.length ? t('checkin.food.list.titleOpen', { n: open.length }) : t('checkin.food.list.titleDone')) + '</div>' + rijen +
     '<div class="co-ob-vraag">' + t('checkin.food.list.hint') + '</div></div>';
 }
@@ -782,9 +782,9 @@ function coTrainingLijstHtml(allItems, isDone) {
     const naam = isSessie(ex) ? (sessieIcon(ex.sessieType) + ' ' + escapeHtml(ex.name)) : escapeHtml(dispName(ex) || ex.name || '');
     return '<div class="co-vink-rij" onclick="coToggleTraining(' + idx + ')">' +
       '<span class="co-vink-naam">' + naam + '</span>' +
-      '<div class="exercise-check co-vink-vink' + (isDone(ex) ? ' done' : '') + '">✓</div></div>';
+      '<div class="exercise-check co-vink-vink' + (isDone(ex) ? ' done' : ' co-vink-open') + '">' + (isDone(ex) ? '✓' : '✗') + '</div></div>';
   }).join('');
-  return '<div class="co-ob"><div class="co-ob-titel">' +
+  return '<div class="co-ob ' + (open.length ? 'co-ob-open' : 'co-ob-klaar') + '"><div class="co-ob-titel">' +
     (open.length ? t('checkin.food.list.titleOpen', { n: open.length }) : t('checkin.food.list.titleDone')) + '</div>' + rijen +
     '<div class="co-ob-vraag">' + t('checkin.training.list.hint') + '</div></div>';
 }
