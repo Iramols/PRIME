@@ -263,7 +263,7 @@ function buildTrainingSummary() {
     + '<div><div class="training-status-text">' + status + '</div>'
     + '<div class="training-status-sub">' + typeLabel + '</div></div></div>'
     + '<div class="training-done-list">' + doneTags + '</div>'
-    + coTrainingLijstHtml(allItems, _btsItemDone);
+    + '<div id="co-tr-onbevestigd">' + coTrainingLijstHtml(allItems, _btsItemDone) + '</div>';
 
   document.getElementById('training-confirm-question').textContent = coachQuestion;
   document.getElementById('training-confirm-question').style.display = 'block';
@@ -759,6 +759,7 @@ function dagStatusCoachRijHtml(dateStr) {
 let _coItemIds = []; // logIds die ooit niet-afgevinkt in dit lijstje zijn gekomen
 
 function foodOnbevestigdHtml() {
+  if (!_coControle) return ''; // overdag niets tonen: pas bij het afronden van de dag
   const dag = localDateStr();
   dayLog.forEach(function(i) { if (!isEatenItem(i) && _coItemIds.indexOf(i.logId) < 0) _coItemIds.push(i.logId); });
   const lijst = dayLog.filter(function(i) { return _coItemIds.indexOf(i.logId) >= 0; });
@@ -794,10 +795,14 @@ function coToggleItem(logId) {
 // Zelfde idee als bij Voeding (foodOnbevestigdHtml): de oefeningen en sessies van vandaag die bij het openen nog
 // niet waren afgevinkt, als lijstje met een groen vinkje rechts dat je aan of uit kunt zetten. Een item blijft in
 // het lijstje staan nadat je het hebt afgevinkt, zodat je je altijd kunt corrigeren. Na het afronden ligt het vast.
+let _coControle = false; // true na de eerste tik op "Dag afronden" als er nog iets niet is afgevinkt
+let _coTrLaatste = null; // { alle, isDone } van de laatste samenvatting, voor de controlestap
 let _coTrIds = [];   // ex.id waarden die ooit niet-afgevinkt in dit lijstje zijn gekomen
 let _coTrItems = []; // huidige lijst, zodat de onclick met een volgnummer kan werken
 
 function coTrainingLijstHtml(allItems, isDone) {
+  _coTrLaatste = { alle: allItems, isDone: isDone };
+  if (!_coControle) return ''; // overdag niets tonen: pas bij het afronden van de dag
   const dag = localDateStr();
   allItems.forEach(function(ex) { if (!isDone(ex) && _coTrIds.indexOf(ex.id) < 0) _coTrIds.push(ex.id); });
   const lijst = allItems.filter(function(ex) { return _coTrIds.indexOf(ex.id) >= 0; });
@@ -824,4 +829,24 @@ function coToggleTraining(idx) {
   else if (String(ex.id).indexOf('wp-') === 0) toggleWpMijnDag(dag, ex._wpKey, parseInt(String(ex.id).slice(3), 10));
   else toggleDagDone(ex.id);
   buildTrainingSummary();
+}
+
+// Knop "Dag afronden": is alles afgevinkt, dan meteen afsluiten. Staat er nog iets niet afgevinkt (voeding of
+// training), dan eerst een controlestap: de rode lijstjes verschijnen, je corrigeert wat nodig is en tikt daarna
+// op "Dag definitief afsluiten". Overdag zie je die lijstjes dus niet.
+function afrondenKlik() {
+  if (_coControle) { doCheckout(); return; }
+  const voedingOpen = dayLog.some(function(i) { return !isEatenItem(i); });
+  const ziek = getDagStatus(localDateStr()) === 'ziek'; // bij Ziek is er geen trainingsvraag
+  const trainingOpen = !ziek && !!_coTrLaatste && _coTrLaatste.alle.some(function(ex) { return !_coTrLaatste.isDone(ex); });
+  if (!voedingOpen && !trainingOpen) { doCheckout(); return; }
+  _coControle = true;
+  const vEl = document.getElementById('co-onbevestigd');
+  if (vEl) vEl.innerHTML = foodOnbevestigdHtml();
+  const tEl = document.getElementById('co-tr-onbevestigd');
+  if (tEl && _coTrLaatste) tEl.innerHTML = coTrainingLijstHtml(_coTrLaatste.alle, _coTrLaatste.isDone);
+  const btn = document.getElementById('checkout-btn');
+  if (btn) btn.textContent = t('checkout.finalize');
+  const eerste = document.querySelector('#training-summary-content .co-ob, #co-onbevestigd .co-ob');
+  if (eerste && eerste.scrollIntoView) eerste.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }

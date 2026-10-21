@@ -109,6 +109,7 @@ const I18N = {
     'checkout.title': 'Avond check-out 🌙',
     'checkin.energy.eod.label': 'Hoe was je energie vandaag?',
     'checkout.finish': 'Dag afronden →',
+    'checkout.finalize': "Dag definitief afsluiten →",
 
     // Training
     'training.cardLabel': 'Training',
@@ -1142,6 +1143,7 @@ const I18N = {
     'checkout.title': 'Evening check-out 🌙',
     'checkin.energy.eod.label': 'How was your energy today?',
     'checkout.finish': 'Finish day →',
+    'checkout.finalize': "Close the day for good →",
 
     'training.cardLabel': 'Training',
     'training.today': 'Today',
