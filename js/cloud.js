@@ -567,7 +567,7 @@ function _invoerBezig() {
 // Onthoudt waar je was (scherm, subtab, gekozen datum, scrollstand) zodat
 // herstelSchermStaat() in app.js je na het herladen op dezelfde plek terugzet.
 // sessionStorage: geldt alleen voor dit tabblad en alleen voor die ene herlaad.
-function bewaarSchermStaat() {
+function bewaarSchermStaat(zonderDatums) {
   try {
     const st = { scroll: Math.round(window.scrollY || 0) };
     const scr = document.querySelector('.screen.active');
@@ -577,11 +577,11 @@ function bewaarSchermStaat() {
         const e = document.getElementById('foodtab-' + x);
         return e && e.style.display !== 'none';
       }) || null;
-      if (typeof currentLogDate !== 'undefined') st.foodDate = currentLogDate;
+      if (!zonderDatums && typeof currentLogDate !== 'undefined') st.foodDate = currentLogDate;
     }
     if (st.screen === 'training') {
       if (typeof activeTrainingTab !== 'undefined') st.trainTab = activeTrainingTab;
-      if (typeof currentTrainingDate !== 'undefined') st.trainDate = currentTrainingDate;
+      if (!zonderDatums && typeof currentTrainingDate !== 'undefined') st.trainDate = currentTrainingDate;
     }
     if (st.screen === 'history') {
       st.histTab = ['stats', 'voeding', 'programma'].find(function(x) {
@@ -601,8 +601,8 @@ function bewaarSchermStaat() {
 
 // Herlaadt de pagina en keert daarna terug op dezelfde plek. Gebruikt door de
 // automatische verversing en door de knoppen in de update- en datameldingen.
-function verversNu(zonderMelding) {
-  bewaarSchermStaat();
+function verversNu(zonderMelding, zonderDatums) {
+  bewaarSchermStaat(zonderDatums);
   if (!zonderMelding) { try { sessionStorage.setItem('prime_data_ververst', '1'); } catch (e) {} }
   location.reload();
 }
@@ -654,6 +654,7 @@ async function verversBijTerugkeer() {
 // midden in een invoer (je tikt er bewust op) en zonder wachttijd.
 async function verversKnop() {
   if (_terugVerversBezig || !activeClientId) return;
+  if (_datumNu() !== _appDatum) { verversNu(true, true); return; } // nieuwe dag: scherm van gisteren vervangen
   _terugVerversBezig = true;
   const btn = document.getElementById('ververs-btn');
   if (btn) btn.disabled = true;
@@ -674,11 +675,37 @@ async function verversKnop() {
   }
 }
 
+// ---- Nieuwe dag: de app is blijven openstaan over middernacht ----
+// Het Dashboard bepaalt "vandaag" alleen bij het opbouwen van het scherm. Blijft de app open staan, dan
+// toonde hij 's ochtends nog de avond van gisteren. Daarom onthouden we de datum waarop de pagina is
+// geladen en vergelijken die bij terugkeren naar de app en elke minuut.
+function _datumNu() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+let _appDatum = _datumNu();
+
+// Geeft true terug als het een nieuwe dag is (en de pagina dus herlaadt of de balk getoond wordt).
+function controleerNieuweDag() {
+  if (!activeClientId) return false;
+  if (_datumNu() === _appDatum) return false;
+  if (_invoerBezig()) {
+    const txt = document.getElementById('ververs-text');
+    if (txt) { txt.setAttribute('data-i18n', 'app.newDay'); txt.textContent = t('app.newDay'); }
+    const knop = document.getElementById('ververs-btn');
+    if (knop) knop.onclick = function() { verversNu(true, true); };
+    return true;
+  }
+  verversNu(true, true);
+  return true;
+}
+setInterval(controleerNieuweDag, 60000);
+
 document.addEventListener('visibilitychange', function() {
-  if (!document.hidden) verversBijTerugkeer();
+  if (!document.hidden && !controleerNieuweDag()) verversBijTerugkeer();
 });
-window.addEventListener('focus', verversBijTerugkeer);
-window.addEventListener('pageshow', function(e) { if (e.persisted) verversBijTerugkeer(); });
+window.addEventListener('focus', function() { if (!controleerNieuweDag()) verversBijTerugkeer(); });
+window.addEventListener('pageshow', function(e) { if (e.persisted && !controleerNieuweDag()) verversBijTerugkeer(); });
 
 function syncSet(key, value) {
   try {
