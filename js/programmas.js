@@ -64,6 +64,7 @@ async function primeProgRefreshFromCloud() {
     primeProgLijst = list;
     warmPhotoCache(list.map(p => p.foto));
     if (progMode === 'prime') { progLaadData(); renderProgrammas(); }
+    else if (_progPlanContext && progMode === 'normal' && progActiefId === null && document.getElementById('ttab-content-addprogram')?.style.display === 'block') renderProgrammas();
   }
 }
 
@@ -106,25 +107,12 @@ function progBouwTegels(lijst) {
   } else if (isPrimeCoach()) {
     balk = '<div onclick="progOpenNieuwPrimeModal()" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border:1.5px dashed var(--coach-only);border-radius:10px;background:rgba(230,126,34,0.08);color:var(--coach-only);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px"><span style="font-size:18px;line-height:1">➕</span><span>' + t('programmas.prime.addBtn') + '</span></div>';
   }
-  if (!progLijst.length) {
-    return balk + '<div class="card" style="text-align:center;padding:40px 20px">' +
-      '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
-      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
-      '<div style="font-size:13px;color:var(--muted)">' + (isPrime ? t('programmas.prime.emptyHint') : t('programmas.empty.hint')) + '</div>' +
-      '</div>';
-  }
-  if (!lijst.length) {
-    return balk + '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('common.noSearchResults') + '</div>';
-  }
-  return balk + '<div class="product-grid">' + lijst.map(prog => {
+  // Eén kaartje; label = "Vast"/"Eigen" (alleen bij de eigen lijst), PRIME-programma's hebben geen label.
+  const tegel = (prog, label) => {
     const aantalDagen = Object.keys(prog.dagen || {}).length;
     const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
     const pills = (prog.niveau ? '<span class="product-pill">' + t('programmas.level.' + prog.niveau.toLowerCase()) + '</span>' : '') +
       (prog.dagenPerWeek ? '<span class="product-pill">' + prog.dagenPerWeek + '</span>' : '');
-    // Labeltje linksboven: "Vast" bij ingebouwde programma's, "Eigen" bij eigen programma's; PRIME-programma's hebben geen label.
-    const label = isPrime ? '' : (prog.builtin
-      ? '<span class="prod-label">' + t('programmas.builtinBadge') + '</span>'
-      : '<span class="prod-label prod-label-own">' + t('food.label.own') + '</span>');
     return '<div class="product-card" onclick="openProgModal(\'' + prog.id + '\')">' + label +
       (prog.foto
         ? '<div class="product-photo"><img src="' + prog.foto + '" style="width:100%;height:100%;object-fit:cover;display:block"></div>'
@@ -133,25 +121,58 @@ function progBouwTegels(lijst) {
       '<div class="product-per">' + t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef }) + '</div>' +
       (pills ? '<div class="product-macros">' + pills + '</div>' : '') +
       '</div>';
-  }).join('') + '</div>';
+  };
+  const labelVan = prog => isPrime ? '' : (prog.builtin
+    ? '<span class="prod-label">' + t('programmas.builtinBadge') + '</span>'
+    : '<span class="prod-label prod-label-own">' + t('food.label.own') + '</span>');
+
+  // Kom je hier via "+ Programma" (een programma inplannen vanuit een dag in Weekplanning), dan horen de PRIME
+  // programma's er ook bij: je kiest uit je eigen en uit de PRIME programma's (zoals bij gerechten).
+  let primeHtml = '';
+  if (!isPrime && typeof _progPlanContext !== 'undefined' && _progPlanContext && primeProgLijst.length) {
+    const q = (document.getElementById('programma-search')?.value || '').toLowerCase();
+    const primeLijst = q ? primeProgLijst.filter(p => (p.naam || '').toLowerCase().includes(q) || dispName(p).toLowerCase().includes(q)) : primeProgLijst;
+    if (primeLijst.length) {
+      primeHtml = '<div class="card-label" style="margin:20px 0 10px">' + t('training.tab.primeProgramas') + '</div>' +
+        '<div class="product-grid">' + primeLijst.map(p => tegel(p, '')).join('') + '</div>';
+    }
+  }
+
+  if (!progLijst.length) {
+    return balk + '<div class="card" style="text-align:center;padding:40px 20px">' +
+      '<div style="font-size:40px;margin-bottom:12px">\u{1F4CB}</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('programmas.empty.title') + '</div>' +
+      '<div style="font-size:13px;color:var(--muted)">' + (isPrime ? t('programmas.prime.emptyHint') : t('programmas.empty.hint')) + '</div>' +
+      '</div>' + primeHtml;
+  }
+  if (!lijst.length) {
+    return balk + '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('common.noSearchResults') + '</div>' + primeHtml;
+  }
+  return balk + '<div class="product-grid">' + lijst.map(p => tegel(p, labelVan(p))).join('') + '</div>' + primeHtml;
 }
 
 // Klik op een programma: keuze uit inplannen, bewerken en verwijderen.
 // Eigen programma's kan de gebruiker zelf bewerken/verwijderen; vaste
 // programma's alleen inplannen; bij PRIME bewerkt en verwijdert alleen de coach
 // (iedereen anders ziet "Bekijken"). Hergebruikt het venster #own-meal-modal.
+// Een PRIME-programma dat hier (in de eigen lijst, via "+ Programma") staat, kun je inplannen of openen in de
+// tab PRIME programma's om te bekijken/bewerken.
 function openProgModal(id) {
-  const prog = progLijst.find(p => p.id === id);
+  let prog = progLijst.find(p => p.id === id);
+  const uitPrimeLijst = !prog;
+  if (!prog) prog = primeProgLijst.find(p => p.id === id);
   if (!prog) return;
   const aantalDagen = Object.keys(prog.dagen || {}).length;
   const aantalOef   = Object.values(prog.dagen || {}).reduce((a, d) => a + (d.oefeningen || []).length, 0);
-  const kanBewerken = progCanEdit();
+  const kanBewerken = uitPrimeLijst ? isPrimeCoach() : progCanEdit();
   const vast = !!prog.builtin;
   document.getElementById('omm-name').textContent = dispName(prog);
   document.getElementById('omm-info').textContent = t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef });
   const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
   let html = '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>';
-  if (!vast) {
+  if (uitPrimeLijst) {
+    html += '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();progOpenPrimeInTab(\'' + prog.id + '\')">' + (kanBewerken ? '✏️ ' + t('common.edit') : '👁️ ' + t('programmas.view')) + '</button>';
+  } else if (!vast) {
     html += '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();progOpenEditor(\'' + prog.id + '\')">' + (kanBewerken ? '✏️ ' + t('common.edit') : '👁️ ' + t('programmas.view')) + '</button>';
     if (kanBewerken) {
       html += '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();progVerwijder(\'' + prog.id + '\')">🗑️ ' + t('common.delete') + '</button>';
@@ -159,6 +180,20 @@ function openProgModal(id) {
   }
   document.getElementById('omm-actions').innerHTML = html;
   document.getElementById('own-meal-modal').classList.add('open');
+}
+
+// Opent een PRIME-programma in de tab PRIME programma's (bekijken of, voor de coach, bewerken).
+function progOpenPrimeInTab(id) {
+  switchTrainingTab('primeprog');
+  progOpenEditor(id);
+}
+
+// "+ Programma" in een dag van de Weekplanning: de lijst met eigen programma's, aangevuld met de PRIME programma's.
+let _progPlanContext = false;
+let _progViaKnop = false;
+function progKiesVoorPlannen() {
+  _progViaKnop = true;
+  switchTrainingTab('addprogram');
 }
 
 // ─── Programma editor: dagen | oefeningen naast elkaar ───────────────────────

@@ -184,6 +184,8 @@ function _setActiveTrainingTabDom(tab) {
 
 function switchTrainingTab(tab) {
   if (tab === 'programmas') tab = 'addprogram';
+  // Via de knop "+ Programma" in Weekplanning staan bij de eigen programma's ook de PRIME programma's (progKiesVoorPlannen).
+  if (tab === 'addprogram') { _progPlanContext = _progViaKnop; _progViaKnop = false; } else { _progPlanContext = false; }
   // Vaste titel ({naam} — Trainingsplanner), ongeacht welke subtab open
   // staat -- zodat de coach altijd in één oogopslag ziet bij welke klant
   // hij/zij zit (belangrijk sinds het wisselen van klant meermaals tot
@@ -199,6 +201,7 @@ function switchTrainingTab(tab) {
     progMode = 'normal'; progActiefId = null; progActiefDagIdx = null; progSelectedOefIdx = null;
     progSluitNieuwFormulier();
     renderProgrammas();
+    if (_progPlanContext) primeProgRefreshFromCloud(); // actuele PRIME programma's ophalen
   }
   if (tab === 'oefeningen') renderExtraExercises();
   if (tab === 'addexercise') renderAddExerciseTab();

@@ -788,7 +788,7 @@ function wpdBouwDagKaart(dateStr, d, dayIdx, todayStr) {
         ? `<div style="font-size:12px;color:var(--muted);text-align:center;padding:8px 0">${t('weekplan.dayLocked')}</div>`
         : `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
         <button class="btn-sm" style="flex:1" onclick="wpdAddForDay('${dateStr}')">${t('training.dag.addExerciseForDay')}</button>
-        <button class="btn-sm" style="flex:1" onclick="switchTrainingTab('programmas')">${t('training.dag.addProgramForDay')}</button>
+        <button class="btn-sm" style="flex:1" onclick="progKiesVoorPlannen()">${t('training.dag.addProgramForDay')}</button>
         <button class="btn-sm" style="flex:1 1 100%" onclick="openSessieModal('${dateStr}')">${t('sessie.btn.add')}</button>
       </div>`}
       ${isPrimeCoach() ? dagStatusCoachRijHtml(dateStr) : ''}
