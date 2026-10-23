@@ -757,7 +757,7 @@ const PRODUCTS = [
   { id:'o13', name:'Zwarte bonen (gekookt)', name_en:'Black beans (cooked)', icon:'🫘', cat:'overig', kcal:132, prot:8.9, carb:24, fat:0.5, photo:'images/producten/o13.jpg'},
   { id:'o14', name:'Witte bonen (gekookt)', name_en:'White beans (cooked)', icon:'🫘', cat:'overig', kcal:139, prot:9.7, carb:25, fat:0.5, photo:'images/producten/o14.jpg'},
   { id:'o15', name:'Bruine bonen (gekookt)', name_en:'Brown beans (cooked)', icon:'🫘', cat:'overig', kcal:127, prot:8.7, carb:23, fat:0.5, photo:'images/producten/o15.jpg'},
-  { id:'o16', name:'Pure chocolade', name_en:'Dark chocolate', icon:'🍫', cat:'overig', kcal:546, prot:4.9, carb:61, fat:31, photo:'images/producten/o16.jpg'},
+  { id:'o16', name:'Pure chocolade (gemiddeld)', name_en:'Dark chocolate (average)', icon:'🍫', cat:'overig', kcal:529, prot:7.1, carb:47.1, fat:34.3, photo:'images/producten/o16.jpg'},
   { id:'o17', name:'Koolzaadolie', name_en:'Rapeseed oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'images/producten/o17.jpg'},
   { id:'o18', name:'Lijnzaadolie', name_en:'Flaxseed oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'images/producten/o18.jpg'},
   { id:'o19', name:'Zonnebloemolie', name_en:'Sunflower oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'images/producten/o19.jpg'},
