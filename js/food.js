@@ -229,8 +229,9 @@ function updateAddProductKcal() {
   const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
   const carb = parseFloat(document.getElementById('ap-carb').value) || 0;
   const fat  = parseFloat(document.getElementById('ap-fat').value) || 0;
-  // Standaard voedingswaarde-formule: eiwit/koolhydraten 4 kcal/g, vet 9 kcal/g
-  const kcal = Math.round(prot * 4 + carb * 4 + fat * 9);
+  const alc  = parseFloat(document.getElementById('ap-alc')?.value) || 0;
+  // Standaard voedingswaarde-formule: eiwit/koolhydraten 4 kcal/g, vet 9 kcal/g, alcohol 7 kcal/g
+  const kcal = Math.round(prot * 4 + carb * 4 + fat * 9 + alc * 7);
   document.getElementById('ap-kcal-display').textContent = kcal + ' kcal';
   return kcal;
 }
@@ -277,6 +278,7 @@ function addCustomProduct() {
     prot: parseFloat(document.getElementById('ap-prot').value) || 0,
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
+    alc: parseFloat(document.getElementById('ap-alc').value) || 0,
     photo: _apPhotoData || null
   };
   if (_apBarcode) velden.barcode = _apBarcode;
@@ -315,6 +317,7 @@ function resetAddProductForm() {
   document.getElementById('ap-prot').value = 0;
   document.getElementById('ap-carb').value = 0;
   document.getElementById('ap-fat').value = 0;
+  document.getElementById('ap-alc').value = 0;
   document.getElementById('ap-kcal-display').textContent = '0 kcal';
   document.getElementById('ap-photo-preview').innerHTML = '🍽️';
   document.getElementById('ap-error').textContent = '';
@@ -355,6 +358,7 @@ function editCustomProduct(id) {
   document.getElementById('ap-prot').value = product.prot || 0;
   document.getElementById('ap-carb').value = product.carb || 0;
   document.getElementById('ap-fat').value = product.fat || 0;
+  document.getElementById('ap-alc').value = product.alc || 0;
   updateAddProductKcal();
   _apPhotoData = product.photo || null;
   document.getElementById('ap-photo-preview').innerHTML = product.photo
@@ -606,7 +610,8 @@ async function confirmPrimeMealSave() {
       gram: parseFloat(row.querySelector('.am-ing-gram')?.value) || 0,
       prot: parseFloat(row.querySelector('.am-ing-prot')?.value) || 0,
       carb: parseFloat(row.querySelector('.am-ing-carb')?.value) || 0,
-      fat:  parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0
+      fat:  parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0,
+      alc:  parseFloat(row.dataset.alc) || 0
     });
   });
 
@@ -646,9 +651,10 @@ function mealTotals(dish) {
     gram: a.gram + (Number(i.gram) || 0),
     prot: a.prot + (Number(i.prot) || 0),
     carb: a.carb + (Number(i.carb) || 0),
-    fat:  a.fat  + (Number(i.fat)  || 0)
-  }), { gram:0, prot:0, carb:0, fat:0 });
-  tot.kcal = Math.round(tot.prot * 4 + tot.carb * 4 + tot.fat * 9);
+    fat:  a.fat  + (Number(i.fat)  || 0),
+    alc:  a.alc  + (Number(i.alc)  || 0)
+  }), { gram:0, prot:0, carb:0, fat:0, alc:0 });
+  tot.kcal = Math.round(tot.prot * 4 + tot.carb * 4 + tot.fat * 9 + tot.alc * 7);
   return tot;
 }
 
@@ -673,6 +679,9 @@ function addIngredientRow(prefill) {
   const dis = _amFormReadOnly ? ' disabled' : '';
   const gramInputAttrs = (p.per100 ? ' oninput="updateLinkedIngredientRow(\'' + rowId + '\');updateMealFormTotals()"' : ' oninput="updateMealFormTotals()"') + dis;
   if (p.per100) tr.dataset.per100 = JSON.stringify(p.per100);
+  // Alcohol (g) van deze rij, voor de kcal (7 kcal/g); komt uit het basisproduct of uit een opgeslagen gerecht.
+  if (p.alc) tr.dataset.alc = p.alc;
+  else if (p.per100 && p.per100.alc) tr.dataset.alc = Math.round(p.per100.alc * (p.gram ?? 0) / 100 * 10) / 10;
   tr.innerHTML =
     '<td style="padding:4px 6px 4px 0"><input type="text" class="am-ing-name" placeholder="' + t('food.addMeal.ingredientNamePlaceholder') + '" value="' + (p.name ? String(p.name).replace(/"/g,'&quot;') : '') + '"' + dis + ' style="width:100%;padding:6px 8px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;font-family:\'DM Sans\',sans-serif;background:var(--sand);box-sizing:border-box"></td>' +
     '<td style="padding:4px 3px"><input type="number" class="am-ing-gram" min="0" step="1" value="' + (p.gram ?? 0) + '"' + gramInputAttrs + ' style="width:56px;padding:6px 4px;border:1px solid var(--sand-dark);border-radius:6px;font-size:12px;text-align:center;font-family:\'DM Sans\',sans-serif;background:var(--sand)"></td>' +
@@ -698,6 +707,7 @@ function updateLinkedIngredientRow(rowId) {
   row.querySelector('.am-ing-prot').value = round1(per100.prot * factor);
   row.querySelector('.am-ing-carb').value = round1(per100.carb * factor);
   row.querySelector('.am-ing-fat').value  = round1(per100.fat  * factor);
+  row.dataset.alc = round1((per100.alc || 0) * factor);
 }
 
 // ========== BASISPRODUCT KIEZEN ALS INGREDIËNT (bij Gerecht toevoegen) ==========
@@ -742,7 +752,7 @@ function pickIngredientProduct(productId) {
     prot: product.prot,
     carb: product.carb,
     fat: product.fat,
-    per100: { prot: product.prot, carb: product.carb, fat: product.fat }
+    per100: { prot: product.prot, carb: product.carb, fat: product.fat, alc: product.alc || 0 }
   });
   closeIngredientProductPicker();
 }
@@ -756,17 +766,18 @@ function removeIngredientRow(rowId) {
 
 function updateMealFormTotals() {
   const rows = document.querySelectorAll('#am-ingredients-body tr');
-  let totGram = 0, totProt = 0, totCarb = 0, totFat = 0;
+  let totGram = 0, totProt = 0, totCarb = 0, totFat = 0, totAlc = 0;
   rows.forEach(row => {
     const gram = parseFloat(row.querySelector('.am-ing-gram')?.value) || 0;
     const prot = parseFloat(row.querySelector('.am-ing-prot')?.value) || 0;
     const carb = parseFloat(row.querySelector('.am-ing-carb')?.value) || 0;
     const fat  = parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0;
     const kcalCell = row.querySelector('.am-ing-kcal');
-    if (kcalCell) kcalCell.textContent = Math.round(prot * 4 + carb * 4 + fat * 9);
-    totGram += gram; totProt += prot; totCarb += carb; totFat += fat;
+    const alc = parseFloat(row.dataset.alc) || 0;
+    if (kcalCell) kcalCell.textContent = Math.round(prot * 4 + carb * 4 + fat * 9 + alc * 7);
+    totGram += gram; totProt += prot; totCarb += carb; totFat += fat; totAlc += alc;
   });
-  const totKcal = Math.round(totProt * 4 + totCarb * 4 + totFat * 9);
+  const totKcal = Math.round(totProt * 4 + totCarb * 4 + totFat * 9 + totAlc * 7);
   const weightEl = document.getElementById('am-total-weight');
   const macrosEl = document.getElementById('am-total-macros');
   if (weightEl) weightEl.textContent = totGram + 'g';
@@ -832,7 +843,8 @@ function addCustomMeal() {
       gram: parseFloat(row.querySelector('.am-ing-gram')?.value) || 0,
       prot: parseFloat(row.querySelector('.am-ing-prot')?.value) || 0,
       carb: parseFloat(row.querySelector('.am-ing-carb')?.value) || 0,
-      fat:  parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0
+      fat:  parseFloat(row.querySelector('.am-ing-fat')?.value)  || 0,
+      alc:  parseFloat(row.dataset.alc) || 0
     });
   });
   if (!ingredients.length) {
@@ -951,6 +963,7 @@ function _populateMealForm(dish, isPrime) {
     row.querySelector('.am-ing-prot').value = ing.prot || 0;
     row.querySelector('.am-ing-carb').value = ing.carb || 0;
     row.querySelector('.am-ing-fat').value  = ing.fat  || 0;
+    if (ing.alc) row.dataset.alc = ing.alc;
   });
   if (!dish.ingredients || !dish.ingredients.length) addIngredientRow();
   updateMealFormTotals();
@@ -2123,6 +2136,7 @@ function editPrimeProduct(id) {
   document.getElementById('ap-prot').value = p.prot || 0;
   document.getElementById('ap-carb').value = p.carb || 0;
   document.getElementById('ap-fat').value = p.fat || 0;
+  document.getElementById('ap-alc').value = p.alc || 0;
   updateAddProductKcal();
   _apPhotoData = p.photo || null;
   document.getElementById('ap-photo-preview').innerHTML = p.photo
@@ -2160,6 +2174,7 @@ async function savePrimeProductEdit() {
     prot: parseFloat(document.getElementById('ap-prot').value) || 0,
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
+    alc: parseFloat(document.getElementById('ap-alc').value) || 0,
     photo: _apPhotoData || null
   };
 
@@ -2330,6 +2345,7 @@ async function savePrimeProductNew() {
     prot: parseFloat(document.getElementById('ap-prot').value) || 0,
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
+    alc: parseFloat(document.getElementById('ap-alc').value) || 0,
     photo: _apPhotoData || null
   };
   if (_apBarcode) rij.barcode = _apBarcode;
@@ -2423,6 +2439,7 @@ function kopieerEigenProduct(id) {
   document.getElementById('ap-prot').value = p.prot || 0;
   document.getElementById('ap-carb').value = p.carb || 0;
   document.getElementById('ap-fat').value = p.fat || 0;
+  document.getElementById('ap-alc').value = p.alc || 0;
   updateAddProductKcal();
   _apPhotoData = p.photo || null;
   document.getElementById('ap-photo-preview').innerHTML = p.photo
@@ -3243,6 +3260,7 @@ function bcActieOpslaan() {
   document.getElementById('ap-prot').value = k.p.prot === null ? 0 : k.p.prot;
   document.getElementById('ap-carb').value = k.p.carb === null ? 0 : k.p.carb;
   document.getElementById('ap-fat').value = k.p.fat === null ? 0 : k.p.fat;
+  document.getElementById('ap-alc').value = 0;
   const deel = document.getElementById('ap-share');
   if (deel) deel.checked = (k.keuze === 'iedereen');
   updateAddProductKcal();
