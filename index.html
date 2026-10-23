@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261023-1517';
+window.PRIME_BUILD = '20261023-1540';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261023-1517">
+<link rel="stylesheet" href="css/styles.css?v=20261023-1540">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261023-1517"></script>
-<script src="js/translations.js?v=20261023-1517"></script>
-<script src="js/i18n.js?v=20261023-1517"></script>
+<script src="js/cloud.js?v=20261023-1540"></script>
+<script src="js/translations.js?v=20261023-1540"></script>
+<script src="js/i18n.js?v=20261023-1540"></script>
 </head>
 <body>
 
@@ -720,6 +720,7 @@ if ('serviceWorker' in navigator) {
         <button class="cat-tab" onclick="filterCat('zuivel',this)" data-i18n="cat.zuivel">Zuivel</button>
         <button class="cat-tab" onclick="filterCat('granen',this)" data-i18n="cat.granen">Granen</button>
         <button class="cat-tab" onclick="filterCat('noten',this)" data-i18n="cat.noten">Noten</button>
+        <button class="cat-tab" onclick="filterCat('snacks',this)" data-i18n="cat.snacks">Snacks en snoep</button>
         <button class="cat-tab" onclick="filterCat('dranken',this)" data-i18n="cat.dranken">Dranken</button>
         <button class="cat-tab" onclick="filterCat('overig',this)" data-i18n="cat.overig">Overig</button>
       </div>
@@ -773,6 +774,7 @@ if ('serviceWorker' in navigator) {
             <option value="zuivel" data-i18n="cat.zuivel">Zuivel</option>
             <option value="granen" data-i18n="cat.granen">Granen</option>
             <option value="noten" data-i18n="cat.noten">Noten</option>
+            <option value="snacks" data-i18n="cat.snacks">Snacks en snoep</option>
             <option value="dranken" data-i18n="cat.dranken">Dranken</option>
             <option value="overig" selected data-i18n="cat.overig">Overig</option>
           </select>
@@ -836,6 +838,7 @@ if ('serviceWorker' in navigator) {
         <button class="cat-tab" onclick="filterOwnCat('zuivel',this)" data-i18n="cat.zuivel">Zuivel</button>
         <button class="cat-tab" onclick="filterOwnCat('granen',this)" data-i18n="cat.granen">Granen</button>
         <button class="cat-tab" onclick="filterOwnCat('noten',this)" data-i18n="cat.noten">Noten</button>
+        <button class="cat-tab" onclick="filterOwnCat('snacks',this)" data-i18n="cat.snacks">Snacks en snoep</button>
         <button class="cat-tab" onclick="filterOwnCat('dranken',this)" data-i18n="cat.dranken">Dranken</button>
         <button class="cat-tab" onclick="filterOwnCat('overig',this)" data-i18n="cat.overig">Overig</button>
       </div>
@@ -1745,6 +1748,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261023-1517"></script>
+<script src="js/auth.js?v=20261023-1540"></script>
 </body>
 </html>
