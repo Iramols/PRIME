@@ -763,6 +763,14 @@ const PRODUCTS = [
   { id:'o19', name:'Zonnebloemolie', name_en:'Sunflower oil', icon:'🛢️', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'images/producten/o19.jpg'},
   { id:'o20', name:'Cacaopoeder', name_en:'Cocoa powder', icon:'🍫', cat:'overig', kcal:255, prot:25.2, carb:13.7, fat:11, photo:'images/producten/o20.jpg'},
   { id:'o21', name:'Cacao nibs', name_en:'Cacao nibs', icon:'🍫', cat:'overig', kcal:488, prot:13.4, carb:2.5, fat:47.2, photo:'images/producten/o21.jpg'},
+  { id:'d1', name:'Pils', name_en:'Lager (pils)', icon:'🍺', cat:'dranken', kcal:41, prot:0.3, carb:3, fat:0, alc:3.9, portie:{ gram:250, label:'1 glas (250 ml)', label_en:'1 glass (250 ml)' }, photo:'images/producten/d1.jpg'},
+  { id:'d2', name:'Speciaalbier', name_en:'Craft beer', icon:'🍺', cat:'dranken', kcal:51, prot:0.4, carb:3.5, fat:0, alc:5.1, portie:{ gram:300, label:'1 glas (300 ml)', label_en:'1 glass (300 ml)' }, photo:'images/producten/d2.jpg'},
+  { id:'d3', name:'Rode wijn', name_en:'Red wine', icon:'🍷', cat:'dranken', kcal:70, prot:0.1, carb:0.3, fat:0, alc:9.8, portie:{ gram:150, label:'1 glas (150 ml)', label_en:'1 glass (150 ml)' }, photo:'images/producten/d3.jpg'},
+  { id:'d4', name:'Witte wijn', name_en:'White wine', icon:'🍷', cat:'dranken', kcal:69, prot:0.1, carb:0.8, fat:0, alc:9.4, portie:{ gram:150, label:'1 glas (150 ml)', label_en:'1 glass (150 ml)' }, photo:'images/producten/d4.jpg'},
+  { id:'d5', name:'Prosecco / champagne', name_en:'Prosecco / champagne', icon:'🥂', cat:'dranken', kcal:70, prot:0.2, carb:1.5, fat:0, alc:9, portie:{ gram:125, label:'1 glas (125 ml)', label_en:'1 glass (125 ml)' }, photo:'images/producten/d5.jpg'},
+  { id:'d6', name:'Sterke drank (gin, wodka, whisky)', name_en:'Spirits (gin, vodka, whisky)', icon:'🥃', cat:'dranken', kcal:221, prot:0, carb:0, fat:0, alc:31.6, portie:{ gram:35, label:'1 shot (35 ml)', label_en:'1 shot (35 ml)' }, photo:'images/producten/d6.jpg'},
+  { id:'d7', name:'Gin-tonic', name_en:'Gin and tonic', icon:'🍸', cat:'dranken', kcal:77, prot:0, carb:5.5, fat:0, alc:7.8, portie:{ gram:200, label:'1 glas (200 ml)', label_en:'1 glass (200 ml)' }, photo:'images/producten/d7.jpg'},
+  { id:'d8', name:'Alcoholvrij bier', name_en:'Alcohol-free beer', icon:'🍺', cat:'dranken', kcal:13, prot:0.3, carb:3, fat:0, alc:0, portie:{ gram:250, label:'1 glas (250 ml)', label_en:'1 glass (250 ml)' }, photo:'images/producten/d8.jpg'},
 ];
 
 // Cache-busting: elke keer dat een productfoto vervangen wordt, dit nummer ophogen.

@@ -2613,6 +2613,7 @@ function bcManueel() {
 // kan het in het formulier altijd nog aanpassen.
 function _bcCategorie(tags) {
   const s = (tags || []).join(' ').toLowerCase();
+  if (/alcoholic|beers|wines|spirits|liquors|aperitifs/.test(s)) return 'dranken';
   if (/dairies|milks|cheeses|yogurts|yoghurts|creams|butters/.test(s)) return 'zuivel';
   if (/fishes|seafood|fish-/.test(s)) return 'vis';
   if (/meats|sausages|poultr|hams|charcuterie/.test(s)) return 'vlees';
