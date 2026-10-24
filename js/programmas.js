@@ -170,6 +170,7 @@ function openProgModal(id) {
   document.getElementById('omm-info').textContent = t('programmas.daysExercisesSummary', { days: aantalDagen, ex: aantalOef });
   const knop = 'font-size:14px;padding:12px;border-radius:10px;cursor:pointer;font-weight:600;font-family:inherit;width:100%;text-align:left';
   let html = '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();progLadenInWeekplanning(\'' + prog.id + '\')">' + t('programmas.loadIntoWeekplan') + '</button>';
+  html += '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();kopieerProgramma(\'' + prog.id + '\')">' + t('food.copy.btn') + '</button>';
   if (uitPrimeLijst) {
     html += '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();progOpenPrimeInTab(\'' + prog.id + '\')">' + (kanBewerken ? '✏️ ' + t('common.edit') : '👁️ ' + t('programmas.view')) + '</button>';
   } else if (!vast) {
@@ -472,7 +473,14 @@ function resetNewProgramForm() {
   document.getElementById('apr-dagenperweek').value = '';
   document.getElementById('apr-photo-preview').innerHTML = '📋';
   _aprPhotoData = null;
+  _aprCopyFrom = null;
   document.getElementById('apr-error').textContent = '';
+  const hint = document.getElementById('apr-hint');
+  if (hint) hint.style.display = 'none';
+  const titel = document.getElementById('apr-form-title');
+  if (titel) titel.textContent = t('programmas.add.formTitle');
+  const knop = document.getElementById('apr-submit-btn');
+  if (knop) knop.textContent = t('programmas.add.submit');
 }
 
 function handleNewProgramPhoto(event) {
@@ -505,6 +513,12 @@ function addNewProgram() {
   }
   errorEl.textContent = '';
   nameInput.style.borderColor = '';
+  if (_aprCopyFrom && progNaamBestaat(name)) { // de naam van een kopie moet anders zijn dan elk bestaand programma
+    errorEl.textContent = t('programmas.copy.nameExists');
+    nameInput.style.borderColor = '#c0392b';
+    return;
+  }
+  const kopieDagen = _aprCopyFrom ? JSON.parse(JSON.stringify(_aprCopyFrom.dagen || {})) : {};
 
   progMode = 'normal';
   progLaadData();
@@ -517,7 +531,7 @@ function addNewProgram() {
     niveau: document.getElementById('apr-niveau').value,
     dagenPerWeek: document.getElementById('apr-dagenperweek').value.trim(),
     foto: _aprPhotoData || null,
-    dagen: {}
+    dagen: kopieDagen
   });
   progSlaOp();
   progActiefId = id;
@@ -916,4 +930,59 @@ async function confirmPrimeSave() {
   // op null en rendert de lijst), zelfde gedrag als confirmPrimeMealSave()
   // bij Voeding.
   switchTrainingTab('primeprog');
+}
+
+
+// ========== KOPIËREN EN AANPASSEN (programma's) ==========
+// Bij alle soorten programma's (eigen, PRIME, vast): het formulier "Nieuw programma" opent ingevuld met de gegevens en
+// de dagen en oefeningen van het origineel, met de naam "Naam (kopie)". Opslaan maakt altijd een nieuw eigen
+// programma en opent de editor, zodat je dagen en oefeningen meteen kunt aanpassen. Het origineel blijft ongewijzigd.
+let _aprCopyFrom = null; // kopie van het programma dat gekopieerd wordt, anders null
+
+function _progAlleProgrammas() {
+  let user = [];
+  try { user = JSON.parse(localStorage.getItem('prime_programmas') || '[]'); } catch (e) {}
+  return [].concat(BUILTIN_PROGRAMMAS, user, primeProgLijst);
+}
+
+function progNaamBestaat(naam) {
+  const norm = String(naam || '').trim().toLowerCase();
+  if (!norm) return false;
+  return _progAlleProgrammas().some(function(p) {
+    return [p.naam, p.name, p.naam_en, p.name_en].some(function(n) { return n && String(n).trim().toLowerCase() === norm; });
+  });
+}
+
+function aprNaamInput() {
+  const hint = document.getElementById('apr-hint');
+  if (!hint) return;
+  const bestaat = !!_aprCopyFrom && progNaamBestaat(document.getElementById('apr-name').value);
+  hint.textContent = bestaat ? t('programmas.copy.nameExists') : '';
+  hint.style.display = bestaat ? 'block' : 'none';
+}
+
+function kopieerProgramma(id) {
+  const bron = _progAlleProgrammas().find(function(p) { return p.id === id; });
+  if (!bron) return;
+  switchTrainingTab('addprogram'); // eigen programma's; sluit en leegt ook het formulier
+  progOpenNieuwFormulier();
+  _aprCopyFrom = JSON.parse(JSON.stringify(bron));
+  document.getElementById('apr-name').value = kopieNaam(dispName(bron), progNaamBestaat);
+  document.getElementById('apr-beschrijving').value = bron.beschrijving || '';
+  document.getElementById('apr-doel').value = bron.doel || '';
+  const niveauEl = document.getElementById('apr-niveau');
+  niveauEl.value = Array.prototype.some.call(niveauEl.options, function(o) { return o.value === bron.niveau; }) ? bron.niveau : '';
+  document.getElementById('apr-dagenperweek').value = bron.dagenPerWeek || '';
+  const foto = bron.foto ? String(bron.foto).replace(/[?]v=[0-9]+$/, '') : null;
+  _aprPhotoData = foto;
+  document.getElementById('apr-photo-preview').innerHTML = foto
+    ? '<img src="' + foto + '" style="width:100%;height:100%;object-fit:cover">'
+    : '📋';
+  document.getElementById('apr-form-title').textContent = t('programmas.copy.title');
+  document.getElementById('apr-submit-btn').textContent = t('food.copy.save');
+  aprNaamInput();
+  const naamEl = document.getElementById('apr-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
+  try { naamEl.select(); } catch (e) {}
 }

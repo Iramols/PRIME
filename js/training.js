@@ -351,6 +351,11 @@ function addCustomExercise() {
   }
   nameInput.style.borderColor = '';
   errorEl.textContent = '';
+  if (_aeCopyOf && oefeningNaamBestaat(name, _aeEditingId)) { // de naam van een kopie moet anders zijn dan elke bestaande oefening
+    errorEl.textContent = t('training.copy.nameExists');
+    nameInput.style.borderColor = '#c0392b';
+    return;
+  }
 
   const fields = {
     name: name,
@@ -372,7 +377,7 @@ function addCustomExercise() {
   } else {
     customExercises.push({
       id: 'custom-ex-' + Date.now() + Math.floor(Math.random() * 1000),
-      icon: '🏋️',
+      icon: _aeCopyIcon || '🏋️',
       custom: true,
       ...fields
     });
@@ -414,6 +419,10 @@ function resetExerciseForm() {
   showAeForm(false);
   _aeEditingId = null;
   _aePhotoData = null;
+  _aeCopyOf = null;
+  _aeCopyIcon = null;
+  const _aeHint = document.getElementById('ae-hint');
+  if (_aeHint) _aeHint.style.display = 'none';
   const nameInput = document.getElementById('ae-name');
   nameInput.value = '';
   nameInput.style.borderColor = '';
@@ -487,6 +496,7 @@ function openOwnExerciseModal(id) {
   document.getElementById('omm-actions').innerHTML =
     '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();openExerciseAddModal(\'' + ex.id + '\')">' + t('portion.addToDay') + '</button>' +
     '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();editCustomExercise(\'' + ex.id + '\')">✏️ ' + t('common.edit') + '</button>' +
+    '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();kopieerOefening(\'' + ex.id + '\')">' + t('food.copy.btn') + '</button>' +
     '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();removeCustomExercise(\'' + ex.id + '\')">🗑️ ' + t('common.delete') + '</button>';
   document.getElementById('own-meal-modal').classList.add('open');
 }
@@ -609,6 +619,8 @@ function closeExerciseDetail() {
   _edExerciseId = null;
   _edSaveCallback = null;
   _edMode = 'edit';
+  const _edCopyBtn = document.getElementById('ed-copy-btn');
+  if (_edCopyBtn) _edCopyBtn.style.display = 'none';
   // Annuleren (dit is de ×, niet de submit) mag _trainingReturnTab niet
   // laten "hangen": zonder deze reset zou een latere, hélemaal
   // ongerelateerde toevoeging/bewerking je alsnog naar dit oude
@@ -692,6 +704,8 @@ function openExerciseAddModal(exId) {
   _edExerciseId = exId;
   _edSaveCallback = null;
   _edMode = 'add';
+  const _edCopy = document.getElementById('ed-copy-btn');
+  if (_edCopy) _edCopy.style.display = _progPickingForProgram ? 'none' : 'inline-block';
 
   const saved = exerciseNotes[exId];
   if (saved && saved.sets && saved.sets.length) {
@@ -1319,4 +1333,70 @@ function updateTrainingProgress() {
   const pct = total > 0 ? Math.round(done / total * 100) : 0;
   document.getElementById('training-prog-bar').style.width = pct + '%';
   document.getElementById('training-prog-txt').textContent = t('training.progressText', { done, total });
+}
+
+
+// ========== KOPIËREN EN AANPASSEN (oefeningen) ==========
+// Zelfde opzet als bij producten en gerechten (food.js): het formulier "+ Oefening toevoegen" opent ingevuld met de
+// waarden van de oefening en de naam "Naam (kopie)". Opslaan maakt altijd een nieuwe eigen oefening; het origineel blijft
+// ongewijzigd. De naam moet uniek zijn.
+let _aeCopyOf = null;   // id van de oefening waarvan een kopie gemaakt wordt, anders null
+let _aeCopyIcon = null; // icoon van het origineel, voor als er geen foto is
+
+function oefeningNaamBestaat(naam, exceptId) {
+  const norm = String(naam || '').trim().toLowerCase();
+  if (!norm) return false;
+  const alle = [];
+  EXTRA_EXERCISES.forEach(function(g) { g.exercises.forEach(function(e) { alle.push(e); }); });
+  return alle.concat(customExercises).some(function(e) {
+    return e.id !== exceptId && [e.name, e.name_en].some(function(n) { return n && String(n).trim().toLowerCase() === norm; });
+  });
+}
+
+// Live naamcontrole bij een kopie.
+function aeNaamInput() {
+  const hint = document.getElementById('ae-hint');
+  if (!hint) return;
+  const bestaat = !!_aeCopyOf && oefeningNaamBestaat(document.getElementById('ae-name').value, _aeEditingId);
+  hint.textContent = bestaat ? t('training.copy.nameExists') : '';
+  hint.style.display = bestaat ? 'block' : 'none';
+}
+
+function kopieerOefening(id) {
+  const ex = findAnyExtraExercise(id);
+  if (!ex) return;
+  switchTrainingTab('addexercise');
+  resetExerciseForm();
+  _aeCopyOf = id;
+  _aeCopyIcon = ex.icon || null;
+  showAeForm(true);
+
+  document.getElementById('ae-name').value = kopieNaam(dispName(ex), function(n) { return oefeningNaamBestaat(n, null); });
+  const groepEl = document.getElementById('ae-group');
+  groepEl.value = Array.prototype.some.call(groepEl.options, function(o) { return o.value === ex.group; }) ? ex.group : 'Eigen oefeningen';
+  document.getElementById('ae-sets').value = parseInt(ex.sets, 10) || 3;
+  document.getElementById('ae-reps').value = ex.reps && ex.reps !== '—' ? ex.reps : '';
+  document.getElementById('ae-rest').value = ex.rest && ex.rest !== '—' ? ex.rest : '';
+  document.getElementById('ae-youtube').value = ex.youtube || '';
+  const foto = ex.photo ? String(ex.photo).replace(/[?]v=[0-9]+$/, '') : null; // zonder het versienummer van de basisfoto
+  _aePhotoData = foto;
+  document.getElementById('ae-photo-preview').innerHTML = foto
+    ? '<img src="' + foto + '" style="width:100%;height:100%;object-fit:cover">'
+    : (ex.icon || '🏋️');
+  document.getElementById('ae-form-title').textContent = t('training.copy.exerciseTitle');
+  document.getElementById('ae-submit-btn').textContent = t('food.copy.save');
+  document.getElementById('ae-cancel-btn').style.display = 'inline-block';
+  aeNaamInput();
+  const naamEl = document.getElementById('ae-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
+  try { naamEl.select(); } catch (e) {}
+}
+
+// Vanuit het detailscherm van een oefening (Losse oefeningen).
+function kopieerVanuitDetail() {
+  const id = _edExerciseId;
+  if (!id) return;
+  closeExerciseDetail();
+  kopieerOefening(id);
 }
