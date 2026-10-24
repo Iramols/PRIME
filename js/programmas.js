@@ -269,7 +269,6 @@ function progBouw3ColEditor() {
     '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
     '<div class="prog-title-static">' + dispName(prog).replace(/</g,'&lt;') + '</div>' +
     (progMode === 'prime' ? '<span class="prog-prime-badge">' + t('programmas.prime.badge') + '</span>' : '') +
-    (canEdit ? '<button class="btn-sm' + coachOnlyBtn + '" style="margin-left:auto;flex-shrink:0" onclick="progOpslaanKlik()">' + t('programmas.save') + '</button>' : '') +
     '</div>' +
     progBouwInfoKaart(prog, canEdit) +
     '<div class="prog-2col">' +
