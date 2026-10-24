@@ -104,7 +104,6 @@ function pick(key, val, btn) {
   container.querySelectorAll(btnSel).forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   checkin[key] = val;
-  if (key === 'energy' && typeof renderCheckinNote === 'function') renderCheckinNote();
   const ready = checkin.sleep > 0 && checkin.energy > 0 && checkin.stress > 0;
   document.getElementById('checkin-btn').disabled = !ready;
 }
@@ -859,9 +858,10 @@ function afrondenKlik() {
 // ========== TOELICHTING AAN DE COACH (optie in Config) ==========
 // Staat per klant aan of uit (profile.noteEnabled) met een maximaal aantal regels (profile.noteLines, 1 t/m 10).
 // De tekst staat per datum in dagNotes (state.js, key prime_notes): { 'JJJJ-MM-DD': { text, ts } }, één toelichting
-// per dag die je de hele dag kunt aanpassen. Drie plekken: een knop op het Dashboard (opent een venster), een veld in
-// de check-in bij lage energie en een veld bij de avond check-out. De coach leest ze bij Signalen (history.js).
-const NOTE_CHIPS = ['note.chip.work', 'note.chip.sleep', 'note.chip.time', 'note.chip.stress'];
+// per dag die je de hele dag kunt aanpassen. Twee plekken: een veld in de check-in (onder de stressvraag) en daarna,
+// in de plaats daarvan, een knop die een venster opent (bij de check-out en na het afsluiten van de dag). De coach
+// leest de toelichtingen bij Signalen (history.js).
+const NOTE_CHIPS = ['note.chip.work', 'note.chip.time', 'note.chip.home', 'note.chip.worry', 'note.chip.pain'];
 
 function noteAan() { return profile.noteEnabled === true; }
 function noteRegels() { const n = parseInt(profile.noteLines, 10); return n >= 1 && n <= 10 ? n : 4; }
@@ -948,20 +948,15 @@ function noteEditorKlaar(ctx) {
   noteTeller(el);
 }
 
-// Tekstvelden in de check-in en check-out bewaren bij het verlaten van het veld (en bij het afronden).
+// Het veld in de check-in bewaren bij het verlaten van het veld (en bij het starten van de dag).
 function noteAutoSave(el) {
   if (!noteAan()) return;
-  if (noteBewaar(localDateStr(), el.value)) {
-    document.querySelectorAll('.note-ta').forEach(function(x) { if (x !== el && x.id !== 'note-ta-m') x.value = el.value; });
-    noteKnopVernieuw();
-  }
+  if (noteBewaar(localDateStr(), el.value)) noteKnopVernieuw();
 }
 function noteFlush() {
   if (!noteAan()) return;
-
-  document.querySelectorAll('#co-note .note-ta, #ci-note .note-ta').forEach(function(x) {
-    if (x.offsetParent !== null && x.value !== noteVan(localDateStr())) noteAutoSave(x);
-  });
+  // Alleen een zichtbaar veld: het verborgen veld van de check-in kan na het starten van de dag een oudere tekst hebben.
+  document.querySelectorAll('#ci-note .note-ta').forEach(function(x) { if (x.offsetParent !== null) noteAutoSave(x); });
 }
 
 function noteKnopHtml() {
@@ -972,8 +967,8 @@ function noteKnopHtml() {
     '<span class="note-knop-tekst">' + _fbEsc(kort.replace(/\s*\n\s*/g, ' ')) + '</span><span class="note-knop-edit">' + t('note.btnEdit') + '</span></button>';
 }
 function noteKnopVernieuw() {
-  const slot = document.getElementById('note-slot');
-  if (slot) slot.innerHTML = noteAan() ? noteKnopHtml() : '';
+  const html = noteAan() ? noteKnopHtml() : '';
+  document.querySelectorAll('.note-knop-slot').forEach(function(el) { el.innerHTML = html; });
 }
 
 function openNoteModal() {
@@ -991,38 +986,32 @@ function saveNoteModal() {
   const el = document.getElementById('note-ta-m');
   if (el && noteAan()) {
     noteBewaar(localDateStr(), el.value);
-    document.querySelectorAll('#co-note .note-ta, #ci-note .note-ta').forEach(function(x) { x.value = noteVan(localDateStr()); noteTeller(x); });
     noteKnopVernieuw();
     try { showToast(t('note.saved')); } catch (e) {}
   }
   closeNoteModal();
 }
 
-// Veld in de check-in: alleen zichtbaar bij lage energie.
+// Veld in de check-in, onder de stressvraag.
 function renderCheckinNote(opnieuw) {
   const el = document.getElementById('ci-note');
   if (!el) return;
-  const toon = noteAan() && checkin && checkin.energy === 1;
-  if (!toon) { el.innerHTML = ''; return; }
+  if (!noteAan()) { el.innerHTML = ''; return; }
   if (el.querySelector('textarea') && !opnieuw) return;
   el.innerHTML = '<div class="cq-card note-kaart"><div class="cq-header"><span class="cq-icon">💬</span><span class="cq-label">' + t('note.checkin.title') + '</span></div>' +
     '<div class="note-sub">' + t('note.checkin.sub') + '</div>' + noteEditorHtml('ci') + '</div>';
   noteEditorKlaar('ci');
 }
 
-// Alles wat bij de toelichting hoort opbouwen of bijwerken (Dashboard-knop, check-in- en check-out-veld).
-// opnieuw = true: ook bestaande velden opnieuw opbouwen (bv. als de coach het aantal regels wijzigt).
+// Alles wat bij de toelichting hoort opbouwen of bijwerken: het veld in de check-in en de knop bij de check-out en na het
+// afsluiten. opnieuw = true: ook het bestaande veld opnieuw opbouwen (bv. als de coach het aantal regels wijzigt).
 function renderNoteUI(opnieuw) {
   const aan = noteAan();
-  noteKnopVernieuw();
   const co = document.getElementById('co-note');
   if (co) {
     if (!aan) co.innerHTML = '';
-    else if (!co.querySelector('textarea') || opnieuw) {
-      co.innerHTML = '<div class="note-checkout"><div class="ds-kop"><span class="ds-titel">' + t('note.checkout.title') + '</span></div>' +
-        '<div class="note-sub">' + t('note.checkout.sub') + '</div>' + noteEditorHtml('co') + '</div><div class="divider" style="margin:18px 0"></div>';
-      noteEditorKlaar('co');
-    }
+    else if (!co.querySelector('.note-knop-slot')) co.innerHTML = '<div class="note-knop-slot"></div><div class="divider" style="margin:18px 0"></div>';
   }
+  noteKnopVernieuw();
   renderCheckinNote(opnieuw);
 }
