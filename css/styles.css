@@ -822,3 +822,22 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .cfg-optie input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--sage); cursor: pointer; flex-shrink: 0; }
 .cfg-optie-naam { display: block; font-size: 14px; font-weight: 600; color: var(--charcoal); }
 .cfg-optie-hint { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.cfg-kaart { padding: 6px 14px 12px; }
+.cfg-scroll { overflow-x: auto; }
+.cfg-tabel { border-collapse: collapse; width: 100%; font-size: 14px; }
+.cfg-tabel th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); padding: 12px 8px 8px; text-align: center; border-bottom: 2px solid var(--sand-dark); white-space: nowrap; }
+.cfg-tabel th:first-child, .cfg-tabel td:first-child { text-align: left; }
+.cfg-tabel td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--sand); }
+.cfg-naam { font-weight: 700; color: var(--charcoal); }
+.cfg-geen { display: block; font-weight: 400; font-size: 11px; color: var(--muted); }
+.cfg-leeg { color: var(--muted); }
+.cfg-alle { display: block; font-size: 11px; text-transform: none; letter-spacing: 0; font-weight: 600; margin-top: 4px; }
+.cfg-alle a { color: var(--sage); text-decoration: none; padding: 2px 3px; }
+.cfg-sw { display: inline-block; position: relative; width: 44px; height: 26px; vertical-align: middle; cursor: pointer; }
+.cfg-sw input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.cfg-sl { position: absolute; inset: 0; border-radius: 13px; background: var(--sand-dark); transition: background 0.15s; }
+.cfg-sl::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left 0.15s; }
+.cfg-sw input:checked + .cfg-sl { background: var(--sage); }
+.cfg-sw input:checked + .cfg-sl::after { left: 21px; }
+.cfg-sw.afw .cfg-sl { box-shadow: 0 0 0 2px var(--coach-only); }
+.cfg-legenda { font-size: 12px; color: var(--muted); margin-top: 10px; }

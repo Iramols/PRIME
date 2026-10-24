@@ -236,17 +236,21 @@ function applyCustomPhotos() {
 
 
 // ========== CONFIG (alleen coach): opties per klant aan/uit zetten ==========
-// Een lijst met alle klanten en per klant de opties die de coach kan instellen. De waarden staan in het profiel van
-// de klant (client_state.prime_profile). Een nieuwe optie toevoegen = één regel bij CONFIG_OPTIES (+ vertalingen).
+// Matrix: klanten onder elkaar, opties als kolommen met een schuifje per klant en bovenaan een kolom "alles aan / uit".
+// De waarden staan in het profiel van de klant (client_state.prime_profile). Een nieuwe optie toevoegen = één regel bij
+// CONFIG_OPTIES (+ vertalingen). 'standaard' bepaalt wanneer een klant als afwijkend (oranje rand) wordt getoond.
 const CONFIG_OPTIES = [
   {
     key: 'trainingEnabled',
     label: 'config.opt.training',
     hint: 'config.opt.trainingHint',
+    standaard: true,
     get: function(p) { return p.trainingEnabled !== false; },
     set: function(p, v) { p.trainingEnabled = !!v; }
   }
 ];
+
+let _configKlanten = []; // klant-id's met een profiel, uit de laatste weergave (voor "alles aan/uit")
 
 async function renderConfigTab() {
   const el = document.getElementById('config-content');
@@ -263,46 +267,77 @@ async function renderConfigTab() {
   try { namen = await fetchProfileNames(); } catch (e) { /* namen zijn optioneel */ }
   if (!clients.length) { el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">' + t('config.noClients') + '</div>'; return; }
 
-  const kaarten = [];
+  const rijen = [];
+  _configKlanten = [];
   for (const c of clients) {
     let prof = null;
     try { const data = await fetchClientStateFor(c.id, ['prime_profile']); prof = data.prime_profile || null; } catch (e) { console.error(e); }
+    if (prof) _configKlanten.push(c.id);
     const naam = _fbEsc(namen[c.id] || c.display_name || c.id);
-    const opties = prof
-      ? CONFIG_OPTIES.map(function(o) {
-          return '<label class="cfg-optie"><input type="checkbox" ' + (o.get(prof) ? 'checked ' : '') + 'onchange="configZet(\'' + c.id + '\', \'' + o.key + '\', this.checked, this)">' +
-            '<span><span class="cfg-optie-naam">' + t(o.label) + '</span><span class="cfg-optie-hint">' + t(o.hint) + '</span></span></label>';
-        }).join('')
-      : '<div style="font-size:12px;color:var(--muted)">' + t('config.noProfile') + '</div>';
-    kaarten.push('<div class="card cfg-klant"><div class="cfg-klant-naam">' + naam + '</div>' + opties + '</div>');
+    const cellen = CONFIG_OPTIES.map(function(o) {
+      if (!prof) return '<td class="cfg-leeg">–</td>';
+      const aan = o.get(prof);
+      const afw = aan !== o.standaard;
+      return '<td><label class="cfg-sw' + (afw ? ' afw' : '') + '"><input type="checkbox" ' + (aan ? 'checked ' : '') +
+        'onchange="configZet(\'' + c.id + '\', \'' + o.key + '\', this.checked, this)"><span class="cfg-sl"></span></label></td>';
+    }).join('');
+    rijen.push('<tr><td class="cfg-naam">' + naam + (prof ? '' : '<span class="cfg-geen">' + t('config.noProfile') + '</span>') + '</td>' + cellen + '</tr>');
   }
-  el.innerHTML = kaarten.join('');
+  const kop = CONFIG_OPTIES.map(function(o) {
+    return '<th>' + t(o.label) +
+      '<span class="cfg-alle"><a href="#" onclick="configAlles(\'' + o.key + '\', true);return false">' + t('config.allOn') + '</a> · ' +
+      '<a href="#" onclick="configAlles(\'' + o.key + '\', false);return false">' + t('config.allOff') + '</a></span></th>';
+  }).join('');
+  el.innerHTML = '<div class="card cfg-kaart"><div class="cfg-scroll"><table class="cfg-tabel"><thead><tr><th>' + t('config.clientCol') + '</th>' + kop + '</tr></thead><tbody>' +
+    rijen.join('') + '</tbody></table></div><div class="cfg-legenda">' + t('config.legend') + '</div></div>';
 }
 
-// Zet één optie voor één klant. Leest het profiel van die klant vers uit de cloud, wijzigt alleen deze optie en schrijft
-// het terug, zodat andere profielgegevens (naam, doelen) niet worden overschreven.
+// Schrijft één optie voor één klant. Leest het profiel van die klant vers uit de cloud, wijzigt alleen deze optie en
+// schrijft het terug, zodat andere profielgegevens (naam, doelen) niet worden overschreven. true = gelukt.
+async function _configSchrijf(clientId, optie, waarde) {
+  const data = await fetchClientStateFor(clientId, ['prime_profile']);
+  if (!data.prime_profile) return false;
+  const prof = Object.assign({}, data.prime_profile);
+  optie.set(prof, waarde);
+  const res = await getSupabase().from('client_state').upsert({ client_id: clientId, key: 'prime_profile', value: prof, updated_at: new Date().toISOString() });
+  if (res.error) throw res.error;
+  // Staat deze klant nu open in deze sessie, dan meteen ook lokaal bijwerken.
+  if (clientId === activeClientId) {
+    optie.set(profile, waarde);
+    syncSet('prime_profile', profile);
+    try { applyTrainingVisibility(); } catch (e) { console.error(e); }
+  }
+  return true;
+}
+
 async function configZet(clientId, optieKey, waarde, vinkje) {
   const optie = CONFIG_OPTIES.find(function(o) { return o.key === optieKey; });
   if (!optie || !isPrimeCoach()) return;
   const terug = function() { if (vinkje) vinkje.checked = !waarde; };
   if (await probeOfflineNow()) { try { showToast(t('config.offline'), true); } catch (e) {} terug(); return; }
   try {
-    const data = await fetchClientStateFor(clientId, ['prime_profile']);
-    if (!data.prime_profile) { try { showToast(t('config.noProfile'), true); } catch (e) {} terug(); return; }
-    const prof = Object.assign({}, data.prime_profile);
-    optie.set(prof, waarde);
-    const res = await getSupabase().from('client_state').upsert({ client_id: clientId, key: 'prime_profile', value: prof, updated_at: new Date().toISOString() });
-    if (res.error) throw res.error;
-    // Staat deze klant nu open in deze sessie, dan meteen ook lokaal bijwerken.
-    if (clientId === activeClientId) {
-      optie.set(profile, waarde);
-      syncSet('prime_profile', profile);
-      try { applyTrainingVisibility(); } catch (e) { console.error(e); }
-    }
+    const gelukt = await _configSchrijf(clientId, optie, waarde);
+    if (!gelukt) { try { showToast(t('config.noProfile'), true); } catch (e) {} terug(); return; }
+    if (vinkje && vinkje.parentNode) vinkje.parentNode.classList.toggle('afw', waarde !== optie.standaard);
     try { showToast(t('config.saved')); } catch (e) {}
   } catch (e) {
     console.error('configZet:', e);
     try { showToast(t('config.saveFailed'), true); } catch (e2) {}
     terug();
   }
+}
+
+// "Alles aan" / "alles uit" voor één optie bij alle klanten met een profiel (met een bevestiging vooraf).
+async function configAlles(optieKey, waarde) {
+  const optie = CONFIG_OPTIES.find(function(o) { return o.key === optieKey; });
+  if (!optie || !isPrimeCoach() || !_configKlanten.length) return;
+  if (!confirm(t('config.confirmAll', { optie: t(optie.label), stand: t(waarde ? 'config.on' : 'config.off'), n: _configKlanten.length }))) return;
+  if (await probeOfflineNow()) { try { showToast(t('config.offline'), true); } catch (e) {} return; }
+  let ok = 0, fout = 0;
+  for (const id of _configKlanten.slice()) {
+    try { if (await _configSchrijf(id, optie, waarde)) ok++; else fout++; }
+    catch (e) { console.error('configAlles:', e); fout++; }
+  }
+  try { showToast(fout ? t('config.bulkPartly', { n: ok, f: fout }) : t('config.bulkDone', { n: ok }), !!fout); } catch (e) {}
+  renderConfigTab();
 }
