@@ -198,7 +198,9 @@ function saveProfile() {
     calorieMax: calorieMax,
     proteinPerKg: proteinPerKg,
     carbPct: carbPct,
-    trainingEnabled: profile.trainingEnabled !== false // wordt nu door de coach ingesteld in Config
+    trainingEnabled: profile.trainingEnabled !== false, // wordt nu door de coach ingesteld in Config
+    noteEnabled: profile.noteEnabled === true, // idem (toelichting aan de coach)
+    noteLines: profile.noteLines
   };
   syncSet('prime_profile', profile);
   applyTrainingVisibility();

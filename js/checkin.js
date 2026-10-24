@@ -104,6 +104,7 @@ function pick(key, val, btn) {
   container.querySelectorAll(btnSel).forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   checkin[key] = val;
+  if (key === 'energy' && typeof renderCheckinNote === 'function') renderCheckinNote();
   const ready = checkin.sleep > 0 && checkin.energy > 0 && checkin.stress > 0;
   document.getElementById('checkin-btn').disabled = !ready;
 }
@@ -417,6 +418,7 @@ function calcTrainingType() {
 }
 
 async function doCheckin() {
+  try { noteFlush(); } catch (e) { console.error(e); }
   const btn = document.getElementById('checkin-btn');
   btn.disabled = true; btn.textContent = t('checkin.analyzing');
 
@@ -494,6 +496,7 @@ async function doCheckin() {
 }
 
 async function doCheckout() {
+  try { noteFlush(); } catch (e) { console.error(e); }
   const btn = document.getElementById('checkout-btn');
   btn.disabled = true;
   btn.textContent = t('checkin.preparingAdvice');
@@ -835,6 +838,7 @@ function coToggleTraining(idx) {
 // training), dan eerst een controlestap: de rode lijstjes verschijnen, je corrigeert wat nodig is en tikt daarna
 // op "Dag definitief afsluiten". Overdag zie je die lijstjes dus niet.
 function afrondenKlik() {
+  try { noteFlush(); } catch (e) { console.error(e); }
   if (_coControle) { doCheckout(); return; }
   const voedingOpen = dayLog.some(function(i) { return !isEatenItem(i); });
   const ziek = getDagStatus(localDateStr()) === 'ziek'; // bij Ziek is er geen trainingsvraag
@@ -849,4 +853,176 @@ function afrondenKlik() {
   if (btn) btn.textContent = t('checkout.finalize');
   const eerste = document.querySelector('#training-summary-content .co-ob, #co-onbevestigd .co-ob');
   if (eerste && eerste.scrollIntoView) eerste.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+
+// ========== TOELICHTING AAN DE COACH (optie in Config) ==========
+// Staat per klant aan of uit (profile.noteEnabled) met een maximaal aantal regels (profile.noteLines, 1 t/m 10).
+// De tekst staat per datum in dagNotes (state.js, key prime_notes): { 'JJJJ-MM-DD': { text, ts } }, één toelichting
+// per dag die je de hele dag kunt aanpassen. Drie plekken: een knop op het Dashboard (opent een venster), een veld in
+// de check-in bij lage energie en een veld bij de avond check-out. De coach leest ze bij Signalen (history.js).
+const NOTE_CHIPS = ['note.chip.work', 'note.chip.sleep', 'note.chip.time', 'note.chip.stress'];
+
+function noteAan() { return profile.noteEnabled === true; }
+function noteRegels() { const n = parseInt(profile.noteLines, 10); return n >= 1 && n <= 10 ? n : 4; }
+function noteVan(dateStr) { const n = dagNotes[dateStr]; return n && n.text ? n.text : ''; }
+
+function noteBewaar(dateStr, text) {
+  text = String(text || '').replace(/\s+$/, '');
+  if (text === noteVan(dateStr)) return false;
+  const nieuw = Object.assign({}, dagNotes);
+  if (text) nieuw[dateStr] = { text: text, ts: Date.now() }; else delete nieuw[dateStr];
+  const datums = Object.keys(nieuw).sort(); // alleen de laatste 60 dagen bewaren
+  datums.slice(0, Math.max(0, datums.length - 60)).forEach(function(d) { delete nieuw[d]; });
+  dagNotes = nieuw;
+  syncSet('prime_notes', dagNotes);
+  return true;
+}
+
+// Aantal zichtbare regels in het tekstveld (inclusief regels die door lange tekst breken).
+function noteMeet(el) {
+  if (!el.value) return 0;
+  const cs = getComputedStyle(el);
+  const lh = parseFloat(cs.lineHeight) || 20;
+  const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  const oud = el.style.height;
+  el.style.height = '0px';
+  const sh = el.scrollHeight;
+  el.style.height = oud;
+  return Math.max(1, Math.round((sh - pad) / lh));
+}
+
+function noteTeller(el) {
+  const ctx = el.id.replace('note-ta-', '');
+  const tel = document.getElementById('note-cnt-' + ctx);
+  if (!tel) return;
+  const max = noteRegels();
+  const n = noteMeet(el);
+  tel.textContent = t('note.count', { n: n, max: max });
+  tel.classList.toggle('vol', n >= max);
+}
+
+// Houdt de tekst binnen het maximum aantal regels: een tik die over de rand gaat wordt teruggedraaid, een grote
+// geplakte tekst wordt aan het eind ingekort.
+function noteInput(el) {
+  const max = noteRegels();
+  let n = noteMeet(el);
+  if (n > max) {
+    const vorige = typeof el._vorige === 'string' ? el._vorige : '';
+    if (Math.abs(el.value.length - vorige.length) <= 1) {
+      el.value = vorige;
+    } else {
+      let guard = 0;
+      while (n > max && el.value.length && guard++ < 3000) { el.value = el.value.slice(0, -1); n = noteMeet(el); }
+    }
+  }
+  el._vorige = el.value;
+  noteTeller(el);
+}
+
+function noteChip(ctx, i) {
+  const el = document.getElementById('note-ta-' + ctx);
+  if (!el) return;
+  const tekst = t(NOTE_CHIPS[i]);
+  const huidig = el.value.replace(/[\s,]+$/, '');
+  el.value = huidig ? huidig + ', ' + tekst.charAt(0).toLowerCase() + tekst.slice(1) : tekst;
+  noteInput(el);
+  el.focus();
+}
+
+function noteEditorHtml(ctx) {
+  const max = noteRegels();
+  const chips = NOTE_CHIPS.map(function(k, i) {
+    return '<button type="button" class="note-chip" onclick="noteChip(\'' + ctx + '\', ' + i + ')">' + t(k) + '</button>';
+  }).join('');
+  return '<div class="note-chips">' + chips + '</div>' +
+    '<textarea id="note-ta-' + ctx + '" class="note-ta" rows="' + max + '" maxlength="' + (max * 120) + '" placeholder="' + _fbEsc(t('note.placeholder')) + '" ' +
+    'oninput="noteInput(this)" onchange="noteAutoSave(this)">' + _fbEsc(noteVan(localDateStr())) + '</textarea>' +
+    '<div class="note-teller"><span id="note-cnt-' + ctx + '"></span><span>' + t('note.private') + '</span></div>';
+}
+
+function noteEditorKlaar(ctx) {
+  const el = document.getElementById('note-ta-' + ctx);
+  if (!el) return;
+  el._vorige = el.value;
+  noteTeller(el);
+}
+
+// Tekstvelden in de check-in en check-out bewaren bij het verlaten van het veld (en bij het afronden).
+function noteAutoSave(el) {
+  if (!noteAan()) return;
+  if (noteBewaar(localDateStr(), el.value)) {
+    document.querySelectorAll('.note-ta').forEach(function(x) { if (x !== el && x.id !== 'note-ta-m') x.value = el.value; });
+    noteKnopVernieuw();
+  }
+}
+function noteFlush() {
+  if (!noteAan()) return;
+
+  document.querySelectorAll('#co-note .note-ta, #ci-note .note-ta').forEach(function(x) {
+    if (x.offsetParent !== null && x.value !== noteVan(localDateStr())) noteAutoSave(x);
+  });
+}
+
+function noteKnopHtml() {
+  const tekst = noteVan(localDateStr());
+  if (!tekst) return '<button type="button" class="note-knop" onclick="openNoteModal()">💬 <span>' + t('note.btn') + '</span></button>';
+  const kort = tekst.length > 70 ? tekst.slice(0, 70).replace(/\s+\S*$/, '') + '…' : tekst;
+  return '<button type="button" class="note-knop note-heeft" onclick="openNoteModal()"><span class="note-knop-kop">✓ ' + t('note.btnDone') + '</span>' +
+    '<span class="note-knop-tekst">' + _fbEsc(kort.replace(/\s*\n\s*/g, ' ')) + '</span><span class="note-knop-edit">' + t('note.btnEdit') + '</span></button>';
+}
+function noteKnopVernieuw() {
+  const slot = document.getElementById('note-slot');
+  if (slot) slot.innerHTML = noteAan() ? noteKnopHtml() : '';
+}
+
+function openNoteModal() {
+  if (!noteAan()) return;
+  const body = document.getElementById('note-modal-body');
+  if (!body) return;
+  body.innerHTML = noteEditorHtml('m');
+  document.getElementById('note-modal').classList.add('open');
+  noteEditorKlaar('m');
+  const el = document.getElementById('note-ta-m');
+  if (el) { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} }
+}
+function closeNoteModal() { document.getElementById('note-modal').classList.remove('open'); }
+function saveNoteModal() {
+  const el = document.getElementById('note-ta-m');
+  if (el && noteAan()) {
+    noteBewaar(localDateStr(), el.value);
+    document.querySelectorAll('#co-note .note-ta, #ci-note .note-ta').forEach(function(x) { x.value = noteVan(localDateStr()); noteTeller(x); });
+    noteKnopVernieuw();
+    try { showToast(t('note.saved')); } catch (e) {}
+  }
+  closeNoteModal();
+}
+
+// Veld in de check-in: alleen zichtbaar bij lage energie.
+function renderCheckinNote(opnieuw) {
+  const el = document.getElementById('ci-note');
+  if (!el) return;
+  const toon = noteAan() && checkin && checkin.energy === 1;
+  if (!toon) { el.innerHTML = ''; return; }
+  if (el.querySelector('textarea') && !opnieuw) return;
+  el.innerHTML = '<div class="cq-card note-kaart"><div class="cq-header"><span class="cq-icon">💬</span><span class="cq-label">' + t('note.checkin.title') + '</span></div>' +
+    '<div class="note-sub">' + t('note.checkin.sub') + '</div>' + noteEditorHtml('ci') + '</div>';
+  noteEditorKlaar('ci');
+}
+
+// Alles wat bij de toelichting hoort opbouwen of bijwerken (Dashboard-knop, check-in- en check-out-veld).
+// opnieuw = true: ook bestaande velden opnieuw opbouwen (bv. als de coach het aantal regels wijzigt).
+function renderNoteUI(opnieuw) {
+  const aan = noteAan();
+  noteKnopVernieuw();
+  const co = document.getElementById('co-note');
+  if (co) {
+    if (!aan) co.innerHTML = '';
+    else if (!co.querySelector('textarea') || opnieuw) {
+      co.innerHTML = '<div class="note-checkout"><div class="ds-kop"><span class="ds-titel">' + t('note.checkout.title') + '</span></div>' +
+        '<div class="note-sub">' + t('note.checkout.sub') + '</div>' + noteEditorHtml('co') + '</div><div class="divider" style="margin:18px 0"></div>';
+      noteEditorKlaar('co');
+    }
+  }
+  renderCheckinNote(opnieuw);
 }

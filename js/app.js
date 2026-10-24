@@ -179,6 +179,7 @@ function renderHome() {
   renderCheckoutDagStatus();
   applyDagStatusTone();
   applyDagStatusTraining();
+  try { renderNoteUI(); } catch (e) { console.error('renderNoteUI:', e); }
 }
 
 // ========== TRAINING AAN/UIT (profielinstelling) ==========

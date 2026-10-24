@@ -75,5 +75,7 @@ let customExercises = JSON.parse(localStorage.getItem('prime_custom_exercises') 
 let foodDays = JSON.parse(localStorage.getItem('prime_food_days') || '{}');
 // Dagstatus per datum: { 'JJJJ-MM-DD': 'rust' | 'ziek' | 'vrij' }; ontbreekt een datum, dan is het een normale dag (zie checkin.js).
 let dagStatus = JSON.parse(localStorage.getItem('prime_dagstatus') || '{}');
+// Toelichting aan de coach per datum: { 'JJJJ-MM-DD': { text, ts } } (alleen voor klanten bij wie dit in Config aanstaat, zie checkin.js).
+let dagNotes = JSON.parse(localStorage.getItem('prime_notes') || '{}');
 let currentLogDate = null; // wordt in app.js init() op vandaag gezet
 

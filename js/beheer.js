@@ -239,6 +239,7 @@ function applyCustomPhotos() {
 // Matrix: klanten onder elkaar, opties als kolommen met een schuifje per klant en bovenaan een kolom "alles aan / uit".
 // De waarden staan in het profiel van de klant (client_state.prime_profile). Een nieuwe optie toevoegen = één regel bij
 // CONFIG_OPTIES (+ vertalingen). 'standaard' bepaalt wanneer een klant als afwijkend (oranje rand) wordt getoond.
+// Een optie kan een 'aantal' hebben (− / +): een getal dat bij de optie hoort, zoals het aantal regels van de toelichting.
 const CONFIG_OPTIES = [
   {
     key: 'trainingEnabled',
@@ -247,10 +248,36 @@ const CONFIG_OPTIES = [
     standaard: true,
     get: function(p) { return p.trainingEnabled !== false; },
     set: function(p, v) { p.trainingEnabled = !!v; }
+  },
+  {
+    key: 'noteEnabled',
+    label: 'config.opt.note',
+    hint: 'config.opt.noteHint',
+    standaard: false,
+    get: function(p) { return p.noteEnabled === true; },
+    set: function(p, v) { p.noteEnabled = !!v; if (v && !(parseInt(p.noteLines, 10) >= 1)) p.noteLines = 4; },
+    aantal: {
+      key: 'noteLines',
+      eenheid: 'config.lines',
+      min: 1,
+      max: 10,
+      standaard: 4,
+      get: function(p) { const n = parseInt(p.noteLines, 10); return n >= 1 && n <= 10 ? n : 4; },
+      set: function(p, v) { p.noteLines = v; }
+    }
   }
 ];
 
 let _configKlanten = []; // klant-id's met een profiel, uit de laatste weergave (voor "alles aan/uit")
+
+function _configStapHtml(clientId, o, prof, aan) {
+  const a = o.aantal;
+  const w = a.get(prof);
+  return '<span class="cfg-stap' + (aan ? '' : ' uit') + '" data-w="' + w + '">' +
+    '<button type="button" class="cfg-stap-knop" aria-label="-" onclick="configStap(\'' + clientId + '\', \'' + o.key + '\', -1, this)">−</button>' +
+    '<span class="cfg-stap-w' + (w !== a.standaard ? ' afw' : '') + '">' + t(a.eenheid, { n: w }) + '</span>' +
+    '<button type="button" class="cfg-stap-knop" aria-label="+" onclick="configStap(\'' + clientId + '\', \'' + o.key + '\', 1, this)">+</button></span>';
+}
 
 async function renderConfigTab() {
   const el = document.getElementById('config-content');
@@ -279,7 +306,8 @@ async function renderConfigTab() {
       const aan = o.get(prof);
       const afw = aan !== o.standaard;
       return '<td><label class="cfg-sw' + (afw ? ' afw' : '') + '"><input type="checkbox" ' + (aan ? 'checked ' : '') +
-        'onchange="configZet(\'' + c.id + '\', \'' + o.key + '\', this.checked, this)"><span class="cfg-sl"></span></label></td>';
+        'onchange="configZet(\'' + c.id + '\', \'' + o.key + '\', this.checked, this)"><span class="cfg-sl"></span></label>' +
+        (o.aantal ? _configStapHtml(c.id, o, prof, aan) : '') + '</td>';
     }).join('');
     rijen.push('<tr><td class="cfg-naam">' + naam + (prof ? '' : '<span class="cfg-geen">' + t('config.noProfile') + '</span>') + '</td>' + cellen + '</tr>');
   }
@@ -292,20 +320,22 @@ async function renderConfigTab() {
     rijen.join('') + '</tbody></table></div><div class="cfg-legenda">' + t('config.legend') + '</div></div>';
 }
 
-// Schrijft één optie voor één klant. Leest het profiel van die klant vers uit de cloud, wijzigt alleen deze optie en
-// schrijft het terug, zodat andere profielgegevens (naam, doelen) niet worden overschreven. true = gelukt.
-async function _configSchrijf(clientId, optie, waarde) {
+// Schrijft één optie (of het aantal van een optie, bij deel) voor één klant. Leest het profiel van die klant vers uit de
+// cloud, wijzigt alleen dit veld en schrijft het terug, zodat andere profielgegevens (naam, doelen) niet worden
+// overschreven. true = gelukt.
+async function _configSchrijf(clientId, optie, waarde, deel) {
   const data = await fetchClientStateFor(clientId, ['prime_profile']);
   if (!data.prime_profile) return false;
   const prof = Object.assign({}, data.prime_profile);
-  optie.set(prof, waarde);
+  (deel || optie).set(prof, waarde);
   const res = await getSupabase().from('client_state').upsert({ client_id: clientId, key: 'prime_profile', value: prof, updated_at: new Date().toISOString() });
   if (res.error) throw res.error;
   // Staat deze klant nu open in deze sessie, dan meteen ook lokaal bijwerken.
   if (clientId === activeClientId) {
-    optie.set(profile, waarde);
+    (deel || optie).set(profile, waarde);
     syncSet('prime_profile', profile);
     try { applyTrainingVisibility(); } catch (e) { console.error(e); }
+    try { if (typeof renderNoteUI === 'function') renderNoteUI(true); } catch (e) { console.error(e); }
   }
   return true;
 }
@@ -318,12 +348,43 @@ async function configZet(clientId, optieKey, waarde, vinkje) {
   try {
     const gelukt = await _configSchrijf(clientId, optie, waarde);
     if (!gelukt) { try { showToast(t('config.noProfile'), true); } catch (e) {} terug(); return; }
-    if (vinkje && vinkje.parentNode) vinkje.parentNode.classList.toggle('afw', waarde !== optie.standaard);
+    if (vinkje && vinkje.parentNode) {
+      vinkje.parentNode.classList.toggle('afw', waarde !== optie.standaard);
+      const stap = vinkje.parentNode.parentNode.querySelector('.cfg-stap');
+      if (stap) stap.classList.toggle('uit', !waarde);
+    }
     try { showToast(t('config.saved')); } catch (e) {}
   } catch (e) {
     console.error('configZet:', e);
     try { showToast(t('config.saveFailed'), true); } catch (e2) {}
     terug();
+  }
+}
+
+// Het getal bij een optie (bv. aantal regels) met − of + verhogen of verlagen.
+async function configStap(clientId, optieKey, delta, knop) {
+  const optie = CONFIG_OPTIES.find(function(o) { return o.key === optieKey; });
+  if (!optie || !optie.aantal || !isPrimeCoach() || !knop) return;
+  const a = optie.aantal;
+  const cel = knop.closest('.cfg-stap');
+  if (!cel || cel.classList.contains('bezig')) return;
+  const huidig = parseInt(cel.dataset.w, 10);
+  const nieuw = Math.min(a.max, Math.max(a.min, huidig + delta));
+  if (nieuw === huidig) return;
+  if (await probeOfflineNow()) { try { showToast(t('config.offline'), true); } catch (e) {} return; }
+  cel.classList.add('bezig');
+  try {
+    const gelukt = await _configSchrijf(clientId, optie, nieuw, a);
+    if (!gelukt) { try { showToast(t('config.noProfile'), true); } catch (e) {} return; }
+    cel.dataset.w = nieuw;
+    const w = cel.querySelector('.cfg-stap-w');
+    if (w) { w.textContent = t(a.eenheid, { n: nieuw }); w.classList.toggle('afw', nieuw !== a.standaard); }
+    try { showToast(t('config.saved')); } catch (e) {}
+  } catch (e) {
+    console.error('configStap:', e);
+    try { showToast(t('config.saveFailed'), true); } catch (e2) {}
+  } finally {
+    cel.classList.remove('bezig');
   }
 }
 

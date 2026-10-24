@@ -1112,6 +1112,38 @@ async function removeFeedback(id) {
   renderFeedbackList();
 }
 
+// Toelichtingen van klanten (alleen coach): welke zijn al gelezen, wordt op dit apparaat bewaard.
+function _noteGelezen() { try { return JSON.parse(localStorage.getItem('prime_notes_gelezen') || '{}'); } catch (e) { return {}; } }
+function _notesVoorCoach(clientId, notes, gelezen) {
+  const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
+  return Object.keys(notes || {}).filter(function(d) { return d >= grens && notes[d] && notes[d].text; }).sort().reverse().slice(0, 5).map(function(d) {
+    const ts = notes[d].ts || 0, k = clientId + '|' + d;
+    return { date: d, text: notes[d].text, ts: ts, nieuw: !(k in gelezen && gelezen[k] >= ts) };
+  });
+}
+function _noteRijHtml(clientId, n) {
+  const dag = new Date(n.date + 'T12:00:00').toLocaleDateString(dateLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
+  const tijd = n.ts ? ', ' + new Date(n.ts).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : '';
+  return '<div class="note-coachrij' + (n.nieuw ? ' nieuw' : '') + '" onclick="event.stopPropagation()">' +
+    '<div class="note-coachtekst">💬 ' + _fbEsc(n.text).replace(/\n/g, '<br>') + '</div>' +
+    '<div class="note-coachmeta"><span>' + _fbEsc(dag + tijd) + '</span>' +
+    '<button type="button" class="note-gelezen" onclick="noteGelezenToggle(event, \'' + clientId + '\', \'' + n.date + '\', ' + n.ts + ', this)">' +
+    t(n.nieuw ? 'note.coach.markRead' : 'note.coach.read') + '</button></div></div>';
+}
+function noteGelezenToggle(ev, clientId, datum, ts, knop) {
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  const gelezen = _noteGelezen();
+  const k = clientId + '|' + datum;
+  const was = k in gelezen && gelezen[k] >= ts;
+  if (was) delete gelezen[k]; else gelezen[k] = Math.max(Date.now(), ts);
+  try { localStorage.setItem('prime_notes_gelezen', JSON.stringify(gelezen)); } catch (e) {}
+  if (knop) {
+    knop.textContent = t(was ? 'note.coach.markRead' : 'note.coach.read');
+    const rij = knop.closest('.note-coachrij');
+    if (rij) rij.classList.toggle('nieuw', was);
+  }
+}
+
 async function renderSignalenTab() {
   const el = document.getElementById('signalen-overzicht-content');
   if (!el) return;
@@ -1139,10 +1171,12 @@ async function renderSignalenTab() {
   let namen = {};
   try { namen = await fetchProfileNames(); } catch (e) {}
   const resultaten = [];
+  const noteGelezen = _noteGelezen();
   for (const c of clients) {
-    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus']);
+    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus', 'prime_notes']);
     const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {}, data.prime_dagstatus || {});
-    if (signals.length) resultaten.push({ client: c, signals });
+    const notes = _notesVoorCoach(c.id, data.prime_notes, noteGelezen);
+    if (signals.length || notes.length) resultaten.push({ client: c, signals, notes });
   }
   resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
 
@@ -1155,6 +1189,7 @@ async function renderSignalenTab() {
     <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
       <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div>
       ${r.signals.map(s => `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
+      ${r.notes.map(n => _noteRijHtml(r.client.id, n)).join('')}
     </div>
   `).join('');
 }

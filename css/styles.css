@@ -841,3 +841,29 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .cfg-sw input:checked + .cfg-sl::after { left: 21px; }
 .cfg-sw.afw .cfg-sl { box-shadow: 0 0 0 2px var(--coach-only); }
 .cfg-legenda { font-size: 12px; color: var(--muted); margin-top: 10px; }
+#note-slot:not(:empty) { margin-bottom: 14px; }
+.note-knop { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 14px; border: 1.5px dashed var(--sage); background: var(--sage-light); color: var(--sage); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.note-knop.note-heeft { flex-wrap: wrap; justify-content: flex-start; text-align: left; border-style: solid; border-color: var(--sage-mid); background: var(--white); gap: 2px 10px; }
+.note-knop-kop { color: var(--sage); font-size: 13px; font-weight: 700; }
+.note-knop-tekst { flex: 1 1 100%; order: 3; color: var(--charcoal); font-size: 13px; font-weight: 400; line-height: 1.5; }
+.note-knop-edit { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--sage); }
+.note-sub { font-size: 12px; color: var(--muted); margin: 2px 0 10px; line-height: 1.5; }
+.note-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.note-chip { border: 1px solid var(--sand-dark); background: var(--white); color: var(--charcoal); border-radius: 16px; padding: 7px 12px; font-family: inherit; font-size: 13px; cursor: pointer; }
+.note-chip:active { background: var(--sage-light); border-color: var(--sage); }
+.note-ta { display: block; width: 100%; border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); background: var(--white); color: var(--charcoal); font-family: inherit; font-size: 16px; line-height: 22px; padding: 8px 10px; resize: none; overflow: hidden; }
+.note-ta:focus { outline: none; border-color: var(--sage); }
+.note-teller { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.note-teller .vol { color: var(--coach-only); font-weight: 700; }
+.note-kaart { border: 1.5px solid var(--sage-mid); }
+.cfg-stap { display: inline-flex; align-items: center; margin-left: 10px; vertical-align: middle; border: 1px solid var(--sand-dark); border-radius: 10px; overflow: hidden; background: var(--white); }
+.cfg-stap.uit { opacity: 0.35; pointer-events: none; }
+.cfg-stap.bezig { opacity: 0.6; pointer-events: none; }
+.cfg-stap-knop { border: none; background: var(--sand); color: var(--charcoal); width: 32px; height: 32px; font-size: 18px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.cfg-stap-w { padding: 0 10px; font-size: 13px; white-space: nowrap; }
+.cfg-stap-w.afw { color: var(--coach-only); font-weight: 700; }
+.note-coachrij { margin-top: 8px; padding: 9px 11px; border-radius: 8px; background: var(--sand); border-left: 3px solid var(--sand-dark); font-size: 13px; line-height: 1.55; cursor: default; }
+.note-coachrij.nieuw { background: var(--sage-light); border-left-color: var(--sage); }
+.note-coachtekst { color: var(--charcoal); word-break: break-word; }
+.note-coachmeta { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 6px; font-size: 11px; color: var(--muted); }
+.note-gelezen { border: 1px solid var(--sage); background: var(--white); color: var(--sage); border-radius: 8px; padding: 5px 10px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
