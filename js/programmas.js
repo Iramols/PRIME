@@ -269,6 +269,7 @@ function progBouw3ColEditor() {
     '<button class="prog-back-btn" onclick="progTerugNaarLijst()">' + t('common.back') + '</button>' +
     '<div class="prog-title-static">' + dispName(prog).replace(/</g,'&lt;') + '</div>' +
     (progMode === 'prime' ? '<span class="prog-prime-badge">' + t('programmas.prime.badge') + '</span>' : '') +
+    (canEdit ? '<button class="btn-sm' + coachOnlyBtn + '" style="margin-left:auto;flex-shrink:0" onclick="progOpslaanKlik()">' + t('programmas.save') + '</button>' : '') +
     '</div>' +
     progBouwInfoKaart(prog, canEdit) +
     '<div class="prog-2col">' +
@@ -295,7 +296,9 @@ function progBouw3ColEditor() {
     '<div class="prog-col-body">' + oefRijenHtml + '</div>' +
     '</div>' +
 
-    '</div>';
+    '</div>' +
+    (canEdit ? '<div style="margin-top:18px"><button class="btn-primary' + coachOnlyBtn + '" style="width:100%" onclick="progOpslaanKlik()">' + t('programmas.save') + '</button>' +
+      '<div style="font-size:12px;color:var(--muted);text-align:center;margin-top:8px">' + t('programmas.autosaveHint') + '</div></div>' : '');
 }
 
 // Programma-info: beschrijving, doel, niveau en dagen per week -- los van de
@@ -351,6 +354,26 @@ function progBouwInfoKaart(prog, canEdit) {
     '</div>' +
     primeActie +
     '</div>';
+}
+
+// Opslaan-knop in de editor: alles wordt al direct bewaard, de knop legt het nog eens vast (bij een PRIME-programma
+// wacht hij op de cloud), meldt dat het gelukt is en gaat terug naar de lijst.
+async function progOpslaanKlik() {
+  if (!progCanEdit()) return;
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) { /* geen actief veld */ }
+  const prog = progLijst.find(p => p.id === progActiefId);
+  if (prog) {
+    if (progMode === 'prime') {
+      primeProgLijst = progLijst;
+      try { localStorage.setItem('prime_prime_programmas', JSON.stringify(primeProgLijst)); } catch (e) { console.error(e); }
+      const fout = await savePrimeProgramToCloud(prog);
+      if (fout) { try { showToast(t('programmas.saveFailed'), true); } catch (e) { console.error(e); } return; }
+    } else {
+      progSlaOp();
+    }
+    try { showToast(t('programmas.saved')); } catch (e) { console.error(e); }
+  }
+  progTerugNaarLijst();
 }
 
 function progInfoBijwerken(veld, val) {
