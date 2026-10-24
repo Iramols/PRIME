@@ -551,16 +551,38 @@ function _clientDataSnapshotCanon() {
     .join('|');
 }
 
-// True als je nu iets aan het invullen bent of een venster open hebt: dan
-// laten we de pagina met rust (een herlaad zou je invoer wegvegen).
+// Is dit element echt zichtbaar (niet verborgen op een ander scherm of tab)?
+function _zichtbaar(el) {
+  return !!(el && (el.offsetWidth || el.offsetHeight || (el.getClientRects && el.getClientRects().length)));
+}
+
+// Staat er in dit zichtbare tekstveld iets dat je zou kwijtraken bij een herlaad?
+function _tekstveldMetInhoud(el) {
+  if (!el || !_zichtbaar(el)) return false;
+  const tag = el.tagName;
+  if (el.isContentEditable) return !!(el.textContent || '').trim();
+  if (tag === 'TEXTAREA') return !!(el.value || '').trim();
+  if (tag === 'INPUT') {
+    const t = (el.type || 'text').toLowerCase();
+    if (t === 'text' || t === 'search' || t === 'email' || t === 'url' || t === 'tel') return !!(el.value || '').trim();
+  }
+  return false;
+}
+
+// True als je nu midden in iets zit dat een herlaad zou wegvegen: een zichtbaar tekstveld met tekst erin, een
+// zichtbaar open venster, of een zichtbaar formulier waar al iets is ingevuld. Verborgen of lege formulieren
+// (bv. een formulier dat op een ander scherm open is blijven staan) tellen niet mee.
 function _invoerBezig() {
-  const a = document.activeElement;
-  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return true;
-  if (document.querySelector('.overlay.open, .portion-modal-wrap.open')) return true;
-  const am = document.getElementById('am-form-wrap');
-  const ap = document.getElementById('ap-form-card');
-  if (am && am.style.display === 'block') return true;
-  if (ap && ap.style.display === 'block') return true;
+  if (_tekstveldMetInhoud(document.activeElement)) return true;
+  const open = document.querySelectorAll('.overlay.open, .portion-modal-wrap.open');
+  for (let i = 0; i < open.length; i++) { if (_zichtbaar(open[i])) return true; }
+  const formulieren = ['am-form-wrap', 'ap-form-card', 'apr-form-wrap', 'ae-form-wrap'];
+  for (let k = 0; k < formulieren.length; k++) {
+    const f = document.getElementById(formulieren[k]);
+    if (!f || !_zichtbaar(f)) continue;
+    const velden = f.querySelectorAll('input, textarea');
+    for (let j = 0; j < velden.length; j++) { if (_tekstveldMetInhoud(velden[j])) return true; }
+  }
   return false;
 }
 
