@@ -1127,8 +1127,9 @@ function _noteRijHtml(clientId, n) {
   return '<div class="note-coachrij' + (n.nieuw ? ' nieuw' : '') + '" onclick="event.stopPropagation()">' +
     '<div class="note-coachtekst">💬 ' + _fbEsc(n.text).replace(/\n/g, '<br>') + '</div>' +
     '<div class="note-coachmeta"><span>' + _fbEsc(dag + tijd) + '</span>' +
-    '<button type="button" class="note-gelezen" onclick="noteGelezenToggle(event, \'' + clientId + '\', \'' + n.date + '\', ' + n.ts + ', this)">' +
-    t(n.nieuw ? 'note.coach.markRead' : 'note.coach.read') + '</button></div></div>';
+    '<span class="note-acties"><button type="button" class="note-gelezen" onclick="noteGelezenToggle(event, \'' + clientId + '\', \'' + n.date + '\', ' + n.ts + ', this)">' +
+    t(n.nieuw ? 'note.coach.markRead' : 'note.coach.read') + '</button>' +
+    '<button type="button" class="note-gelezen note-del" onclick="noteVerwijder(event, \'' + clientId + '\', \'' + n.date + '\', this)">' + t('note.coach.delete') + '</button></span></div></div>';
 }
 function noteGelezenToggle(ev, clientId, datum, ts, knop) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -1141,6 +1142,42 @@ function noteGelezenToggle(ev, clientId, datum, ts, knop) {
     knop.textContent = t(was ? 'note.coach.markRead' : 'note.coach.read');
     const rij = knop.closest('.note-coachrij');
     if (rij) rij.classList.toggle('nieuw', was);
+  }
+}
+
+// Coach: een toelichting van een klant verwijderen. Leest de toelichtingen van die klant vers uit de cloud, haalt alleen
+// deze dag eruit en schrijft het terug (zoals Config doet met het profiel).
+async function noteVerwijder(ev, clientId, datum, knop) {
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  if (!isPrimeCoach()) return;
+  const dag = new Date(datum + 'T12:00:00').toLocaleDateString(dateLocale(), { day: 'numeric', month: 'long' });
+  if (!confirm(t('note.coach.confirmDelete', { datum: dag }))) return;
+  if (await probeOfflineNow()) { try { showToast(t('config.offline'), true); } catch (e) {} return; }
+  if (knop) knop.disabled = true;
+  try {
+    const data = await fetchClientStateFor(clientId, ['prime_notes']);
+    const notes = Object.assign({}, data.prime_notes || {});
+    delete notes[datum];
+    const res = await getSupabase().from('client_state').upsert({ client_id: clientId, key: 'prime_notes', value: notes, updated_at: new Date().toISOString() });
+    if (res.error) throw res.error;
+    if (clientId === activeClientId) { // deze klant staat open in deze sessie: ook lokaal bijwerken
+      dagNotes = notes;
+      syncSet('prime_notes', dagNotes);
+      try { renderNoteUI(true); } catch (e) { console.error(e); }
+    }
+    const gelezen = _noteGelezen();
+    delete gelezen[clientId + '|' + datum];
+    try { localStorage.setItem('prime_notes_gelezen', JSON.stringify(gelezen)); } catch (e) {}
+    const rij = knop && knop.closest('.note-coachrij');
+    const kaart = rij && rij.closest('.card');
+    if (rij) rij.remove();
+    // Een klant zonder signalen en zonder toelichtingen hoort niet meer in de lijst.
+    if (kaart && !kaart.querySelector('.note-coachrij') && !kaart.querySelector('[data-signaal]')) kaart.remove();
+    try { showToast(t('note.coach.deleted')); } catch (e) {}
+  } catch (e) {
+    console.error('noteVerwijder:', e);
+    if (knop) knop.disabled = false;
+    try { showToast(t('config.saveFailed'), true); } catch (e2) {}
   }
 }
 
@@ -1188,7 +1225,7 @@ async function renderSignalenTab() {
   el.innerHTML = resultaten.map(r => `
     <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
       <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div>
-      ${r.signals.map(s => `<div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
+      ${r.signals.map(s => `<div data-signaal="1" style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
       ${r.notes.map(n => _noteRijHtml(r.client.id, n)).join('')}
     </div>
   `).join('');
