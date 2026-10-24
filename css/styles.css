@@ -816,3 +816,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .co-ob.co-ob-klaar { background: var(--sage-light); border: 1.5px solid var(--sage-mid); }
 .co-ob.co-ob-klaar .co-ob-titel { color: var(--sage); }
 .exercise-check.co-vink-open { border-color: #c0392b; background: #fdecea; color: #c0392b; font-weight: 700; }
+.cfg-klant { margin-bottom: 12px; }
+.cfg-klant-naam { font-size: 16px; font-weight: 700; color: var(--charcoal); margin-bottom: 10px; }
+.cfg-optie { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-top: 1px solid var(--sand-dark); cursor: pointer; }
+.cfg-optie input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--sage); cursor: pointer; flex-shrink: 0; }
+.cfg-optie-naam { display: block; font-size: 14px; font-weight: 600; color: var(--charcoal); }
+.cfg-optie-hint { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }

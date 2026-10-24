@@ -52,7 +52,6 @@ function openProfile() {
   _kvRatio = (typeof profile.carbPct === 'number') ? profile.carbPct / 100 : 0.6;
   _kvLeeg = false;
   _kvVeldenVullen();
-  document.getElementById('p-training-enabled').checked = profile.trainingEnabled !== false;
   updateMacroPreview();
   document.getElementById('profile-modal').classList.add('open');
 }
@@ -199,7 +198,7 @@ function saveProfile() {
     calorieMax: calorieMax,
     proteinPerKg: proteinPerKg,
     carbPct: carbPct,
-    trainingEnabled: document.getElementById('p-training-enabled').checked
+    trainingEnabled: profile.trainingEnabled !== false // wordt nu door de coach ingesteld in Config
   };
   syncSet('prime_profile', profile);
   applyTrainingVisibility();

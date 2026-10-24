@@ -233,3 +233,76 @@ function applyCustomPhotos() {
     if (photos['prod-' + p.name]) p.photo = photos['prod-' + p.name];
   });
 }
+
+
+// ========== CONFIG (alleen coach): opties per klant aan/uit zetten ==========
+// Een lijst met alle klanten en per klant de opties die de coach kan instellen. De waarden staan in het profiel van
+// de klant (client_state.prime_profile). Een nieuwe optie toevoegen = één regel bij CONFIG_OPTIES (+ vertalingen).
+const CONFIG_OPTIES = [
+  {
+    key: 'trainingEnabled',
+    label: 'config.opt.training',
+    hint: 'config.opt.trainingHint',
+    get: function(p) { return p.trainingEnabled !== false; },
+    set: function(p, v) { p.trainingEnabled = !!v; }
+  }
+];
+
+async function renderConfigTab() {
+  const el = document.getElementById('config-content');
+  if (!el || !isPrimeCoach()) return;
+  if (await probeOfflineNow()) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">' + t('config.offline') + '</div>';
+    return;
+  }
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loading') + '</div>';
+  let clients;
+  try { clients = await fetchClientList(); }
+  catch (e) { console.error('renderConfigTab, fetchClientList:', e); el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">' + t('signalen.loadError') + '</div>'; return; }
+  let namen = {};
+  try { namen = await fetchProfileNames(); } catch (e) { /* namen zijn optioneel */ }
+  if (!clients.length) { el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--muted)">' + t('config.noClients') + '</div>'; return; }
+
+  const kaarten = [];
+  for (const c of clients) {
+    let prof = null;
+    try { const data = await fetchClientStateFor(c.id, ['prime_profile']); prof = data.prime_profile || null; } catch (e) { console.error(e); }
+    const naam = _fbEsc(namen[c.id] || c.display_name || c.id);
+    const opties = prof
+      ? CONFIG_OPTIES.map(function(o) {
+          return '<label class="cfg-optie"><input type="checkbox" ' + (o.get(prof) ? 'checked ' : '') + 'onchange="configZet(\'' + c.id + '\', \'' + o.key + '\', this.checked, this)">' +
+            '<span><span class="cfg-optie-naam">' + t(o.label) + '</span><span class="cfg-optie-hint">' + t(o.hint) + '</span></span></label>';
+        }).join('')
+      : '<div style="font-size:12px;color:var(--muted)">' + t('config.noProfile') + '</div>';
+    kaarten.push('<div class="card cfg-klant"><div class="cfg-klant-naam">' + naam + '</div>' + opties + '</div>');
+  }
+  el.innerHTML = kaarten.join('');
+}
+
+// Zet één optie voor één klant. Leest het profiel van die klant vers uit de cloud, wijzigt alleen deze optie en schrijft
+// het terug, zodat andere profielgegevens (naam, doelen) niet worden overschreven.
+async function configZet(clientId, optieKey, waarde, vinkje) {
+  const optie = CONFIG_OPTIES.find(function(o) { return o.key === optieKey; });
+  if (!optie || !isPrimeCoach()) return;
+  const terug = function() { if (vinkje) vinkje.checked = !waarde; };
+  if (await probeOfflineNow()) { try { showToast(t('config.offline'), true); } catch (e) {} terug(); return; }
+  try {
+    const data = await fetchClientStateFor(clientId, ['prime_profile']);
+    if (!data.prime_profile) { try { showToast(t('config.noProfile'), true); } catch (e) {} terug(); return; }
+    const prof = Object.assign({}, data.prime_profile);
+    optie.set(prof, waarde);
+    const res = await getSupabase().from('client_state').upsert({ client_id: clientId, key: 'prime_profile', value: prof, updated_at: new Date().toISOString() });
+    if (res.error) throw res.error;
+    // Staat deze klant nu open in deze sessie, dan meteen ook lokaal bijwerken.
+    if (clientId === activeClientId) {
+      optie.set(profile, waarde);
+      syncSet('prime_profile', profile);
+      try { applyTrainingVisibility(); } catch (e) { console.error(e); }
+    }
+    try { showToast(t('config.saved')); } catch (e) {}
+  } catch (e) {
+    console.error('configZet:', e);
+    try { showToast(t('config.saveFailed'), true); } catch (e2) {}
+    terug();
+  }
+}

@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261024-0753';
+window.PRIME_BUILD = '20261024-1330';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261024-0753">
+<link rel="stylesheet" href="css/styles.css?v=20261024-1330">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261024-0753"></script>
-<script src="js/translations.js?v=20261024-0753"></script>
-<script src="js/i18n.js?v=20261024-0753"></script>
+<script src="js/cloud.js?v=20261024-1330"></script>
+<script src="js/translations.js?v=20261024-1330"></script>
+<script src="js/i18n.js?v=20261024-1330"></script>
 </head>
 <body>
 
@@ -196,6 +196,7 @@ if ('serviceWorker' in navigator) {
     <button class="nav-btn" onclick="go('history')" data-i18n="nav.voortgang">Voortgang</button>
     <button class="nav-btn coach-only-btn" id="nav-btn-signalen" style="display:none" onclick="go('signalen')" data-i18n="nav.signalen">Signalen</button>
     <button class="nav-btn coach-only-btn" id="nav-btn-beheer" style="display:none;font-size:11px" onclick="go('beheer')" data-i18n="nav.photoManage">📷 Foto beheer</button>
+    <button class="nav-btn coach-only-btn" id="nav-btn-config" style="display:none;font-size:11px" onclick="go('config')" data-i18n="nav.config">⚙️ Config</button>
   </nav>
   <div class="lang-toggle">
     <button class="lang-btn" data-lang="nl" onclick="setLang('nl')">NL</button>
@@ -1104,6 +1105,18 @@ if ('serviceWorker' in navigator) {
 </div>
 </div>
 
+<!-- CONFIG SCHERM (alleen coach): opties per klant -->
+<div id="screen-config" class="screen">
+<div class="container">
+  <div style="margin-bottom:20px">
+    <div class="card-label" style="margin-bottom:4px;color:var(--coach-only)" data-i18n="config.cardLabel">Config</div>
+    <h2 style="font-family:'DM Serif Display',serif;font-size:26px" data-i18n="config.title">Instellingen per klant</h2>
+    <div style="font-size:13px;color:var(--muted)" data-i18n="config.subtitle">Zet opties voor een klant aan of uit. Een wijziging geldt direct voor die klant.</div>
+  </div>
+  <div id="config-content"></div>
+</div>
+</div>
+
 <!-- SIGNALEN SCHERM (alleen coach) -->
 <div id="screen-signalen" class="screen">
 <div class="container">
@@ -1244,12 +1257,6 @@ if ('serviceWorker' in navigator) {
       <div id="pm-som" style="margin-top:8px;font-size:12px;color:var(--sage);font-weight:600;text-align:center"></div>
       <div id="pm-warn" style="display:none;margin-top:10px;background:#fdf0e4;border:1px solid #e8c4a8;border-radius:10px;padding:10px 12px;font-size:12px;color:#7a4a1c" data-i18n-html="profile.macro.warn"></div>
       <div id="pm-err" style="display:none;margin-top:10px;background:#fbe9e7;border:1px solid #e6b0a8;border-radius:10px;padding:10px 12px;font-size:12px;color:#8a2c1c" data-i18n-html="profile.macro.err"></div>
-    </div>
-    <div class="form-row"><label data-i18n="profile.trainingEnabled">Training</label>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:normal">
-        <input id="p-training-enabled" type="checkbox" checked style="width:18px;height:18px;cursor:pointer;accent-color:var(--sage)">
-        <span data-i18n="profile.trainingEnabledHint" style="font-size:12px;color:var(--muted)">Toon de Training-tab en trainingsonderdelen</span>
-      </label>
     </div>
     <div class="divider" style="margin:16px 0"></div>
     <div class="form-row">
@@ -1745,12 +1752,13 @@ if ('serviceWorker' in navigator) {
   <div class="more-menu-label" data-i18n="nav.coachMenu">Coach menu</div>
   <button class="more-item" onclick="go('signalen')">🔔 <span data-i18n="nav.signalen">Signalen</span></button>
   <button class="more-item" onclick="go('beheer')" data-i18n="nav.photoManage">📷 Foto beheer</button>
+  <button class="more-item" onclick="go('config')" data-i18n="nav.config">⚙️ Config</button>
   <button class="more-item" onclick="closeMoreMenu();switchClient()" data-i18n="header.switchClient">🔁 Wissel klant</button>
   <button class="more-item" onclick="go('coach')">🤖 <span data-i18n="nav.coach">Coach</span> <span class="soon-badge" data-i18n="nav.soon">Binnenkort</span></button>
 </div>
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261024-0753"></script>
+<script src="js/auth.js?v=20261024-1330"></script>
 </body>
 </html>

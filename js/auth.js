@@ -319,6 +319,7 @@ async function bootApp(clientId, isCoach) {
   if (isCoach) document.getElementById('wis-training-btn').style.display = '';
   if (isCoach) document.getElementById('wis-voeding-btn').style.display = '';
   if (isCoach) document.getElementById('nav-btn-beheer').style.display = '';
+  if (isCoach) document.getElementById('nav-btn-config').style.display = '';
   // Groene verversbalk bovenin (coach en klanten); niet als er al een rode updatebalk is.
   _verversBalkToegestaan = true;
   updateConnBanner(); // toont de balk, tenzij er een verbindings-/opslagmelding of een nieuwe versie is

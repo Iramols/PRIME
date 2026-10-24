@@ -31,11 +31,11 @@ function go(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach((b, i) => {
-    b.classList.toggle('active', ['home','voeding','training','coach','history','signalen','beheer'][i] === screen);
+    b.classList.toggle('active', ['home','voeding','training','coach','history','signalen','beheer','config'][i] === screen);
   });
   document.querySelectorAll('.bnav-btn[data-screen]').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
   const _bnavMore = document.getElementById('bnav-more');
-  if (_bnavMore) _bnavMore.classList.toggle('active', screen === 'signalen' || screen === 'beheer' || screen === 'coach');
+  if (_bnavMore) _bnavMore.classList.toggle('active', screen === 'signalen' || screen === 'beheer' || screen === 'config' || screen === 'coach');
   closeMoreMenu();
   // Zonder dit bleef het Dashboard een bevroren momentopname tonen (bv. een
   // inmiddels verwijderde oefening) totdat de pagina werd herladen -- elk
@@ -47,6 +47,7 @@ function go(screen) {
   if (screen === 'signalen') renderSignalenTab();
   if (screen === 'training') switchTrainingTab('dag');
   if (screen === 'beheer') { switchBeheerTab('training'); }
+  if (screen === 'config') { renderConfigTab(); }
   if (screen === 'voeding') {
     // Voeding is altijd direct toegankelijk, ook zonder dat de dagelijkse
     // check-in is gedaan -- renderFood() toont het scherm zelf (geen
