@@ -224,6 +224,7 @@ let _apTerug = null; // {tab, datum, productId}: waar de coach vandaan kwam (Mij
 let _apCopyOf = null; // id van het basisproduct waarvan de coach een kopie maakt, anders null
 let ownCat = 'alle'; // gekozen categorie in de tab "Eigen basisproducten"
 let _apCopyOwn = false; // true = kopie van een eigen product (de coach kiest zelf: voor iedereen of eigen)
+let _apCopyIcon = null; // icoon van het product dat gekopieerd wordt (voor als er geen foto is)
 
 function updateAddProductKcal() {
   const prot = parseFloat(document.getElementById('ap-prot').value) || 0;
@@ -291,12 +292,14 @@ function addCustomProduct() {
     const deelVinkje = document.getElementById('ap-share-edit');
     if (isPrimeCoach() && deelVinkje && deelVinkje.checked) deelId = _apEditingId;
   } else {
+    const nieuwId = 'custom-' + Date.now() + Math.floor(Math.random() * 1000);
     customProducts.push({
-      id: 'custom-' + Date.now() + Math.floor(Math.random() * 1000),
-      icon: '🍽️',
+      id: nieuwId,
+      icon: _apCopyIcon || '🍽️',
       custom: true,
       ...velden
     });
+    if (_apTerug && _apCopyOwn) _apTerug.productId = nieuwId; // na het opslaan terug naar de dag met het nieuwe product
   }
   syncSet('prime_custom_products', customProducts);
 
@@ -326,6 +329,7 @@ function resetAddProductForm() {
   _apPrimeId = null;
   _apCopyOf = null;
   _apCopyOwn = false;
+  _apCopyIcon = null;
   _apBarcode = null;
   showApForm(false);
   const _pa = document.getElementById('ap-prime-actions');
@@ -450,7 +454,7 @@ function openOwnProductModal(id) {
     `<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnProductModal();openPortionModal('${p.id}')">${t('portion.addToDay')}</button>` +
     `<button style="${knop};border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnProductModal();editCustomProduct('${p.id}')">✏️ ${t('common.edit')}</button>` +
     (nu ? `<button class="coach-only-btn" style="${knop};border:1px solid var(--coach-only)" onclick="closeOwnProductModal();deelEigenProduct('${p.id}')">${t('food.prime.shareOwn')}</button>` : '') +
-    (nu ? `<button class="coach-only-btn" style="${knop};border:1px solid var(--coach-only)" onclick="closeOwnProductModal();kopieerEigenProduct('${p.id}')">${t('food.prime.copyOwn')}</button>` : '') +
+    `<button style="${knop};border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnProductModal();kopieerProduct('${p.id}')">${t('food.copy.btn')}</button>` +
     `<button style="${knop};border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnProductModal();removeCustomProduct('${p.id}')">🗑️ ${t('common.delete')}</button>`;
   document.getElementById('own-product-modal').classList.add('open');
 }
@@ -534,6 +538,7 @@ function openPrimeMealModal(id) {
   document.getElementById('omm-actions').innerHTML =
     '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();openMealPortionModal(\'' + dish.id + '\')">' + t('portion.addToDay') + '</button>' +
     '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();editPrimeMeal(\'' + dish.id + '\')">' + (nu ? '✏️ ' + t('common.edit') : '👁️ ' + t('programmas.view')) + '</button>' +
+    gerechtKopieKnop(dish.id, knop) +
     (nu ? '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();removePrimeMeal(\'' + dish.id + '\')">🗑️ ' + t('common.delete') + '</button>' : '');
   document.getElementById('own-meal-modal').classList.add('open');
 }
@@ -665,6 +670,7 @@ let _amEditingIsPrime = false; // true zolang het formulier een PRIME-gerecht be
 let _amNewPrime = false;       // true zolang de coach een NIEUW PRIME-gerecht invult (via de balk op PRIME gerechten)
 let _amFormReadOnly = false;   // true zolang een niet-coach een PRIME-gerecht alleen bekijkt (geen wijzigingen mogelijk)
 let _amReturnTab = null;       // welke foodtab "Terug"/"Annuleren" moet openen (null = op + Gerecht toevoegen blijven, zoals bij een eigen gerecht)
+let _amCopyOf = null;        // id van het gerecht waarvan een kopie gemaakt wordt (naam moet dan uniek zijn), anders null
 
 // prefill (optioneel): { name, gram, prot, carb, fat, per100:{prot,carb,fat} }.
 // Als per100 is meegegeven, staat de rij "gekoppeld" aan een basisproduct: het
@@ -825,6 +831,11 @@ function addCustomMeal() {
     return;
   }
   nameInput.style.borderColor = '';
+  if (!_amEditingIsPrime && !_amNewPrime) {
+    // Een klant kan geen PRIME-gerecht maken; de naam van een kopie moet anders zijn dan elk bestaand gerecht.
+    if (!isPrimeCoach() && /^prime-/i.test(name)) { showMealFormError(t('food.copy.noPrimePrefix')); nameInput.style.borderColor = '#c0392b'; return; }
+    if (_amCopyOf && gerechtNaamBestaat(name, null)) { showMealFormError(t('food.copy.mealNameExists')); nameInput.style.borderColor = '#c0392b'; return; }
+  }
 
   const rows = document.querySelectorAll('#am-ingredients-body tr');
   const ingredients = [];
@@ -905,6 +916,7 @@ function addCustomMeal() {
       custom: true
     };
     customMeals.push(nieuw);
+    _amCopyOf = null;
     syncSet('prime_custom_meals', customMeals);
     // In de editor van het zojuist aangemaakte gerecht blijven staan
     // (i.p.v. resetMealForm() terug naar een leeg formulier) -- zelfde
@@ -1038,6 +1050,9 @@ function openAddPrimeMealForm() {
 function resetMealForm() {
   showAmForm(false);
   _amNewPrime = false;
+  _amCopyOf = null;
+  const _amHint = document.getElementById('am-hint');
+  if (_amHint) _amHint.style.display = 'none';
   _amEditingId = null;
   _amEditingIsPrime = false;
   _amFormReadOnly = false;
@@ -1163,6 +1178,7 @@ function openOwnMealModal(id) {
   document.getElementById('omm-actions').innerHTML =
     '<button class="btn-primary" style="margin-bottom:0" onclick="closeOwnMealModal();openMealPortionModal(\'' + dish.id + '\')">' + t('portion.addToDay') + '</button>' +
     '<button style="' + knop + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();editCustomMeal(\'' + dish.id + '\')">✏️ ' + t('common.edit') + '</button>' +
+    gerechtKopieKnop(dish.id, knop) +
     '<button style="' + knop + ';border:1px solid #e8c4a8;background:var(--accent-light);color:var(--accent)" onclick="closeOwnMealModal();removeCustomMeal(\'' + dish.id + '\')">🗑️ ' + t('common.delete') + '</button>';
   document.getElementById('own-meal-modal').classList.add('open');
 }
@@ -1391,6 +1407,8 @@ function openPortionModal(productId, tijdelijk) {
   _pmViaScan = false;
   const _editBtn = document.getElementById('pm-edit-btn');
   if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p._tijdelijk) ? 'inline-block' : 'none';
+  const _copyBtn = document.getElementById('pm-copy-btn');
+  if (_copyBtn) _copyBtn.style.display = p._tijdelijk ? 'none' : 'inline-block';
   document.getElementById('portion-modal').classList.add('open');
 }
 
@@ -1604,6 +1622,8 @@ function editLogItem(dateStr, logId) {
     _editingLogId = logId;
     const _editBtn2 = document.getElementById('pm-edit-btn');
     if (_editBtn2) _editBtn2.style.display = 'none';
+    const _copyBtn2 = document.getElementById('pm-copy-btn');
+    if (_copyBtn2) _copyBtn2.style.display = 'none';
     document.getElementById('pm-gram').value = item.gram;
     currentMoment = item.moment;
     setActiveMomentBtn('#portion-modal', item.moment);
@@ -2305,7 +2325,7 @@ function updateApShareRow() {
   const gedeeld = _apCopyOf ? true : _apGedeeld();
   btn.classList.toggle('coach-only-btn', gedeeld);
   if (_apCopyOf) btn.textContent = t('food.prime.saveNew');
-  else if (!_apEditingId) btn.textContent = t('food.add.submit');
+  else if (!_apEditingId) btn.textContent = t(_apCopyOwn ? 'food.copy.save' : 'food.add.submit');
 }
 
 // Coach: maakt van het geopende basisproduct een kopie. De velden blijven
@@ -2371,6 +2391,7 @@ function apNaamInput() {
   const bestaat = actief && productNaamBestaat(naam, _apPrimeId);
   hint.textContent = bestaat ? t('food.prime.nameExists') : '';
   hint.style.display = bestaat ? 'block' : 'none';
+  hint.style.color = '#c0392b';
   const errorEl = document.getElementById('ap-error');
   if (!bestaat && errorEl && errorEl.textContent === t('food.prime.nameExists')) errorEl.textContent = '';
 }
@@ -2424,35 +2445,113 @@ async function deelEigenProduct(id, zonderBevestiging) {
   try { showToast(t('food.prime.sharedOwnDone')); } catch (e) { console.error(e); }
 }
 
-// Vult het formulier met een kopie van een eigen product. De coach geeft het een
-// andere naam en kiest met het vinkje of het voor iedereen of eigen wordt.
-function kopieerEigenProduct(id) {
-  if (!isPrimeCoach()) return;
-  const p = customProducts.find(x => x.id === id);
+// ========== KOPIËREN EN AANPASSEN (voor iedereen: coach en klanten) ==========
+// Bij basisproducten, eigen producten, PRIME-gerechten en eigen gerechten. Het formulier opent ingevuld met de waarden van
+// het origineel en een eigen naam "Naam (kopie)". Een klant slaat het altijd op als eigen product of eigen gerecht; het
+// origineel blijft ongewijzigd. De coach houdt haar eigen keuzes (voor iedereen, of als PRIME-gerecht). De naam van een
+// kopie moet uniek zijn (zie productNaamBestaat en gerechtNaamBestaat).
+
+// "Naam (kopie)"; bestaat die al, dan "Naam (kopie) 2", enzovoort. Het voorvoegsel PRIME- vervalt bij een kopie.
+function kopieNaam(naam, bestaatFn) {
+  const suffix = t('food.copy.suffix');
+  const kaal = String(naam || '').replace(/^PRIME-[ ]*/i, '').replace(new RegExp('[ ]*[(]' + suffix + '[)]([ ]+[0-9]+)?$', 'i'), '').trim();
+  const basis = kaal + ' (' + suffix + ')';
+  let n = basis, i = 2;
+  while (bestaatFn(n) && i < 100) { n = basis + ' ' + i; i++; }
+  return n;
+}
+
+// Kopie van een product (basisproduct of eigen product) in het formulier "+ Eigen basisproducten".
+function kopieerProduct(id) {
+  const p = getAllProducts().find(x => x.id === id);
   if (!p) return;
   resetAddProductForm();
   _apCopyOwn = true;
+  _apCopyIcon = p.icon || null;
   showApForm(true);
 
-  document.getElementById('ap-name').value = p.name;
+  document.getElementById('ap-name').value = kopieNaam(dispName(p), function(n) { return productNaamBestaat(n, null); });
   document.getElementById('ap-cat').value = p.cat || 'overig';
   document.getElementById('ap-prot').value = p.prot || 0;
   document.getElementById('ap-carb').value = p.carb || 0;
   document.getElementById('ap-fat').value = p.fat || 0;
   document.getElementById('ap-alc').value = p.alc || 0;
   updateAddProductKcal();
-  _apPhotoData = p.photo || null;
-  document.getElementById('ap-photo-preview').innerHTML = p.photo
-    ? '<img src="' + p.photo + '" style="width:100%;height:100%;object-fit:cover">'
-    : '🍽️';
-  document.getElementById('ap-form-title').textContent = t('food.prime.copyOwnTitle');
+  const foto = p.photo ? String(p.photo).replace(/[?]v=[0-9]+$/, '') : null; // zonder het versienummer van de basisfoto
+  _apPhotoData = foto;
+  document.getElementById('ap-photo-preview').innerHTML = foto
+    ? '<img src="' + foto + '" style="width:100%;height:100%;object-fit:cover">'
+    : (p.icon || '🍽️');
+  document.getElementById('ap-form-title').textContent = t('food.copy.productTitle');
   document.getElementById('ap-cancel-btn').style.display = 'inline-block';
   updateApShareRow();
   apNaamInput();
+  switchFoodTab('add');
   const naamEl = document.getElementById('ap-name');
   naamEl.focus();
   naamEl.select();
   naamEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Vanuit het portiescherm van een product: na opslaan of annuleren terug naar de dag (zoals bij ✏️ Aanpassen).
+function kopieerVanuitPortie(id) {
+  if (!id) return;
+  if (_portionReturnTab) _apTerug = { tab: _portionReturnTab, datum: currentLogDate, productId: id };
+  closePortionModal();
+  kopieerProduct(id);
+}
+
+// Bestaat er al een gerecht (eigen of PRIME) met deze naam?
+function gerechtNaamBestaat(naam, exceptId) {
+  const norm = String(naam || '').trim().toLowerCase();
+  if (!norm) return false;
+  return customMeals.concat(primeMeals).some(m => m.id !== exceptId &&
+    [m.name, m.name_en].some(n => n && String(n).trim().toLowerCase() === norm));
+}
+
+// Live naamcontrole bij een gerecht: alleen bij een kopie (naam moet uniek zijn) en voor klanten (geen PRIME- aan het begin).
+function amNaamInput() {
+  const hint = document.getElementById('am-hint');
+  if (!hint) return;
+  const naam = document.getElementById('am-name').value;
+  let msg = '';
+  if (!_amEditingIsPrime && !_amNewPrime) {
+    if (!isPrimeCoach() && /^prime-/i.test(naam.trim())) msg = t('food.copy.noPrimePrefix');
+    else if (_amCopyOf && gerechtNaamBestaat(naam, null)) msg = t('food.copy.mealNameExists');
+  }
+  hint.textContent = msg;
+  hint.style.display = msg ? 'block' : 'none';
+}
+
+// Kopie van een eigen gerecht of PRIME-gerecht in het gerechtformulier; opslaan maakt altijd een nieuw eigen gerecht.
+function kopieerGerecht(id) {
+  const bron = customMeals.find(m => m.id === id) || primeMeals.find(m => m.id === id);
+  if (!bron) return;
+  _amReturnTab = null;
+  resetMealForm();
+  const kopie = {
+    id: null,
+    name: kopieNaam(dispName(bron), function(n) { return gerechtNaamBestaat(n, null); }),
+    photo: bron.photo || null,
+    ingredients: JSON.parse(JSON.stringify(bron.ingredients || []))
+  };
+  _populateMealForm(kopie, false);
+  _amEditingId = null;
+  _amCopyOf = id;
+  document.getElementById('am-form-title').textContent = t('food.copy.mealTitle');
+  document.getElementById('am-submit-btn').textContent = t('food.copy.save');
+  updateMealFormPrimeButtonVisibility();
+  switchFoodTab('addmeal');
+  amNaamInput();
+  const naamEl = document.getElementById('am-name');
+  naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  naamEl.focus();
+  try { naamEl.select(); } catch (e) {}
+}
+
+// Knop "Kopiëren en aanpassen" in de keuzevensters van gerechten.
+function gerechtKopieKnop(id, knopStijl) {
+  return '<button style="' + knopStijl + ';border:1px solid var(--sand-dark);background:var(--sand);color:var(--charcoal)" onclick="closeOwnMealModal();kopieerGerecht(\'' + id + '\')">' + t('food.copy.btn') + '</button>';
 }
 
 
