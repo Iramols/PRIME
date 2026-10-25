@@ -570,7 +570,7 @@ function wmOpenLaden(modus, id) {
   wmModal('<div class="modal-title"><span>' + t('wm.load.title') + '</span><button class="modal-close" onclick="wmSluitModal()">×</button></div>' +
     '<div style="font-weight:700;margin-bottom:12px">' + wmEsc(menu.naam) + '</div>' +
     '<div class="form-row"><label>' + t('wm.load.start') + '</label><input type="date" id="wm-laad-start" value="' + fdTodayStr() + '" onchange="wmLaadPreview()"></div>' +
-    '<div class="form-row"><label>' + t('wm.load.weeks') + '</label><input type="number" id="wm-laad-weken" min="1" max="52" step="1" value="4" oninput="wmLaadPreview()"></div>' +
+    '<div class="form-row"><label>' + t('wm.load.weeks') + '</label><input type="number" id="wm-laad-weken" min="1" max="52" step="1" value="1" oninput="wmLaadPreview()"></div>' +
     '<div class="form-row"><label>' + t('wm.load.days') + '</label><div class="wm-dagkeuzes">' + chips + '</div></div>' +
     '<label class="wm-radio" style="margin:6px 0"><input type="checkbox" id="wm-laad-skip" checked onchange="wmLaadPreview()"> ' + t('wm.load.skip') + '</label>' +
     '<div id="wm-laad-preview" class="wm-preview"></div>' +
