@@ -77,5 +77,7 @@ let foodDays = JSON.parse(localStorage.getItem('prime_food_days') || '{}');
 let dagStatus = JSON.parse(localStorage.getItem('prime_dagstatus') || '{}');
 // Toelichting aan de coach per datum: { 'JJJJ-MM-DD': { text, ts } } (alleen voor klanten bij wie dit in Config aanstaat, zie checkin.js).
 let dagNotes = JSON.parse(localStorage.getItem('prime_notes') || '{}');
+// Eigen weekmenu's (Voeding): [{ id, naam, dagen: { '0'..'6': { items: [...] } } }], zie weekmenu.js.
+let weekmenus = JSON.parse(localStorage.getItem('prime_weekmenus') || '[]');
 let currentLogDate = null; // wordt in app.js init() op vandaag gezet
 

@@ -74,6 +74,8 @@ function buildFoodWeekHtml() {
     </div>` : ''}
   </div>`;
 
+  html += `<button class="btn-sm" style="width:100%;margin-bottom:14px" onclick="wmOpenSaveWeek(fwWeekOffset)">${t('wm.saveWeekBtn')}</button>`;
+
   html += '<div style="display:flex;flex-direction:column;gap:10px">';
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);

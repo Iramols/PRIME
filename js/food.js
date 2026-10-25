@@ -2,7 +2,7 @@
 function switchFoodTab(tab) {
   if (tab === 'plan') tab = 'addmeal'; // de losse Gerechten-tab bestaat niet meer
   if (tab !== 'add') _apTerug = null;
-  ['basis','primemeals','log','add','addmeal','week'].forEach(t => {
+  ['basis','primemeals','log','add','addmeal','week','weekmenu'].forEach(t => {
     document.getElementById('foodtab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tab-' + t).classList.toggle('active', t === tab);
   });
@@ -14,6 +14,7 @@ function switchFoodTab(tab) {
   if (tab === 'add') { renderAddProductTab(); primeProductsRefreshFromCloud(); }
   if (tab === 'addmeal') { renderAddMealTab(); if (_portionReturnTab) primeMealsRefreshFromCloud(); }
   if (tab === 'week') renderFoodWeek();
+  if (typeof wmOnTab === 'function') wmOnTab(tab);
 }
 
 // Combineert de vaste productcatalogus met de eigen producten van deze klant.
@@ -1236,6 +1237,7 @@ function openMealPortionModal(dishId) {
   document.getElementById('mpm-date').value = currentLogDate;
   updateMpmDateLabel();
   updateMealPortionPreview();
+  if (typeof wmPasModalsAan === 'function') wmPasModalsAan();
   document.getElementById('meal-portion-modal').classList.add('open');
 }
 
@@ -1293,7 +1295,7 @@ function addMealToLog() {
   // vrij te kiezen in het "Dag"-veld -- zo kun je meteen hier al voor een
   // andere dag loggen i.p.v. eerst via Weekplanning te moeten wisselen.
   const targetDate = document.getElementById('mpm-date').value || currentLogDate;
-  if (isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
+  if (!(typeof _wmContext !== 'undefined' && _wmContext) && isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
   const f = tot.gram > 0 ? gram / tot.gram : 0;
 
   const values = {
@@ -1315,6 +1317,9 @@ function addMealToLog() {
     type: 'meal',
     eaten: false
   };
+
+  // Voor een weekmenu toevoegen i.p.v. aan een dag (zie weekmenu.js).
+  if (typeof wmOnItemAdded === 'function' && wmOnItemAdded(values)) return;
 
   if (_editingLogId !== null) {
     // editLogItem() heeft currentLogDate al op de oorspronkelijke datum
@@ -1424,6 +1429,7 @@ function openPortionModal(productId, tijdelijk) {
   if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p._tijdelijk) ? 'inline-block' : 'none';
   const _copyBtn = document.getElementById('pm-copy-btn');
   if (_copyBtn) _copyBtn.style.display = p._tijdelijk ? 'none' : 'inline-block';
+  if (typeof wmPasModalsAan === 'function') wmPasModalsAan();
   document.getElementById('portion-modal').classList.add('open');
 }
 
@@ -1551,7 +1557,7 @@ function addProductToLog() {
   // vrij te kiezen in het "Dag"-veld -- zo kun je meteen hier al voor een
   // andere dag loggen i.p.v. eerst via Weekplanning te moeten wisselen.
   const targetDate = document.getElementById('pm-date').value || currentLogDate;
-  if (isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
+  if (!(typeof _wmContext !== 'undefined' && _wmContext) && isDagAfgesloten(targetDate)) { alert(t('weekplan.dayLocked')); return; }
   const f = gram / 100;
   const values = {
     productId: p.id,
@@ -1568,6 +1574,9 @@ function addProductToLog() {
     type: 'product',
     eaten: false
   };
+
+  // Voor een weekmenu toevoegen i.p.v. aan een dag (zie weekmenu.js).
+  if (typeof wmOnItemAdded === 'function' && wmOnItemAdded(values)) return;
 
   if (_editingLogId !== null) {
     // editLogItem() heeft currentLogDate al op de oorspronkelijke datum

@@ -28,6 +28,7 @@ function showToast(msg, isError) {
 
 // ========== NAVIGATIE ==========
 function go(screen) {
+  if (screen !== 'voeding' && typeof wmClearContext === 'function') wmClearContext();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + screen).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach((b, i) => {

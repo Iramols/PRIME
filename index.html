@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261025-1514';
+window.PRIME_BUILD = '20261025-1607';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261025-1514">
+<link rel="stylesheet" href="css/styles.css?v=20261025-1607">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261025-1514"></script>
-<script src="js/translations.js?v=20261025-1514"></script>
-<script src="js/i18n.js?v=20261025-1514"></script>
+<script src="js/cloud.js?v=20261025-1607"></script>
+<script src="js/translations.js?v=20261025-1607"></script>
+<script src="js/i18n.js?v=20261025-1607"></script>
 </head>
 <body>
 
@@ -682,10 +682,14 @@ if ('serviceWorker' in navigator) {
       <button class="btn-sm" onclick="backToTodayLog()" data-i18n="foodweek.backToToday">Terug naar vandaag</button>
     </div>
 
+    <!-- BANNER: je voegt een product of gerecht toe aan een weekmenu (zie weekmenu.js) -->
+    <div id="wm-banner" class="wm-banner" style="display:none"></div>
+
     <!-- TABS: MAALTIJDPLAN / BASISPRODUCTEN -->
     <div class="food-tabs">
       <button class="food-tab active" id="tab-log" onclick="switchFoodTab('log')"><span data-i18n="food.tab.log">Mijn dag</span> <span id="log-count-badge" style="display:none;background:var(--sage);color:white;border-radius:100px;font-size:10px;padding:1px 7px;margin-left:4px">0</span></button>
       <button class="food-tab" id="tab-week" onclick="switchFoodTab('week')" data-i18n="food.tab.week">Weekplanning</button>
+      <button class="food-tab" id="tab-weekmenu" onclick="switchFoodTab('weekmenu')" data-i18n="wm.tab">Weekmenu's</button>
       <button class="food-tab" id="tab-basis" onclick="switchFoodTab('basis')" data-i18n="food.tab.basis">Basisproducten</button>
       <button class="food-tab" id="tab-primemeals" onclick="switchFoodTab('primemeals')" data-i18n="food.tab.primeMeals">PRIME gerechten</button>
       <button class="food-tab" id="tab-add" onclick="switchFoodTab('add')" data-i18n="food.tab.add">+ Eigen basisproducten</button>
@@ -709,6 +713,11 @@ if ('serviceWorker' in navigator) {
     <!-- TAB: WEEKPLANNING -->
     <div id="foodtab-week" style="display:none">
       <div id="foodweek-content"></div>
+    </div>
+
+    <!-- TAB: WEEKMENU'S -->
+    <div id="foodtab-weekmenu" style="display:none">
+      <div id="wm-content"></div>
     </div>
 
     <!-- TAB: BASISPRODUCTEN -->
@@ -1301,6 +1310,11 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- WEEKMENU: naam, kopieren en inplannen (inhoud wordt door weekmenu.js gevuld) -->
+<div class="overlay" id="wm-modal">
+  <div class="modal" id="wm-modal-box"></div>
+</div>
+
 <!-- TOELICHTING AAN DE COACH -->
 <div class="overlay" id="note-modal">
   <div class="modal">
@@ -1531,7 +1545,7 @@ if ('serviceWorker' in navigator) {
       <div><div class="prev-val" id="pv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="pv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;margin-top:6px;border-top:1px solid var(--sand-dark)">
+    <div id="pm-date-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;margin-top:6px;border-top:1px solid var(--sand-dark)">
       <span style="font-size:13px;color:var(--charcoal)">📅 <span id="pm-date-label">Vandaag</span></span>
       <button type="button" class="btn-sm" onclick="openPmDatePicker()" data-i18n="portion.changeDay">Andere dag</button>
     </div>
@@ -1569,7 +1583,7 @@ if ('serviceWorker' in navigator) {
       <div><div class="prev-val" id="mpv-carb" style="color:#5a7cc8">0g</div><div class="prev-lbl" data-i18n="portion.carbs">koolh</div></div>
       <div><div class="prev-val" id="mpv-fat" style="color:#c8a85a">0g</div><div class="prev-lbl" data-i18n="portion.fat">vet</div></div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;margin-top:6px;border-top:1px solid var(--sand-dark)">
+    <div id="mpm-date-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;margin-top:6px;border-top:1px solid var(--sand-dark)">
       <span style="font-size:13px;color:var(--charcoal)">📅 <span id="mpm-date-label">Vandaag</span></span>
       <button type="button" class="btn-sm" onclick="openMpmDatePicker()" data-i18n="portion.changeDay">Andere dag</button>
     </div>
@@ -1791,6 +1805,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261025-1514"></script>
+<script src="js/auth.js?v=20261025-1607"></script>
 </body>
 </html>

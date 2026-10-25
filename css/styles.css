@@ -871,3 +871,44 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .note-del { border-color: #c0392b; color: #c0392b; }
 .product-portie { font-size: 10px; color: var(--muted); margin-top: 6px; line-height: 1.35; }
 .product-portie b { color: var(--charcoal); }
+.wm-banner { align-items: center; gap: 10px; justify-content: space-between; background: var(--sage-light); border: 1px solid var(--sage-mid); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: var(--sage); }
+.wm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.wm-tegel { background: var(--white); border: 1px solid var(--sand-dark); border-radius: var(--radius-sm); padding: 12px; cursor: pointer; }
+.wm-tegel-naam { font-weight: 700; font-size: 14px; margin: 6px 0 2px; color: var(--charcoal); word-break: break-word; }
+.wm-tegel-meta { font-size: 11px; color: var(--muted); }
+.wm-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.wm-label-own { background: var(--sage-light); color: var(--sage); }
+.wm-label-prime { background: var(--coach-only-light); color: var(--coach-only); }
+.wm-dagchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.wm-chip { border: 1px solid var(--sand-dark); background: var(--white); color: var(--charcoal); border-radius: 18px; padding: 8px 14px; font-family: inherit; font-size: 13px; cursor: pointer; }
+.wm-chip.on { background: var(--sage); border-color: var(--sage); color: #fff; font-weight: 700; }
+.wm-chip.leeg { border-style: dashed; color: var(--sage); border-color: var(--sage); background: var(--sage-light); }
+.wm-dagkaart { padding: 14px; }
+.wm-dagtitel { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; font-family: "DM Serif Display", serif; font-size: 20px; margin-bottom: 6px; }
+.wm-dagtot { font-family: "DM Sans", sans-serif; font-size: 12px; color: var(--muted); }
+.wm-moment { margin-top: 10px; }
+.wm-moment-kop { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); margin-bottom: 6px; }
+.wm-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px; border: 1px solid var(--sand-dark); border-radius: 10px; margin-bottom: 6px; background: var(--white); }
+.wm-thumb { width: 44px; height: 44px; border-radius: 8px; overflow: hidden; background: var(--sand); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.wm-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wm-item-tekst { flex: 1; min-width: 120px; }
+.wm-item-naam { font-size: 13px; font-weight: 600; color: var(--charcoal); }
+.wm-item-meta { font-size: 11px; color: var(--muted); }
+.wm-x { border: none; background: var(--sand); color: var(--accent); width: 32px; height: 32px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.wm-item-rij { flex: 1 1 100%; display: flex; gap: 8px; align-items: center; }
+.wm-item-rij label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.wm-gram { width: 72px; padding: 6px 8px; border: 1px solid var(--sand-dark); border-radius: 8px; font-family: inherit; font-size: 14px; }
+.wm-mom { flex: 1; padding: 6px 8px; border: 1px solid var(--sand-dark); border-radius: 8px; font-family: inherit; font-size: 13px; background: var(--white); }
+.wm-leesnotitie { font-size: 12px; color: var(--muted); background: var(--sand); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
+.wm-dagkeuzes { display: flex; flex-wrap: wrap; gap: 8px; }
+.wm-dagkeuze { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); cursor: pointer; min-width: 36px; }
+.wm-dagkeuze input { width: 18px; height: 18px; accent-color: var(--sage); }
+.wm-radio { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--charcoal); margin: 4px 0; }
+.wm-radio select { margin-left: 4px; padding: 4px 8px; border: 1px solid var(--sand-dark); border-radius: 8px; font-family: inherit; }
+.wm-preview { background: var(--sage-light); color: var(--sage); border-radius: 8px; padding: 9px 11px; font-size: 12px; font-weight: 600; margin: 10px 0; }
+.form-row .wm-dagkeuzes { display: flex; flex-wrap: wrap; gap: 8px; }
+.form-row .wm-dagkeuze { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; font-size: 12px; color: var(--muted); cursor: pointer; min-width: 36px; }
+.form-row .wm-dagkeuze input { width: 20px; height: 20px; padding: 0; margin: 0; border-radius: 4px; accent-color: var(--sage); }
+.form-row .wm-radio, .wm-radio { display: flex; flex-direction: row; align-items: center; gap: 8px; margin: 4px 0; font-size: 13px; color: var(--charcoal); font-weight: 400; }
+.form-row .wm-radio input, .wm-radio input[type="checkbox"], .wm-radio input[type="radio"] { width: 18px; height: 18px; padding: 0; margin: 0; accent-color: var(--sage); flex-shrink: 0; }
+.form-row .wm-radio select, .wm-radio select { width: auto; padding: 6px 10px; }
