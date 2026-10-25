@@ -187,6 +187,14 @@ function filterCat(cat, btn) {
   renderProducts();
 }
 
+// Waarden van één portie van een product (alleen producten met een portie), voor de kaart en het portiescherm.
+function portieWaarden(p) {
+  if (!p || !p.portie || !(p.portie.gram > 0)) return null;
+  const f = p.portie.gram / 100;
+  const r1 = function(x) { return Math.round(x * f * 10) / 10; };
+  return { label: dispField(p.portie, 'label'), gram: p.portie.gram, kcal: Math.round(p.kcal * f), prot: r1(p.prot), carb: r1(p.carb), fat: r1(p.fat) };
+}
+
 function renderProducts() {
   const q = (document.getElementById('product-search')?.value || '').toLowerCase();
   // Chip "Eigen" alleen tonen als er eigen producten zijn; verdwijnt het gekozen
@@ -213,6 +221,7 @@ function renderProducts() {
           <span class="product-pill">${p.kcal} kcal</span>
           <span class="product-pill">${t('food.macroAbbr.protein')}${p.prot}g</span>
         </div>
+        ${(() => { const pw = portieWaarden(p); return pw ? '<div class="product-portie">' + pw.label + ' (' + pw.gram + ' g): <b>' + pw.kcal + ' kcal</b></div>' : ''; })()}
       </div>`).join('') + `</div>`;
 }
 
@@ -1365,6 +1374,12 @@ function openPortionModal(productId, tijdelijk) {
   const p = currentPortionProduct;
   document.getElementById('pm-name').textContent = p.icon + ' ' + dispName(p);
   document.getElementById('pm-per100').textContent = `per 100g: ${p.kcal} kcal · ${p.prot}g ${t('portion.protein')} · ${p.carb}g ${t('portion.carbs')} · ${p.fat}g ${t('portion.fat')}`;
+  const _pw = portieWaarden(p);
+  const _ppEl = document.getElementById('pm-perportie');
+  if (_ppEl) {
+    _ppEl.textContent = _pw ? t('portion.perPortion', { label: _pw.label, gram: _pw.gram }) + ` ${_pw.kcal} kcal · ${_pw.prot}g ${t('portion.protein')} · ${_pw.carb}g ${t('portion.carbs')} · ${_pw.fat}g ${t('portion.fat')}` : '';
+    _ppEl.style.display = _pw ? 'block' : 'none';
+  }
 
   const portieDiv = document.getElementById('pm-portie-btns');
   if (p.portie) {

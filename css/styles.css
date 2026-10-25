@@ -869,3 +869,5 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .note-gelezen { border: 1px solid var(--sage); background: var(--white); color: var(--sage); border-radius: 8px; padding: 5px 10px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .note-acties { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .note-del { border-color: #c0392b; color: #c0392b; }
+.product-portie { font-size: 10px; color: var(--muted); margin-top: 6px; line-height: 1.35; }
+.product-portie b { color: var(--charcoal); }
