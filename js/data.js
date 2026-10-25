@@ -742,7 +742,7 @@ const PRODUCTS = [
   { id:'n16', name:'Paranoten', name_en:'Brazil nuts', icon:'🥜', cat:'noten', kcal:688, prot:14.4, carb:2.4, fat:67.2, portie:{ gram:25, label:'1 handje', label_en:'1 handful' }, photo:'images/producten/n16.jpg'},
   { id:'n17', name:'Hennepzaad', name_en:'Hemp seeds', icon:'🌱', cat:'noten', kcal:593, prot:31.3, carb:4.7, fat:48.7, portie:{ gram:15, label:'1 eetlepel', label_en:'1 tablespoon' }, photo:'images/producten/n17.jpg'},
   // OVERIG
-  { id:'o1', name:'Hummus', name_en:'Hummus', icon:'🫙', cat:'overig', kcal:166, prot:8, carb:14, fat:10, photo:'images/producten/o1.jpg'},
+  { id:'o1', name:'Hummus', name_en:'Hummus', icon:'🫙', cat:'sauzen', kcal:166, prot:8, carb:14, fat:10, portie:{ gram:25, label:'1 eetlepel', label_en:'1 tablespoon' }, photo:'images/producten/o1.jpg'},
   { id:'o2', name:'Olijfolie', name_en:'Olive oil', icon:'🫒', cat:'overig', kcal:884, prot:0, carb:0, fat:100, photo:'images/producten/o2.jpg'},
   { id:'o3', name:'Honing', name_en:'Honey', icon:'🍯', cat:'overig', kcal:304, prot:0.3, carb:82, fat:0, photo:'images/producten/o3.jpg'},
   { id:'o4', name:'Edamame', name_en:'Edamame', icon:'🫘', cat:'overig', kcal:121, prot:11, carb:9, fat:5, photo:'images/producten/o4.jpg'},
@@ -800,6 +800,22 @@ const PRODUCTS = [
   { id:'d11', name:'Sinaasappelsap (100%)', name_en:'Orange juice (100%)', icon:'🧃', cat:'dranken', kcal:45, prot:0.6, carb:9.5, fat:0.1, portie:{ gram:250, label:'1 glas (250 ml)', label_en:'1 glass (250 ml)' }, photo:'images/producten/d11.jpg'},
   { id:'d12', name:'Energiedrank', name_en:'Energy drink', icon:'🥤', cat:'dranken', kcal:44, prot:0, carb:11, fat:0, portie:{ gram:250, label:'1 blikje (250 ml)', label_en:'1 can (250 ml)' }, photo:'images/producten/d12.jpg'},
   { id:'d13', name:'IJsthee (gezoet)', name_en:'Iced tea (sweetened)', icon:'🥤', cat:'dranken', kcal:18, prot:0, carb:4.1, fat:0.1, portie:{ gram:250, label:'1 glas (250 ml)', label_en:'1 glass (250 ml)' }, photo:'images/producten/d13.jpg'},
+  { id:'sa1', name:'Mayonaise', name_en:'Mayonnaise', icon:'🫙', cat:'sauzen', kcal:665, prot:1, carb:3.5, fat:71.5, portie:{ gram:20, label:'1 eetlepel', label_en:'1 tablespoon' }},
+  { id:'sa2', name:'Fritessaus', name_en:'Fries sauce', icon:'🍟', cat:'sauzen', kcal:295, prot:0.5, carb:12, fat:27.5, portie:{ gram:20, label:'1 eetlepel', label_en:'1 tablespoon' }},
+  { id:'sa3', name:'Knoflooksaus', name_en:'Garlic sauce', icon:'🧄', cat:'sauzen', kcal:248, prot:0.8, carb:13.6, fat:20.8, portie:{ gram:25, label:'1 sauslepel', label_en:'1 sauce spoon' }},
+  { id:'sa4', name:'Ketchup', name_en:'Ketchup', icon:'🍅', cat:'sauzen', kcal:76, prot:1.2, carb:17.6, fat:0, portie:{ gram:17, label:'1 eetlepel', label_en:'1 tablespoon' }},
+  { id:'sa5', name:'Currysaus (curryketchup)', name_en:'Curry sauce (curry ketchup)', icon:'🥫', cat:'sauzen', kcal:128, prot:1, carb:30, fat:0.4, portie:{ gram:25, label:'1 sauslepel', label_en:'1 sauce spoon' }},
+  { id:'sa6', name:'Pindasaus', name_en:'Peanut sauce', icon:'🥜', cat:'sauzen', kcal:247, prot:7, carb:23, fat:13, portie:{ gram:30, label:'1 sauslepel', label_en:'1 sauce spoon' }},
+  { id:'sa7', name:'Satésaus (geconcentreerd)', name_en:'Satay sauce (concentrated)', icon:'🍢', cat:'sauzen', kcal:436, prot:14, carb:36, fat:26, portie:{ gram:25, label:'1 sauslepel', label_en:'1 sauce spoon' }},
+  { id:'sa8', name:'Barbecuesaus', name_en:'Barbecue sauce', icon:'🍖', cat:'sauzen', kcal:95, prot:1, carb:22, fat:0, portie:{ gram:20, label:'1 eetlepel', label_en:'1 tablespoon' }},
+  { id:'sa9', name:'Mosterd', name_en:'Mustard', icon:'🌭', cat:'sauzen', kcal:120, prot:6, carb:6, fat:8, portie:{ gram:5, label:'1 theelepel', label_en:'1 teaspoon' }},
+  { id:'sa10', name:'Sojasaus', name_en:'Soy sauce', icon:'🥢', cat:'sauzen', kcal:38, prot:5.6, carb:4.4, fat:0, portie:{ gram:16, label:'1 eetlepel', label_en:'1 tablespoon' }},
+  { id:'sa11', name:'Sambal oelek', name_en:'Sambal oelek', icon:'🌶️', cat:'sauzen', kcal:33, prot:1, carb:5, fat:0.5, portie:{ gram:3, label:'1 theelepel', label_en:'1 teaspoon' }},
+  { id:'sa12', name:'Tomatensaus (pastasaus)', name_en:'Tomato sauce (pasta sauce)', icon:'🍅', cat:'sauzen', kcal:67, prot:1.7, carb:7, fat:3.3, portie:{ gram:30, label:'1 sauslepel', label_en:'1 sauce spoon' }},
+  { id:'sa13', name:'Pesto (groen)', name_en:'Pesto (green)', icon:'🌿', cat:'sauzen', kcal:445, prot:9, carb:4.5, fat:43, portie:{ gram:20, label:'1 eetlepel', label_en:'1 tablespoon' }},
+  { id:'sa14', name:'Tzatziki', name_en:'Tzatziki', icon:'🥒', cat:'sauzen', kcal:156, prot:4, carb:4.1, fat:13.4, portie:{ gram:150, label:'1 schaaltje', label_en:'1 small bowl' }},
+  { id:'sa15', name:'Slasaus', name_en:'Salad dressing', icon:'🥗', cat:'sauzen', kcal:256, prot:1.2, carb:12.4, fat:22.8, portie:{ gram:25, label:'1 sauslepel', label_en:'1 sauce spoon' }},
+  { id:'sa16', name:'Vinaigrette', name_en:'Vinaigrette', icon:'🫒', cat:'sauzen', kcal:592, prot:0.8, carb:0.4, fat:64.8, portie:{ gram:25, label:'1 sauslepel', label_en:'1 sauce spoon' }},
 ];
 
 // Cache-busting: elke keer dat een productfoto vervangen wordt, dit nummer ophogen.
