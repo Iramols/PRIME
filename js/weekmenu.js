@@ -17,6 +17,7 @@ let _wmContext = null;  // gezet zolang je via "+ Product" / "+ Gerecht" een ite
 let _wmDirty = false;   // PRIME weekmenu met wijzigingen die nog niet in de cloud staan
 let _wmNaamDoel = null; // wat de naam-modal gaat doen
 let _wmLaad = null;     // { modus, id } van het weekmenu dat ingepland wordt
+let _wmKopie = null;      // { modus, id, naam } zolang het formulier "Weekmenu kopiëren en aanpassen" open staat
 let _wmPrimeStempel = 0; // verhoogd bij elke lokale PRIME-wijziging; een oudere cloud-verversing mag die niet overschrijven
 const WM_MOMENTEN = ['ontbijt', 'tussendoorOchtend', 'lunch', 'tussendoorMiddag', 'avond', 'tussendoorAvond'];
 
@@ -147,9 +148,18 @@ function wmTegelHtml(menu, modus) {
     '<div class="wm-tegel-meta">' + t('wm.daysItems', { d: dagen, n: wmAantalItems(menu) }) + '</div></div>';
 }
 
+// Formulier "kopiëren en aanpassen": zelfde opzet als bij producten en gerechten (naamveld met "Naam (kopie)", melding bij een dubbele naam).
+function wmKopieKaartHtml() {
+  return '<div class="card" id="wm-kopie-kaart" style="margin-bottom:18px"><div class="card-label" style="margin-bottom:14px">' + t('wm.copy.formTitle') + '</div>' +
+    '<div class="form-row"><label>' + t('wm.name.label') + '</label><input type="text" id="wm-kopie-naam" maxlength="60" value="' + wmEsc(_wmKopie.naam) + '" oninput="wmKopieNaamInput()"></div>' +
+    '<div id="wm-kopie-hint" style="display:none;font-size:12px;font-weight:600;color:#c0392b;margin:-6px 0 10px"></div>' +
+    '<div style="display:flex;gap:8px"><button class="btn-primary" style="flex:1" onclick="wmKopieOpslaan()">' + t('food.copy.save') + '</button>' +
+    '<button class="btn-sm" onclick="wmKopieAnnuleer()">' + t('note.cancel') + '</button></div></div>';
+}
+
 function wmBouwLijst() {
   const balk = 'display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 12px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;text-align:center';
-  let html = '<div onclick="wmNieuw()" style="' + balk + ';border:1.5px dashed var(--sage);background:var(--sage-light);color:var(--sage)">' + t('wm.add') + '</div>' +
+  let html = (_wmKopie ? wmKopieKaartHtml() : '') + '<div onclick="wmNieuw()" style="' + balk + ';border:1.5px dashed var(--sage);background:var(--sage-light);color:var(--sage)">' + t('wm.add') + '</div>' +
     '<div onclick="wmOpenSaveWeek(fwWeekOffset)" style="' + balk + ';border:1.5px solid var(--sage);background:var(--white);color:var(--sage)">' + t('wm.saveWeekBar') + '</div>';
   html += '<div class="card-label" style="margin:14px 0 10px">' + t('wm.mine') + '</div>';
   html += weekmenus.length
@@ -197,16 +207,43 @@ async function wmVerwijder(modus, id) {
   renderWeekmenus();
 }
 
-// Kopie van een weekmenu (eigen of PRIME) als nieuw eigen weekmenu, met een andere naam.
+// Kopie van een weekmenu (eigen of PRIME): opent het formulier met "Naam (kopie)"; pas bij "Kopie opslaan" ontstaat het nieuwe eigen weekmenu.
 function wmKopieerMenu(modus, id) {
   const bron = wmVind(modus, id);
   if (!bron) return;
+  _wmKopie = { modus: modus, id: id, naam: kopieNaam(bron.naam, function(n) { return wmNaamBestaat(n, null); }) };
+  wmEdit = null;
+  switchFoodTab('weekmenu');
+  renderWeekmenus();
+  const inp = document.getElementById('wm-kopie-naam');
+  if (inp) { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); inp.focus(); try { inp.select(); } catch (e) { /* geen selectie */ } }
+  wmKopieNaamInput();
+}
+function wmKopieNaamInput() {
+  const hint = document.getElementById('wm-kopie-hint');
+  const inp = document.getElementById('wm-kopie-naam');
+  if (!hint || !inp) return;
+  const bestaat = wmNaamBestaat(inp.value.trim(), null);
+  hint.textContent = bestaat ? t('wm.name.exists') : '';
+  hint.style.display = bestaat ? 'block' : 'none';
+}
+function wmKopieAnnuleer() { _wmKopie = null; renderWeekmenus(); }
+function wmKopieOpslaan() {
+  if (!_wmKopie) return;
+  const bron = wmVind(_wmKopie.modus, _wmKopie.id);
+  const naam = (document.getElementById('wm-kopie-naam').value || '').trim();
+  const hint = document.getElementById('wm-kopie-hint');
+  if (!bron) { _wmKopie = null; renderWeekmenus(); return; }
+  const fout = !naam ? t('wm.name.required') : (wmNaamBestaat(naam, null) ? t('wm.name.exists') : '');
+  if (fout) { hint.textContent = fout; hint.style.display = 'block'; return; }
   const kopie = JSON.parse(JSON.stringify(bron));
   kopie.id = wmNieuwId();
-  kopie.naam = kopieNaam(bron.naam, function(n) { return wmNaamBestaat(n, null); });
+  kopie.naam = naam;
   wmDagen(kopie).forEach(function(d) { (kopie.dagen[d].items || []).forEach(function(it) { it.mid = newLogId(); }); });
   weekmenus = weekmenus.concat([kopie]);
   syncSet('prime_weekmenus', weekmenus);
+  _wmKopie = null;
+  try { showToast(t('wm.saved')); } catch (e) { console.error(e); }
   wmOpenEditor('eigen', kopie.id);
 }
 
@@ -323,6 +360,7 @@ async function wmNaamBevestig() {
 
 // ---------- editor ----------
 function wmOpenEditor(modus, id) {
+  _wmKopie = null;
   wmEdit = { modus: modus, id: id, dag: null };
   _wmDirty = false;
   switchFoodTab('weekmenu');
