@@ -1082,6 +1082,7 @@ function wgToonDatum(datum) {
 }
 
 function openWeightImport() {
+  if (!isPrimeCoach()) return;
   const jaarEl = document.getElementById('wgimp-jaar');
   const nu = new Date().getFullYear();
   jaarEl.innerHTML = [nu, nu - 1].map(function(j) { return '<option value="' + j + '">' + j + '</option>'; }).join('');
@@ -1126,6 +1127,7 @@ function wgImportPreview() {
 function wmEscSafe(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 function wgImportUitvoeren() {
+  if (!isPrimeCoach()) return;
   const r = wgImportLees();
   const err = document.getElementById('wgimp-error');
   if (!document.getElementById('wgimp-text').value.trim()) { err.textContent = t('weight.import.empty'); return; }

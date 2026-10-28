@@ -256,6 +256,8 @@ function init() {
 
 function initInner() {
   try { weightLogMigreer(); } catch (e) { console.error('weightLogMigreer:', e); }
+  const _wgBtn = document.getElementById('wg-import-btn'); // gewichten importeren: alleen voor de coach
+  if (_wgBtn) _wgBtn.style.display = isPrimeCoach() ? '' : 'none';
   // Laad eigen foto's van coach als eerste stap
   applyCustomPhotos();
 
