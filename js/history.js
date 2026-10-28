@@ -311,12 +311,13 @@ function renderWeightChart() {
   const latest = weights[weights.length - 1];
   const diff = +(latest - weights[0]).toFixed(1);
   const diffStr = diff === 0 ? '' : (diff > 0 ? `+${diff}` : `${diff}`);
+  const eersteInfo = t('history.firstMeasurementInfo', { kg: weights[0], datum: new Date(data[0].date + 'T12:00:00').toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', year: 'numeric' }) });
   const diffColor = diff < 0 ? 'var(--sage)' : diff > 0 ? 'var(--accent)' : 'var(--muted)';
 
   el.innerHTML = chips + `
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
       ${t('history.latestMeasurement')} <strong style="color:var(--charcoal)">${latest} kg</strong>
-      ${diffStr ? `&nbsp;<span style="color:${diffColor};font-weight:600">${diffStr} kg</span> ${t('history.vsFirstMeasurement')}` : ''}
+      ${diffStr ? `&nbsp;<span style="color:${diffColor};font-weight:600">${diffStr} kg</span> ${t('history.vsFirstMeasurement')} ${eersteInfo}` : ''}
     </div>
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
       <defs><linearGradient id="wgtFill" x1="0" y1="0" x2="0" y2="1">
