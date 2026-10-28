@@ -255,6 +255,7 @@ function init() {
 }
 
 function initInner() {
+  try { weightLogMigreer(); } catch (e) { console.error('weightLogMigreer:', e); }
   // Laad eigen foto's van coach als eerste stap
   applyCustomPhotos();
 

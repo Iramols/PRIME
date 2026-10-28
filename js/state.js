@@ -79,5 +79,8 @@ let dagStatus = JSON.parse(localStorage.getItem('prime_dagstatus') || '{}');
 let dagNotes = JSON.parse(localStorage.getItem('prime_notes') || '{}');
 // Eigen weekmenu's (Voeding): [{ id, naam, dagen: { '0'..'6': { items: [...] } } }], zie weekmenu.js.
 let weekmenus = JSON.parse(localStorage.getItem('prime_weekmenus') || '[]');
+// Gewichtslogboek { 'JJJJ-MM-DD': kg }, nooit ingekort (zie checkin.js). De dagrecords in history houden hoogstens een jaar bij.
+let weightLog = JSON.parse(localStorage.getItem('prime_weights') || '{}');
+const HISTORY_MAX_DAGEN = 366;
 let currentLogDate = null; // wordt in app.js init() op vandaag gezet
 

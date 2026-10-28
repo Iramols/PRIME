@@ -29,6 +29,7 @@ const CLOUD_KEYS = [
   'prime_dagstatus',
   'prime_notes',
   'prime_weekmenus',
+  'prime_weights',
   'prime_exercise_notes',
   'prime_custom_exercises',
   'prime_training_days',

@@ -245,27 +245,29 @@ function renderEnergyChart() {
     </svg>`;
 }
 
+// Gewichtspunten { date, checkin: { weight } } uit logboek, dagrecords en vandaag, oplopend op datum.
+let _wgRange = 365; // aantal dagen dat de grafiek toont
+function wgKiesRange(n) { _wgRange = n; renderWeightChart(); }
+function weightPunten() {
+  const per = {};
+  history.forEach(h => { if (h.checkin && h.checkin.weight > 0) per[h.date] = h.checkin.weight; });
+  if (todayData && todayData.date && todayData.checkin && todayData.checkin.weight > 0) per[todayData.date] = todayData.checkin.weight;
+  Object.keys(weightLog).forEach(d => { if (weightLog[d] > 0) per[d] = weightLog[d]; });
+  return Object.keys(per).sort().map(d => ({ date: d, checkin: { weight: per[d] } }));
+}
+
 function renderWeightChart() {
   const el = document.getElementById('weight-chart');
   if (!el) return;
 
-  // Een gewicht dat via het Dashboard-regeltje is ingevuld terwijl de dag
-  // nog actief is (nog niet afgesloten) staat in todayData, niet in
-  // history (dat gebeurt pas bij checkout, zie doCheckout()) -- zonder dit
-  // zou je dat gewicht dus pas ná het afsluiten van de dag in de grafiek
-  // zien i.p.v. meteen.
-  // Dezelfde datum kan in todayData én history staan (bv. na gebruik op twee
-  // apparaten); dedupeHistoryByDate() houdt er één van over: één punt per dag.
-  const bron = dedupeHistoryByDate((todayData && todayData.checkin && todayData.checkin.weight > 0)
-    ? [todayData, ...history]
-    : history);
-  const data = bron
-    .filter(h => h.checkin && h.checkin.weight > 0)
-    .slice(0, 30)
-    .reverse();
+  // Gewichten uit het logboek (nooit ingekort) aangevuld met wat nog alleen in een dagrecord of vandaag staat; één punt per dag.
+  const grens = localDateStr(new Date(Date.now() - _wgRange * 86400000));
+  const data = weightPunten().filter(h => h.date >= grens);
+  const chips = '<div class="wg-chips">' + [90, 180, 365].map(n =>
+    '<button type="button" class="wg-chip' + (n === _wgRange ? ' on' : '') + '" onclick="wgKiesRange(' + n + ')">' + t('weight.range.' + n) + '</button>').join('') + '</div>';
 
   if (data.length < 2) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.weightChartHint') + '</div>';
+    el.innerHTML = chips + '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('history.weightChartHint') + '</div>';
     return;
   }
 
@@ -311,7 +313,7 @@ function renderWeightChart() {
   const diffStr = diff === 0 ? '' : (diff > 0 ? `+${diff}` : `${diff}`);
   const diffColor = diff < 0 ? 'var(--sage)' : diff > 0 ? 'var(--accent)' : 'var(--muted)';
 
-  el.innerHTML = `
+  el.innerHTML = chips + `
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
       ${t('history.latestMeasurement')} <strong style="color:var(--charcoal)">${latest} kg</strong>
       ${diffStr ? `&nbsp;<span style="color:${diffColor};font-weight:600">${diffStr} kg</span> ${t('history.vsFirstMeasurement')}` : ''}

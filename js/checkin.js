@@ -28,31 +28,31 @@ function skipWeight() {
 // nog nooit een check-in had) leeft/komt in `history`.
 function _weightForDate(dateStr) {
   if (todayData && todayData.date === dateStr) return (todayData.checkin && todayData.checkin.weight) || null;
+  if (weightLog[dateStr] > 0) return weightLog[dateStr];
   const entry = history.find(h => h.date === dateStr);
   return (entry && entry.checkin && entry.checkin.weight) || null;
 }
 
 function setWeightForDate(dateStr, gewicht) {
+  // Het gewicht gaat altijd naar het logboek (nooit ingekort). Een dagrecord in history wordt alleen bijgewerkt als dat er al is;
+  // voor een dag zonder record maken we er geen aan (dat telde mee als check-in en viel na een jaar weer weg).
+  weightLogSet(dateStr, gewicht);
   if (todayData && todayData.date === dateStr) {
     todayData.checkin = todayData.checkin || {};
     todayData.checkin.weight = gewicht;
     syncSet('prime_today', todayData);
   } else {
-    let entry = history.find(h => h.date === dateStr);
-    if (!entry) {
-      entry = { date: dateStr, checkin: {}, checkout: null };
-      history.push(entry);
-      history.sort((a, b) => b.date.localeCompare(a.date));
-      if (history.length > 60) history = history.slice(0, 60);
+    const entry = history.find(h => h.date === dateStr);
+    if (entry) {
+      entry.checkin = entry.checkin || {};
+      entry.checkin.weight = gewicht;
+      syncSet('prime_history', history);
     }
-    entry.checkin = entry.checkin || {};
-    entry.checkin.weight = gewicht;
-    syncSet('prime_history', history);
   }
-  // Zelfde als bij een normale check-in (doCheckin() hierboven): het
-  // profielgewicht bijwerken als dit de meest recente bekende dag is.
-  const meestRecenteDag = (todayData && todayData.date) || (history.length && history[0].date);
-  if (dateStr === meestRecenteDag) {
+  // Zelfde als bij een normale check-in (doCheckin() hierboven): het profielgewicht bijwerken als dit de meest recente
+  // bekende weegdatum is.
+  const nieuwste = Object.keys(weightLog).sort().pop();
+  if (dateStr === nieuwste) {
     profile.weight = gewicht;
     syncSet('prime_profile', profile);
   }
@@ -428,6 +428,7 @@ async function doCheckin() {
   if (checkin.weight && checkin.weight > 0) {
     profile.weight = checkin.weight;
     syncSet('prime_profile', profile);
+    weightLogSet(localDateStr(), checkin.weight);
   }
 
   // Save today
@@ -514,7 +515,7 @@ async function doCheckout() {
       history = history.filter(h => h.date !== todayData.date);
     }
     history.unshift(todayData);
-    if (history.length > 60) history.pop();
+    if (history.length > HISTORY_MAX_DAGEN) history.pop();
     syncSet('prime_history', history);
     syncRemove('prime_today');
     // Ook de in-memory referentie leegmaken -- syncRemove() haalt 'm alleen
@@ -1014,4 +1015,127 @@ function renderNoteUI(opnieuw) {
   }
   noteKnopVernieuw();
   renderCheckinNote(opnieuw);
+}
+
+
+// ========== GEWICHTSLOGBOEK (altijd bewaard) + IMPORT ==========
+// Elk gewicht staat ook in weightLog (state.js, key prime_weights): { 'JJJJ-MM-DD': kg }. Dat lijstje wordt nooit ingekort,
+// in tegenstelling tot de dagrecords in history (max. HISTORY_MAX_DAGEN). Grafiek en gewichtsscherm lezen er dus uit.
+function weightLogSet(dateStr, kg) {
+  if (!(kg > 0) || !dateStr) return;
+  const nieuw = Object.assign({}, weightLog);
+  nieuw[dateStr] = kg;
+  weightLog = nieuw;
+  syncSet('prime_weights', weightLog);
+}
+
+// Kopieert gewichten die nog alleen in history of vandaag staan naar het logboek (eenmalig per ontbrekende datum).
+function weightLogMigreer() {
+  const nieuw = Object.assign({}, weightLog);
+  let n = 0;
+  history.forEach(function(h) {
+    if (h && h.date && h.checkin && h.checkin.weight > 0 && !(nieuw[h.date] > 0)) { nieuw[h.date] = h.checkin.weight; n++; }
+  });
+  if (todayData && todayData.date && todayData.checkin && todayData.checkin.weight > 0 && !(nieuw[todayData.date] > 0)) { nieuw[todayData.date] = todayData.checkin.weight; n++; }
+  if (n) { weightLog = nieuw; syncSet('prime_weights', weightLog); }
+}
+
+// Datum van "weeknummer + dag": ISO (week begint op maandag, dag 1 = maandag) of "zondag" (zoals Excel: week 1 bevat 1 januari,
+// dag 1 = zondag).
+function wgDatumVanWeek(jaar, week, dag, startZondag) {
+  let start;
+  if (startZondag) {
+    const j1 = new Date(jaar, 0, 1);
+    start = new Date(jaar, 0, 1 - j1.getDay());
+  } else {
+    const j4 = new Date(jaar, 0, 4);
+    start = new Date(jaar, 0, 4 - ((j4.getDay() + 6) % 7));
+  }
+  start.setDate(start.getDate() + (week - 1) * 7 + (dag - 1));
+  return localDateStr(start);
+}
+
+// Eén regel ("wk43.7 79,2", "2026-10-25 79.2", "25-10-2026 79,2") naar { datum, kg } of { fout }.
+function wgParseRegel(regel, jaar, startZondag) {
+  const delen = regel.trim().split(/[\s;]+/).filter(Boolean);
+  if (delen.length < 2) return { fout: true };
+  const kg = parseFloat(String(delen[delen.length - 1]).replace(',', '.'));
+  if (!(kg >= 20 && kg <= 400)) return { fout: true };
+  const d = delen[0];
+  let datum = null, m;
+  if ((m = d.match(/^wk(\d{1,2})[.,](\d)$/i))) {
+    const week = parseInt(m[1], 10), dag = parseInt(m[2], 10);
+    if (week < 1 || week > 53 || dag < 1 || dag > 7) return { fout: true };
+    datum = wgDatumVanWeek(jaar, week, dag, startZondag);
+  } else if ((m = d.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) {
+    datum = m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2);
+  } else if ((m = d.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/))) {
+    const j = m[3].length === 2 ? 2000 + parseInt(m[3], 10) : parseInt(m[3], 10);
+    datum = j + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  } else return { fout: true };
+  if (isNaN(new Date(datum + 'T12:00:00').getTime()) || datum > localDateStr()) return { fout: true };
+  return { datum: datum, kg: kg, regel: d };
+}
+
+function wgToonDatum(datum) {
+  return new Date(datum + 'T12:00:00').toLocaleDateString(dateLocale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function openWeightImport() {
+  const jaarEl = document.getElementById('wgimp-jaar');
+  const nu = new Date().getFullYear();
+  jaarEl.innerHTML = [nu, nu - 1].map(function(j) { return '<option value="' + j + '">' + j + '</option>'; }).join('');
+  document.getElementById('wgimp-text').value = '';
+  document.getElementById('wgimp-start').value = 'ma';
+  document.getElementById('wgimp-preview').innerHTML = '';
+  document.getElementById('wgimp-modal').classList.add('open');
+  wgImportPreview();
+}
+function closeWeightImport() { document.getElementById('wgimp-modal').classList.remove('open'); }
+
+function wgImportLees() {
+  const tekst = document.getElementById('wgimp-text').value;
+  const jaar = parseInt(document.getElementById('wgimp-jaar').value, 10);
+  const zondag = document.getElementById('wgimp-start').value === 'zo';
+  const ok = [], fout = [];
+  tekst.split(/\r?\n/).forEach(function(r) {
+    if (!r.trim()) return;
+    const p = wgParseRegel(r, jaar, zondag);
+    if (p.fout) fout.push(r); else ok.push(p);
+  });
+  return { ok: ok, fout: fout };
+}
+
+function wgImportPreview() {
+  const el = document.getElementById('wgimp-preview');
+  if (!el) return;
+  const r = wgImportLees();
+  if (!r.ok.length && !r.fout.length) { el.innerHTML = ''; return; }
+  const bestaan = r.ok.filter(function(p) { return weightLog[p.datum] > 0 && weightLog[p.datum] !== p.kg; }).length;
+  const gesorteerd = r.ok.slice().sort(function(a, b) { return a.datum.localeCompare(b.datum); });
+  let html = '';
+  if (r.ok.length) {
+    html += '<div><b>' + t('weight.import.preview', { n: r.ok.length }) + '</b></div>' +
+      '<div>' + t('weight.import.first', { regel: wmEscSafe(gesorteerd[0].regel), datum: wgToonDatum(gesorteerd[0].datum) }) + '</div>' +
+      '<div>' + t('weight.import.last', { regel: wmEscSafe(gesorteerd[gesorteerd.length - 1].regel), datum: wgToonDatum(gesorteerd[gesorteerd.length - 1].datum) }) + '</div>';
+    if (bestaan) html += '<div>' + t('weight.import.exists', { n: bestaan }) + '</div>';
+  }
+  if (r.fout.length) html += '<div style="color:#c0392b">' + t('weight.import.bad', { n: r.fout.length }) + '</div>';
+  el.innerHTML = html;
+}
+function wmEscSafe(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function wgImportUitvoeren() {
+  const r = wgImportLees();
+  const err = document.getElementById('wgimp-error');
+  if (!document.getElementById('wgimp-text').value.trim()) { err.textContent = t('weight.import.empty'); return; }
+  if (!r.ok.length) { err.textContent = t('weight.import.none'); return; }
+  err.textContent = '';
+  const nieuw = Object.assign({}, weightLog);
+  r.ok.forEach(function(p) { nieuw[p.datum] = p.kg; });
+  weightLog = nieuw;
+  syncSet('prime_weights', weightLog);
+  closeWeightImport();
+  if (typeof renderHistory === 'function') { try { renderHistory(); } catch (e) { console.error(e); } }
+  try { showToast(t('weight.import.done', { n: r.ok.length })); } catch (e) { console.error(e); }
 }
