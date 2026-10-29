@@ -152,8 +152,9 @@ function renderHistory() {
   if (parseFloat(avg(recent7, 'energy')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowEnergy') });
   if (parseFloat(avg(recent7, 'stress')) < 2.0) signals.push({ kleur:'#f39c12', tekst:t('history.signal.highStress') });
   if (verledenCount >= 3 && volledig / verledenCount < 0.4) signals.push({ kleur:'#f39c12', tekst:t('history.signal.lowTrainingCompletion') });
-  if (pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodRarelyLogged') });
-  if (foodDaysHist.length >= 3) {
+  const foodUit = profile.foodEnabled === false; // Voeding staat uit: geen voedingssignalen
+  if (!foodUit && pctLog < 40 && total >= 3) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodRarelyLogged') });
+  if (!foodUit && foodDaysHist.length >= 3) {
     const pctOpDoel = opDoel / foodDaysHist.length * 100;
     if (pctOpDoel < 65) signals.push({ kleur:'#E24B4A', tekst:t('history.signal.foodOnTargetLow') });
     else if (pctOpDoel <= 80) signals.push({ kleur:'#f39c12', tekst:t('history.signal.foodOnTargetMid') });
@@ -977,8 +978,9 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
   const totalVoedingKlant = hist.filter(h => ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0).length;
   const opDoel = foodDaysArr.filter(h => { const k = kcalOpCheckoutDagKlant(h); return k >= kcalRangeKlant.min && k <= kcalRangeKlant.max; }).length;
   const pctLog = totalVoedingKlant > 0 ? foodDaysArr.length / totalVoedingKlant * 100 : 0;
-  if (pctLog < 40 && total >= 3) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodRarelyLogged') });
-  if (foodDaysArr.length >= 3) {
+  const foodUitKlant = !!(profielObj && profielObj.foodEnabled === false); // Voeding staat uit voor deze klant: geen voedingssignalen
+  if (!foodUitKlant && pctLog < 40 && total >= 3) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodRarelyLogged') });
+  if (!foodUitKlant && foodDaysArr.length >= 3) {
     const pctOpDoel = opDoel / foodDaysArr.length * 100;
     if (pctOpDoel < 65) signals.push({ kleur: '#E24B4A', tekst: t('history.signal.foodOnTargetLow') });
     else if (pctOpDoel <= 80) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodOnTargetMid') });

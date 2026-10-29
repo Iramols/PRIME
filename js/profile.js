@@ -199,6 +199,8 @@ function saveProfile() {
     proteinPerKg: proteinPerKg,
     carbPct: carbPct,
     trainingEnabled: profile.trainingEnabled !== false, // wordt nu door de coach ingesteld in Config
+    foodEnabled: profile.foodEnabled !== false, // idem (Voeding)
+    weightEnabled: profile.weightEnabled !== false, // idem (gewichtsvraag)
     noteEnabled: profile.noteEnabled === true, // idem (toelichting aan de coach)
     noteLines: profile.noteLines
   };

@@ -219,6 +219,45 @@ function applyTrainingVisibility() {
   if (!enabled && trainingScreen && trainingScreen.classList.contains('active')) {
     go('home');
   }
+
+  try { applyFoodVisibility(); } catch (e) { console.error('applyFoodVisibility:', e); }
+  try { applyWeightVisibility(); } catch (e) { console.error('applyWeightVisibility:', e); }
+}
+
+// ========== GEWICHT AAN/UIT (instelling van de coach in Config) ==========
+// Verbergt de gewichtsvraag in de check-in, de gewichtsregel op het Dashboard en de gewichtskaart bij Voortgang. Al ingevulde
+// gewichten blijven bewaard.
+function applyWeightVisibility() {
+  const enabled = profile.weightEnabled !== false;
+  const toon = function(id, display) { const el = document.getElementById(id); if (el) el.style.display = enabled ? (display || '') : 'none'; };
+  toon('cq-weight-card');
+  toon('day-weight-row', 'flex');
+  toon('done-weight-row', 'flex');
+  toon('h-weight-card');
+}
+
+// ========== VOEDING AAN/UIT (instelling van de coach in Config) ==========
+// Verbergt de Voeding-tab en alle voedingsonderdelen elders (dashboard, check-out, Voortgang) wanneer de coach dit voor een
+// klant uitzet. De gegevens zelf blijven bewaard.
+function applyFoodVisibility() {
+  const enabled = profile.foodEnabled !== false;
+  const toon = function(id, display) { const el = document.getElementById(id); if (el) el.style.display = enabled ? (display || '') : 'none'; };
+  toon('nav-btn-voeding');
+  toon('bnav-voeding');
+  toon('home-food-card');
+  toon('food-summary-block');
+  toon('divider-after-food-summary');
+  toon('h-kcal-card');
+  toon('h-macro-card');
+  toon('h-food-card');
+  toon('htab-voeding');
+  const plan = document.getElementById('home-planned-summary');
+  if (plan && !enabled) plan.style.display = 'none';
+  else if (typeof updateHomePlannedSummary === 'function') { try { updateHomePlannedSummary(); } catch (e) { console.error(e); } }
+  const hVoeding = document.getElementById('hstab-content-voeding');
+  if (!enabled && hVoeding && hVoeding.style.display !== 'none' && typeof switchHistoryTab === 'function') switchHistoryTab('stats');
+  const voedingScreen = document.getElementById('screen-voeding');
+  if (!enabled && voedingScreen && voedingScreen.classList.contains('active')) go('home');
 }
 
 // Zet je na een automatische verversing (zie verversNu()/bewaarSchermStaat() in cloud.js) terug op het scherm, de subtab, de datum en de scrollstand waar je was.

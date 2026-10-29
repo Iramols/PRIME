@@ -250,6 +250,22 @@ const CONFIG_OPTIES = [
     set: function(p, v) { p.trainingEnabled = !!v; }
   },
   {
+    key: 'foodEnabled',
+    label: 'config.opt.food',
+    hint: 'config.opt.foodHint',
+    standaard: true,
+    get: function(p) { return p.foodEnabled !== false; },
+    set: function(p, v) { p.foodEnabled = !!v; }
+  },
+  {
+    key: 'weightEnabled',
+    label: 'config.opt.weight',
+    hint: 'config.opt.weightHint',
+    standaard: true,
+    get: function(p) { return p.weightEnabled !== false; },
+    set: function(p, v) { p.weightEnabled = !!v; }
+  },
+  {
     key: 'noteEnabled',
     label: 'config.opt.note',
     hint: 'config.opt.noteHint',

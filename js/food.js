@@ -1930,6 +1930,7 @@ function plannedText(n, unit) { return n > 0 ? t('food.plannedSuffix', { n: Math
 function updateHomePlannedSummary() {
   const el = document.getElementById('home-planned-summary');
   if (!el) return;
+  if (profile.foodEnabled === false) { el.style.display = 'none'; el.textContent = ''; return; } // Voeding staat uit voor deze klant
   const _split = splitTotals(foodDays[fdTodayStr()] || []);
   const tot = {
     kcal: _split.eaten.kcal + _split.planned.kcal, prot: _split.eaten.prot + _split.planned.prot,

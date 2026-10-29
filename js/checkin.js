@@ -670,7 +670,7 @@ function dagStatusKnoppenHtml(huidig, vast, handler) {
 
 function dagStatusGevolgenHtml(s) {
   if (s === 'normaal') return '<div class="ds-gevolg"><div class="ds-row">' + t('dagstatus.gevolg.normaal') + '</div></div>';
-  return '<div class="ds-gevolg">' + ['voeding', 'training', 'reeks'].map(function(k) {
+  return '<div class="ds-gevolg">' + ['voeding', 'training', 'reeks'].filter(function(k) { return !(k === 'voeding' && profile.foodEnabled === false); }).map(function(k) {
     return '<div class="ds-row"><b>' + t('dagstatus.k.' + k) + '</b><span>' + t('dagstatus.' + s + '.' + k) + '</span></div>';
   }).join('') + '</div>';
 }
@@ -762,6 +762,7 @@ function dagStatusCoachRijHtml(dateStr) {
 let _coItemIds = []; // logIds die ooit niet-afgevinkt in dit lijstje zijn gekomen
 
 function foodOnbevestigdHtml() {
+  if (profile.foodEnabled === false) return ''; // Voeding staat uit voor deze klant
   if (!_coControle) return ''; // overdag niets tonen: pas bij het afronden van de dag
   const dag = localDateStr();
   dayLog.forEach(function(i) { if (!isEatenItem(i) && _coItemIds.indexOf(i.logId) < 0) _coItemIds.push(i.logId); });
@@ -840,7 +841,7 @@ function coToggleTraining(idx) {
 function afrondenKlik() {
   try { noteFlush(); } catch (e) { console.error(e); }
   if (_coControle) { doCheckout(); return; }
-  const voedingOpen = dayLog.some(function(i) { return !isEatenItem(i); });
+  const voedingOpen = profile.foodEnabled !== false && dayLog.some(function(i) { return !isEatenItem(i); });
   const ziek = getDagStatus(localDateStr()) === 'ziek'; // bij Ziek is er geen trainingsvraag
   const trainingOpen = !ziek && !!_coTrLaatste && _coTrLaatste.alle.some(function(ex) { return !_coTrLaatste.isDone(ex); });
   if (!voedingOpen && !trainingOpen) { doCheckout(); return; }
