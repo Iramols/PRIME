@@ -32,6 +32,7 @@ const CLOUD_KEYS = [
   'prime_weights',
   'prime_coach_reacties',
   'prime_reacties_gelezen',
+  'prime_klant_antwoorden',
   'prime_exercise_notes',
   'prime_custom_exercises',
   'prime_training_days',

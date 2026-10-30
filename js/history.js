@@ -177,6 +177,7 @@ function renderHistory() {
 
   // ── Gewicht grafiek ──
   renderWeightChart();
+  try { renderVoortgangBerichten(); } catch (e) { console.error('renderVoortgangBerichten:', e); }
 
   // ── Calorietrend grafiek (kcal) ──
   renderKcalTrendChart();
@@ -1049,7 +1050,7 @@ async function renderConsentOverview() {
 
 // Rendert twee aparte lijsten uit dezelfde tabel: gewone feedback (idee, tip,
 // iets dat niet werkt) en, apart, verzoeken tot verwijdering van gegevens.
-function _fbItemsHtml(items, nameOf, kindLabel, reactieVan) {
+function _fbItemsHtml(items, nameOf, kindLabel, reactieVan, antwoordVan) {
   return '<div class="card">' + items.map(f => {
     const d = new Date(f.created_at);
     return '<div class="fb-item" style="' + (f.handled ? 'opacity:0.5' : '') + '">' +
@@ -1061,7 +1062,7 @@ function _fbItemsHtml(items, nameOf, kindLabel, reactieVan) {
       '<div style="display:flex;gap:8px">' +
         '<button class="btn-sm" onclick="toggleFeedbackHandled(\'' + f.id + '\',' + (!f.handled) + ')">' + (f.handled ? t('feedback.coach.reopen') : t('feedback.coach.handled')) + '</button>' +
         '<button class="btn-sm" onclick="removeFeedback(\'' + f.id + '\')">' + t('feedback.coach.delete') + '</button>' +
-      '</div>' + (reactieVan ? msgReactieBlokHtml(f.client_id, 'fb:' + f.id, 'fb', f.message, reactieVan(f.client_id)['fb:' + f.id]) : '') + '</div>';
+      '</div>' + (reactieVan ? msgReactieBlokHtml(f.client_id, 'fb:' + f.id, 'fb', f.message, reactieVan(f.client_id), antwoordVan ? antwoordVan(f.client_id) : {}) : '') + '</div>';
   }).join('') + '</div>';
 }
 async function renderFeedbackList() {
@@ -1093,11 +1094,12 @@ async function renderFeedbackList() {
   const kindLabel = { bug: t('feedback.kind.bug'), idea: t('feedback.kind.idea'), other: t('feedback.kind.other') };
   let reactieBulk = null;
   try { reactieBulk = await msgCoachBulk(false); } catch (e) { console.error('msgCoachBulk:', e); }
-  const reactieVan = reactieBulk ? (cid => (reactieBulk.reacties[cid] || {}).reacties || {}) : null;
+  const reactieVan = reactieBulk ? (cid => reactieBulk.reacties[cid] || {}) : null;
+  const antwoordVan = reactieBulk ? (cid => reactieBulk.antwoorden[cid] || {}) : null;
   const verzoeken = res.data.filter(f => f.kind === 'delete_request');
   const feedback = res.data.filter(f => f.kind !== 'delete_request');
   if (elDel) elDel.innerHTML = kop('deleteRequests.title') + (verzoeken.length ? _fbItemsHtml(verzoeken, nameOf, null) : leeg('deleteRequests.none'));
-  if (el) el.innerHTML = kop('feedback.coach.title') + (feedback.length ? _fbItemsHtml(feedback, nameOf, kindLabel, reactieVan) : leeg('feedback.coach.none'));
+  if (el) el.innerHTML = kop('feedback.coach.title') + (feedback.length ? _fbItemsHtml(feedback, nameOf, kindLabel, reactieVan, antwoordVan) : leeg('feedback.coach.none'));
 }
 async function toggleFeedbackHandled(id, handled) {
   const err = await setFeedbackHandled(id, handled);
@@ -1123,24 +1125,23 @@ async function removeFeedback(id) {
 // Toelichtingen van klanten (alleen coach). De gelezen-status staat in de cloud (zie berichten.js); de oude, per apparaat bewaarde
 // markering blijft als vangnet meetellen.
 function _noteGelezen() { try { return JSON.parse(localStorage.getItem('prime_notes_gelezen') || '{}'); } catch (e) { return {}; } }
-function _notesVoorCoach(clientId, notes, reactiesObj) {
+function _notesVoorCoach(clientId, notes, reactiesObj, antwObj) {
   const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
   return Object.keys(notes || {}).filter(function(d) { return d >= grens && notes[d] && notes[d].text; }).sort().reverse().slice(0, 5).map(function(d) {
     const ts = notes[d].ts || 0;
-    return { date: d, text: notes[d].text, ts: ts, nieuw: msgNoteNieuw(clientId, d, ts, reactiesObj) };
+    return { date: d, text: notes[d].text, ts: ts, nieuw: msgNoteNieuw(clientId, d, ts, reactiesObj, antwObj) };
   });
 }
-function _noteRijHtml(clientId, n, reactiesObj) {
+function _noteRijHtml(clientId, n, reactiesObj, antwObj) {
   const dag = new Date(n.date + 'T12:00:00').toLocaleDateString(dateLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
   const tijd = n.ts ? ', ' + new Date(n.ts).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : '';
-  const reactie = ((reactiesObj && reactiesObj.reacties) || {})['note:' + n.date];
   return '<div class="note-coachrij' + (n.nieuw ? ' nieuw' : '') + '" onclick="event.stopPropagation()">' +
     '<div class="note-coachtekst">💬 ' + _fbEsc(n.text).replace(/\n/g, '<br>') + '</div>' +
     '<div class="note-coachmeta"><span>' + _fbEsc(dag + tijd) + '</span>' +
     '<span class="note-acties"><button type="button" class="note-gelezen" onclick="noteGelezenToggle(event, \'' + clientId + '\', \'' + n.date + '\', ' + n.ts + ', this)">' +
     t(n.nieuw ? 'note.coach.markRead' : 'note.coach.read') + '</button>' +
     '<button type="button" class="note-gelezen note-del" onclick="noteVerwijder(event, \'' + clientId + '\', \'' + n.date + '\', this)">' + t('note.coach.delete') + '</button></span></div>' +
-    msgReactieBlokHtml(clientId, 'note:' + n.date, 'note', n.text, reactie) + '</div>';
+    msgReactieBlokHtml(clientId, 'note:' + n.date, 'note', n.text, reactiesObj || {}, antwObj || {}) + '</div>';
 }
 async function noteGelezenToggle(ev, clientId, datum, ts, knop) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
@@ -1188,6 +1189,8 @@ async function noteVerwijder(ev, clientId, datum, knop) {
     // Een klant zonder signalen en zonder toelichtingen hoort niet meer in de lijst.
     if (kaart && !kaart.querySelector('.note-coachrij') && !kaart.querySelector('[data-signaal]')) kaart.remove();
     try { showToast(t('note.coach.deleted')); } catch (e) {}
+    const hs = document.getElementById('screen-history');
+    if (hs && hs.classList.contains('active') && typeof renderVoortgangBerichten === 'function') renderVoortgangBerichten();
   } catch (e) {
     console.error('noteVerwijder:', e);
     if (knop) knop.disabled = false;
@@ -1224,11 +1227,15 @@ async function renderSignalenTab() {
   try { namen = await fetchProfileNames(); } catch (e) {}
   const resultaten = [];
   for (const c of clients) {
-    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus', 'prime_notes', 'prime_coach_reacties']);
+    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus', 'prime_notes', 'prime_coach_reacties', 'prime_klant_antwoorden']);
     const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {}, data.prime_dagstatus || {});
     const reacties = data.prime_coach_reacties || {};
-    const notes = _notesVoorCoach(c.id, data.prime_notes, reacties);
-    if (signals.length || notes.length) resultaten.push({ client: c, signals, notes, reacties });
+    const antw = data.prime_klant_antwoorden || {};
+    const notes = _notesVoorCoach(c.id, data.prime_notes, reacties, antw);
+    // Eigen berichten van de coach (gesprekken zonder toelichting of feedback): recent of met een nieuw antwoord van de klant.
+    const grensMsg = Date.now() - 30 * 86400000;
+    const draden = msgGespreksIds(reacties).filter(id => id.indexOf('msg:') === 0 && (msgLaatsteTs(msgDraad(reacties, antw, id)) >= grensMsg || msgThreadNieuw(c.id, id, 0, reacties, antw)));
+    if (signals.length || notes.length || draden.length) resultaten.push({ client: c, signals, notes, reacties, antw, draden });
   }
   resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
 
@@ -1239,9 +1246,10 @@ async function renderSignalenTab() {
 
   el.innerHTML = resultaten.map(r => `
     <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
-      <div style="font-weight:700;font-size:15px;margin-bottom:10px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><div style="font-weight:700;font-size:15px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div><button type="button" class="btn-sm coach-only-btn" style="flex-shrink:0" onclick="event.stopPropagation();msgNieuwOpen('${r.client.id}')">✉️</button></div>
       ${r.signals.map(s => `<div data-signaal="1" style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
-      ${r.notes.map(n => _noteRijHtml(r.client.id, n, r.reacties)).join('')}
+      ${r.notes.map(n => _noteRijHtml(r.client.id, n, r.reacties, r.antw)).join('')}
+      ${r.draden.map(id => msgDraadKaartHtml(r.client.id, id, r.reacties, r.antw)).join('')}
     </div>
   `).join('');
 }

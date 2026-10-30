@@ -941,3 +941,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .note-status { font-size: 12px; color: var(--sage); font-weight: 600; margin-top: 8px; min-height: 16px; }
 .note-status.fout { color: #c0392b; }
 .note-hint { font-size: 12px; color: var(--sage); font-weight: 600; margin-top: 10px; line-height: 1.5; }
+.msg-reactie-eigen { border-left-color: var(--sand-dark); }
+.rx-klant .ver { background: var(--sage); }
+.rx-klant .rx-ta { border-color: var(--sage); }
+.rx-klant .rx-acties { justify-content: flex-start; }
+.msg-draadkaart .msg-reactie { margin-top: 8px; }
