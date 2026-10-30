@@ -915,3 +915,25 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .wg-chips { display: flex; gap: 6px; margin-bottom: 12px; }
 .wg-chip { border: 1px solid var(--sand-dark); background: var(--white); color: var(--muted); border-radius: 16px; padding: 6px 12px; font-family: inherit; font-size: 12px; cursor: pointer; }
 .wg-chip.on { background: var(--sage); border-color: var(--sage); color: #fff; font-weight: 700; }
+.msg-badge { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 17px; background: var(--sage-light); border: 1px solid var(--sage-mid); font-size: 16px; cursor: pointer; font-family: inherit; padding: 0; }
+.msg-badge b { position: absolute; top: -6px; right: -7px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--sage); color: #fff; font-size: 10px; line-height: 18px; text-align: center; padding: 0 4px; font-family: "DM Sans", sans-serif; }
+.msg-badge.coach { background: var(--coach-only-light); border-color: #e8c4a8; }
+.msg-badge.coach b { background: var(--coach-only); }
+.msg-bericht { border: 1px solid var(--sand-dark); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; font-size: 13px; line-height: 1.5; background: var(--white); }
+.msg-bericht.nieuw { border-color: var(--sage); background: var(--sage-light); }
+.msg-dt { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.msg-nieuw { background: var(--sage); color: #fff; border-radius: 8px; padding: 1px 7px; font-size: 10px; font-weight: 700; }
+.msg-eigen { color: var(--muted); font-style: italic; border-left: 3px solid var(--sand-dark); padding-left: 8px; margin-bottom: 6px; word-break: break-word; }
+.msg-reactie { border-left: 3px solid var(--sage); padding-left: 8px; word-break: break-word; }
+.msg-reactie small { display: block; color: var(--sage); font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+.msg-reactie-coach { border-left-color: var(--coach-only); margin-top: 8px; }
+.msg-reactie-coach small { color: var(--coach-only); }
+.msg-balk { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--coach-only-light); border: 1px solid #e8c4a8; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: var(--coach-only); }
+.rx-wrap { margin-top: 8px; }
+.rx-acties { display: flex; justify-content: flex-end; margin-top: 6px; }
+.rx-ta { display: block; width: 100%; min-height: 76px; border: 1.5px solid var(--coach-only); border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: 16px; line-height: 1.4; background: var(--white); margin-top: 8px; }
+.rx-rij { display: flex; gap: 8px; margin-top: 8px; }
+.rx-wrap .ver { background: var(--coach-only); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-family: inherit; font-weight: 700; font-size: 13px; cursor: pointer; }
+.rx-wrap .gr { border: 1px solid var(--sage); background: var(--white); color: var(--sage); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.rx-wrap .gr.or { border-color: var(--coach-only); color: var(--coach-only); }
+.rx-fout { color: #c0392b; font-size: 12px; margin-top: 6px; }

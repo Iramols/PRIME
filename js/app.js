@@ -181,6 +181,7 @@ function renderHome() {
   applyDagStatusTone();
   applyDagStatusTraining();
   try { renderNoteUI(); } catch (e) { console.error('renderNoteUI:', e); }
+  try { msgBadgeVernieuw(); } catch (e) { console.error('msgBadgeVernieuw:', e); }
 }
 
 // ========== TRAINING AAN/UIT (profielinstelling) ==========
@@ -295,6 +296,7 @@ function init() {
 
 function initInner() {
   try { weightLogMigreer(); } catch (e) { console.error('weightLogMigreer:', e); }
+  try { msgStart(); } catch (e) { console.error('msgStart:', e); }
   const _wgBtn = document.getElementById('wg-import-btn'); // gewichten importeren: alleen voor de coach
   if (_wgBtn) _wgBtn.style.display = isPrimeCoach() ? '' : 'none';
   // Laad eigen foto's van coach als eerste stap

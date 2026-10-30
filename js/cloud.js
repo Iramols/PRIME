@@ -30,6 +30,8 @@ const CLOUD_KEYS = [
   'prime_notes',
   'prime_weekmenus',
   'prime_weights',
+  'prime_coach_reacties',
+  'prime_reacties_gelezen',
   'prime_exercise_notes',
   'prime_custom_exercises',
   'prime_training_days',
@@ -43,7 +45,7 @@ const CLOUD_KEYS = [
 // te laten geven), dan moet dat ook op een apparaat gelden dat het lokaal nog
 // onthoudt. Verschil met gewone data, waar een lokaal nog niet aangekomen
 // wijziging juist beschermd wordt (zie hydrateFromCloud).
-const SERVER_LEIDEND_KEYS = ['prime_consent', 'prime_onboarding'];
+const SERVER_LEIDEND_KEYS = ['prime_consent', 'prime_onboarding', 'prime_coach_reacties'];
 
 let _sb = null;
 let activeClientId = null;
