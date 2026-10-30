@@ -946,3 +946,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .rx-klant .rx-ta { border-color: var(--sage); }
 .rx-klant .rx-acties { justify-content: flex-start; }
 .msg-draadkaart .msg-reactie { margin-top: 8px; }
+.rx-klant .rx-acties { justify-content: flex-start; gap: 8px; flex-wrap: wrap; }

@@ -37,10 +37,12 @@ function msgMetaVan(cobj, id) {
   if (r) return { soort: r.soort || 'note', bron: r.bron || '' };
   return { soort: id.indexOf('fb:') === 0 ? 'fb' : (id.indexOf('msg:') === 0 ? 'msg' : 'note'), bron: '' };
 }
-function msgDraad(cobj, antw, id) {
+// verborgen = { id: ts }: berichten tot en met dat tijdstip zijn door deze kant (coach of klant) voor zichzelf verwijderd.
+function msgDraad(cobj, antw, id, verborgen) {
+  const grens = (verborgen && verborgen[id]) || 0;
   const coach = msgCoachBerichten(cobj, id).map(function(m) { return { van: 'coach', text: m.text, ts: m.ts }; });
   const klant = ((antw && antw[id]) || []).map(function(m) { return { van: 'klant', text: m.text, ts: m.ts }; });
-  return coach.concat(klant).sort(function(a, b) { return a.ts - b.ts; });
+  return coach.concat(klant).filter(function(m) { return m.ts > grens; }).sort(function(a, b) { return a.ts - b.ts; });
 }
 function msgLaatsteTs(draad, van) {
   let max = 0;
@@ -68,12 +70,13 @@ function msgDraadHtml(draad, perspectief) {
 
 // ---------- klant: eigen gesprekken ----------
 function msgReactieLijst() {
-  const c = msgLokaal('prime_coach_reacties'), a = msgLokaal('prime_klant_antwoorden'), g = msgLokaal('prime_reacties_gelezen');
+  const c = msgLokaal('prime_coach_reacties'), a = msgLokaal('prime_klant_antwoorden'), g = msgLokaal('prime_reacties_gelezen'), v = msgLokaal('prime_reacties_verborgen');
   return msgGespreksIds(c).map(function(id) {
-    const draad = msgDraad(c, a, id), meta = msgMetaVan(c, id);
+    const draad = msgDraad(c, a, id, v), meta = msgMetaVan(c, id);
+    if (!draad.some(function(m) { return m.van === 'coach'; })) return null; // door de klant verwijderd (of nog geen bericht van de coach)
     const laatsteCoach = msgLaatsteTs(draad, 'coach');
     return { id: id, soort: meta.soort, bron: meta.bron, draad: draad, nieuw: !(g[id] >= laatsteCoach), sortTs: msgLaatsteTs(draad) };
-  }).sort(function(a, b) { return b.sortTs - a.sortTs; });
+  }).filter(Boolean).sort(function(a, b) { return b.sortTs - a.sortTs; });
 }
 
 // ---------- badge naast het logo ----------
@@ -109,7 +112,8 @@ function msgModalHtml(lijst) {
       (r.nieuw ? '<span class="msg-nieuw">' + t('msg.new') + '</span>' : '') + '</div>' +
       (r.bron ? '<div class="msg-eigen">"' + msgTekstHtml(r.bron) + '"</div>' : '') +
       msgDraadHtml(r.draad, 'klant') +
-      '<div class="rx-acties"><button type="button" class="gr rx-knop" onclick="msgAntwoordOpen(this)">' + t('msg.reply') + '</button></div>' +
+      '<div class="rx-acties"><button type="button" class="gr rx-knop" onclick="msgAntwoordOpen(this)">' + t('msg.reply') + '</button>' +
+      '<button type="button" class="gr" onclick="msgKlantVerwijder(this)">' + t('msg.reply.delete') + '</button></div>' +
       '<div class="rx-form" style="display:none"><textarea class="rx-ta" rows="3" maxlength="800" placeholder="' + msgEsc(t('msg.reply.placeholder')) + '"></textarea>' +
       '<div class="rx-rij"><button type="button" class="ver" onclick="msgAntwoordVerstuur(this)">' + t('msg.reply.send') + '</button>' +
       '<button type="button" class="gr" onclick="msgAntwoordSluit(this)">' + t('note.cancel') + '</button></div><div class="rx-fout"></div></div></div>';
@@ -134,6 +138,18 @@ function msgOpen() {
 }
 function msgSluit() { document.getElementById('msg-modal').classList.remove('open'); }
 
+// De klant verwijdert een gesprek alleen voor zichzelf: berichten tot nu toe worden voor hem verborgen, de coach houdt ze.
+function msgKlantVerwijder(knop) {
+  const w = knop.closest('.rx-wrap');
+  if (!w || !confirm(t('msg.client.confirmDelete'))) return;
+  const id = w.dataset.id;
+  const v = Object.assign({}, msgLokaal('prime_reacties_verborgen'));
+  v[id] = Date.now();
+  syncSet('prime_reacties_verborgen', v);
+  document.getElementById('msg-modal-body').innerHTML = msgModalHtml(msgReactieLijst());
+  msgBadgeVernieuw();
+  try { showToast(t('msg.client.deleted')); } catch (e) { /* geen melding */ }
+}
 function msgAntwoordOpen(knop) {
   const w = knop.closest('.rx-wrap');
   w.querySelector('.rx-form').style.display = 'block';
@@ -246,7 +262,7 @@ async function msgSchrijfCoach(clientId, wijzig) {
   const data = await fetchClientStateFor(clientId, ['prime_coach_reacties']);
   const oud = data.prime_coach_reacties || {};
   const nieuw = {
-    berichten: Object.assign({}, oud.berichten), meta: Object.assign({}, oud.meta), gelezen: Object.assign({}, oud.gelezen), reacties: Object.assign({}, oud.reacties)
+    berichten: Object.assign({}, oud.berichten), meta: Object.assign({}, oud.meta), gelezen: Object.assign({}, oud.gelezen), reacties: Object.assign({}, oud.reacties), verborgen: Object.assign({}, oud.verborgen)
   };
   wijzig(nieuw);
   const res = await getSupabase().from('client_state').upsert({ client_id: clientId, key: 'prime_coach_reacties', value: nieuw, updated_at: new Date().toISOString() });
@@ -279,7 +295,7 @@ async function msgGelezenZet(clientId, id, ts, gelezen) {
 
 // ---------- coach: gesprek onder een toelichting, feedbackbericht of eigen bericht ----------
 function msgReactieBlokHtml(clientId, id, soort, bron, cobj, antw) {
-  const draad = msgDraad(cobj, antw, id);
+  const draad = msgDraad(cobj, antw, id, cobj && cobj.verborgen);
   return '<div class="rx-wrap" onclick="event.stopPropagation()" data-cid="' + msgEsc(clientId) + '" data-id="' + msgEsc(id) + '" data-soort="' + soort + '" data-bron="' + msgEsc(String(bron || '').slice(0, 300)) + '">' +
     '<div class="rx-bestaand">' + msgDraadHtml(draad, 'coach') + '</div>' +
     '<div class="rx-acties"><button type="button" class="gr or rx-knop" onclick="msgReageerOpen(this)">' + t('msg.coach.reply') + '</button></div>' +
@@ -333,7 +349,7 @@ async function msgVerstuur(knop) {
 // Gesprek zonder toelichting of feedback (een eigen bericht van de coach): kaartje met het hele gesprek.
 function msgDraadKaartHtml(clientId, id, cobj, antw) {
   const meta = msgMetaVan(cobj, id);
-  const draad = msgDraad(cobj, antw, id);
+  const draad = msgDraad(cobj, antw, id, cobj && cobj.verborgen);
   const nieuw = msgThreadNieuw(clientId, id, 0, cobj, antw);
   return '<div class="note-coachrij msg-draadkaart' + (nieuw ? ' nieuw' : '') + '" onclick="event.stopPropagation()">' +
     '<div class="note-coachtekst">✉️ ' + t('msg.kind.' + meta.soort) + '</div>' +
@@ -356,17 +372,41 @@ async function msgDraadGelezen(ev, clientId, id, knop) {
     try { showToast(t('msg.coach.failed'), true); } catch (e2) { /* geen melding */ }
   }
 }
+// De coach verwijdert een gesprek alleen voor zichzelf (de klant houdt het): berichten tot nu toe worden voor de coach verborgen.
 async function msgDraadVerwijder(ev, clientId, id, knop) {
   if (ev && ev.stopPropagation) ev.stopPropagation();
   if (!isPrimeCoach() || !confirm(t('msg.thread.confirmDelete'))) return;
   try {
-    await msgSchrijfCoach(clientId, function(n) { delete n.berichten[id]; delete n.meta[id]; delete n.gelezen[id]; delete n.reacties[id]; });
+    await msgSchrijfCoach(clientId, function(n) { const nu = Date.now(); n.verborgen[id] = nu; n.gelezen[id] = nu; });
     const kaart = knop.closest('.msg-draadkaart');
     if (kaart) kaart.remove();
     try { showToast(t('msg.thread.deleted')); } catch (e) { /* geen melding */ }
     coachTellingVernieuw(true);
   } catch (e) {
     console.error('msgDraadVerwijder:', e);
+    try { showToast(t('msg.coach.failed'), true); } catch (e2) { /* geen melding */ }
+  }
+}
+
+// Toelichting van een klant verwijderen: alleen voor de coach verbergen, de klant houdt zijn toelichting.
+async function noteVerberg(ev, clientId, datum, knop) {
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+  if (!isPrimeCoach() || !confirm(t('msg.coach.confirmHide'))) return;
+  if (knop) knop.disabled = true;
+  try {
+    await msgSchrijfCoach(clientId, function(n) { const nu = Date.now(); n.verborgen['note:' + datum] = nu; n.gelezen['note:' + datum] = nu; });
+    const rij = knop && knop.closest('.note-coachrij');
+    const kaart = rij && rij.closest('.card');
+    if (rij) rij.remove();
+    // Een klant zonder signalen en zonder toelichtingen hoort niet meer in de lijst bij Signalen.
+    if (kaart && !kaart.querySelector('.note-coachrij') && !kaart.querySelector('[data-signaal]')) kaart.remove();
+    try { showToast(t('note.coach.deleted')); } catch (e) { /* geen melding */ }
+    coachTellingVernieuw(true);
+    const hs = document.getElementById('screen-history');
+    if (hs && hs.classList.contains('active')) renderVoortgangBerichten();
+  } catch (e) {
+    console.error('noteVerberg:', e);
+    if (knop) knop.disabled = false;
     try { showToast(t('msg.coach.failed'), true); } catch (e2) { /* geen melding */ }
   }
 }
@@ -451,14 +491,14 @@ async function renderVoortgangBerichten() {
   const c = data.prime_coach_reacties || msgLokaal('prime_coach_reacties');
   const a = data.prime_klant_antwoorden || msgLokaal('prime_klant_antwoorden');
   const grens = localDateStr(new Date(Date.now() - 60 * 86400000));
-  const datums = Object.keys(notes).filter(function(d) { return d >= grens && notes[d] && notes[d].text; }).sort().reverse().slice(0, 30);
+  const datums = Object.keys(notes).filter(function(d) { return d >= grens && notes[d] && notes[d].text && !(((c.verborgen || {})['note:' + d]) >= (notes[d].ts || 0)); }).sort().reverse().slice(0, 30);
   const rijen = datums.map(function(d) {
     const ts = notes[d].ts || 0;
     return _noteRijHtml(cid, { date: d, text: notes[d].text, ts: ts, nieuw: msgThreadNieuw(cid, 'note:' + d, ts, c, a) }, c, a);
   });
   const eigenIds = msgGespreksIds(c).concat(Object.keys(a)).filter(function(id, i, arr) { return arr.indexOf(id) === i && id.indexOf('note:') !== 0; });
-  const draden = eigenIds.filter(function(id) { return msgCoachBerichten(c, id).length || ((a[id] || []).length); }).sort(function(x, y) {
-    return msgLaatsteTs(msgDraad(c, a, y)) - msgLaatsteTs(msgDraad(c, a, x));
+  const draden = eigenIds.filter(function(id) { return msgDraad(c, a, id, c.verborgen).length; }).sort(function(x, y) {
+    return msgLaatsteTs(msgDraad(c, a, y, c.verborgen)) - msgLaatsteTs(msgDraad(c, a, x, c.verborgen));
   }).map(function(id) { return msgDraadKaartHtml(cid, id, c, a); });
   const naam = (typeof profile !== 'undefined' && profile.name) ? profile.name.trim().split(' ')[0] : '';
   wrap.innerHTML = '<div class="card" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +

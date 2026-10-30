@@ -1127,7 +1127,7 @@ async function removeFeedback(id) {
 function _noteGelezen() { try { return JSON.parse(localStorage.getItem('prime_notes_gelezen') || '{}'); } catch (e) { return {}; } }
 function _notesVoorCoach(clientId, notes, reactiesObj, antwObj) {
   const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
-  return Object.keys(notes || {}).filter(function(d) { return d >= grens && notes[d] && notes[d].text; }).sort().reverse().slice(0, 5).map(function(d) {
+  return Object.keys(notes || {}).filter(function(d) { return d >= grens && notes[d] && notes[d].text && !(((reactiesObj && reactiesObj.verborgen || {})['note:' + d]) >= (notes[d].ts || 0)); }).sort().reverse().slice(0, 5).map(function(d) {
     const ts = notes[d].ts || 0;
     return { date: d, text: notes[d].text, ts: ts, nieuw: msgNoteNieuw(clientId, d, ts, reactiesObj, antwObj) };
   });
@@ -1140,7 +1140,7 @@ function _noteRijHtml(clientId, n, reactiesObj, antwObj) {
     '<div class="note-coachmeta"><span>' + _fbEsc(dag + tijd) + '</span>' +
     '<span class="note-acties"><button type="button" class="note-gelezen" onclick="noteGelezenToggle(event, \'' + clientId + '\', \'' + n.date + '\', ' + n.ts + ', this)">' +
     t(n.nieuw ? 'note.coach.markRead' : 'note.coach.read') + '</button>' +
-    '<button type="button" class="note-gelezen note-del" onclick="noteVerwijder(event, \'' + clientId + '\', \'' + n.date + '\', this)">' + t('note.coach.delete') + '</button></span></div>' +
+    '<button type="button" class="note-gelezen note-del" onclick="noteVerberg(event, \'' + clientId + '\', \'' + n.date + '\', this)">' + t('note.coach.delete') + '</button></span></div>' +
     msgReactieBlokHtml(clientId, 'note:' + n.date, 'note', n.text, reactiesObj || {}, antwObj || {}) + '</div>';
 }
 async function noteGelezenToggle(ev, clientId, datum, ts, knop) {
@@ -1234,7 +1234,7 @@ async function renderSignalenTab() {
     const notes = _notesVoorCoach(c.id, data.prime_notes, reacties, antw);
     // Eigen berichten van de coach (gesprekken zonder toelichting of feedback): recent of met een nieuw antwoord van de klant.
     const grensMsg = Date.now() - 30 * 86400000;
-    const draden = msgGespreksIds(reacties).filter(id => id.indexOf('msg:') === 0 && (msgLaatsteTs(msgDraad(reacties, antw, id)) >= grensMsg || msgThreadNieuw(c.id, id, 0, reacties, antw)));
+    const draden = msgGespreksIds(reacties).filter(id => id.indexOf('msg:') === 0 && msgDraad(reacties, antw, id, reacties.verborgen).length && (msgLaatsteTs(msgDraad(reacties, antw, id, reacties.verborgen)) >= grensMsg || msgThreadNieuw(c.id, id, 0, reacties, antw)));
     if (signals.length || notes.length || draden.length) resultaten.push({ client: c, signals, notes, reacties, antw, draden });
   }
   resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
