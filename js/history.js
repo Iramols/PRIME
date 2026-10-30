@@ -871,7 +871,7 @@ function calcStreak() {
   const today = localDateStr();
   const dates = history.map(h => h.date);
   let check = today;
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < HISTORY_MAX_DAGEN; i++) { // zo ver terug als history bewaard wordt (vroeger vast 60 dagen)
     if (dates.includes(check)) { streak++; }
     else if (i > 0 && !dagStatusAfwijkend(check)) break; // rust-, ziekte- of vrije dag onderbreekt de reeks niet
     const d = new Date(check + 'T00:00:00'); d.setDate(d.getDate() - 1);
@@ -934,7 +934,7 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
   {
     const dates = hist.map(h => h.date);
     let check = vandaag;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < HISTORY_MAX_DAGEN; i++) {
       if (dates.includes(check)) streak++;
       else if (i > 0 && dagStatusVan(statusObj, check) === 'normaal') break; // rust/ziek/vrij onderbreekt niet
       const d = new Date(check + 'T00:00:00'); d.setDate(d.getDate() - 1);
