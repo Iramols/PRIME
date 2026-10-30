@@ -1232,9 +1232,18 @@ async function renderSignalenTab() {
     const reacties = data.prime_coach_reacties || {};
     const antw = data.prime_klant_antwoorden || {};
     const notes = _notesVoorCoach(c.id, data.prime_notes, reacties, antw);
-    // Eigen berichten van de coach (gesprekken zonder toelichting of feedback): recent of met een nieuw antwoord van de klant.
+    // Gesprekken onder de kaart van de klant (naast de toelichtingen hierboven): eigen berichten van de coach (recent) en elk gesprek
+    // met een nieuw, nog niet gelezen antwoord van de klant, ook op feedback of op een oudere toelichting.
     const grensMsg = Date.now() - 30 * 86400000;
-    const draden = msgGespreksIds(reacties).filter(id => id.indexOf('msg:') === 0 && msgDraad(reacties, antw, id, reacties.verborgen).length && (msgLaatsteTs(msgDraad(reacties, antw, id, reacties.verborgen)) >= grensMsg || msgThreadNieuw(c.id, id, 0, reacties, antw)));
+    const getoond = notes.map(n => 'note:' + n.date);
+    const draden = msgGespreksIds(reacties).concat(Object.keys(antw)).filter((id, i, arr) => arr.indexOf(id) === i).filter(id => {
+      if (getoond.indexOf(id) >= 0) return false; // staat al als toelichting hierboven
+      const draad = msgDraad(reacties, antw, id, reacties.verborgen);
+      if (!draad.length) return false;
+      const laatsteKlant = msgLaatsteTs(draad, 'klant');
+      const ongelezenAntwoord = laatsteKlant > ((reacties.gelezen || {})[id] || 0);
+      return ongelezenAntwoord || (id.indexOf('msg:') === 0 && msgLaatsteTs(draad) >= grensMsg);
+    });
     if (signals.length || notes.length || draden.length) resultaten.push({ client: c, signals, notes, reacties, antw, draden });
   }
   resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
