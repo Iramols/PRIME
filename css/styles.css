@@ -937,3 +937,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .rx-wrap .gr { border: 1px solid var(--sage); background: var(--white); color: var(--sage); border-radius: 8px; padding: 6px 12px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .rx-wrap .gr.or { border-color: var(--coach-only); color: var(--coach-only); }
 .rx-fout { color: #c0392b; font-size: 12px; margin-top: 6px; }
+.note-verstuur { width: 100%; margin-top: 12px; }
+.note-status { font-size: 12px; color: var(--sage); font-weight: 600; margin-top: 8px; min-height: 16px; }
+.note-status.fout { color: #c0392b; }
