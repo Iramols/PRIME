@@ -418,6 +418,7 @@ function calcTrainingType() {
 
 async function doCheckin() {
   try { noteFlush(); } catch (e) { console.error(e); }
+  try { if (noteAan() && noteVan(localDateStr())) showToast(t('note.sent')); } catch (e) { console.error(e); }
   const btn = document.getElementById('checkin-btn');
   btn.disabled = true; btn.textContent = t('checkin.analyzing');
 
@@ -942,8 +943,7 @@ function noteEditorHtml(ctx) {
     '<textarea id="note-ta-' + ctx + '" class="note-ta" rows="' + max + '" maxlength="' + (max * 120) + '" placeholder="' + _fbEsc(t('note.placeholder')) + '" ' +
     'oninput="noteInput(this)" onchange="noteAutoSave(this)">' + _fbEsc(noteVan(localDateStr())) + '</textarea>' +
     '<div class="note-teller"><span id="note-cnt-' + ctx + '"></span><span>' + t('note.private') + '</span></div>' +
-    (ctx === 'm' ? '' : '<button type="button" class="btn-primary note-verstuur" onclick="noteVerstuur(\'' + ctx + '\')">' + t('note.send') + '</button>' +
-      '<div class="note-status" id="note-status-' + ctx + '">' + noteStatusTekst() + '</div>');
+    (ctx === 'ci' ? '<div class="note-hint">' + t('note.checkin.hint') + '</div>' : '');
 }
 
 function noteEditorKlaar(ctx) {
@@ -956,7 +956,7 @@ function noteEditorKlaar(ctx) {
 // Het veld in de check-in bewaren bij het verlaten van het veld (en bij het starten van de dag).
 function noteAutoSave(el) {
   if (!noteAan()) return;
-  if (noteBewaar(localDateStr(), el.value)) { noteKnopVernieuw(); noteStatusVernieuw(); }
+  if (noteBewaar(localDateStr(), el.value)) noteKnopVernieuw();
 }
 function noteFlush() {
   if (!noteAan()) return;
@@ -1144,27 +1144,4 @@ function wgImportUitvoeren() {
   closeWeightImport();
   if (typeof renderHistory === 'function') { try { renderHistory(); } catch (e) { console.error(e); } }
   try { showToast(t('weight.import.done', { n: r.ok.length })); } catch (e) { console.error(e); }
-}
-
-// Knop "Versturen naar je coach" onder het veld: bewaart meteen (de coach ziet de toelichting direct bij Signalen) en bevestigt dat.
-function noteVerstuur(ctx) {
-  if (!noteAan()) return;
-  const el = document.getElementById('note-ta-' + ctx);
-  if (!el) return;
-  const tekst = el.value.trim();
-  const status = document.getElementById('note-status-' + ctx);
-  if (!tekst) { if (status) { status.textContent = t('note.emptySend'); status.classList.add('fout'); } return; }
-  noteBewaar(localDateStr(), tekst);
-  noteKnopVernieuw();
-  noteStatusVernieuw();
-  try { showToast(t('note.sent')); } catch (e) { console.error(e); }
-}
-function noteStatusTekst() {
-  const n = dagNotes[localDateStr()];
-  if (!n || !n.text || !n.ts) return '';
-  const d = new Date(n.ts);
-  return '✓ ' + t('note.sentOn', { datum: d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) });
-}
-function noteStatusVernieuw() {
-  document.querySelectorAll('.note-status').forEach(function(el) { el.classList.remove('fout'); el.textContent = noteStatusTekst(); });
 }
