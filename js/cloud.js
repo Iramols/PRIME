@@ -876,16 +876,23 @@ async function sendFeedback(kind, message) {
   );
   const session = sessionData.session;
   if (!session) return { error: { message: 'niet ingelogd' } };
-  const { error } = await withTimeout(
-    sb.from('feedback').insert({
-      client_id: session.user.id,
-      kind: kind,
-      message: message,
-      app_build: window.PRIME_BUILD || null,
-      user_agent: (navigator.userAgent || '').slice(0, 200)
-    }),
-    3000, { error: { message: 'Failed to fetch (timeout)' } }
-  );
+  const verstuur = function(clientId) {
+    return withTimeout(
+      sb.from('feedback').insert({
+        client_id: clientId,
+        kind: kind,
+        message: message,
+        app_build: window.PRIME_BUILD || null,
+        user_agent: (navigator.userAgent || '').slice(0, 200)
+      }),
+      3000, { error: { message: 'Failed to fetch (timeout)' } }
+    );
+  };
+  // De coach die bij een klant is ingelogd geeft feedback namens die klant (zie supabase/feedback_coach_insert.sql); lukt dat niet
+  // (de regel is nog niet in Supabase gezet), dan blijft het bericht op naam van de coach staan i.p.v. verloren te gaan.
+  const namens = (isPrimeCoach() && kind !== 'delete_request' && activeClientId && activeClientId !== session.user.id) ? activeClientId : null;
+  let { error } = await verstuur(namens || session.user.id);
+  if (error && namens) ({ error } = await verstuur(session.user.id));
   return { error: error || null };
 }
 // Coach-only: de naam die elke deelnemer zelf in Profiel heeft ingevuld
