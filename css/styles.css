@@ -987,3 +987,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .fb-item.fb-paars:last-child { margin-bottom: 0; }
 .fb-item.fb-paars.nieuw { background: #e6dff5; border-left-color: var(--paars); }
 .fb-soort, .fb-nieuwantw { white-space: nowrap; }
+.msg-wacht { font-size: 12px; font-weight: 600; color: var(--paars); margin: 2px 0 8px; }

@@ -71,18 +71,34 @@ function msgDraadHtml(draad, perspectief) {
 // ---------- klant: eigen gesprekken ----------
 function msgReactieLijst() {
   const c = msgLokaal('prime_coach_reacties'), a = msgLokaal('prime_klant_antwoorden'), g = msgLokaal('prime_reacties_gelezen'), v = msgLokaal('prime_reacties_verborgen');
-  return msgGespreksIds(c).map(function(id) {
+  const mijnFb = msgLokaal('prime_mijn_feedback');
+  const notes = (typeof dagNotes !== 'undefined' && dagNotes) || {};
+  const grens = localDateStr(new Date(Date.now() - 60 * 86400000));
+  // Alle gesprekken met een bericht van de coach, plus wat de klant zelf heeft verstuurd (toelichtingen, feedback), ook zonder reactie.
+  const ids = msgGespreksIds(c).slice();
+  Object.keys(notes).forEach(function(d) { if (d >= grens && notes[d] && notes[d].text && ids.indexOf('note:' + d) < 0) ids.push('note:' + d); });
+  Object.keys(mijnFb).forEach(function(fid) { if (ids.indexOf('fb:' + fid) < 0) ids.push('fb:' + fid); });
+  return ids.map(function(id) {
     const draad = msgDraad(c, a, id, v), meta = msgMetaVan(c, id);
-    if (!draad.some(function(m) { return m.van === 'coach'; })) return null; // door de klant verwijderd (of nog geen bericht van de coach)
-    const laatsteCoach = msgLaatsteTs(draad, 'coach');
+    let bron = meta.bron, soort = meta.soort, eigenTs = 0;
     // De aanhaling bij een toelichting is de huidige tekst: heeft de klant de toelichting na de reactie aangepast, dan toont dit de laatste versie.
-    let bron = meta.bron;
-    if (meta.soort === 'note' && id.indexOf('note:') === 0 && typeof dagNotes !== 'undefined') {
-      const huidig = dagNotes[id.slice(5)];
-      if (huidig && huidig.text) bron = huidig.text;
+    if (id.indexOf('note:') === 0) {
+      const n = notes[id.slice(5)];
+      if (n && n.text) { bron = n.text; eigenTs = n.ts || 0; }
+      soort = 'note';
+    } else if (id.indexOf('fb:') === 0) {
+      const f = mijnFb[id.slice(3)];
+      if (f) { bron = f.text; eigenTs = f.ts || 0; }
+      soort = 'fb';
     }
-    return { id: id, soort: meta.soort, bron: bron, draad: draad, nieuw: !(g[id] >= laatsteCoach), sortTs: msgLaatsteTs(draad) };
-  }).filter(Boolean).sort(function(a, b) { return b.sortTs - a.sortTs; });
+    if (!draad.some(function(m) { return m.van === 'coach'; })) {
+      // nog geen bericht van de coach: alleen tonen als de klant dit zelf heeft verstuurd en niet voor zichzelf heeft verwijderd
+      if (!eigenTs || v[id] >= eigenTs) return null;
+      return { id: id, soort: soort, bron: bron, draad: [], nieuw: false, sortTs: eigenTs, wacht: true };
+    }
+    const laatsteCoach = msgLaatsteTs(draad, 'coach');
+    return { id: id, soort: soort, bron: bron, draad: draad, nieuw: !(g[id] >= laatsteCoach), sortTs: msgLaatsteTs(draad), wacht: false };
+  }).filter(Boolean).sort(function(x, y) { return y.sortTs - x.sortTs; });
 }
 
 // ---------- badge naast het logo ----------
@@ -99,7 +115,7 @@ function msgBadgeVernieuw() {
     totaal = lijst.length; nieuw = lijst.filter(function(r) { return r.nieuw; }).length;
     el.classList.remove('coach');
   }
-  el.style.display = totaal > 0 ? 'inline-flex' : 'none';
+  el.style.display = (isPrimeCoach() ? totaal > 0 : true) ? 'inline-flex' : 'none'; // klanten zien het wolkje altijd
   if (n) { n.textContent = nieuw > 0 ? String(nieuw) : ''; n.style.display = nieuw > 0 ? '' : 'none'; }
 }
 
@@ -118,7 +134,8 @@ function msgModalHtml(lijst) {
       (r.nieuw ? '<span class="msg-nieuw">' + t('msg.new') + '</span>' : '') + '</div>' +
       (r.bron ? '<div class="msg-eigen">"' + msgTekstHtml(r.bron) + '"</div>' : '') +
       msgDraadHtml(r.draad, 'klant') +
-      '<div class="rx-acties"><button type="button" class="gr rx-knop" onclick="msgAntwoordOpen(this)">' + t('msg.reply') + '</button>' +
+      (r.wacht ? '<div class="msg-wacht">' + t('msg.wait') + '</div>' : '') +
+      '<div class="rx-acties">' + (r.wacht ? '' : '<button type="button" class="gr rx-knop" onclick="msgAntwoordOpen(this)">' + t('msg.reply') + '</button>') +
       '<button type="button" class="gr" onclick="msgKlantVerwijder(this)">' + t('msg.reply.delete') + '</button></div>' +
       '<div class="rx-form" style="display:none"><textarea class="rx-ta" rows="3" maxlength="800" placeholder="' + msgEsc(t('msg.reply.placeholder')) + '"></textarea>' +
       '<div class="rx-rij"><button type="button" class="ver" onclick="msgAntwoordVerstuur(this)">' + t('msg.reply.send') + '</button>' +
@@ -136,6 +153,7 @@ function msgOpen() {
   const g = Object.assign({}, msgLokaal('prime_reacties_gelezen'));
   let gewijzigd = false;
   lijst.forEach(function(r) {
+    if (r.wacht) return;
     const ts = msgLaatsteTs(r.draad, 'coach');
     if (!(g[r.id] >= ts)) { g[r.id] = ts; gewijzigd = true; }
   });

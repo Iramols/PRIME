@@ -28,6 +28,16 @@ async function submitFeedback() {
     return;
   }
   closeFeedback();
+  // Onthouden wat de klant zelf heeft verstuurd, zodat het in de lijst achter het wolkje staat (de klant mag de feedbacktabel zelf niet lezen).
+  if (res.id) {
+    try {
+      const mijn = Object.assign({}, msgLokaal('prime_mijn_feedback'));
+      mijn[res.id] = { kind: _fbKind, text: msg, ts: Date.now() };
+      Object.keys(mijn).sort(function(x, y) { return (mijn[y].ts || 0) - (mijn[x].ts || 0); }).slice(50).forEach(function(k) { delete mijn[k]; });
+      syncSet('prime_mijn_feedback', mijn);
+      msgBadgeVernieuw();
+    } catch (e) { console.error(e); }
+  }
   try { showToast(t('feedback.sent')); } catch (e) {}
 }
 async function requestDataDeletion() {

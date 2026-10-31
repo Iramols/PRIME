@@ -34,6 +34,7 @@ const CLOUD_KEYS = [
   'prime_reacties_gelezen',
   'prime_klant_antwoorden',
   'prime_reacties_verborgen',
+  'prime_mijn_feedback',
   'prime_exercise_notes',
   'prime_custom_exercises',
   'prime_training_days',
@@ -878,9 +879,11 @@ async function sendFeedback(kind, message) {
   );
   const session = sessionData.session;
   if (!session) return { error: { message: 'niet ingelogd' } };
+  const nieuwId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : null;
   const verstuur = function(clientId) {
     return withTimeout(
       sb.from('feedback').insert({
+        ...(nieuwId ? { id: nieuwId } : {}),
         client_id: clientId,
         kind: kind,
         message: message,
@@ -895,7 +898,7 @@ async function sendFeedback(kind, message) {
   const namens = (isPrimeCoach() && kind !== 'delete_request' && activeClientId && activeClientId !== session.user.id) ? activeClientId : null;
   let { error } = await verstuur(namens || session.user.id);
   if (error && namens) ({ error } = await verstuur(session.user.id));
-  return { error: error || null };
+  return { error: error || null, id: nieuwId };
 }
 // Coach-only: de naam die elke deelnemer zelf in Profiel heeft ingevuld
 // (prime_profile.name), voor alle klanten in één vraag. Geeft {client_id: naam}.
