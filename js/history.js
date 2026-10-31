@@ -1055,7 +1055,7 @@ function _fbItemsHtml(items, nameOf, kindLabel, reactieVan, antwoordVan) {
     const d = new Date(f.created_at);
     const antwDraad = antwoordVan ? (antwoordVan(f.client_id) || {})['fb:' + f.id] : null;
     const nieuwAntw = !!(reactieVan && antwDraad && antwDraad.length && msgThreadNieuw(f.client_id, 'fb:' + f.id, 0, reactieVan(f.client_id), antwoordVan(f.client_id)));
-    return '<div class="fb-item">' +
+    return '<div class="fb-item' + (kindLabel ? ' fb-paars' + (nieuwAntw ? ' nieuw' : '') : '') + '">' + (kindLabel ? '<div class="note-soort">' + t('fb.label') + '</div>' : '') +
       '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px">' +
         '<span><b style="color:var(--charcoal)">' + _fbEsc(nameOf(f.client_id)) + '</b> · ' + d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) + '</span>' +
         '<span>' + (nieuwAntw ? '<span class="fb-nieuwantw">' + t('fb.newReply') + '</span> ' : '') +

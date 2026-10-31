@@ -983,3 +983,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .pb-rij { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 4px 0; }
 .pb-tag { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 10px; background: var(--sand); color: var(--muted); }
 .fb-nieuwantw { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 10px; background: var(--paars); color: #fff; margin-right: 4px; }
+.fb-item.fb-paars { background: var(--paars-light); border-bottom: none; border-left: 3px solid var(--paars-mid); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+.fb-item.fb-paars:last-child { margin-bottom: 0; }
+.fb-item.fb-paars.nieuw { background: #e6dff5; border-left-color: var(--paars); }
+.fb-soort, .fb-nieuwantw { white-space: nowrap; }
