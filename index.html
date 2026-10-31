@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261031-0823';
+window.PRIME_BUILD = '20261031-0844';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261031-0823">
+<link rel="stylesheet" href="css/styles.css?v=20261031-0844">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261031-0823"></script>
-<script src="js/translations.js?v=20261031-0823"></script>
-<script src="js/i18n.js?v=20261031-0823"></script>
+<script src="js/cloud.js?v=20261031-0844"></script>
+<script src="js/translations.js?v=20261031-0844"></script>
+<script src="js/i18n.js?v=20261031-0844"></script>
 </head>
 <body>
 
@@ -304,6 +304,13 @@ if ('serviceWorker' in navigator) {
       </div>
     </div>
 
+    <!-- Feedback over de app: tussen de bedanktekst en de dagstatus -->
+    <div class="card fb-card fb-boven">
+      <div class="fb-card-kop"><span class="fb-card-icoon">💬</span><div class="fb-card-titel" data-i18n="feedback.card.title">Help PRIME beter te maken</div></div>
+      <p class="fb-card-tekst" data-i18n="feedback.card.text">PRIME is nieuw en wordt samen met jullie ontwikkeld. Werkt iets niet, mis je iets of heb je een idee voor de app? Laat het weten. Dit gaat over de app, niet over je coaching of je resultaten.</p>
+      <button class="btn-primary btn-paars" onclick="openFeedback()" data-i18n="feedback.card.btn">Feedback over de app</button>
+    </div>
+
     <div class="dagstatus-slot"></div>
 
     <div class="card" style="display:flex;align-items:center;gap:10px;cursor:pointer" id="day-weight-row" onclick="openWeightModal()"></div>
@@ -393,18 +400,18 @@ if ('serviceWorker' in navigator) {
       </div>
     </div>
 
+    <!-- Feedback over de app: tussen de bedanktekst en de dagstatus -->
+    <div class="card fb-card fb-boven">
+      <div class="fb-card-kop"><span class="fb-card-icoon">💬</span><div class="fb-card-titel" data-i18n="feedback.card.title">Help PRIME beter te maken</div></div>
+      <p class="fb-card-tekst" data-i18n="feedback.card.text">PRIME is nieuw en wordt samen met jullie ontwikkeld. Werkt iets niet, mis je iets of heb je een idee voor de app? Laat het weten. Dit gaat over de app, niet over je coaching of je resultaten.</p>
+      <button class="btn-primary btn-paars" onclick="openFeedback()" data-i18n="feedback.card.btn">Feedback over de app</button>
+    </div>
+
     <div class="dagstatus-slot"></div>
 
     <div class="card" style="display:flex;align-items:center;gap:10px;cursor:pointer" id="done-weight-row" onclick="openWeightModal()"></div>
 
     <div id="done-note" class="note-knop-slot"></div>
-  </div>
-
-  <!-- Feedback over de app (altijd zichtbaar onderaan het Dashboard) -->
-  <div class="card fb-card" id="home-feedback-card">
-    <div class="fb-card-kop"><span class="fb-card-icoon">💬</span><div class="fb-card-titel" data-i18n="feedback.card.title">Help PRIME beter te maken</div></div>
-    <p class="fb-card-tekst" data-i18n="feedback.card.text">PRIME is nieuw en wordt samen met jullie ontwikkeld. Werkt iets niet, mis je iets of heb je een idee voor de app? Laat het weten. Dit gaat over de app, niet over je coaching of je resultaten.</p>
-    <button class="btn-primary btn-paars" onclick="openFeedback()" data-i18n="feedback.card.btn">Feedback over de app</button>
   </div>
 
 </div>
@@ -1865,6 +1872,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261031-0823"></script>
+<script src="js/auth.js?v=20261031-0844"></script>
 </body>
 </html>

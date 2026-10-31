@@ -974,3 +974,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .note-dash .note-knop-tekst { color: var(--charcoal); }
 .sig-n { background: var(--paars); }
 #sig-n-verwijder { background: #c0392b; }
+.fb-card.fb-boven { margin-top: 0; margin-bottom: 18px; }
