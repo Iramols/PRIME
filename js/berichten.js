@@ -75,7 +75,13 @@ function msgReactieLijst() {
     const draad = msgDraad(c, a, id, v), meta = msgMetaVan(c, id);
     if (!draad.some(function(m) { return m.van === 'coach'; })) return null; // door de klant verwijderd (of nog geen bericht van de coach)
     const laatsteCoach = msgLaatsteTs(draad, 'coach');
-    return { id: id, soort: meta.soort, bron: meta.bron, draad: draad, nieuw: !(g[id] >= laatsteCoach), sortTs: msgLaatsteTs(draad) };
+    // De aanhaling bij een toelichting is de huidige tekst: heeft de klant de toelichting na de reactie aangepast, dan toont dit de laatste versie.
+    let bron = meta.bron;
+    if (meta.soort === 'note' && id.indexOf('note:') === 0 && typeof dagNotes !== 'undefined') {
+      const huidig = dagNotes[id.slice(5)];
+      if (huidig && huidig.text) bron = huidig.text;
+    }
+    return { id: id, soort: meta.soort, bron: bron, draad: draad, nieuw: !(g[id] >= laatsteCoach), sortTs: msgLaatsteTs(draad) };
   }).filter(Boolean).sort(function(a, b) { return b.sortTs - a.sortTs; });
 }
 
