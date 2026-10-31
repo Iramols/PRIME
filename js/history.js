@@ -1053,15 +1053,19 @@ async function renderConsentOverview() {
 function _fbItemsHtml(items, nameOf, kindLabel, reactieVan, antwoordVan) {
   return '<div class="card">' + items.map(f => {
     const d = new Date(f.created_at);
+    const antwDraad = antwoordVan ? (antwoordVan(f.client_id) || {})['fb:' + f.id] : null;
+    const nieuwAntw = !!(reactieVan && antwDraad && antwDraad.length && msgThreadNieuw(f.client_id, 'fb:' + f.id, 0, reactieVan(f.client_id), antwoordVan(f.client_id)));
     return '<div class="fb-item">' +
       '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px">' +
         '<span><b style="color:var(--charcoal)">' + _fbEsc(nameOf(f.client_id)) + '</b> · ' + d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) + '</span>' +
-        (kindLabel ? '<span class="fb-soort fb-soort-' + _fbEsc(f.kind) + '">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' : '') +
+        '<span>' + (nieuwAntw ? '<span class="fb-nieuwantw">' + t('fb.newReply') + '</span> ' : '') +
+        (kindLabel ? '<span class="fb-soort fb-soort-' + _fbEsc(f.kind) + '">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' : '') + '</span>' +
       '</div>' +
       '<div style="font-size:14px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap">' + _fbEsc(f.message) + '</div>' +
       '<div style="display:flex;gap:8px">' +
         '<button class="btn-sm" onclick="toggleFeedbackHandled(\'' + f.id + '\',' + (!f.handled) + ')">' + (f.handled ? t('feedback.coach.reopen') : t('feedback.coach.handled')) + '</button>' +
         '<button class="btn-sm" onclick="removeFeedback(\'' + f.id + '\')">' + t('feedback.coach.delete') + '</button>' +
+        (nieuwAntw ? '<button class="btn-sm" onclick="fbAntwoordGelezen(this, \'' + f.client_id + '\', \'' + f.id + '\')">' + t('note.coach.markRead') + '</button>' : '') +
       '</div>' + (reactieVan ? msgReactieBlokHtml(f.client_id, 'fb:' + f.id, 'fb', f.message, reactieVan(f.client_id), antwoordVan ? antwoordVan(f.client_id) : {}) : '') + '</div>';
   }).join('') + '</div>';
 }
@@ -1260,8 +1264,8 @@ function switchSignalenTab(tab) {
 // 💬-bolletje van de coach: naar het tabblad waar iets nieuws staat
 function sigOpenMeestRelevant() {
   const d = (typeof _coachDetail !== 'undefined' && _coachDetail) || {};
-  if ((d.notes || 0) + (d.antw || 0) > 0) switchSignalenTab('toelichting');
-  else if ((d.feedback || 0) > 0) switchSignalenTab('feedback');
+  if ((d.notes || 0) + (d.antw || 0) - (d.antwFb || 0) > 0) switchSignalenTab('toelichting');
+  else if ((d.feedback || 0) + (d.antwFb || 0) > 0) switchSignalenTab('feedback');
   else if ((d.verwijder || 0) > 0) switchSignalenTab('verwijder');
 }
 function sigToonAllesToggle() {
@@ -1300,7 +1304,7 @@ function sigRenderToelichting() {
     const notes = _notesVoorCoach(r.client.id, r.notesRaw, reacties, antw, alles);
     const getoond = notes.map(n => 'note:' + n.date);
     const draden = msgGespreksIds(reacties).concat(Object.keys(antw)).filter((id, i, arr) => arr.indexOf(id) === i).filter(id => {
-      if (getoond.indexOf(id) >= 0) return false; // staat al als toelichting
+      if (getoond.indexOf(id) >= 0 || id.indexOf('fb:') === 0) return false; // staat al als toelichting; gesprekken over feedback staan bij Feedback
       const draad = msgDraad(reacties, antw, id, reacties.verborgen);
       if (!draad.length) return false;
       if (alles) return true;

@@ -11,7 +11,7 @@
 // aantal nieuwe toelichtingen (laatste 14 dagen), nog niet afgehandelde feedback en ongelezen antwoorden van klanten.
 
 let _coachNieuw = 0;      // aantal nieuwe dingen voor de coach
-let _coachDetail = { notes: 0, feedback: 0, antw: 0, verwijder: 0 };
+let _coachDetail = { notes: 0, feedback: 0, antw: 0, antwFb: 0, verwijder: 0 };
 let _msgLaatste = 0;      // tijdstip van de laatste telling (beperkt het aantal verzoeken)
 let _msgBulk = null;      // { ts, notes, reacties, antwoorden, feedback, klanten } van de laatste bulk-lezing
 let _msgGestart = false;
@@ -215,7 +215,7 @@ async function msgCoachBulk(vers) {
 
 function msgTelling(b) {
   const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
-  let notes = 0, feedback = 0, antw = 0, verwijder = 0;
+  let notes = 0, feedback = 0, antw = 0, antwFb = 0, verwijder = 0;
   const geteld = {};
   b.klanten.forEach(function(cid) {
     const n = b.notes[cid] || {}, c = b.reacties[cid] || {}, a = b.antwoorden[cid] || {};
@@ -223,7 +223,7 @@ function msgTelling(b) {
       if (d >= grens && n[d] && n[d].text && msgThreadNieuw(cid, 'note:' + d, n[d].ts || 0, c, {})) { notes++; geteld[cid + '|note:' + d] = 1; } // alleen de toelichting zelf; een nieuw antwoord telt hieronder
     });
     Object.keys(a).forEach(function(id) { // nieuwe antwoorden van klanten op een gesprek dat nog niet is geteld
-      if (!geteld[cid + '|' + id] && msgThreadNieuw(cid, id, 0, c, a)) { antw++; geteld[cid + '|' + id] = 1; }
+      if (!geteld[cid + '|' + id] && msgThreadNieuw(cid, id, 0, c, a)) { antw++; if (id.indexOf('fb:') === 0) antwFb++; geteld[cid + '|' + id] = 1; }
     });
   });
   b.feedback.forEach(function(f) {
@@ -231,15 +231,15 @@ function msgTelling(b) {
     if (f.kind === 'delete_request') { verwijder++; return; }
     if (!geteld[f.client_id + '|fb:' + f.id]) feedback++;
   });
-  return { notes: notes, feedback: feedback, antw: antw, verwijder: verwijder };
+  return { notes: notes, feedback: feedback, antw: antw, antwFb: antwFb, verwijder: verwijder };
 }
 
 // Getalletjes in de tabs van Signalen (Toelichting, Feedback, Verwijderverzoeken)
 function sigTabBadges() {
   const d = _coachDetail || {};
   const zet = function(k, n) { const el = document.getElementById('sig-n-' + k); if (!el) return; el.textContent = n > 0 ? n : ''; el.style.display = n > 0 ? '' : 'none'; };
-  zet('toelichting', (d.notes || 0) + (d.antw || 0));
-  zet('feedback', d.feedback || 0);
+  zet('toelichting', (d.notes || 0) + (d.antw || 0) - (d.antwFb || 0)); // antwoorden op feedback tellen bij Feedback
+  zet('feedback', (d.feedback || 0) + (d.antwFb || 0));
   zet('verwijder', d.verwijder || 0);
 }
 
@@ -532,4 +532,13 @@ function msgStart() {
   document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') coachTellingVernieuw(false); });
   window.addEventListener('focus', function() { coachTellingVernieuw(false); });
   setInterval(function() { coachTellingVernieuw(false); }, 5 * 60 * 1000);
+}
+
+// Feedbackitem in Signalen: het nieuwe antwoord van de klant als gelezen markeren.
+async function fbAntwoordGelezen(knop, clientId, fbId) {
+  try { await msgGelezenZet(clientId, 'fb:' + fbId, 0, true); }
+  catch (e) { console.error('fbAntwoordGelezen:', e); try { showToast(t('msg.coach.failed'), true); } catch (e2) { /* geen melding */ } return; }
+  const item = knop.closest('.fb-item');
+  if (item) item.querySelectorAll('.fb-nieuwantw').forEach(function(x) { x.remove(); });
+  knop.remove();
 }
