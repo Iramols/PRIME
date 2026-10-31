@@ -290,6 +290,7 @@ function addCustomProduct() {
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
     alc: parseFloat(document.getElementById('ap-alc').value) || 0,
+    portie: apPortieLees(_apEditingId ? (customProducts.find(p => p.id === _apEditingId) || {}).portie : null),
     photo: _apPhotoData || null
   };
   if (_apBarcode) velden.barcode = _apBarcode;
@@ -331,6 +332,7 @@ function resetAddProductForm() {
   document.getElementById('ap-carb').value = 0;
   document.getElementById('ap-fat').value = 0;
   document.getElementById('ap-alc').value = 0;
+  apPortieZet(null);
   document.getElementById('ap-kcal-display').textContent = '0 kcal';
   document.getElementById('ap-photo-preview').innerHTML = '🍽️';
   document.getElementById('ap-error').textContent = '';
@@ -373,6 +375,7 @@ function editCustomProduct(id) {
   document.getElementById('ap-carb').value = product.carb || 0;
   document.getElementById('ap-fat').value = product.fat || 0;
   document.getElementById('ap-alc').value = product.alc || 0;
+  apPortieZet(product.portie);
   updateAddProductKcal();
   _apPhotoData = product.photo || null;
   document.getElementById('ap-photo-preview').innerHTML = product.photo
@@ -413,8 +416,12 @@ function renderAddProductTab() {
     <div class="coach-only-btn" onclick="openBarcodeScanner()" style="${balkStijl};border-color:var(--coach-only)">
       <span style="font-size:18px;line-height:1">📷</span><span>${t('food.scan.tile')}</span>
     </div>` : '';
-  // Bovenaan een eigen rij met de acties (toevoegen, scannen); daaronder de opgeslagen producten.
-  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">` + tegel + scanTegel + `</div><div class="product-grid">` + lijst.map(p => `
+  const portieTegel = `
+    <div onclick="portieBulkOpen()" style="${balkStijl};border-color:var(--sand-dark);background:var(--white);color:var(--charcoal)">
+      <span style="font-size:18px;line-height:1">⚖️</span><span>${t('food.pb.tile')}</span>
+    </div>`;
+  // Bovenaan een eigen rij met de acties (toevoegen, scannen, portie voor meerdere); daaronder de opgeslagen producten.
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px">` + tegel + scanTegel + portieTegel + `</div><div class="product-grid">` + lijst.map(p => `
     <div class="product-card" onclick="openOwnProductModal('${p.id}')">
       <span class="prod-label prod-label-own">${t('food.label.own')}</span>
       ${p.photo ? `<div class="product-photo"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>` : `<div class="product-icon">${p.icon || '🍽️'}</div>`}
@@ -424,6 +431,7 @@ function renderAddProductTab() {
         <span class="product-pill">${p.kcal} kcal</span>
         <span class="product-pill">${t('food.macroAbbr.protein')}${p.prot}g</span>
       </div>
+      ${(() => { const pw = portieWaarden(p); return pw ? '<div class="product-portie">' + pw.label + ' (' + pw.gram + ' g): <b>' + pw.kcal + ' kcal</b></div>' : ''; })()}
     </div>`).join('') + `</div>` +
     (!customProducts.length ? '<div style="font-size:13px;color:var(--muted);margin-top:12px">' + t('food.add.noOwnProducts') + '</div>' : '');
 }
@@ -2182,6 +2190,7 @@ function editPrimeProduct(id) {
   document.getElementById('ap-carb').value = p.carb || 0;
   document.getElementById('ap-fat').value = p.fat || 0;
   document.getElementById('ap-alc').value = p.alc || 0;
+  apPortieZet(p.portie);
   updateAddProductKcal();
   _apPhotoData = p.photo || null;
   document.getElementById('ap-photo-preview').innerHTML = p.photo
@@ -2220,6 +2229,7 @@ async function savePrimeProductEdit() {
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
     alc: parseFloat(document.getElementById('ap-alc').value) || 0,
+    portie: apPortieLees((PRODUCTS.find(x => x.id === _apPrimeId) || {}).portie),
     photo: _apPhotoData || null
   };
 
@@ -2234,7 +2244,10 @@ async function savePrimeProductEdit() {
     // verbeteringen aan de vaste lijst voor onaangepaste velden blijven doorwerken.
     const orig = (_productsOrig || []).find(o => o.id === id) || {};
     rij = { id: id, op: 'edit' };
-    Object.keys(velden).forEach(f => { if (velden[f] !== orig[f] && !(velden[f] === null && orig[f] === undefined)) rij[f] = velden[f]; });
+    Object.keys(velden).forEach(f => {
+      if (f === 'portie') { if (JSON.stringify(velden[f] || null) !== JSON.stringify(orig[f] || null)) rij[f] = velden[f]; return; }
+      if (velden[f] !== orig[f] && !(velden[f] === null && orig[f] === undefined)) rij[f] = velden[f];
+    });
     // Het formulier rekent kcal altijd uit E/K/V; de vaste lijst heeft soms de
     // kcal uit de bron. Alleen als de macro's zelf zijn gewijzigd telt de nieuwe kcal.
     const macrosGewijzigd = ['prot', 'carb', 'fat'].some(f => velden[f] !== orig[f]);
@@ -2391,6 +2404,7 @@ async function savePrimeProductNew() {
     carb: parseFloat(document.getElementById('ap-carb').value) || 0,
     fat: parseFloat(document.getElementById('ap-fat').value) || 0,
     alc: parseFloat(document.getElementById('ap-alc').value) || 0,
+    portie: apPortieLees(bron && bron.portie),
     photo: _apPhotoData || null
   };
   if (_apBarcode) rij.barcode = _apBarcode;
@@ -2453,7 +2467,7 @@ async function deelEigenProduct(id, zonderBevestiging) {
   const foto = await _fotoNaarStorage(p.photo);
   const rij = {
     id: p.id, op: 'new', icon: p.icon || '🍽️', name: p.name, cat: p.cat,
-    kcal: p.kcal, prot: p.prot, carb: p.carb, fat: p.fat, photo: foto || null
+    kcal: p.kcal, prot: p.prot, carb: p.carb, fat: p.fat, portie: p.portie || null, photo: foto || null
   };
   const fout = await savePrimeProductToCloud(rij);
   if (fout) {
@@ -4390,3 +4404,84 @@ function vzDatumRegel(id) {
   if (r && el) r.datum = el.value;
 }
 
+// ========== PORTIE VAN EEN PRODUCT (1 stuk = x gram) ==========
+// Optioneel veld in het productformulier. Het product krijgt { gram, label }; klanten zien dan de knop "label (gram g)" met een aantal
+// stuks, net als bij komkommer. Is er niets gewijzigd t.o.v. het origineel, dan blijft dat object (met eventuele label_en) staan.
+function apPortieLees(origineel) {
+  const g = parseFloat(document.getElementById('ap-portie-gram').value);
+  if (!(g > 0)) return null;
+  const gram = Math.round(g * 10) / 10;
+  const label = (document.getElementById('ap-portie-naam').value || '').trim() || t('food.add.portieStandaard');
+  if (origineel && origineel.gram === gram && origineel.label === label) return origineel;
+  return { gram: gram, label: label };
+}
+function apPortieZet(portie) {
+  const g = document.getElementById('ap-portie-gram');
+  const n = document.getElementById('ap-portie-naam');
+  if (g) g.value = portie && portie.gram > 0 ? portie.gram : '';
+  if (n) n.value = portie && portie.gram > 0 ? (portie.label || '') : '';
+}
+
+// Portie voor meerdere producten tegelijk (bijvoorbeeld alle ESN-repen). Eigen producten voor iedereen; de coach ook de
+// producten die voor iedereen gelden (die worden voor iedereen opgeslagen).
+let _pbLijst = [];
+function portieBulkOpen() {
+  ['pb-zoek', 'pb-gram', 'pb-naam'].forEach(function(id) { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('pb-fout').textContent = '';
+  document.getElementById('pb-knop').disabled = false;
+  portieBulkLijst();
+  document.getElementById('portie-bulk-modal').classList.add('open');
+}
+function portieBulkSluit() { document.getElementById('portie-bulk-modal').classList.remove('open'); }
+function portieBulkLijst() {
+  const q = (document.getElementById('pb-zoek').value || '').trim().toLowerCase();
+  const el = document.getElementById('pb-lijst');
+  _pbLijst = [];
+  if (q) {
+    const past = function(p) { return (p.name || '').toLowerCase().indexOf(q) >= 0 || dispName(p).toLowerCase().indexOf(q) >= 0; };
+    customProducts.forEach(function(p) { if (past(p)) _pbLijst.push({ soort: 'eigen', p: p }); });
+    if (isPrimeCoach()) PRODUCTS.forEach(function(p) { if (past(p)) _pbLijst.push({ soort: 'prime', p: p }); });
+  }
+  if (!q) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.style.display = 'block';
+  if (!_pbLijst.length) { el.innerHTML = '<div class="pb-rij" style="color:var(--muted)">' + t('food.pb.none') + '</div>'; return; }
+  el.innerHTML = '<div class="pb-tel">' + t('food.pb.count', { n: _pbLijst.length }) + '</div>' + _pbLijst.map(function(x) {
+    const nu = x.p.portie && x.p.portie.gram > 0 ? ' · ' + t('food.pb.now', { gram: x.p.portie.gram }) : '';
+    return '<div class="pb-rij"><span>' + _fbEsc(dispName(x.p)) + '<small style="color:var(--muted)">' + nu + '</small></span><span class="pb-tag">' + t(x.soort === 'eigen' ? 'food.pb.own' : 'food.pb.shared') + '</span></div>';
+  }).join('');
+}
+async function portieBulkToepassen() {
+  const fout = document.getElementById('pb-fout');
+  fout.textContent = '';
+  const gram = Math.round((parseFloat(document.getElementById('pb-gram').value) || 0) * 10) / 10;
+  const naam = (document.getElementById('pb-naam').value || '').trim() || t('food.add.portieStandaard');
+  if (!_pbLijst.length) { fout.textContent = t('food.pb.none'); return; }
+  if (!(gram > 0)) { fout.textContent = t('food.pb.gramRequired'); return; }
+  const knop = document.getElementById('pb-knop');
+  knop.disabled = true;
+  let n = 0, mislukt = 0;
+  let eigenGewijzigd = false;
+  for (const x of _pbLijst) {
+    const portie = { gram: gram, label: naam };
+    if (x.soort === 'eigen') {
+      const p = customProducts.find(c => c.id === x.p.id);
+      if (p) { p.portie = portie; eigenGewijzigd = true; n++; }
+      continue;
+    }
+    const id = x.p.id;
+    const bestaand = primeProducts.find(r => r && r.id === id);
+    const rij = (bestaand && bestaand.op === 'new') ? Object.assign({}, bestaand, { portie: portie })
+      : Object.assign({}, (bestaand && bestaand.op === 'edit') ? bestaand : { id: id, op: 'edit' }, { portie: portie });
+    primeProducts = primeProducts.filter(r => !(r && r.id === id)).concat([rij]);
+    const err = await savePrimeProductToCloud(rij);
+    if (err) mislukt++;
+    n++;
+  }
+  if (eigenGewijzigd) syncSet('prime_custom_products', customProducts);
+  _bewaarPrimeProductenLokaal();
+  applyPrimeProducts();
+  renderAddProductTab();
+  renderProducts();
+  portieBulkSluit();
+  try { showToast(mislukt ? t('food.pb.failed') : t('food.pb.done', { n: n }), !!mislukt); } catch (e) { console.error(e); }
+}
