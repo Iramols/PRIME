@@ -947,3 +947,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .rx-klant .rx-acties { justify-content: flex-start; }
 .msg-draadkaart .msg-reactie { margin-top: 8px; }
 .rx-klant .rx-acties { justify-content: flex-start; gap: 8px; flex-wrap: wrap; }
+.sig-tabs .food-tab { white-space: nowrap; flex-shrink: 0; padding: 10px 14px; }
+.sig-n { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--coach-only); color: #fff; font-size: 11px; font-weight: 700; text-align: center; vertical-align: 1px; }
+.sig-filter { display: flex; justify-content: flex-end; margin-bottom: 12px; }

@@ -11,7 +11,7 @@
 // aantal nieuwe toelichtingen (laatste 14 dagen), nog niet afgehandelde feedback en ongelezen antwoorden van klanten.
 
 let _coachNieuw = 0;      // aantal nieuwe dingen voor de coach
-let _coachDetail = { notes: 0, feedback: 0, antw: 0 };
+let _coachDetail = { notes: 0, feedback: 0, antw: 0, verwijder: 0 };
 let _msgLaatste = 0;      // tijdstip van de laatste telling (beperkt het aantal verzoeken)
 let _msgBulk = null;      // { ts, notes, reacties, antwoorden, feedback, klanten } van de laatste bulk-lezing
 let _msgGestart = false;
@@ -98,7 +98,7 @@ function msgBadgeVernieuw() {
 }
 
 function msgBadgeKlik() {
-  if (isPrimeCoach()) { go('signalen'); return; }
+  if (isPrimeCoach()) { go('signalen'); sigOpenMeestRelevant(); return; }
   msgOpen();
 }
 
@@ -209,7 +209,7 @@ async function msgCoachBulk(vers) {
 
 function msgTelling(b) {
   const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
-  let notes = 0, feedback = 0, antw = 0;
+  let notes = 0, feedback = 0, antw = 0, verwijder = 0;
   const geteld = {};
   b.klanten.forEach(function(cid) {
     const n = b.notes[cid] || {}, c = b.reacties[cid] || {}, a = b.antwoorden[cid] || {};
@@ -221,10 +221,20 @@ function msgTelling(b) {
     });
   });
   b.feedback.forEach(function(f) {
-    if (f.kind === 'delete_request' || f.handled || b.klanten.indexOf(f.client_id) < 0) return;
+    if (f.handled || b.klanten.indexOf(f.client_id) < 0) return;
+    if (f.kind === 'delete_request') { verwijder++; return; }
     if (!geteld[f.client_id + '|fb:' + f.id]) feedback++;
   });
-  return { notes: notes, feedback: feedback, antw: antw };
+  return { notes: notes, feedback: feedback, antw: antw, verwijder: verwijder };
+}
+
+// Getalletjes in de tabs van Signalen (Toelichting, Feedback, Verwijderverzoeken)
+function sigTabBadges() {
+  const d = _coachDetail || {};
+  const zet = function(k, n) { const el = document.getElementById('sig-n-' + k); if (!el) return; el.textContent = n > 0 ? n : ''; el.style.display = n > 0 ? '' : 'none'; };
+  zet('toelichting', (d.notes || 0) + (d.antw || 0));
+  zet('feedback', d.feedback || 0);
+  zet('verwijder', d.verwijder || 0);
 }
 
 async function coachTellingVernieuw(force) {
@@ -249,6 +259,7 @@ async function coachTellingVernieuw(force) {
 
 // Balk bovenaan Signalen: wat er nieuw is, met "Alles als gelezen" en "Bericht sturen".
 function msgRenderBalk() {
+  sigTabBadges();
   const el = document.getElementById('msg-bar');
   if (!el) return;
   if (!isPrimeCoach()) { el.innerHTML = ''; return; }

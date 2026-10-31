@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261030-2212';
+window.PRIME_BUILD = '20261031-0749';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261030-2212">
+<link rel="stylesheet" href="css/styles.css?v=20261031-0749">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261030-2212"></script>
-<script src="js/translations.js?v=20261030-2212"></script>
-<script src="js/i18n.js?v=20261030-2212"></script>
+<script src="js/cloud.js?v=20261031-0749"></script>
+<script src="js/translations.js?v=20261031-0749"></script>
+<script src="js/i18n.js?v=20261031-0749"></script>
 </head>
 <body>
 
@@ -1158,11 +1158,20 @@ if ('serviceWorker' in navigator) {
     <div style="font-size:13px;color:var(--muted)" data-i18n="signalen.subtitle">Klanten met openstaande signalen, gesorteerd op ernst.</div>
   </div>
   <div id="msg-bar"></div>
-  <div id="signalen-overzicht-content"></div>
-  <div id="consent-overzicht-content" style="margin-top:28px"></div>
-  <div id="delete-requests-content" style="margin-top:28px"></div>
-  <div id="feedback-overzicht-content" style="margin-top:28px"></div>
-  <div style="margin-top:28px">
+  <div class="food-tabs sig-tabs" id="sig-tabs">
+    <button class="food-tab active" id="sigbtn-trends" onclick="switchSignalenTab('trends')"><span data-i18n="sig.tab.trends">Trends</span><span class="sig-n" id="sig-n-trends" style="display:none"></span></button>
+    <button class="food-tab" id="sigbtn-toelichting" onclick="switchSignalenTab('toelichting')"><span data-i18n="sig.tab.toelichting">Toelichting voor coach</span><span class="sig-n" id="sig-n-toelichting" style="display:none"></span></button>
+    <button class="food-tab" id="sigbtn-feedback" onclick="switchSignalenTab('feedback')"><span data-i18n="sig.tab.feedback">Feedback</span><span class="sig-n" id="sig-n-feedback" style="display:none"></span></button>
+    <button class="food-tab" id="sigbtn-toestemming" onclick="switchSignalenTab('toestemming')"><span data-i18n="sig.tab.toestemming">Toestemming</span><span class="sig-n" id="sig-n-toestemming" style="display:none"></span></button>
+    <button class="food-tab" id="sigbtn-verwijder" onclick="switchSignalenTab('verwijder')"><span data-i18n="sig.tab.verwijder">Verwijderverzoeken</span><span class="sig-n" id="sig-n-verwijder" style="display:none"></span></button>
+    <button class="food-tab" id="sigbtn-export" onclick="switchSignalenTab('export')"><span data-i18n="sig.tab.export">Data exporteren</span><span class="sig-n" id="sig-n-export" style="display:none"></span></button>
+  </div>
+  <div class="sig-pane" id="sigpane-trends"><div id="signalen-overzicht-content"></div></div>
+  <div class="sig-pane" id="sigpane-toelichting" style="display:none"><div id="sig-toelichting-content"></div></div>
+  <div class="sig-pane" id="sigpane-feedback" style="display:none"><div id="feedback-overzicht-content"></div></div>
+  <div class="sig-pane" id="sigpane-toestemming" style="display:none"><div id="consent-overzicht-content"></div></div>
+  <div class="sig-pane" id="sigpane-verwijder" style="display:none"><div id="delete-requests-content"></div></div>
+  <div class="sig-pane" id="sigpane-export" style="display:none">
     <div style="font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:12px" data-i18n="export.title">Data exporteren</div>
     <div class="card">
       <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px" data-i18n="export.hint">Download alle gegevens van alle deelnemers.</div>
@@ -1851,6 +1860,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261030-2212"></script>
+<script src="js/auth.js?v=20261031-0749"></script>
 </body>
 </html>

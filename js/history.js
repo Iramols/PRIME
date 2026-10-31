@@ -1125,9 +1125,9 @@ async function removeFeedback(id) {
 // Toelichtingen van klanten (alleen coach). De gelezen-status staat in de cloud (zie berichten.js); de oude, per apparaat bewaarde
 // markering blijft als vangnet meetellen.
 function _noteGelezen() { try { return JSON.parse(localStorage.getItem('prime_notes_gelezen') || '{}'); } catch (e) { return {}; } }
-function _notesVoorCoach(clientId, notes, reactiesObj, antwObj) {
-  const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
-  return Object.keys(notes || {}).filter(function(d) { return d >= grens && notes[d] && notes[d].text && !(((reactiesObj && reactiesObj.verborgen || {})['note:' + d]) >= (notes[d].ts || 0)); }).sort().reverse().slice(0, 5).map(function(d) {
+function _notesVoorCoach(clientId, notes, reactiesObj, antwObj, alles) {
+  const grens = alles ? '' : localDateStr(new Date(Date.now() - 14 * 86400000));
+  return Object.keys(notes || {}).filter(function(d) { return d >= grens && notes[d] && notes[d].text && !(((reactiesObj && reactiesObj.verborgen || {})['note:' + d]) >= (notes[d].ts || 0)); }).sort().reverse().slice(0, alles ? 400 : 5).map(function(d) {
     const ts = notes[d].ts || 0;
     return { date: d, text: notes[d].text, ts: ts, nieuw: msgNoteNieuw(clientId, d, ts, reactiesObj, antwObj) };
   });
@@ -1212,6 +1212,8 @@ async function renderSignalenTab() {
     document.getElementById('feedback-overzicht-content') && (document.getElementById('feedback-overzicht-content').innerHTML = offlineHtml);
     document.getElementById('delete-requests-content') && (document.getElementById('delete-requests-content').innerHTML = offlineHtml);
     el.innerHTML = offlineHtml;
+    const elToel = document.getElementById('sig-toelichting-content');
+    if (elToel) elToel.innerHTML = offlineHtml;
     return;
   }
   renderConsentOverview();
@@ -1231,34 +1233,99 @@ async function renderSignalenTab() {
     const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {}, data.prime_dagstatus || {});
     const reacties = data.prime_coach_reacties || {};
     const antw = data.prime_klant_antwoorden || {};
-    const notes = _notesVoorCoach(c.id, data.prime_notes, reacties, antw);
-    // Gesprekken onder de kaart van de klant (naast de toelichtingen hierboven): eigen berichten van de coach (recent) en elk gesprek
-    // met een nieuw, nog niet gelezen antwoord van de klant, ook op feedback of op een oudere toelichting.
-    const grensMsg = Date.now() - 30 * 86400000;
+    resultaten.push({ client: c, signals, notesRaw: data.prime_notes || {}, reacties, antw });
+  }
+  _sigData = { resultaten, namen };
+  sigRenderTrends();
+  sigRenderToelichting();
+}
+
+// ========== SIGNALEN IN TABS ==========
+let _sigTab = 'trends';
+let _sigToonAlles = false;
+let _sigData = null;
+const SIG_TABS = ['trends', 'toelichting', 'feedback', 'toestemming', 'verwijder', 'export'];
+
+function switchSignalenTab(tab) {
+  if (SIG_TABS.indexOf(tab) < 0) tab = 'trends';
+  _sigTab = tab;
+  SIG_TABS.forEach(function(k) {
+    const btn = document.getElementById('sigbtn-' + k);
+    const pane = document.getElementById('sigpane-' + k);
+    if (btn) btn.classList.toggle('active', k === tab);
+    if (pane) pane.style.display = k === tab ? 'block' : 'none';
+  });
+}
+// 💬-bolletje van de coach: naar het tabblad waar iets nieuws staat
+function sigOpenMeestRelevant() {
+  const d = (typeof _coachDetail !== 'undefined' && _coachDetail) || {};
+  if ((d.notes || 0) + (d.antw || 0) > 0) switchSignalenTab('toelichting');
+  else if ((d.feedback || 0) > 0) switchSignalenTab('feedback');
+  else if ((d.verwijder || 0) > 0) switchSignalenTab('verwijder');
+}
+function sigToonAllesToggle() {
+  _sigToonAlles = !_sigToonAlles;
+  sigRenderToelichting();
+}
+
+function sigRenderTrends() {
+  const el = document.getElementById('signalen-overzicht-content');
+  if (!el || !_sigData) return;
+  const namen = _sigData.namen;
+  const lijst = _sigData.resultaten.filter(r => r.signals.length).sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
+  if (!lijst.length) {
+    el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px;color:var(--muted)">' + t('signalen.none') + '</div>';
+    return;
+  }
+  el.innerHTML = lijst.map(r => `
+    <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><div style="font-weight:700;font-size:15px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div></div>
+      ${r.signals.map(s => `<div data-signaal="1" style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
+    </div>
+  `).join('');
+}
+
+// Tabblad Toelichting voor coach: per klant de toelichtingen en gesprekken.
+// Standaard: nieuw en lopend (toelichtingen van 14 dagen, eigen berichten van 30 dagen, gesprekken met een ongelezen antwoord);
+// met "Toon alles" ook de oudere die niet door jou zijn verwijderd.
+function sigRenderToelichting() {
+  const el = document.getElementById('sig-toelichting-content');
+  if (!el || !_sigData) return;
+  const alles = _sigToonAlles;
+  const grensMsg = Date.now() - 30 * 86400000;
+  const groepen = [];
+  _sigData.resultaten.forEach(function(r) {
+    const reacties = r.reacties, antw = r.antw;
+    const notes = _notesVoorCoach(r.client.id, r.notesRaw, reacties, antw, alles);
     const getoond = notes.map(n => 'note:' + n.date);
     const draden = msgGespreksIds(reacties).concat(Object.keys(antw)).filter((id, i, arr) => arr.indexOf(id) === i).filter(id => {
-      if (getoond.indexOf(id) >= 0) return false; // staat al als toelichting hierboven
+      if (getoond.indexOf(id) >= 0) return false; // staat al als toelichting
       const draad = msgDraad(reacties, antw, id, reacties.verborgen);
       if (!draad.length) return false;
+      if (alles) return true;
       const laatsteKlant = msgLaatsteTs(draad, 'klant');
       const ongelezenAntwoord = laatsteKlant > ((reacties.gelezen || {})[id] || 0);
       return ongelezenAntwoord || (id.indexOf('msg:') === 0 && msgLaatsteTs(draad) >= grensMsg);
     });
-    if (signals.length || notes.length || draden.length) resultaten.push({ client: c, signals, notes, reacties, antw, draden });
-  }
-  resultaten.sort((a, b) => _signalenErnst(a.signals) - _signalenErnst(b.signals));
-
-  if (!resultaten.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px;color:var(--muted)">' + t('signalen.none') + '</div>';
+    if (!notes.length && !draden.length) return;
+    const nieuw = notes.some(n => n.nieuw) || draden.some(id => msgLaatsteTs(msgDraad(reacties, antw, id, reacties.verborgen), 'klant') > ((reacties.gelezen || {})[id] || 0));
+    let laatste = 0;
+    notes.forEach(n => { laatste = Math.max(laatste, n.ts || 0); });
+    draden.forEach(id => { laatste = Math.max(laatste, msgLaatsteTs(msgDraad(reacties, antw, id, reacties.verborgen)) || 0); });
+    groepen.push({ r, notes, draden, nieuw, laatste });
+  });
+  groepen.sort((a, b) => (a.nieuw === b.nieuw ? b.laatste - a.laatste : (a.nieuw ? -1 : 1)));
+  const namen = _sigData.namen;
+  const knop = '<div class="sig-filter"><button type="button" class="btn-sm" onclick="sigToonAllesToggle()">' + t(alles ? 'sig.toel.showNew' : 'sig.toel.showAll') + '</button></div>';
+  if (!groepen.length) {
+    el.innerHTML = knop + '<div class="card" style="text-align:center;padding:40px 20px;color:var(--muted)">' + t('sig.toel.none') + '</div>';
     return;
   }
-
-  el.innerHTML = resultaten.map(r => `
-    <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${r.client.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><div style="font-weight:700;font-size:15px;color:var(--charcoal)">${_fbEsc(namen[r.client.id] || r.client.display_name || r.client.id)}</div><button type="button" class="btn-sm coach-only-btn" style="flex-shrink:0" onclick="event.stopPropagation();msgNieuwOpen('${r.client.id}')">✉️</button></div>
-      ${r.signals.map(s => `<div data-signaal="1" style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;color:var(--charcoal)"><span style="width:8px;height:8px;border-radius:50%;background:${s.kleur};flex-shrink:0"></span>${s.tekst}</div>`).join('')}
-      ${r.notes.map(n => _noteRijHtml(r.client.id, n, r.reacties, r.antw)).join('')}
-      ${r.draden.map(id => msgDraadKaartHtml(r.client.id, id, r.reacties, r.antw)).join('')}
+  el.innerHTML = knop + groepen.map(g => `
+    <div class="card" style="cursor:pointer;margin-bottom:12px" onclick="switchToClient('${g.r.client.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><div style="font-weight:700;font-size:15px;color:var(--charcoal)">${_fbEsc(namen[g.r.client.id] || g.r.client.display_name || g.r.client.id)}</div><button type="button" class="btn-sm coach-only-btn" style="flex-shrink:0" onclick="event.stopPropagation();msgNieuwOpen('${g.r.client.id}')">✉️</button></div>
+      ${g.notes.map(n => _noteRijHtml(g.r.client.id, n, g.r.reacties, g.r.antw)).join('')}
+      ${g.draden.map(id => msgDraadKaartHtml(g.r.client.id, id, g.r.reacties, g.r.antw)).join('')}
     </div>
   `).join('');
 }
