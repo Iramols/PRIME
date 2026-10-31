@@ -345,8 +345,6 @@ async function msgVerstuur(knop) {
     if (rij) { rij.classList.remove('nieuw'); const g = rij.querySelector('.note-gelezen'); if (g && !g.classList.contains('note-del')) g.textContent = t('note.coach.read'); }
     const dr = w.closest('.msg-draadkaart');
     if (dr) dr.classList.remove('nieuw');
-    const fbItem = w.closest('.fb-item');
-    if (fbItem) fbItem.style.opacity = '0.5';
     try { showToast(t('msg.coach.sent')); } catch (e) { /* geen melding */ }
     coachTellingVernieuw(true);
   } catch (e) {
