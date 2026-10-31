@@ -1136,7 +1136,8 @@ function _noteRijHtml(clientId, n, reactiesObj, antwObj) {
   const dag = new Date(n.date + 'T12:00:00').toLocaleDateString(dateLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
   const tijd = n.ts ? ', ' + new Date(n.ts).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) : '';
   return '<div class="note-coachrij' + (n.nieuw ? ' nieuw' : '') + '" onclick="event.stopPropagation()">' +
-    '<div class="note-coachtekst">💬 ' + _fbEsc(n.text).replace(/\n/g, '<br>') + '</div>' +
+    '<div class="note-soort">' + t('note.coach.label') + '</div>' +
+    '<div class="note-coachtekst">' + _fbEsc(n.text).replace(/\n/g, '<br>') + '</div>' +
     '<div class="note-coachmeta"><span>' + _fbEsc(dag + tijd) + '</span>' +
     '<span class="note-acties"><button type="button" class="note-gelezen" onclick="noteGelezenToggle(event, \'' + clientId + '\', \'' + n.date + '\', ' + n.ts + ', this)">' +
     t(n.nieuw ? 'note.coach.markRead' : 'note.coach.read') + '</button>' +

@@ -966,10 +966,13 @@ function noteFlush() {
 
 function noteKnopHtml() {
   const tekst = noteVan(localDateStr());
-  if (!tekst) return '<button type="button" class="note-knop" onclick="openNoteModal()">💬 <span>' + t('note.btn') + '</span></button>';
+  const kop = '<div class="fb-card-kop"><span class="fb-card-icoon">💬</span><div class="fb-card-titel">' + t('note.btn') + '</div></div>';
+  if (!tekst) return '<div class="card fb-card note-dash">' + kop + '<p class="fb-card-tekst">' + t('note.card.text') + '</p>' +
+    '<button type="button" class="btn-primary btn-paars" onclick="openNoteModal()">' + t('note.btnWrite') + '</button></div>';
   const kort = tekst.length > 70 ? tekst.slice(0, 70).replace(/\s+\S*$/, '') + '…' : tekst;
-  return '<button type="button" class="note-knop note-heeft" onclick="openNoteModal()"><span class="note-knop-kop">✓ ' + t('note.btnDone') + '</span>' +
-    '<span class="note-knop-tekst">' + _fbEsc(kort.replace(/\s*\n\s*/g, ' ')) + '</span><span class="note-knop-edit">' + t('note.btnEdit') + '</span></button>';
+  return '<div class="card fb-card note-dash">' + kop + '<div class="note-knop-kop">✓ ' + t('note.btnDone') + '</div>' +
+    '<p class="fb-card-tekst note-knop-tekst">' + _fbEsc(kort.replace(/\s*\n\s*/g, ' ')) + '</p>' +
+    '<button type="button" class="btn-primary btn-paars" onclick="openNoteModal()">' + t('note.btnChange') + '</button></div>';
 }
 function noteKnopVernieuw() {
   const html = noteAan() ? noteKnopHtml() : '';
@@ -1003,7 +1006,7 @@ function renderCheckinNote(opnieuw) {
   if (!el) return;
   if (!noteAan()) { el.innerHTML = ''; return; }
   if (el.querySelector('textarea') && !opnieuw) return;
-  el.innerHTML = '<div class="cq-card note-kaart"><div class="cq-header"><span class="cq-icon">💬</span><span class="cq-label">' + t('note.checkin.title') + '</span></div>' +
+  el.innerHTML = '<div class="cq-card note-kaart"><div class="fb-card-kop"><span class="fb-card-icoon">💬</span><div class="fb-card-titel">' + t('note.checkin.title') + '</div></div>' +
     '<div class="note-sub">' + t('note.checkin.sub') + '</div>' + noteEditorHtml('ci') + '</div>';
   noteEditorKlaar('ci');
 }
