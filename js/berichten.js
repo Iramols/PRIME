@@ -217,12 +217,15 @@ function msgTelling(b) {
   const grens = localDateStr(new Date(Date.now() - 14 * 86400000));
   let notes = 0, feedback = 0, antw = 0, antwFb = 0, verwijder = 0;
   const geteld = {};
+  const fbBestaat = {}; // feedback die al is verwijderd telt niet meer mee (ook niet de antwoorden van de klant erop)
+  b.feedback.forEach(function(f) { fbBestaat[f.client_id + '|fb:' + f.id] = 1; });
   b.klanten.forEach(function(cid) {
     const n = b.notes[cid] || {}, c = b.reacties[cid] || {}, a = b.antwoorden[cid] || {};
     Object.keys(n).forEach(function(d) {
       if (d >= grens && n[d] && n[d].text && msgThreadNieuw(cid, 'note:' + d, n[d].ts || 0, c, {})) { notes++; geteld[cid + '|note:' + d] = 1; } // alleen de toelichting zelf; een nieuw antwoord telt hieronder
     });
     Object.keys(a).forEach(function(id) { // nieuwe antwoorden van klanten op een gesprek dat nog niet is geteld
+      if (id.indexOf('fb:') === 0 && !fbBestaat[cid + '|' + id]) return;
       if (!geteld[cid + '|' + id] && msgThreadNieuw(cid, id, 0, c, a)) { antw++; if (id.indexOf('fb:') === 0) antwFb++; geteld[cid + '|' + id] = 1; }
     });
   });

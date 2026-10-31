@@ -1115,6 +1115,7 @@ async function toggleFeedbackHandled(id, handled) {
     try { showToast(t('feedback.coach.actionFailed'), true); } catch (e) {}
   }
   renderFeedbackList();
+  coachTellingVernieuw(true);
 }
 async function removeFeedback(id) {
   if (!confirm(t('feedback.coach.deleteConfirm'))) return;
@@ -1124,6 +1125,7 @@ async function removeFeedback(id) {
     try { showToast(t('feedback.coach.actionFailed'), true); } catch (e) {}
   }
   renderFeedbackList();
+  coachTellingVernieuw(true);
 }
 
 // Toelichtingen van klanten (alleen coach). De gelezen-status staat in de cloud (zie berichten.js); de oude, per apparaat bewaarde
