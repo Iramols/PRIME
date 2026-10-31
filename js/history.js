@@ -1056,7 +1056,7 @@ function _fbItemsHtml(items, nameOf, kindLabel, reactieVan, antwoordVan) {
     return '<div class="fb-item" style="' + (f.handled ? 'opacity:0.5' : '') + '">' +
       '<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px">' +
         '<span><b style="color:var(--charcoal)">' + _fbEsc(nameOf(f.client_id)) + '</b> · ' + d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) + '</span>' +
-        (kindLabel ? '<span style="padding:1px 8px;border-radius:10px;font-weight:600;background:var(--sand);color:var(--muted)">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' : '') +
+        (kindLabel ? '<span class="fb-soort fb-soort-' + _fbEsc(f.kind) + '">' + _fbEsc(kindLabel[f.kind] || f.kind) + '</span>' : '') +
       '</div>' +
       '<div style="font-size:14px;line-height:1.5;margin-bottom:8px;white-space:pre-wrap">' + _fbEsc(f.message) + '</div>' +
       '<div style="display:flex;gap:8px">' +

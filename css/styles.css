@@ -950,3 +950,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .sig-tabs .food-tab { white-space: nowrap; flex-shrink: 0; padding: 10px 14px; }
 .sig-n { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 9px; background: var(--coach-only); color: #fff; font-size: 11px; font-weight: 700; text-align: center; vertical-align: 1px; }
 .sig-filter { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+.fb-card { margin-top: 16px; background: var(--sage-light); border-color: var(--sage-mid); }
+.fb-card-kop { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.fb-card-icoon { width: 34px; height: 34px; border-radius: 17px; background: var(--white); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.fb-card-titel { font-family: 'DM Serif Display', serif; font-size: 19px; color: var(--charcoal); }
+.fb-card-tekst { font-size: 13px; line-height: 1.55; color: #2f5a3c; margin: 0 0 14px; }
+.fb-hint { background: var(--sage-light); border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.55; color: #2f5a3c; margin-bottom: 4px; }
+.fb-soort { padding: 2px 9px; border-radius: 10px; font-weight: 700; background: var(--sand); color: var(--muted); }
+.fb-soort-bug { background: #fbe4e1; color: #8a2a1f; }
+.fb-soort-idea { background: #e1ecfa; color: #1d467a; }
