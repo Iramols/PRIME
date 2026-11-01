@@ -607,7 +607,7 @@ function renderVoedingVoortgang() {
   // Alleen dagen waarop echt iets is gegeten (afgevinkt); wat alleen gepland stond telt niet als inname.
   const dagen = Object.keys(foodDays).filter(d => d <= vandaag && (foodDays[d] || []).some(isEatenItem)).sort();
   if (!dagen.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
+    el.innerHTML = voortgangVandaagStatusHtml('voeding') + '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F37D}️</div>' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('history.noFoodTitle') + '</div>' +
       '<div style="font-size:13px;color:var(--muted)">' + t('history.noFoodHint') + '</div>' +
@@ -721,7 +721,7 @@ function renderVoedingVoortgang() {
       '</div>';
   }).join('');
 
-  el.innerHTML = statsHtml + '<div class="card">' + wekenHtml + '</div>';
+  el.innerHTML = voortgangVandaagStatusHtml('voeding') + statsHtml + '<div class="card">' + wekenHtml + '</div>';
 }
 
 function renderProgrammaVoortgang() {
@@ -732,7 +732,7 @@ function renderProgrammaVoortgang() {
   try { geplanning = JSON.parse(localStorage.getItem('prime_planning') || '[]'); } catch(e) {}
 
   if (!geplanning.length) {
-    el.innerHTML = '<div class="card" style="text-align:center;padding:40px 20px">' +
+    el.innerHTML = voortgangVandaagStatusHtml('training') + '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F4C5}</div>' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;margin-bottom:8px">' + t('history.noWeekplanTitle') + '</div>' +
       '<div style="font-size:13px;color:var(--muted)">' + t('history.noWeekplanHint') + '</div>' +
@@ -869,7 +869,7 @@ function renderProgrammaVoortgang() {
       '</div>';
   }).join('');
 
-  el.innerHTML = statsHtml + '<div class="card">' + wekenHtml + '</div>';
+  el.innerHTML = voortgangVandaagStatusHtml('training') + statsHtml + '<div class="card">' + wekenHtml + '</div>';
 }
 
 // ========== STREAK & STATS ==========
@@ -1343,4 +1343,14 @@ function sigRenderToelichting() {
       ${g.draden.map(id => msgDraadKaartHtml(g.r.client.id, id, g.r.reacties, g.r.antw)).join('')}
     </div>
   `).join('');
+}
+
+// Bovenaan Voortgang Training en Voeding: als vandaag niet meetelt (rustdag, ziek, vrij), staat dat er, ook als er niets gepland of gelogd is.
+function voortgangVandaagStatusHtml(soort) {
+  const dag = localDateStr();
+  const telt = soort === 'training' ? dagStatusTrainingTelt(dag) : dagStatusVoedingTelt(dag);
+  if (telt) return '';
+  const vandaag = t('weekplan.today');
+  return '<div class="card" style="margin-bottom:14px"><div class="card-label" style="margin-bottom:6px">' + vandaag.charAt(0).toUpperCase() + vandaag.slice(1) + '</div>' +
+    '<div class="ds-niettelt" style="margin:0">' + _nietTeltTekst(getDagStatus(dag), soort === 'training' ? 'training' : 'voeding') + '</div></div>';
 }
