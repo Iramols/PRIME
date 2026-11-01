@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261101-1405';
+window.PRIME_BUILD = '20261101-1528';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#4A7C59">
 <meta name="apple-mobile-web-app-title" content="PRIME">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261101-1405">
+<link rel="stylesheet" href="css/styles.css?v=20261101-1528">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261101-1405"></script>
-<script src="js/translations.js?v=20261101-1405"></script>
-<script src="js/i18n.js?v=20261101-1405"></script>
+<script src="js/cloud.js?v=20261101-1528"></script>
+<script src="js/translations.js?v=20261101-1528"></script>
+<script src="js/i18n.js?v=20261101-1528"></script>
 </head>
 <body>
 
@@ -1281,13 +1281,13 @@ if ('serviceWorker' in navigator) {
     </div>
     <div id="p-fase-blok" style="display:none">
     <div class="form-row"><label data-i18n="profile.fase.title">Grenzen per voedingsfase (kcal per dag)</label>
-      <div class="pf-rij"><span class="pf-naam" data-i18n="fase.maintain">Maintain</span><input id="p-fase-maintain-min" type="number" min="0" data-i18n-placeholder="profile.fase.min" placeholder="onder"><input id="p-fase-maintain-max" type="number" min="0" data-i18n-placeholder="profile.fase.max" placeholder="boven"></div>
-      <div class="pf-rij"><span class="pf-naam" data-i18n="fase.cut">Cut</span><input id="p-fase-cut-min" type="number" min="0" data-i18n-placeholder="profile.fase.min" placeholder="onder"><input id="p-fase-cut-max" type="number" min="0" data-i18n-placeholder="profile.fase.max" placeholder="boven"></div>
-      <div class="pf-rij"><span class="pf-naam" data-i18n="fase.bulk">Bulk</span><input id="p-fase-bulk-min" type="number" min="0" data-i18n-placeholder="profile.fase.min" placeholder="onder"><input id="p-fase-bulk-max" type="number" min="0" data-i18n-placeholder="profile.fase.max" placeholder="boven"></div>
+      <div class="pf-rij"><span class="pf-naam" data-i18n="fase.maintain">Onderhoud</span><input id="p-fase-maintain-min" type="number" min="0" data-i18n-placeholder="profile.fase.min" placeholder="onder"><input id="p-fase-maintain-max" type="number" min="0" data-i18n-placeholder="profile.fase.max" placeholder="boven"></div>
+      <div class="pf-rij"><span class="pf-naam" data-i18n="fase.cut">Droogtrainen</span><input id="p-fase-cut-min" type="number" min="0" data-i18n-placeholder="profile.fase.min" placeholder="onder"><input id="p-fase-cut-max" type="number" min="0" data-i18n-placeholder="profile.fase.max" placeholder="boven"></div>
+      <div class="pf-rij"><span class="pf-naam" data-i18n="fase.bulk">Aankomen</span><input id="p-fase-bulk-min" type="number" min="0" data-i18n-placeholder="profile.fase.min" placeholder="onder"><input id="p-fase-bulk-max" type="number" min="0" data-i18n-placeholder="profile.fase.max" placeholder="boven"></div>
     </div>
-    <div class="form-row"><label data-i18n="profile.refeed.label">Refeed: extra kcal erbij (bovenop de bovengrens)</label>
+    <div class="form-row"><label data-i18n="profile.refeed.label">Koolhydraten herladen: extra kcal erbij (bovenop de bovengrens)</label>
       <input id="p-refeed-extra" type="number" min="0" data-i18n-placeholder="profile.calorieRange.placeholder" placeholder="bijvoorbeeld 300">
-      <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.fase.hint">Op het Dashboard kies je per dag maintain, cut of bulk, met of zonder refeed. Het caloriedoel is het midden van de grenzen. Op een refeeddag mag je dit aantal kcal boven de gewone bovengrens eten.</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px" data-i18n="profile.fase.hint">Op het Dashboard kies je per dag onderhoud, droogtrainen of aankomen, met of zonder koolhydraten herladen. Het caloriedoel is het midden van de grenzen. Op een herlaaddag mag je dit aantal kcal boven de gewone bovengrens eten.</div>
     </div>
     </div>
     <div class="form-row"><label data-i18n="profile.protein.label">Eiwit (gram per kg lichaamsgewicht)</label>
@@ -1901,6 +1901,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261101-1405"></script>
+<script src="js/auth.js?v=20261101-1528"></script>
 </body>
 </html>

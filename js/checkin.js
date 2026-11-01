@@ -704,7 +704,7 @@ function faseKeuzeHtml(dag) {
     const sel = k.fase === f;
     const w = (profile.fases || {})[f];
     const bereik = (w && w.min > 0 && w.max > 0) ? '<span class="fs-bereik">' + w.min + '–' + w.max + '</span>' : '';
-    return '<button type="button" class="ds-chip' + (sel ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesFase(\'' + f + '\')"' : ' disabled') + ' aria-pressed="' + sel + '"><span>' + t('fase.' + f) + '</span>' + bereik + '</button>';
+    return '<button type="button" class="ds-chip' + (sel ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesFase(\'' + f + '\')"' : ' disabled') + ' aria-pressed="' + sel + '"><span class="fs-naam">' + t('fase.' + f) + '</span><span class="fs-sub">' + t('fase.' + f + '.sub') + '</span>' + bereik + '</button>';
   }).join('');
   return '<div class="fs-blok"><div class="ds-titel fs-titel">' + t('fase.title') + '</div><div class="ds-chips fs-chips">' + chips + '</div>' +
     '<button type="button" class="ds-chip fs-refeed' + (k.refeed ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesRefeed()"' : ' disabled') + ' aria-pressed="' + k.refeed + '"><span>' + (profile.refeedExtra > 0 ? t('fase.refeedExtra', { n: profile.refeedExtra }) : t('fase.refeed')) + '</span></button>' +
