@@ -14,6 +14,7 @@ function resetVoortgang() {
 }
 
 function renderHistory() {
+  try { histStatusNotes(); } catch (e) { console.error('histStatusNotes:', e); }
   const total = history.length;
   if (total === 0) {
     document.getElementById('h-username').textContent = t('history.defaultTitle');
@@ -1353,4 +1354,24 @@ function voortgangVandaagStatusHtml(soort) {
   const vandaag = t('weekplan.today');
   return '<div class="card" style="margin-bottom:14px"><div class="card-label" style="margin-bottom:6px">' + vandaag.charAt(0).toUpperCase() + vandaag.slice(1) + '</div>' +
     '<div class="ds-niettelt" style="margin:0">' + _nietTeltTekst(getDagStatus(dag), soort === 'training' ? 'training' : 'voeding') + '</div></div>';
+}
+
+// Statistieken: staat er bij training of voeding niets omdat vandaag niet meetelt (rustdag, ziek, vrij), dan staat dat er.
+function histStatusNotes() {
+  const dag = localDateStr();
+  const st = getDagStatus(dag);
+  const vandaag = t('weekplan.today');
+  const vandaagKop = vandaag.charAt(0).toUpperCase() + vandaag.slice(1);
+  const tr = document.getElementById('h-training-niettelt');
+  if (tr) {
+    const toon = !dagStatusTrainingTelt(dag) && profile.trainingEnabled !== false;
+    tr.style.display = toon ? '' : 'none';
+    tr.innerHTML = toon ? '<div class="card-label" style="margin-bottom:6px">' + t('home.trainingToday') + '</div><div class="ds-niettelt" style="margin:0">' + _nietTeltTekst(st, 'training') + '</div>' : '';
+  }
+  const vd = document.getElementById('h-food-niettelt');
+  if (vd) {
+    const toon = !dagStatusVoedingTelt(dag);
+    vd.style.display = toon ? '' : 'none';
+    vd.innerHTML = toon ? '<b>' + vandaagKop + '</b> ' + _nietTeltTekst(st, 'voeding') : '';
+  }
 }
