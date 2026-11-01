@@ -703,7 +703,7 @@ function faseKeuzeHtml(dag) {
   const chips = FASES.map(function(f) {
     const sel = k.fase === f;
     const w = (profile.fases || {})[f];
-    const bereik = (w && w.min > 0 && w.max > 0) ? '<span class="fs-bereik">' + w.min + '–' + w.max + '</span>' : '';
+    const bereik = (w && w.min > 0 && w.max > 0) ? '<span class="fs-bereik">' + w.min + '–' + w.max + ' kcal</span>' : '';
     return '<button type="button" class="ds-chip' + (sel ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesFase(\'' + f + '\')"' : ' disabled') + ' aria-pressed="' + sel + '"><span class="fs-naam">' + t('fase.' + f) + '</span><span class="fs-sub">' + t('fase.' + f + '.sub') + '</span>' + bereik + '</button>';
   }).join('');
   return '<div class="fs-blok"><div class="ds-titel fs-titel">' + t('fase.title') + '</div><div class="ds-chips fs-chips">' + chips + '</div>' +
