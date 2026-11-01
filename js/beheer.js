@@ -266,6 +266,14 @@ const CONFIG_OPTIES = [
     set: function(p, v) { p.weightEnabled = !!v; }
   },
   {
+    key: 'faseEnabled',
+    label: 'config.opt.fase',
+    hint: 'config.opt.faseHint',
+    standaard: false,
+    get: function(p) { return p.faseEnabled === true; },
+    set: function(p, v) { p.faseEnabled = !!v; }
+  },
+  {
     key: 'noteEnabled',
     label: 'config.opt.note',
     hint: 'config.opt.noteHint',
@@ -352,6 +360,7 @@ async function _configSchrijf(clientId, optie, waarde, deel) {
     syncSet('prime_profile', profile);
     try { applyTrainingVisibility(); } catch (e) { console.error(e); }
     try { if (typeof renderNoteUI === 'function') renderNoteUI(true); } catch (e) { console.error(e); }
+    try { if (typeof renderDagStatusKaart === 'function') { renderDagStatusKaart(); updateHomeMacros(); updateMacroTotals(); } } catch (e) { console.error(e); }
   }
   return true;
 }

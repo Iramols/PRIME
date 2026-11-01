@@ -58,6 +58,7 @@ function openProfile() {
   document.getElementById('p-calorie-need').value = profile.calorieBehoefte || '';
   document.getElementById('p-calorie-min').value = profile.calorieMin || '';
   document.getElementById('p-calorie-max').value = profile.calorieMax || '';
+  profileFaseVul();
   document.getElementById('p-protein-per-kg').value = profile.proteinPerKg || '';
   _kvRatio = (typeof profile.carbPct === 'number') ? profile.carbPct / 100 : 0.6;
   _kvLeeg = false;
@@ -175,6 +176,13 @@ function saveProfile() {
     try { showToast(t('profile.calorieRange.invalid'), true); } catch (e) {}
     return;
   }
+  const fases = profileFaseLees();
+  for (const k of FASES) {
+    if (fases[k].min && fases[k].max && fases[k].min > fases[k].max) {
+      try { showToast(t('profile.fase.invalid', { fase: t('fase.' + k) }), true); } catch (e) {}
+      return;
+    }
+  }
   // Eiwit per kg: leeg = standaard (2). Daarbuiten 0,8-4 g/kg, en het eiwit mag
   // niet meer calorieën zijn dan het dagdoel zelf (dan past de verdeling niet).
   const eiwitRaw = document.getElementById('p-protein-per-kg').value;
@@ -212,7 +220,10 @@ function saveProfile() {
     foodEnabled: profile.foodEnabled !== false, // idem (Voeding)
     weightEnabled: profile.weightEnabled !== false, // idem (gewichtsvraag)
     noteEnabled: profile.noteEnabled === true, // idem (toelichting aan de coach)
-    noteLines: profile.noteLines
+    noteLines: profile.noteLines,
+    faseEnabled: profile.faseEnabled === true, // idem (voedingsfase)
+    fases: fases,
+    refeedMax: document.getElementById('p-refeed-max').value ? +document.getElementById('p-refeed-max').value : null
   };
   syncSet('prime_profile', profile);
   applyTrainingVisibility();
@@ -221,6 +232,29 @@ function saveProfile() {
   // opslaat, i.p.v. pas bij de volgende tabwissel.
   if (typeof updateHomeMacros === 'function') updateHomeMacros();
   if (typeof updateMacroTotals === 'function') updateMacroTotals();
+  try { renderDagStatusKaart(); } catch (e) { console.error(e); }
   closeProfile();
 }
 
+// Voedingsfase in Profiel: grenzen per fase en de refeed-bovengrens, alleen zichtbaar als de coach de optie aanzet (Config).
+function profileFaseVul() {
+  const aan = faseAan(profile);
+  const blok = document.getElementById('p-fase-blok');
+  if (blok) blok.style.display = aan ? 'block' : 'none';
+  // Met de voedingsfase vervangen de grenzen per fase de losse onder- en bovengrens
+  ['p-calorie-min', 'p-calorie-max'].forEach(function(id) { const r = document.getElementById(id).closest('.form-row'); if (r) r.style.display = aan ? 'none' : ''; });
+  const f = profile.fases || {};
+  FASES.forEach(function(k) {
+    document.getElementById('p-fase-' + k + '-min').value = (f[k] && f[k].min) || '';
+    document.getElementById('p-fase-' + k + '-max').value = (f[k] && f[k].max) || '';
+  });
+  document.getElementById('p-refeed-max').value = profile.refeedMax || '';
+}
+function profileFaseLees() {
+  const o = {};
+  FASES.forEach(function(k) {
+    const mn = document.getElementById('p-fase-' + k + '-min').value, mx = document.getElementById('p-fase-' + k + '-max').value;
+    o[k] = { min: mn ? +mn : null, max: mx ? +mx : null };
+  });
+  return o;
+}

@@ -27,6 +27,7 @@ const CLOUD_KEYS = [
   'prime_custom_meals',
   'prime_food_days',
   'prime_dagstatus',
+  'prime_voedingsfase',
   'prime_notes',
   'prime_weekmenus',
   'prime_weights',

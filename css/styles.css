@@ -988,3 +988,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .fb-item.fb-paars.nieuw { background: #e6dff5; border-left-color: var(--paars); }
 .fb-soort, .fb-nieuwantw { white-space: nowrap; }
 .msg-wacht { font-size: 12px; font-weight: 600; color: var(--paars); margin: 2px 0 8px; }
+.fs-blok { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--sand-dark); }
+.fs-titel { margin-bottom: 8px; }
+.ds-chips.fs-chips { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ds-chip.fs-refeed { width: 100%; margin-top: 8px; flex-direction: row; }
+.fs-band { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.pf-rij { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.pf-naam { flex: 0 0 74px; font-size: 14px; font-weight: 600; color: var(--charcoal); }
+.pf-rij input { flex: 1; min-width: 0; }

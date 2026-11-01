@@ -688,9 +688,49 @@ function renderDagStatusKaart() {
     '<div class="ds-kop"><span class="ds-titel">' + t('dagstatus.title') + '</span>' + (vast ? '<span aria-hidden="true">🔒</span>' : '') + '</div>' +
     dagStatusKnoppenHtml(s, vast, 'kiesDagStatus') +
     dagStatusGevolgenHtml(s) +
+    faseKeuzeHtml(dag) +
     '<div class="ds-hint">' + t(vast ? 'dagstatus.hint.vast' : 'dagstatus.hint.open') + '</div>' +
     '</div>';
   slots.forEach(function(el) { el.innerHTML = html; });
+}
+
+// Voedingsfase (alleen met de Config-optie): maintain, cut of bulk, met of zonder refeed. Geldt voor die dag; de fase blijft staan tot je hem wijzigt.
+function faseKeuzeHtml(dag) {
+  if (!faseAan(profile)) return '';
+  const k = faseKeuze(dag);
+  const kan = dagStatusKanWijzigen(dag);
+  const band = faseBand(profile, dag);
+  const chips = FASES.map(function(f) {
+    const sel = k.fase === f;
+    return '<button type="button" class="ds-chip' + (sel ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesFase(\'' + f + '\')"' : ' disabled') + ' aria-pressed="' + sel + '"><span>' + t('fase.' + f) + '</span></button>';
+  }).join('');
+  return '<div class="fs-blok"><div class="ds-titel fs-titel">' + t('fase.title') + '</div><div class="ds-chips fs-chips">' + chips + '</div>' +
+    '<button type="button" class="ds-chip fs-refeed' + (k.refeed ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesRefeed()"' : ' disabled') + ' aria-pressed="' + k.refeed + '"><span>' + t('fase.refeed') + '</span></button>' +
+    '<div class="fs-band">' + (band ? t('fase.band', { min: band.min, max: band.max }) : t('fase.leeg')) + '</div></div>';
+}
+function _faseZet(dag, fase, refeed) {
+  if (!dagStatusKanWijzigen(dag)) return false;
+  const nieuw = Object.assign({}, voedingsFase);
+  nieuw[dag] = { fase: fase, refeed: !!refeed };
+  voedingsFase = nieuw;
+  syncSet('prime_voedingsfase', voedingsFase);
+  return true;
+}
+function _faseVernieuw() {
+  try { renderHome(); } catch (e) { console.error('faseVernieuw:', e); renderDagStatusKaart(); }
+  try { updateHomeMacros(); updateMacroTotals(); } catch (e) { console.error(e); }
+}
+function kiesFase(fase) {
+  if (FASES.indexOf(fase) < 0) return;
+  const dag = localDateStr();
+  if (!_faseZet(dag, fase, faseKeuze(dag).refeed)) return;
+  _faseVernieuw();
+}
+function kiesRefeed() {
+  const dag = localDateStr();
+  const k = faseKeuze(dag);
+  if (!_faseZet(dag, k.fase, !k.refeed)) return;
+  _faseVernieuw();
 }
 
 // Zelfde keuze nog eens bij de avond check-out, met de gevolgen erbij.

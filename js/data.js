@@ -497,8 +497,34 @@ function berekenDagDoel(p) {
     proteinHoog: perKg > 3
   };
 }
-function getDagDoel() {
-  return berekenDagDoel(profile);
+function getDagDoel(datum) {
+  // Met de optie Voedingsfase is het kcal-doel het midden van de band van de gekozen fase; eiwit per kg en de verdeling blijven zoals in Profiel.
+  const band = faseBand(profile, datum);
+  return berekenDagDoel(band ? Object.assign({}, profile, { calorieBehoefte: band.mid }) : profile);
+}
+
+// ---------- Voedingsfase (Config-optie): maintain, cut of bulk, met of zonder refeed ----------
+const FASES = ['maintain', 'cut', 'bulk'];
+function faseAan(p) { return !!(p && p.faseEnabled === true); }
+// Gekozen fase van een dag: de eigen keuze, anders de laatste eerdere keuze (de fase blijft staan tot je hem wijzigt, standaard maintain).
+// Refeed begint elke dag uit. keuzeObj = voedingsfase-gegevens van een andere klant (optioneel).
+function faseKeuze(datum, keuzeObj) {
+  const o = keuzeObj || (typeof voedingsFase !== 'undefined' ? voedingsFase : {}) || {};
+  const dag = datum || localDateStr();
+  const e = o[dag];
+  if (e && FASES.indexOf(e.fase) >= 0) return { fase: e.fase, refeed: !!e.refeed };
+  let beste = null;
+  Object.keys(o).forEach(function(d) { if (d < dag && (!beste || d > beste) && o[d] && FASES.indexOf(o[d].fase) >= 0) beste = d; });
+  return { fase: beste ? o[beste].fase : 'maintain', refeed: false };
+}
+// Band (kcal) van een dag volgens de gekozen fase, of null (dan geldt de gewone band). Met refeed wordt de bovengrens de refeed-bovengrens.
+function faseBand(p, datum, keuzeObj) {
+  if (!faseAan(p)) return null;
+  const k = faseKeuze(datum, keuzeObj);
+  const f = (p.fases || {})[k.fase];
+  if (!f || !(f.min > 0) || !(f.max > 0) || f.min > f.max) return null;
+  const max = (k.refeed && p.refeedMax > f.max) ? p.refeedMax : f.max;
+  return { fase: k.fase, refeed: k.refeed, min: f.min, max: max, mid: Math.round((f.min + f.max) / 2) };
 }
 
 // Marge rond het doel waarbinnen een waarde als "gehaald" telt: calorieën
@@ -515,9 +541,14 @@ function macroTolerantie(key) {
 // de actieve (bv. calcSignalenVoorKlant() in history.js, dat per klant in de
 // Signalen-lijst een eigen los opgehaald profiel doorgeeft i.p.v. de globale
 // `profile`-variabele, die alleen de actieve/bekeken klant is).
-function macroDoelRange(doelVal, key, profielOverride) {
+function macroDoelRange(doelVal, key, profielOverride, datum) {
   const tol = macroTolerantie(key);
   const p = profielOverride !== undefined ? profielOverride : (typeof profile !== 'undefined' ? profile : null);
+  // Voedingsfase: de band van de gekozen fase van die dag (alleen voor het actieve profiel; voor een andere klant volgt het later).
+  if (key === 'kcal' && profielOverride === undefined) {
+    const fb = faseBand(p, datum);
+    if (fb) return { min: fb.min, max: fb.max };
+  }
   // Calorieën: handmatige onder-/bovengrens uit het profiel wint, per grens
   // apart -- vul je er maar één in, dan blijft de andere gewoon de
   // automatische marge. Zie profile.js (p-calorie-min/-max).

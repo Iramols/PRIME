@@ -75,6 +75,8 @@ let customExercises = JSON.parse(localStorage.getItem('prime_custom_exercises') 
 let foodDays = JSON.parse(localStorage.getItem('prime_food_days') || '{}');
 // Dagstatus per datum: { 'JJJJ-MM-DD': 'rust' | 'ziek' | 'vrij' }; ontbreekt een datum, dan is het een normale dag (zie checkin.js).
 let dagStatus = JSON.parse(localStorage.getItem('prime_dagstatus') || '{}');
+// Voedingsfase per datum (alleen met de Config-optie Voedingsfase): { 'JJJJ-MM-DD': { fase: 'maintain'|'cut'|'bulk', refeed: true|false } }
+let voedingsFase = JSON.parse(localStorage.getItem('prime_voedingsfase') || '{}');
 // Toelichting aan de coach per datum: { 'JJJJ-MM-DD': { text, ts } } (alleen voor klanten bij wie dit in Config aanstaat, zie checkin.js).
 let dagNotes = JSON.parse(localStorage.getItem('prime_notes') || '{}');
 // Eigen weekmenu's (Voeding): [{ id, naam, dagen: { '0'..'6': { items: [...] } } }], zie weekmenu.js.
