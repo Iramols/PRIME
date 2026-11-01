@@ -702,10 +702,12 @@ function faseKeuzeHtml(dag) {
   const band = faseBand(profile, dag);
   const chips = FASES.map(function(f) {
     const sel = k.fase === f;
-    return '<button type="button" class="ds-chip' + (sel ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesFase(\'' + f + '\')"' : ' disabled') + ' aria-pressed="' + sel + '"><span>' + t('fase.' + f) + '</span></button>';
+    const w = (profile.fases || {})[f];
+    const bereik = (w && w.min > 0 && w.max > 0) ? '<span class="fs-bereik">' + w.min + '–' + w.max + '</span>' : '';
+    return '<button type="button" class="ds-chip' + (sel ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesFase(\'' + f + '\')"' : ' disabled') + ' aria-pressed="' + sel + '"><span>' + t('fase.' + f) + '</span>' + bereik + '</button>';
   }).join('');
   return '<div class="fs-blok"><div class="ds-titel fs-titel">' + t('fase.title') + '</div><div class="ds-chips fs-chips">' + chips + '</div>' +
-    '<button type="button" class="ds-chip fs-refeed' + (k.refeed ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesRefeed()"' : ' disabled') + ' aria-pressed="' + k.refeed + '"><span>' + t('fase.refeed') + '</span></button>' +
+    '<button type="button" class="ds-chip fs-refeed' + (k.refeed ? ' sel ds-normaal' : '') + '"' + (kan ? ' onclick="kiesRefeed()"' : ' disabled') + ' aria-pressed="' + k.refeed + '"><span>' + (profile.refeedExtra > 0 ? t('fase.refeedExtra', { n: profile.refeedExtra }) : t('fase.refeed')) + '</span></button>' +
     '<div class="fs-band">' + (band ? t('fase.band', { min: band.min, max: band.max }) : t('fase.leeg')) + '</div></div>';
 }
 function _faseZet(dag, fase, refeed) {

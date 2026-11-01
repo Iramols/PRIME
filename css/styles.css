@@ -996,3 +996,4 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .pf-rij { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .pf-naam { flex: 0 0 74px; font-size: 14px; font-weight: 600; color: var(--charcoal); }
 .pf-rij input { flex: 1; min-width: 0; }
+.ds-chip .fs-bereik { font-size: 11px; font-weight: 400; color: var(--muted); }

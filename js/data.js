@@ -517,13 +517,13 @@ function faseKeuze(datum, keuzeObj) {
   Object.keys(o).forEach(function(d) { if (d < dag && (!beste || d > beste) && o[d] && FASES.indexOf(o[d].fase) >= 0) beste = d; });
   return { fase: beste ? o[beste].fase : 'maintain', refeed: false };
 }
-// Band (kcal) van een dag volgens de gekozen fase, of null (dan geldt de gewone band). Met refeed wordt de bovengrens de refeed-bovengrens.
+// Band (kcal) van een dag volgens de gekozen fase, of null (dan geldt de gewone band). Met refeed komt er refeedExtra kcal bij de bovengrens.
 function faseBand(p, datum, keuzeObj) {
   if (!faseAan(p)) return null;
   const k = faseKeuze(datum, keuzeObj);
   const f = (p.fases || {})[k.fase];
   if (!f || !(f.min > 0) || !(f.max > 0) || f.min > f.max) return null;
-  const max = (k.refeed && p.refeedMax > f.max) ? p.refeedMax : f.max;
+  const max = (k.refeed && p.refeedExtra > 0) ? f.max + p.refeedExtra : f.max; // refeed: er kan dit aantal kcal bij op de bovengrens
   return { fase: k.fase, refeed: k.refeed, min: f.min, max: max, mid: Math.round((f.min + f.max) / 2) };
 }
 

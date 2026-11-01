@@ -223,7 +223,7 @@ function saveProfile() {
     noteLines: profile.noteLines,
     faseEnabled: profile.faseEnabled === true, // idem (voedingsfase)
     fases: fases,
-    refeedMax: document.getElementById('p-refeed-max').value ? +document.getElementById('p-refeed-max').value : null
+    refeedExtra: document.getElementById('p-refeed-extra').value ? +document.getElementById('p-refeed-extra').value : null
   };
   syncSet('prime_profile', profile);
   applyTrainingVisibility();
@@ -248,7 +248,7 @@ function profileFaseVul() {
     document.getElementById('p-fase-' + k + '-min').value = (f[k] && f[k].min) || '';
     document.getElementById('p-fase-' + k + '-max').value = (f[k] && f[k].max) || '';
   });
-  document.getElementById('p-refeed-max').value = profile.refeedMax || '';
+  document.getElementById('p-refeed-extra').value = profile.refeedExtra || '';
 }
 function profileFaseLees() {
   const o = {};
