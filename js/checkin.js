@@ -769,19 +769,28 @@ function applyDagStatusTone() {
   if (el) el.innerHTML = t('dagstatus.sub.' + s);
 }
 
-// Bij Ziek slaan we de trainingsvraag in de check-out over (die past dan niet); de training telt toch niet mee.
-// Voor alle andere statussen komt het blok terug zoals het hoort (applyTrainingVisibility houdt rekening met
-// de profielinstelling "training uit").
+// Wat niet meetelt hoeft in de check-out niet gecheckt te worden. Voeding telt bij Normaal en Rust (niet bij Ziek en Vrij); training
+// telt alleen bij Normaal. De blokken die niet meetellen verdwijnen uit de check-out; de rest komt terug zoals het hoort
+// (applyTrainingVisibility houdt rekening met de profielinstellingen "training uit" en "voeding uit").
+let _coTrainingAuto = false, _coFoodAuto = false;
 function applyDagStatusTraining() {
-  const blok = document.getElementById('training-summary-block');
-  const lijn = document.getElementById('divider-after-training-summary');
-  if (!blok) return;
-  if (getDagStatus(localDateStr()) === 'ziek') {
-    blok.style.display = 'none';
-    if (lijn) lijn.style.display = 'none';
-    if (!(checkout.training > 0)) checkout.training = 1; // geen antwoord nodig, zodat de dag afgerond kan worden
-  } else if (typeof applyTrainingVisibility === 'function') {
-    applyTrainingVisibility();
+  if (!document.getElementById('training-summary-block')) return;
+  const dag = localDateStr();
+  if (typeof applyTrainingVisibility === 'function') applyTrainingVisibility();
+  const verberg = function(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+  if (!dagStatusTrainingTelt(dag)) {
+    verberg('training-summary-block');
+    verberg('divider-after-training-summary');
+    if (!(checkout.training > 0)) { checkout.training = 1; _coTrainingAuto = true; } // geen antwoord nodig, zodat de dag afgerond kan worden
+  } else if (_coTrainingAuto) { checkout.training = 0; _coTrainingAuto = false; } // de dag telt weer mee: de vraag moet gewoon beantwoord worden
+  if (!dagStatusVoedingTelt(dag)) {
+    verberg('food-summary-block');
+    verberg('divider-after-food-summary');
+    if (!(checkout.food > 0)) { checkout.food = 3; _coFoodAuto = true; }
+  } else if (_coFoodAuto) { // de dag telt weer mee: het voedingsblok opnieuw opbouwen (dat bepaalt zelf de uitkomst)
+    _coFoodAuto = false;
+    checkout.food = 0;
+    try { buildFoodSummary(); } catch (e) { console.error('buildFoodSummary:', e); }
   }
   try { checkCheckoutReady(); } catch (e) { /* check-out nog niet zichtbaar */ }
 }
