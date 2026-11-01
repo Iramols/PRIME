@@ -515,6 +515,7 @@ async function doCheckout() {
       }
       history = history.filter(h => h.date !== todayData.date);
     }
+    try { faseVastleggen(todayData.date); } catch (e) { console.error('faseVastleggen:', e); }
     history.unshift(todayData);
     if (history.length > HISTORY_MAX_DAGEN) history.pop();
     syncSet('prime_history', history);
@@ -715,8 +716,20 @@ function _faseZet(dag, fase, refeed) {
   const nieuw = Object.assign({}, voedingsFase);
   nieuw[dag] = { fase: fase, refeed: !!refeed };
   voedingsFase = nieuw;
+  if (dagStatusVast(dag)) faseVastleggen(dag, true); // de coach wijzigt een afgesloten dag: de vastgelegde band meenemen
   syncSet('prime_voedingsfase', voedingsFase);
   return true;
+}
+// Legt de band van een dag vast (bij de check-out), zodat latere aanpassingen van de grenzen in Profiel die dag niet meer veranderen.
+function faseVastleggen(dag, opnieuw) {
+  if (!faseAan(profile)) return;
+  if (opnieuw && voedingsFase[dag]) { const z = Object.assign({}, voedingsFase); z[dag] = { fase: z[dag].fase, refeed: !!z[dag].refeed }; voedingsFase = z; }
+  const band = faseBand(profile, dag);
+  if (!band) return;
+  const nieuw = Object.assign({}, voedingsFase);
+  nieuw[dag] = { fase: band.fase, refeed: band.refeed, band: { min: band.min, max: band.max, mid: band.mid } };
+  voedingsFase = nieuw;
+  syncSet('prime_voedingsfase', voedingsFase);
 }
 function _faseVernieuw() {
   try { renderHome(); } catch (e) { console.error('faseVernieuw:', e); renderDagStatusKaart(); }

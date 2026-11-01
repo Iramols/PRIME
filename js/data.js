@@ -520,7 +520,18 @@ function faseKeuze(datum, keuzeObj) {
 // Band (kcal) van een dag volgens de gekozen fase, of null (dan geldt de gewone band). Met refeed komt er refeedExtra kcal bij de bovengrens.
 function faseBand(p, datum, keuzeObj) {
   if (!faseAan(p)) return null;
-  const k = faseKeuze(datum, keuzeObj);
+  const o = keuzeObj || (typeof voedingsFase !== 'undefined' ? voedingsFase : {}) || {};
+  const dag = datum || localDateStr();
+  const e = o[dag];
+  // Bij de check-out is de band van die dag vastgelegd: die blijft staan, ook als de grenzen in Profiel later veranderen.
+  if (e && FASES.indexOf(e.fase) >= 0 && e.band && e.band.min > 0 && e.band.max > 0) return { fase: e.fase, refeed: !!e.refeed, min: e.band.min, max: e.band.max, mid: e.band.mid || Math.round((e.band.min + e.band.max) / 2) };
+  // De fase geldt vanaf de eerste keuze (of vanaf de dag dat de optie is aangezet); eerdere dagen houden de gewone band.
+  let start = null;
+  Object.keys(o).forEach(function(d) { if (o[d] && FASES.indexOf(o[d].fase) >= 0 && (!start || d < start)) start = d; });
+  if (p.faseVanaf && (!start || p.faseVanaf < start)) start = p.faseVanaf;
+  if (!start) start = localDateStr();
+  if (dag < start) return null;
+  const k = faseKeuze(dag, keuzeObj);
   const f = (p.fases || {})[k.fase];
   if (!f || !(f.min > 0) || !(f.max > 0) || f.min > f.max) return null;
   const max = (k.refeed && p.refeedExtra > 0) ? f.max + p.refeedExtra : f.max; // refeed: er kan dit aantal kcal bij op de bovengrens
@@ -541,12 +552,13 @@ function macroTolerantie(key) {
 // de actieve (bv. calcSignalenVoorKlant() in history.js, dat per klant in de
 // Signalen-lijst een eigen los opgehaald profiel doorgeeft i.p.v. de globale
 // `profile`-variabele, die alleen de actieve/bekeken klant is).
-function macroDoelRange(doelVal, key, profielOverride, datum) {
+function macroDoelRange(doelVal, key, profielOverride, datum, keuzeObj) {
   const tol = macroTolerantie(key);
   const p = profielOverride !== undefined ? profielOverride : (typeof profile !== 'undefined' ? profile : null);
   // Voedingsfase: de band van de gekozen fase van die dag (alleen voor het actieve profiel; voor een andere klant volgt het later).
-  if (key === 'kcal' && profielOverride === undefined) {
-    const fb = faseBand(p, datum);
+  // keuzeObj = de voedingsfase-gegevens van een andere klant (Signalen); zonder profielOverride gelden die van de actieve klant.
+  if (key === 'kcal' && (profielOverride === undefined || keuzeObj !== undefined)) {
+    const fb = faseBand(p, datum, keuzeObj);
     if (fb) return { min: fb.min, max: fb.max };
   }
   // Calorieën: handmatige onder-/bovengrens uit het profiel wint, per grens

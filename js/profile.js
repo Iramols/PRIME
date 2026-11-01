@@ -222,6 +222,7 @@ function saveProfile() {
     noteEnabled: profile.noteEnabled === true, // idem (toelichting aan de coach)
     noteLines: profile.noteLines,
     faseEnabled: profile.faseEnabled === true, // idem (voedingsfase)
+    faseVanaf: profile.faseVanaf,
     fases: fases,
     refeedExtra: document.getElementById('p-refeed-extra').value ? +document.getElementById('p-refeed-extra').value : null
   };

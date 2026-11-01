@@ -271,7 +271,7 @@ const CONFIG_OPTIES = [
     hint: 'config.opt.faseHint',
     standaard: false,
     get: function(p) { return p.faseEnabled === true; },
-    set: function(p, v) { p.faseEnabled = !!v; }
+    set: function(p, v) { p.faseEnabled = !!v; if (v && !p.faseVanaf) p.faseVanaf = localDateStr(); }
   },
   {
     key: 'noteEnabled',

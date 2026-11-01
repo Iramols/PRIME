@@ -128,15 +128,15 @@ function renderHistory() {
   // meetellen blijven wel dezelfde als voorheen (elke dag met een
   // check-out), alleen de op-doel/teveel/teweinig-indeling per dag is nu
   // live berekend i.p.v. de oude vaste momentopname.
-  const kcalDoelVoeding = getDagDoel().kcal;
-  const kcalRangeVoeding = macroDoelRange(kcalDoelVoeding, 'kcal');
+  // Per dag de band van die dag (voedingsfase, vastgelegd bij de check-out); zonder de optie is dat overal dezelfde gewone band.
+  const kcalRangeVan = d => macroDoelRange(getDagDoel(d).kcal, 'kcal', undefined, d);
   // Alleen werkelijk gegeten (afgevinkt) telt; wat alleen gepland stond telt niet als inname.
   const kcalOpCheckoutDag = h => splitTotals(foodDays[h.date] || []).eaten.kcal;
   const foodDaysHist = metCheckout.filter(h => h.checkout.food > 0 && dagStatusVoedingTelt(h.date));
   const totalVoeding = history.filter(h => dagStatusVoedingTelt(h.date)).length; // ziek/vrij beoordelen we niet
-  const opDoel   = foodDaysHist.filter(h => { const k = kcalOpCheckoutDag(h); return k >= kcalRangeVoeding.min && k <= kcalRangeVoeding.max; }).length;
-  const teveel   = foodDaysHist.filter(h => kcalOpCheckoutDag(h) > kcalRangeVoeding.max).length;
-  const teweinig = foodDaysHist.filter(h => kcalOpCheckoutDag(h) < kcalRangeVoeding.min).length;
+  const opDoel   = foodDaysHist.filter(h => { const k = kcalOpCheckoutDag(h), r = kcalRangeVan(h.date); return k >= r.min && k <= r.max; }).length;
+  const teveel   = foodDaysHist.filter(h => kcalOpCheckoutDag(h) > kcalRangeVan(h.date).max).length;
+  const teweinig = foodDaysHist.filter(h => kcalOpCheckoutDag(h) < kcalRangeVan(h.date).min).length;
   const pctLog   = totalVoeding > 0 ? Math.round(foodDaysHist.length / totalVoeding * 100) : 0;
   document.getElementById('h-food-ondoel').textContent  = foodDaysHist.length > 0 ? Math.round(opDoel/foodDaysHist.length*100)   + '%' : '—';
   document.getElementById('h-food-teveel').textContent  = foodDaysHist.length > 0 ? Math.round(teveel/foodDaysHist.length*100)   + '%' : '—';
@@ -362,8 +362,9 @@ function renderKcalTrendChart() {
     return;
   }
 
-  const doel = getDagDoel();
-  const { min: minLimiet, max: maxLimiet } = macroDoelRange(doel.kcal, 'kcal');
+  // De grenslijnen volgen de band van elke dag (voedingsfase); zonder de optie zijn het twee vaste lijnen.
+  const bands = data.map(d => macroDoelRange(getDagDoel(d.date).kcal, 'kcal', undefined, d.date));
+  const maxLimiet = Math.max(...bands.map(b => b.max));
 
   const W = 300, H = 110;
   // Rechts extra ruimte (padR 28) voor de limiet-getallen, zodat ze naast de
@@ -393,10 +394,16 @@ function renderKcalTrendChart() {
     <text x="${padL - 4}" y="${yPos(v) + 4}" text-anchor="end" font-size="8" fill="#aaa">${v === 0 ? '0' : v + ' kcal'}</text>
   `).join('');
 
-  const limietLijnen = [minLimiet, maxLimiet].map(v => `
-    <line x1="${padL}" y1="${yPos(v)}" x2="${W - padR}" y2="${yPos(v)}" stroke="#c8855a" stroke-width="1" stroke-dasharray="4,3"/>
-    <text x="${W - padR + 3}" y="${yPos(v) + 3}" text-anchor="start" font-size="8" fill="#c8855a">${v}</text>
-  `).join('');
+  const stapPad = key => {
+    let pad = '';
+    bands.forEach((bd, i) => {
+      if (i === 0) pad += 'M' + padL + ',' + yPos(bd[key]);
+      else pad += ' H' + ((xPos(i - 1) + xPos(i)) / 2) + ' V' + yPos(bd[key]);
+    });
+    return pad + ' H' + (W - padR);
+  };
+  const limietLijnen = ['min', 'max'].map(key => '<path d="' + stapPad(key) + '" fill="none" stroke="#c8855a" stroke-width="1" stroke-dasharray="4,3"/>' +
+    '<text x="' + (W - padR + 3) + '" y="' + (yPos(bands[n - 1][key]) + 3) + '" text-anchor="start" font-size="8" fill="#c8855a">' + bands[n - 1][key] + '</text>').join('');
 
   const pts = data.map((d, i) => `${xPos(i)},${yPos(d.kcal)}`).join(' ');
   const vlak = `${padL},${yPos(0)} ` + pts + ` ${xPos(n - 1)},${yPos(0)}`;
@@ -615,7 +622,7 @@ function renderVoedingVoortgang() {
   // detailregel bij (zie macroRij hieronder) zodat je altijd ziet wat er
   // wel/niet binnen de marge viel, zonder dat die drie meetellen voor de
   // badge zelf.
-  const inRange = (val, doelVal, key) => { const r = macroDoelRange(doelVal, key); return val >= r.min && val <= r.max; };
+  const inRange = (val, doelVal, key, dag) => { const r = macroDoelRange(doelVal, key, undefined, dag); return val >= r.min && val <= r.max; };
   const macroDef = [
     { key: 'kcal', label: t('history.macro.cal'), unit: '' },
     { key: 'prot', label: t('history.macro.protein'), unit: 'g' },
@@ -632,7 +639,7 @@ function renderVoedingVoortgang() {
     const split = splitTotals(items);
     const tot = { kcal: split.eaten.kcal, prot: split.eaten.prot, carb: split.eaten.carb, fat: split.eaten.fat };
     dagPlan[d] = Math.round(split.planned.kcal);
-    if (dagStatusVoedingTelt(d) && inRange(tot.kcal, doel.kcal, 'kcal')) doelGehaaldDagen++;
+    if (dagStatusVoedingTelt(d) && inRange(tot.kcal, getDagDoel(d).kcal, 'kcal', d)) doelGehaaldDagen++;
     dagInfo[d] = tot;
   });
   const pct = dagenTelt.length > 0 ? Math.round(doelGehaaldDagen / dagenTelt.length * 100) : 0;
@@ -674,17 +681,18 @@ function renderVoedingVoortgang() {
       const isVandaag = d === vandaag;
       const isVerleden = d < vandaag;
       const kcalTekst = Math.round(tot.kcal) + ' kcal' + (dagPlan[d] > 0 ? ' <span style="font-size:10px;font-weight:400;color:var(--muted)">' + t('history.plannedNotTicked', { kcal: dagPlan[d] }) + '</span>' : '');
-      const geslaagd = inRange(tot.kcal, doel.kcal, 'kcal');
+      const doelD = getDagDoel(d); // het doel van die dag (voedingsfase)
+      const geslaagd = inRange(tot.kcal, doelD.kcal, 'kcal', d);
       const bg = geslaagd ? 'var(--sage)' : '#c0392b';
       const telt = dagStatusVoedingTelt(d);
       const badge = !telt ? dagStatusBadgeHtml(getDagStatus(d)) : '<span style="font-size:11px;padding:2px 9px;border-radius:10px;font-weight:600;background:' + bg + ';color:white;flex-shrink:0">' +
         (geslaagd ? '✓' : '✗') + ' ' + t('history.foodGoalBadge') + '</span>';
 
       const macroRij = macroDef.map(m => {
-        const doelVal = doel[m.key];
-        const { min: rmin, max: rmax } = macroDoelRange(doelVal, m.key);
+        const doelVal = doelD[m.key];
+        const { min: rmin, max: rmax } = macroDoelRange(doelVal, m.key, undefined, d);
         const val = Math.round(tot[m.key]);
-        const ok = inRange(tot[m.key], doelVal, m.key);
+        const ok = inRange(tot[m.key], doelVal, m.key, d);
         const kleur = ok ? 'var(--sage)' : '#c0392b';
         return '<div style="font-size:10px;color:' + kleur + '">' + m.label + ' ' + (ok ? '✓' : '✗') +
           '<br><span style="color:var(--muted)">' + val + m.unit + ' (' + rmin + '–' + rmax + ')</span></div>';
@@ -923,7 +931,7 @@ function calcTrainingCompletionVoorKlant(geplanningArr, wpDoneObj, statusObj) {
   return { verledenCount: verleden.length, volledigDagen };
 }
 
-function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, profielObj, statusObj) {
+function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, profielObj, statusObj, faseObj) {
   const signals = [];
   hist = (hist || []).slice().sort((a, b) => b.date.localeCompare(a.date));
   const total = hist.length;
@@ -972,12 +980,12 @@ function calcSignalenVoorKlant(hist, geplanningArr, wpDoneObj, foodDaysObj, prof
   // klant in dit Signalen-overzicht.
   const foodDaysKlant = foodDaysObj || {};
   const kcalDoelKlant = (profielObj && profielObj.calorieBehoefte && profielObj.calorieBehoefte > 0) ? profielObj.calorieBehoefte : 2000;
-  const kcalRangeKlant = macroDoelRange(kcalDoelKlant, 'kcal', profielObj || {});
+  const kcalRangeKlantVan = d => macroDoelRange(kcalDoelKlant, 'kcal', profielObj || {}, d, faseObj || {});
   const kcalOpCheckoutDagKlant = h => splitTotals(foodDaysKlant[h.date] || []).eaten.kcal; // alleen werkelijk gegeten
   const metCheckout = hist.filter(h => h.checkout);
   const foodDaysArr = metCheckout.filter(h => h.checkout.food > 0 && ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0);
   const totalVoedingKlant = hist.filter(h => ['normaal', 'rust'].indexOf(dagStatusVan(statusObj, h.date)) >= 0).length;
-  const opDoel = foodDaysArr.filter(h => { const k = kcalOpCheckoutDagKlant(h); return k >= kcalRangeKlant.min && k <= kcalRangeKlant.max; }).length;
+  const opDoel = foodDaysArr.filter(h => { const k = kcalOpCheckoutDagKlant(h), r = kcalRangeKlantVan(h.date); return k >= r.min && k <= r.max; }).length;
   const pctLog = totalVoedingKlant > 0 ? foodDaysArr.length / totalVoedingKlant * 100 : 0;
   const foodUitKlant = !!(profielObj && profielObj.foodEnabled === false); // Voeding staat uit voor deze klant: geen voedingssignalen
   if (!foodUitKlant && pctLog < 40 && total >= 3) signals.push({ kleur: '#f39c12', tekst: t('history.signal.foodRarelyLogged') });
@@ -1236,8 +1244,8 @@ async function renderSignalenTab() {
   try { namen = await fetchProfileNames(); } catch (e) {}
   const resultaten = [];
   for (const c of clients) {
-    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus', 'prime_notes', 'prime_coach_reacties', 'prime_klant_antwoorden']);
-    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {}, data.prime_dagstatus || {});
+    const data = await fetchClientStateFor(c.id, ['prime_history', 'prime_planning', 'prime_wp_done', 'prime_food_days', 'prime_profile', 'prime_dagstatus', 'prime_notes', 'prime_coach_reacties', 'prime_klant_antwoorden', 'prime_voedingsfase']);
+    const signals = calcSignalenVoorKlant(data.prime_history || [], data.prime_planning || [], data.prime_wp_done || {}, data.prime_food_days || {}, data.prime_profile || {}, data.prime_dagstatus || {}, data.prime_voedingsfase || {});
     const reacties = data.prime_coach_reacties || {};
     const antw = data.prime_klant_antwoorden || {};
     resultaten.push({ client: c, signals, notesRaw: data.prime_notes || {}, reacties, antw });
