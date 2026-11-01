@@ -769,29 +769,67 @@ function applyDagStatusTone() {
   if (el) el.innerHTML = t('dagstatus.sub.' + s);
 }
 
-// Wat niet meetelt hoeft in de check-out niet gecheckt te worden. Voeding telt bij Normaal en Rust (niet bij Ziek en Vrij); training
-// telt alleen bij Normaal. De blokken die niet meetellen verdwijnen uit de check-out; de rest komt terug zoals het hoort
+// Wat niet meetelt hoeft in de check-out niet gecheckt te worden, en er staat bij waarom. Voeding telt bij Normaal en Rust (niet bij
+// Ziek en Vrij); training telt alleen bij Normaal. Bij een blok dat niet meetelt verdwijnen de vraag en de knoppen en staat de
+// dagstatus met uitleg; de Dashboard-kaarten Training en Voeding krijgen dezelfde regel. De rest komt terug zoals het hoort
 // (applyTrainingVisibility houdt rekening met de profielinstellingen "training uit" en "voeding uit").
 let _coTrainingAuto = false, _coFoodAuto = false;
+function _nietTeltTekst(st, soort) {
+  const uitleg = t('dagstatus.' + st + '.' + soort);
+  return dagStatusBadgeHtml(st) + ' · ' + uitleg.charAt(0).toLowerCase() + uitleg.slice(1);
+}
+// Zet de uitleg in een blok van de check-out (soort: training of food) en verbergt de vraag; geeft true als het blok niet meetelt.
+function _coBlokNietTelt(soort, tekst) {
+  const blok = document.getElementById(soort + '-summary-block');
+  if (!blok) return;
+  let note = document.getElementById(soort + '-niettelt');
+  if (!tekst) {
+    if (note) note.remove();
+    const inh = document.getElementById(soort + '-summary-content');
+    if (inh) inh.style.display = '';
+    return;
+  }
+  if (!note) {
+    note = document.createElement('div');
+    note.id = soort + '-niettelt';
+    note.className = 'ds-niettelt';
+    const label = blok.querySelector('.training-summary-label');
+    if (label && label.nextSibling) blok.insertBefore(note, label.nextSibling); else blok.appendChild(note);
+  }
+  note.innerHTML = tekst;
+  ['summary-content', 'confirm-question', 'confirm-btns'].forEach(function(x) { const el = document.getElementById(soort + '-' + x); if (el) el.style.display = 'none'; });
+}
 function applyDagStatusTraining() {
   if (!document.getElementById('training-summary-block')) return;
   const dag = localDateStr();
+  const st = getDagStatus(dag);
   if (typeof applyTrainingVisibility === 'function') applyTrainingVisibility();
-  const verberg = function(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
-  if (!dagStatusTrainingTelt(dag)) {
-    verberg('training-summary-block');
-    verberg('divider-after-training-summary');
+  const trainingTelt = dagStatusTrainingTelt(dag), voedingTelt = dagStatusVoedingTelt(dag);
+  const hadNote = function(soort) { return !!document.getElementById(soort + '-niettelt'); };
+  // check-out: training
+  if (!trainingTelt) {
+    _coBlokNietTelt('training', _nietTeltTekst(st, 'training'));
     if (!(checkout.training > 0)) { checkout.training = 1; _coTrainingAuto = true; } // geen antwoord nodig, zodat de dag afgerond kan worden
-  } else if (_coTrainingAuto) { checkout.training = 0; _coTrainingAuto = false; } // de dag telt weer mee: de vraag moet gewoon beantwoord worden
-  if (!dagStatusVoedingTelt(dag)) {
-    verberg('food-summary-block');
-    verberg('divider-after-food-summary');
-    if (!(checkout.food > 0)) { checkout.food = 3; _coFoodAuto = true; }
-  } else if (_coFoodAuto) { // de dag telt weer mee: het voedingsblok opnieuw opbouwen (dat bepaalt zelf de uitkomst)
-    _coFoodAuto = false;
-    checkout.food = 0;
-    try { buildFoodSummary(); } catch (e) { console.error('buildFoodSummary:', e); }
+  } else {
+    const wasNote = hadNote('training');
+    _coBlokNietTelt('training', null);
+    if (_coTrainingAuto) { checkout.training = 0; _coTrainingAuto = false; } // de dag telt weer mee: de vraag moet gewoon beantwoord worden
+    if (wasNote) { try { buildTrainingSummary(); } catch (e) { console.error('buildTrainingSummary:', e); } }
   }
+  // check-out: voeding
+  if (!voedingTelt) {
+    _coBlokNietTelt('food', _nietTeltTekst(st, 'voeding'));
+    if (!(checkout.food > 0)) { checkout.food = 3; _coFoodAuto = true; }
+  } else {
+    const wasNote = hadNote('food');
+    _coBlokNietTelt('food', null);
+    if (_coFoodAuto) { checkout.food = 0; _coFoodAuto = false; }
+    if (wasNote) { try { buildFoodSummary(); } catch (e) { console.error('buildFoodSummary:', e); } }
+  }
+  // Dashboard-kaarten
+  const kaartNote = function(id, tekst) { const el = document.getElementById(id); if (!el) return; el.style.display = tekst ? '' : 'none'; el.innerHTML = tekst || ''; };
+  kaartNote('home-training-niettelt', trainingTelt ? '' : _nietTeltTekst(st, 'training'));
+  kaartNote('home-food-niettelt', voedingTelt ? '' : _nietTeltTekst(st, 'voeding'));
   try { checkCheckoutReady(); } catch (e) { /* check-out nog niet zichtbaar */ }
 }
 
