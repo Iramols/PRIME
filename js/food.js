@@ -1998,6 +1998,12 @@ function updateHomeMacros() {
 }
 
 function updateMacroTotals() {
+  // Telt voeding vandaag niet mee (ziek, vrij), dan staat dat bovenaan, zoals bij Training.
+  const _vdEl = document.getElementById('food-dag-status');
+  if (_vdEl) {
+    const _vdDag = localDateStr(), _vdSt = getDagStatus(_vdDag);
+    _vdEl.innerHTML = dagStatusVoedingTelt(_vdDag) ? '' : '<div class="ds-trainingnote">' + dagStatusBadgeHtml(_vdSt) + '<span>' + t('dagstatus.' + _vdSt + '.voeding') + '</span></div>';
+  }
   const doel = getDagDoel();
 
   // dayLog is de enige bron van waarheid; alleen gegeten items tellen als

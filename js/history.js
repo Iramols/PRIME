@@ -606,7 +606,9 @@ function renderVoedingVoortgang() {
   // t/m vandaag, niet over wat er nog aankomt).
   const vandaag = localDateStr();
   // Alleen dagen waarop echt iets is gegeten (afgevinkt); wat alleen gepland stond telt niet als inname.
-  const dagen = Object.keys(foodDays).filter(d => d <= vandaag && (foodDays[d] || []).some(isEatenItem)).sort();
+  // Dagen waarop voeding niet meetelt (ziek, vrij) staan er ook in als er niets is gegeten, met het label van de dagstatus.
+  const dagen = Object.keys(foodDays).filter(d => d <= vandaag && (foodDays[d] || []).some(isEatenItem))
+    .concat(Object.keys(dagStatus).filter(d => d <= vandaag && !dagStatusVoedingTelt(d) && !(foodDays[d] || []).some(isEatenItem))).sort();
   if (!dagen.length) {
     el.innerHTML = voortgangVandaagStatusHtml('voeding') + '<div class="card" style="text-align:center;padding:40px 20px">' +
       '<div style="font-size:40px;margin-bottom:12px">\u{1F37D}️</div>' +
@@ -681,7 +683,7 @@ function renderVoedingVoortgang() {
       const tot = dagInfo[d];
       const isVandaag = d === vandaag;
       const isVerleden = d < vandaag;
-      const kcalTekst = Math.round(tot.kcal) + ' kcal' + (dagPlan[d] > 0 ? ' <span style="font-size:10px;font-weight:400;color:var(--muted)">' + t('history.plannedNotTicked', { kcal: dagPlan[d] }) + '</span>' : '');
+      const kcalTekst = (tot.kcal > 0 ? Math.round(tot.kcal) + ' kcal' : '—') + (dagPlan[d] > 0 ? ' <span style="font-size:10px;font-weight:400;color:var(--muted)">' + t('history.plannedNotTicked', { kcal: dagPlan[d] }) + '</span>' : '');
       const doelD = getDagDoel(d); // het doel van die dag (voedingsfase)
       const geslaagd = inRange(tot.kcal, doelD.kcal, 'kcal', d);
       const bg = geslaagd ? 'var(--sage)' : '#c0392b';
@@ -797,7 +799,9 @@ function renderProgrammaVoortgang() {
 
   // ── Per week ──
   const weken = new Map();
-  geplanning.forEach(item => {
+  // Dagen waarop training niet meetelt (rustdag, ziek, vrij) staan er ook in als er niets gepland was, met het label van de dagstatus.
+  const statusDagen = Object.keys(dagStatus).filter(d => d <= vandaag && !dagStatusTrainingTelt(d) && !geplanning.some(p => p.date === d)).map(d => ({ date: d, statusOnly: true }));
+  geplanning.concat(statusDagen).forEach(item => {
     const d  = new Date(item.date + 'T00:00:00');
     const wd = d.getDay();
     const mon = new Date(d);
@@ -819,6 +823,14 @@ function renderProgrammaVoortgang() {
                   zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
 
     const rijen = [...items].sort((a, b) => a.date.localeCompare(b.date)).map(item => {
+      if (item.statusOnly) {
+        const dS = new Date(item.date + 'T00:00:00'), stS = getDagStatus(item.date), isV = item.date === vandaag;
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isV ? '1' : '0.55') + '">' +
+          '<div style="width:26px;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0">' + wpGetDayKort(dS.getDay()) + '</div>' +
+          '<div style="font-size:11px;color:var(--muted);width:54px;flex-shrink:0">' + dS.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' }) + '</div>' +
+          '<div style="flex:1;min-width:0;font-size:13px;color:var(--muted)">' + (isV ? '<span style="font-size:10px;background:var(--sage);color:white;padding:2px 7px;border-radius:8px">' + t('weekplan.today') + '</span>' : '') + '</div>' +
+          dagStatusBadgeHtml(stS) + '</div>';
+      }
       const d         = new Date(item.date + 'T00:00:00');
       const disp      = wpGetDisplay(item.schemaId);
       // Bevroren lijst (oefSnapshotKeys) voor dagen waar al afgevinkt is,

@@ -830,6 +830,7 @@ function applyDagStatusTraining() {
   const kaartNote = function(id, tekst) { const el = document.getElementById(id); if (!el) return; el.style.display = tekst ? '' : 'none'; el.innerHTML = tekst || ''; };
   kaartNote('home-training-niettelt', trainingTelt ? '' : _nietTeltTekst(st, 'training'));
   kaartNote('home-food-niettelt', voedingTelt ? '' : _nietTeltTekst(st, 'voeding'));
+  try { if (typeof updateMacroTotals === 'function') updateMacroTotals(); } catch (e) { console.error(e); }
   try { checkCheckoutReady(); } catch (e) { /* check-out nog niet zichtbaar */ }
 }
 
