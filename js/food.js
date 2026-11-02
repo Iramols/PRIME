@@ -1856,7 +1856,16 @@ function renderLogItemsHtml(dateStr, items) {
       </div>`).join('');
 }
 
+// Telt voeding op de getoonde dag niet mee (ziek, vrij), dan staat dat bovenaan het tabblad Vandaag, zoals bij Training.
+function renderDagStatusLogNoot() {
+  const el = document.getElementById('day-log-dagstatus');
+  if (!el) return;
+  const dag = (typeof currentLogDate !== 'undefined' && currentLogDate) || localDateStr();
+  const st = getDagStatus(dag);
+  el.innerHTML = dagStatusVoedingTelt(dag) ? '' : '<div class="ds-trainingnote">' + dagStatusBadgeHtml(st) + '<span>' + t('dagstatus.' + st + '.voeding') + '</span></div>';
+}
 function renderDayLog() {
+  renderDagStatusLogNoot();
   document.querySelectorAll('.food-scan-btn').forEach(b => { b.style.display = isPrimeCoach() ? '' : 'none'; });
   const empty = document.getElementById('day-log-empty');
   const list = document.getElementById('day-log-list');

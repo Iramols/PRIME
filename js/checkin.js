@@ -831,6 +831,7 @@ function applyDagStatusTraining() {
   kaartNote('home-training-niettelt', trainingTelt ? '' : _nietTeltTekst(st, 'training'));
   kaartNote('home-food-niettelt', voedingTelt ? '' : _nietTeltTekst(st, 'voeding'));
   try { if (typeof updateMacroTotals === 'function') updateMacroTotals(); } catch (e) { console.error(e); }
+  try { if (typeof renderDagStatusLogNoot === 'function') renderDagStatusLogNoot(); } catch (e) { console.error(e); }
   try { checkCheckoutReady(); } catch (e) { /* check-out nog niet zichtbaar */ }
 }
 
