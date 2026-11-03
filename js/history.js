@@ -672,13 +672,13 @@ function renderVoedingVoortgang() {
     weken.get(key).push(d);
   });
 
-  const wekenHtml = [...weken.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([monStr, dagenInWeek]) => {
+  const wekenHtml = [...weken.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([monStr, dagenInWeek]) => {
     const mon = new Date(monStr + 'T00:00:00');
     const zo  = new Date(mon); zo.setDate(mon.getDate() + 6);
     const label = mon.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' – ' +
                   zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
 
-    const rijen = [...dagenInWeek].sort().map(d => {
+    const rijen = [...dagenInWeek].sort().reverse().map(d => {
       const dt = new Date(d + 'T00:00:00');
       const tot = dagInfo[d];
       const isVandaag = d === vandaag;
@@ -801,7 +801,7 @@ function renderProgrammaVoortgang() {
   const weken = new Map();
   // Dagen waarop training niet meetelt (rustdag, ziek, vrij) staan er ook in als er niets gepland was, met het label van de dagstatus.
   const statusDagen = Object.keys(dagStatus).filter(d => d <= vandaag && !dagStatusTrainingTelt(d) && !geplanning.some(p => p.date === d)).map(d => ({ date: d, statusOnly: true }));
-  geplanning.concat(statusDagen).forEach(item => {
+  geplanning.concat(statusDagen).filter(item => item.date <= vandaag).forEach(item => { // nieuwste eerst; geplande dagen in de toekomst horen niet bij de voortgang
     const d  = new Date(item.date + 'T00:00:00');
     const wd = d.getDay();
     const mon = new Date(d);
@@ -816,13 +816,13 @@ function renderProgrammaVoortgang() {
   // zoals bij een handmatige correctie, staat dan achteraan in de array en
   // zou anders ook als laatste week/rij getoond worden, ook al ligt hij
   // chronologisch veel eerder).
-  const wekenHtml = [...weken.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([monStr, items]) => {
+  const wekenHtml = [...weken.entries()].sort((a, b) => b[0].localeCompare(a[0])).map(([monStr, items]) => {
     const mon = new Date(monStr + 'T00:00:00');
     const zo  = new Date(mon); zo.setDate(mon.getDate() + 6);
     const label = mon.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'}) + ' – ' +
                   zo.toLocaleDateString(dateLocale(),{day:'numeric',month:'short'});
 
-    const rijen = [...items].sort((a, b) => a.date.localeCompare(b.date)).map(item => {
+    const rijen = [...items].sort((a, b) => b.date.localeCompare(a.date)).map(item => {
       if (item.statusOnly) {
         const dS = new Date(item.date + 'T00:00:00'), stS = getDagStatus(item.date), isV = item.date === vandaag;
         return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sand-dark);opacity:' + (isV ? '1' : '0.55') + '">' +
