@@ -166,6 +166,16 @@ function homeNoPlanBadgeHtml(dateStr) {
   return '<div class="training-type-badge badge-normal">' + iconen + ' ' + sessies.length + ' ' + t(sessies.length === 1 ? 'sessie.singular' : 'sessie.plural') + '</div>';
 }
 
+// Check-out: is alles in orde (alles afgevinkt, of voeding op doel), dan vraagt PRIME niets extra's; met deze link kun je het toch aanpassen.
+const _coAanpas = { training: false, food: false };
+function coAanpasLinkHtml(soort) {
+  return '<button type="button" onclick="coAanpas(\'' + soort + '\')" style="background:none;border:none;padding:6px 0;font-size:13px;color:var(--muted);text-decoration:underline;cursor:pointer">' + t('checkin.aanpas.link') + '</button>';
+}
+function coAanpas(soort) {
+  _coAanpas[soort] = true;
+  if (soort === 'training') buildTrainingSummary(); else buildFoodSummary();
+}
+
 function buildTrainingSummary() {
   // Weekplanning oefeningen voor vandaag
   const _btsToday = localDateStr();
@@ -265,12 +275,15 @@ function buildTrainingSummary() {
     + '<div class="training-done-list">' + doneTags + '</div>'
     + '<div id="co-tr-onbevestigd">' + coTrainingLijstHtml(allItems, _btsItemDone) + '</div>';
 
+  // Is alles afgevinkt, dan staat het antwoord al goed (volledig gedaan) en is de controlevraag overbodig: alleen een kleine
+  // link om het toch aan te passen. Bij deels of niets afgevinkt blijft de vraag staan.
+  const _trAlles = total > 0 && done >= total && !_coAanpas.training;
   document.getElementById('training-confirm-question').textContent = coachQuestion;
-  document.getElementById('training-confirm-question').style.display = 'block';
+  document.getElementById('training-confirm-question').style.display = _trAlles ? 'none' : 'block';
 
   const btnContainer = document.getElementById('training-confirm-btns');
   btnContainer.style.display = 'flex';
-  btnContainer.innerHTML = confirmOptions.map(function(opt) {
+  btnContainer.innerHTML = _trAlles ? coAanpasLinkHtml('training') : confirmOptions.map(function(opt) {
     return '<button class="confirm-btn ' + (checkout.training === opt.val ? 'selected' : '') + '"'
       + ' onclick="confirmTraining(' + opt.val + ', this)">' + opt.label + '</button>';
   }).join('');
@@ -380,13 +393,15 @@ function buildFoodSummary() {
     <div id="co-onbevestigd">${foodOnbevestigdHtml()}</div>`;
 
   // Coach bevestigingsvraag
+  // Zit je op doel, dan staat het antwoord al goed en is de controlevraag overbodig (zoals bij Training).
+  const _vdOpDoel = logged > 0 && tot.kcal >= kcalRange.min && tot.kcal <= kcalRange.max && !_coAanpas.food;
   const qEl = document.getElementById('food-confirm-question');
   qEl.textContent = coachQuestion;
-  qEl.style.display = 'block';
+  qEl.style.display = _vdOpDoel ? 'none' : 'block';
 
   const btnContainer = document.getElementById('food-confirm-btns');
   btnContainer.style.display = 'flex';
-  btnContainer.innerHTML = confirmOptions.map(opt =>
+  btnContainer.innerHTML = _vdOpDoel ? coAanpasLinkHtml('food') : confirmOptions.map(opt =>
     `<button class="confirm-btn ${checkout.food === opt.val ? 'selected' : ''}"
       onclick="confirmFood(${opt.val}, this)">${opt.label}</button>`
   ).join('');
