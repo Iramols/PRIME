@@ -902,6 +902,8 @@ function renderTrainingDag() {
 
   // Altijd synchroon houden met trainingDays (bv. na kopiëren vanuit Weekplanning)
   trainingDagLog = trainingDays[currentTrainingDate] || [];
+  // Het getal op het tabblad "Vandaag" altijd meeverversen met de lijst (ook na kopiëren, inplannen of wissen).
+  try { updateTrainingDagBadge(); } catch (e) { console.error(e); }
 
   // Sessies (personal/groep) staan in dezelfde lijst als de losse oefeningen,
   // maar hebben geen spiergroep/sets -- hier gesplitst zodat de groeperingen
