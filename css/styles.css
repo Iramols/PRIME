@@ -1036,3 +1036,17 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .header .msg-badge b { background: #d8c7a3; color: #213d36; }
 .header .msg-badge.coach { background: transparent; border-color: #f0a35e; }
 .header .msg-badge.coach b { background: #f0a35e; color: #213d36; }
+
+/* Onderbalk (telefoon): donkergroen zoals de kop; oranje alleen voor Meer (coach) */
+@media(max-width:600px){
+  .bottom-nav { background: #213d36; border-top: 1px solid #213d36; }
+  .bnav-btn { color: #d8c7a3; }
+  .bnav-btn.active { color: #fff; font-weight: 600; }
+  .bnav-btn.active .bnav-icon { background: rgba(255,255,255,0.14); }
+  .bnav-btn.bnav-coach { color: #f0a35e; }
+  .bnav-btn.bnav-coach.active .bnav-icon { background: rgba(240,163,94,0.18); }
+}
+
+/* Verversbalk: valt niet meer over de kop heen (scrolt mee met de pagina) en past bij de kleuren van de app */
+#ververs-banner { position: static; background: #2a4a41; color: #d8c7a3; font-size: 12px; line-height: 1.4; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
+#ververs-banner button { background: transparent; color: #d8c7a3; border: 1px solid #7f948c; padding: 3px 10px; margin-left: 8px; }
