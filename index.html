@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261110-2109';
+window.PRIME_BUILD = '20261110-2122';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#213d36">
 <meta name="apple-mobile-web-app-title" content="HealthPotential">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261110-2109">
+<link rel="stylesheet" href="css/styles.css?v=20261110-2122">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261110-2109"></script>
-<script src="js/translations.js?v=20261110-2109"></script>
-<script src="js/i18n.js?v=20261110-2109"></script>
+<script src="js/cloud.js?v=20261110-2122"></script>
+<script src="js/translations.js?v=20261110-2122"></script>
+<script src="js/i18n.js?v=20261110-2122"></script>
 </head>
 <body>
 
@@ -138,12 +138,6 @@ if ('serviceWorker' in navigator) {
   <button onclick="verversNu(true)" data-i18n="app.updateReload">Herlaad nu</button>
 </div>
 
-<!-- VERVERSBALK (groen): altijd bovenin zichtbaar voor de coach, zodat je op elk moment de nieuwste gegevens van een ander apparaat kunt ophalen (verversKnop() in cloud.js). Bij een nieuwe app-versie vervangt de rode update-melding hierboven deze balk. -->
-<div id="ververs-banner" role="status" aria-live="polite" style="display:none">
-  <span id="ververs-text" data-i18n="app.refreshBar">Gebruik je HealthPotential ook op een ander apparaat? Ververs om zeker te stellen dat je de nieuwste gegevens ziet.</span>
-  <button id="ververs-btn" onclick="verversKnop()" data-i18n="app.dataReload">Verversen</button>
-</div>
-
 <!-- BOOT-LOADER: voorkomt dat je tijdens het (her)laden even het inlogscherm of een lege
      standaardversie van het dashboard ("Goedemorgen" + check-in) ziet. Verdwijnt zodra de
      app klaar is (revealApp in auth.js) of het inlogscherm nodig is. -->
@@ -216,6 +210,12 @@ if ('serviceWorker' in navigator) {
   <button class="btn-sm coach-only-btn" id="switch-client-btn" style="display:none" data-i18n="header.switchClient">🔁 Wissel klant</button>
   <button class="btn-sm" id="logout-btn" data-i18n="header.logout">🚪 Uit</button>
 </header>
+
+<!-- VERVERSBALK: staat onder de kop (zo kan niets er overheen schuiven, ook niet in Safari op een iPhone). Altijd beschikbaar voor de coach, zodat je op elk moment de nieuwste gegevens van een ander apparaat kunt ophalen (verversKnop() in cloud.js). Bij een nieuwe app-versie vervangt de rode update-melding hierboven deze balk. -->
+<div id="ververs-banner" role="status" aria-live="polite" style="display:none">
+  <span id="ververs-text" data-i18n="app.refreshBar">Gebruik je HealthPotential ook op een ander apparaat? Ververs om zeker te stellen dat je de nieuwste gegevens ziet.</span>
+  <button id="ververs-btn" onclick="verversKnop()" data-i18n="app.dataReload">Verversen</button>
+</div>
 
 <!-- HOME -->
 <div id="screen-home" class="screen active">
@@ -625,7 +625,6 @@ if ('serviceWorker' in navigator) {
   </div>
 
   <div id="food-content" style="display:none">
-
 
     <!-- CALORIE EN NUTRIËNTEN INNAME -->
     <div class="card" style="margin-bottom:18px;padding:24px">
@@ -1897,7 +1896,6 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-
 <!-- ONDERBALK (alleen op telefoonbreedte zichtbaar, zie .bottom-nav in styles.css) -->
 <nav class="bottom-nav" id="bottom-nav">
   <button class="bnav-btn active" data-screen="home" onclick="go('home')"><span class="bnav-icon">🏠</span><span data-i18n="nav.dashboard">Dashboard</span></button>
@@ -1918,6 +1916,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261110-2109"></script>
+<script src="js/auth.js?v=20261110-2122"></script>
 </body>
 </html>
