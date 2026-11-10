@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261110-2122';
+window.PRIME_BUILD = '20261110-2138';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#213d36">
 <meta name="apple-mobile-web-app-title" content="HealthPotential">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261110-2122">
+<link rel="stylesheet" href="css/styles.css?v=20261110-2138">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261110-2122"></script>
-<script src="js/translations.js?v=20261110-2122"></script>
-<script src="js/i18n.js?v=20261110-2122"></script>
+<script src="js/cloud.js?v=20261110-2138"></script>
+<script src="js/translations.js?v=20261110-2138"></script>
+<script src="js/i18n.js?v=20261110-2138"></script>
 </head>
 <body>
 
@@ -221,10 +221,19 @@ if ('serviceWorker' in navigator) {
 <div id="screen-home" class="screen active">
 <div class="container">
 
-  <div class="checkin-hero" id="checkin-hero">
+  <div class="dash-top">
+    <div class="brand-card brand-dash">
+      <div class="brand-naam">HEALTHPOTENTIAL</div>
+      <div class="brand-slogan">UNLOCK YOUR POTENTIAL. LIVE A HEALTHY LIFE.</div>
+      <div class="brand-lijn"></div>
+      <div class="brand-woorden">HEALTH · DIRECTION · GUIDANCE · GROWTH</div>
+      <div class="brand-sub">BY ANNEKE LIFESTYLE COACHING</div>
+    </div>
+    <div class="checkin-hero" id="checkin-hero">
     <p class="checkin-hero-date" id="hero-date"></p>
     <h1 id="hero-greeting">Goedemorgen! 👋</h1>
     <p id="hero-sub" data-i18n="home.sub">Doe je check-in om je dag te starten.</p>
+    </div>
   </div>
 
   <!-- Geplande voeding vandaag: totale kcal + E/K/V, boven de statistiek-blokjes. Gevuld door updateHomePlannedSummary() (food.js). Leeg = verborgen. -->
@@ -1916,6 +1925,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261110-2122"></script>
+<script src="js/auth.js?v=20261110-2138"></script>
 </body>
 </html>
