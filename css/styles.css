@@ -1021,3 +1021,18 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
   .header .lang-toggle { flex-shrink: 0; border-color: #7f948c; }
   .header .msg-badge { width: 28px; height: 28px; flex-shrink: 0; }
 }
+
+/* Kop (donkergroen): alle knoppen zijn omlijnd zonder vulling; oranje blijft voor alles wat alleen de coach ziet */
+.header .nav-btn { border: 1px solid transparent; }
+.header .btn-sm { background: transparent; color: #d8c7a3; border: 1px solid #7f948c; }
+.header .btn-sm:hover { background: rgba(255,255,255,0.10); }
+.header .coach-only-btn, .header .coach-only-btn.btn-sm { background: transparent !important; color: #f0a35e !important; border: 1px solid #f0a35e !important; }
+.header .coach-only-btn:hover { background: rgba(240,163,94,0.14) !important; }
+.header .lang-toggle { border-color: #7f948c; }
+.header .lang-btn { background: transparent; color: #d8c7a3; }
+.header .lang-btn.active { background: #d8c7a3; color: #213d36; }
+.header .soon-badge { background: #f0a35e; color: #213d36; }
+.header .msg-badge { background: rgba(255,255,255,0.12); border-color: #7f948c; }
+.header .msg-badge b { background: #d8c7a3; color: #213d36; }
+.header .msg-badge.coach { background: transparent; border-color: #f0a35e; }
+.header .msg-badge.coach b { background: #f0a35e; color: #213d36; }
