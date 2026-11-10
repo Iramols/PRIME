@@ -1050,9 +1050,3 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 /* Verversbalk: valt niet meer over de kop heen (scrolt mee met de pagina) en past bij de kleuren van de app */
 #ververs-banner { position: static; background: #2a4a41; color: #d8c7a3; font-size: 12px; line-height: 1.4; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
 #ververs-banner button { background: transparent; color: #d8c7a3; border: 1px solid #7f948c; padding: 3px 10px; margin-left: 8px; }
-
-/* Merkkaart links bovenaan het Dashboard: alleen op een computer (op een telefoon staat het merk al in de kop) */
-.dash-top { display: flex; gap: 16px; align-items: stretch; margin-bottom: 20px; }
-.dash-top .brand-dash { flex: 0 0 260px; margin-bottom: 0; }
-.dash-top .checkin-hero { flex: 1 1 auto; min-width: 0; margin-bottom: 0; display: flex; flex-direction: column; justify-content: center; }
-@media (max-width: 600px) { .dash-top { display: block; } .dash-top .brand-dash { display: none; } }
