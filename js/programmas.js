@@ -16,7 +16,7 @@ let progSelectedOefIdx = null; // welke oefening is geselecteerd in kolom 2 (det
 // daarna ververst vanuit de gedeelde Supabase-tabel zodra de tab geopend
 // wordt (zie primeProgRefreshFromCloud()).
 let primeProgLijst = [];
-try { primeProgLijst = JSON.parse(localStorage.getItem('prime_prime_programmas') || '[]'); } catch(e) {}
+try { primeProgLijst = delenNamen(JSON.parse(localStorage.getItem('prime_prime_programmas') || '[]')); } catch(e) {}
 
 const PROG_DAGEN_KORT = ['Ma','Di','Wo','Do','Vr','Za','Zo'];
 const PROG_DAGEN_LANG = ['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];
@@ -886,7 +886,7 @@ async function confirmNieuwPrimeProgramma() {
   }
   const nieuw = {
     id: 'prime' + Date.now() + Math.floor(Math.random() * 1000),
-    naam: 'PRIME-' + suffix,
+    naam: DELEN_PREFIX + suffix,
     foto: null,
     beschrijving: '',
     doel: '',
@@ -924,7 +924,7 @@ async function confirmPrimeSave() {
   }
   const nieuw = {
     id: 'prime' + Date.now() + Math.floor(Math.random() * 1000),
-    naam: 'PRIME-' + suffix,
+    naam: DELEN_PREFIX + suffix,
     foto: prog.foto || null,
     beschrijving: prog.beschrijving || '',
     doel: prog.doel || '',

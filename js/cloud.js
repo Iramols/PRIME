@@ -1084,6 +1084,21 @@ async function migrateBase64PhotosToStorage() {
 // dezelfde PRIME-programma's ziet ongeacht welk klant-account actief is.
 // localStorage blijft wel gebruikt als snelle cache/offline-fallback.
 
+// Gedeelde programma's, gerechten en weekmenu's kregen vroeger het voorvoegsel "PRIME-"; dat is nu "HP-".
+// Oude namen worden bij het laden omgezet (de opgeslagen naam in de cloud verandert pas als de coach het item opnieuw opslaat).
+const DELEN_PREFIX = 'HP-';
+function delenNaam(naam) { return String(naam || '').replace(/^PRIME-[ ]*/i, DELEN_PREFIX); }
+function heeftDelenPrefix(naam) { return /^(prime|hp)-/i.test(String(naam || '').trim()); }
+function delenNamen(lijst) {
+  return (Array.isArray(lijst) ? lijst : []).map(function(x) {
+    if (!x || typeof x !== 'object') return x;
+    const k = Object.assign({}, x);
+    if (typeof k.naam === 'string') k.naam = delenNaam(k.naam);
+    if (typeof k.name === 'string') k.name = delenNaam(k.name);
+    return k;
+  });
+}
+
 async function fetchPrimeProgramsFromCloud() {
   const sb = getSupabase();
   const { data, error } = await withTimeout(
@@ -1091,7 +1106,7 @@ async function fetchPrimeProgramsFromCloud() {
     3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
   );
   if (error) { console.error('fetchPrimeProgramsFromCloud:', error); return null; }
-  const list = (data || []).map(row => row.value);
+  const list = delenNamen((data || []).map(row => row.value));
   try { localStorage.setItem('prime_prime_programmas', JSON.stringify(list)); } catch (e) { console.error(e); }
   return list;
 }
@@ -1129,7 +1144,7 @@ async function fetchPrimeMealsFromCloud() {
     3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
   );
   if (error) { console.error('fetchPrimeMealsFromCloud:', error); return null; }
-  const list = (data || []).map(row => row.value);
+  const list = delenNamen((data || []).map(row => row.value));
   try { localStorage.setItem('prime_prime_meals', JSON.stringify(list)); } catch (e) { console.error(e); }
   return list;
 }

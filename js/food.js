@@ -486,7 +486,7 @@ function closeOwnProductModal() {
 // localStorage, daarna ververst vanuit de gedeelde Supabase-tabel
 // (prime_meals, zie supabase/prime_meals.sql) zodra de tab geopend wordt.
 let primeMeals = [];
-try { primeMeals = JSON.parse(localStorage.getItem('prime_prime_meals') || '[]'); } catch(e) {}
+try { primeMeals = delenNamen(JSON.parse(localStorage.getItem('prime_prime_meals') || '[]')); } catch(e) {}
 
 // Zoekt een gerecht op id, zowel onder de eigen (per-klant) gerechten als
 // onder de gedeelde PRIME-gerechten -- gebruikt overal waar een gelogd of
@@ -640,7 +640,7 @@ async function confirmPrimeMealSave() {
 
   const nieuw = {
     id: 'prime-meal-' + Date.now() + Math.floor(Math.random() * 1000),
-    name: 'PRIME-' + suffix,
+    name: DELEN_PREFIX + suffix,
     photo: _amPhotoData || null,
     ingredients: ingredients
   };
@@ -851,7 +851,7 @@ function addCustomMeal() {
   nameInput.style.borderColor = '';
   if (!_amEditingIsPrime && !_amNewPrime) {
     // Een klant kan geen PRIME-gerecht maken; de naam van een kopie moet anders zijn dan elk bestaand gerecht.
-    if (!isPrimeCoach() && /^prime-/i.test(name)) { showMealFormError(t('food.copy.noPrimePrefix')); nameInput.style.borderColor = '#c0392b'; return; }
+    if (!isPrimeCoach() && heeftDelenPrefix(name)) { showMealFormError(t('food.copy.noPrimePrefix')); nameInput.style.borderColor = '#c0392b'; return; }
     if (_amCopyOf && gerechtNaamBestaat(name, null)) { showMealFormError(t('food.copy.mealNameExists')); nameInput.style.borderColor = '#c0392b'; return; }
   }
 
@@ -885,12 +885,12 @@ function addCustomMeal() {
   if (_amNewPrime) {
     if (!isPrimeCoach()) return;
     // Naam krijgt altijd de vaste prefix 'PRIME-' (zelfde regel als bij "Opslaan als PRIME-gerecht").
-    if (/^prime-?[ ]*$/i.test(name)) { // alleen de prefix ingevuld = nog geen echte naam
+    if (/^(prime|hp)-?[ ]*$/i.test(name)) { // alleen de prefix ingevuld = nog geen echte naam
       showMealFormError(t('food.addMeal.nameRequired'));
       nameInput.style.borderColor = '#c0392b';
       return;
     }
-    const primeNaam = /^prime-/i.test(name) ? name : 'PRIME-' + name;
+    const primeNaam = heeftDelenPrefix(name) ? delenNaam(name) : DELEN_PREFIX + name;
     const nieuwPrime = {
       id: 'prime-meal-' + Date.now() + Math.floor(Math.random() * 1000),
       name: primeNaam,
@@ -1055,7 +1055,7 @@ function openAddPrimeMealForm() {
   switchFoodTab('addmeal');
   showAmForm(true);
   const naamEl = document.getElementById('am-name');
-  naamEl.value = 'PRIME-'; // vaste prefix staat er al in; de coach typt er alleen de rest achter
+  naamEl.value = DELEN_PREFIX; // vaste prefix staat er al in; de coach typt er alleen de rest achter
   naamEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   naamEl.focus();
   try { naamEl.setSelectionRange(naamEl.value.length, naamEl.value.length); } catch (e) {}
@@ -2508,7 +2508,7 @@ async function deelEigenProduct(id, zonderBevestiging) {
 // "Naam (kopie)"; bestaat die al, dan "Naam (kopie) 2", enzovoort. Het voorvoegsel PRIME- vervalt bij een kopie.
 function kopieNaam(naam, bestaatFn) {
   const suffix = t('food.copy.suffix');
-  const kaal = String(naam || '').replace(/^PRIME-[ ]*/i, '').replace(new RegExp('[ ]*[(]' + suffix + '[)]([ ]+[0-9]+)?$', 'i'), '').trim();
+  const kaal = String(naam || '').replace(/^(prime|hp)-[ ]*/i, '').replace(new RegExp('[ ]*[(]' + suffix + '[)]([ ]+[0-9]+)?$', 'i'), '').trim();
   const basis = kaal + ' (' + suffix + ')';
   let n = basis, i = 2;
   while (bestaatFn(n) && i < 100) { n = basis + ' ' + i; i++; }
@@ -2570,7 +2570,7 @@ function amNaamInput() {
   const naam = document.getElementById('am-name').value;
   let msg = '';
   if (!_amEditingIsPrime && !_amNewPrime) {
-    if (!isPrimeCoach() && /^prime-/i.test(naam.trim())) msg = t('food.copy.noPrimePrefix');
+    if (!isPrimeCoach() && heeftDelenPrefix(naam)) msg = t('food.copy.noPrimePrefix');
     else if (_amCopyOf && gerechtNaamBestaat(naam, null)) msg = t('food.copy.mealNameExists');
   }
   hint.textContent = msg;

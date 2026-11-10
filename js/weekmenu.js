@@ -10,7 +10,7 @@
 // Inplannen zet de voeding als GEPLAND (eaten:false) in de dagen van de Weekplanning, zoals een gekopieerde dag.
 
 let primeWeekmenus = [];
-try { primeWeekmenus = JSON.parse(localStorage.getItem('prime_prime_weekmenus') || '[]'); } catch (e) { primeWeekmenus = []; }
+try { primeWeekmenus = delenNamen(JSON.parse(localStorage.getItem('prime_prime_weekmenus') || '[]')); } catch (e) { primeWeekmenus = []; }
 
 let wmEdit = null;      // { modus: 'eigen' | 'prime', id, dag } zolang een weekmenu in de editor open staat
 let _wmContext = null;  // gezet zolang je via "+ Product" / "+ Gerecht" een item voor een weekmenu-dag zoekt
@@ -61,7 +61,7 @@ async function fetchPrimeWeekmenusFromCloud() {
     3000, { data: null, error: { message: 'Failed to fetch (timeout)' } }
   );
   if (error) { console.error('fetchPrimeWeekmenusFromCloud:', error); return null; }
-  const list = (data || []).map(function(r) { return r.value; });
+  const list = delenNamen((data || []).map(function(r) { return r.value; }));
   try { localStorage.setItem('prime_prime_weekmenus', JSON.stringify(list)); } catch (e) { console.error(e); }
   return list;
 }
@@ -279,7 +279,7 @@ function wmNaamModal(doel, titelKey, waarde, metWeek) {
 // Controleert de naam; geeft de foutmelding terug of '' als de naam kan.
 function wmNaamFout(naam) {
   if (!naam) return t('wm.name.required');
-  if (_wmNaamDoel && _wmNaamDoel.soort === 'prime' && !/^prime-/i.test(naam)) return t('wm.name.primePrefix');
+  if (_wmNaamDoel && _wmNaamDoel.soort === 'prime' && !heeftDelenPrefix(naam)) return t('wm.name.primePrefix');
   if (wmNaamBestaat(naam, _wmNaamDoel && _wmNaamDoel.exceptId)) return t('wm.name.exists');
   return '';
 }
@@ -301,7 +301,7 @@ function wmOpenPrimeOpslaan() {
   if (!isPrimeCoach() || !wmEdit || wmEdit.modus !== 'eigen') return;
   const menu = wmVind('eigen', wmEdit.id);
   if (!menu) return;
-  wmNaamModal({ soort: 'prime', bronId: menu.id }, 'wm.name.title.prime', 'PRIME-' + menu.naam.replace(/^PRIME-[ ]*/i, ''), false);
+  wmNaamModal({ soort: 'prime', bronId: menu.id }, 'wm.name.title.prime', DELEN_PREFIX + menu.naam.replace(/^(prime|hp)-[ ]*/i, ''), false);
 }
 function wmHernoem() {
   if (!wmEdit || !wmMagBewerken(wmEdit.modus)) return;

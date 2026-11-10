@@ -1,4 +1,4 @@
-// Service worker: laat PRIME ook zonder internet openen, met de laatst
+// Service worker: laat HealthPotential ook zonder internet openen, met de laatst
 // bewaarde versie. Geen vaste lijst bestanden vooraf cachen (fragile bij dit
 // soort losse-bestanden-zonder-bundelaar-app): alles wat de app opvraagt
 // wordt onderweg bewaard.
@@ -124,7 +124,7 @@ self.addEventListener('fetch', function (event) {
       // respondWith() MOET altijd een geldige Response krijgen -- lukt dat
       // hieronder om wat voor reden dan ook nergens, dan geeft
       // offlineFallbackPage() (helemaal onderaan) alsnog een zelfgemaakte,
-      // nette PRIME-pagina terug i.p.v. dat de browser zijn eigen kale
+      // nette HealthPotential-pagina terug i.p.v. dat de browser zijn eigen kale
       // "site niet bereikbaar"-foutpagina toont.
       try {
         // cache: 'no-store' -- anders volgt deze fetch() gewoon de normale
@@ -180,12 +180,12 @@ self.addEventListener('fetch', function (event) {
 // Zelfgemaakte, minimale pagina (geen externe lettertypen/stijlen nodig --
 // die kunnen zelf ook net ontbreken) voor het geval een navigatie-aanvraag
 // zonder internet ECHT nergens iets gecachet vindt (bv. dit toestel heeft
-// PRIME nog nooit met internet geopend). Puur een nette uitleg i.p.v. de
+// HealthPotential nog nooit met internet geopend). Puur een nette uitleg i.p.v. de
 // kale foutpagina van de browser zelf.
 function offlineFallbackPage() {
   const html = '<!DOCTYPE html><html lang="nl"><head><meta charset="UTF-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
-    '<title>PRIME by Anneke</title>' +
+    '<title>HealthPotential by Anneke</title>' +
     '<style>' +
     'body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;' +
     'background:#f5f0e8;color:#2a2a2a;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:20px;box-sizing:border-box}' +
@@ -195,9 +195,9 @@ function offlineFallbackPage() {
     'button{background:#4a7c59;color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:600;cursor:pointer}' +
     '</style></head><body>' +
     '<div class="card">' +
-    '<h1>PRIME</h1>' +
-    '<p>Geen verbinding, en dit toestel heeft nog geen eerdere versie van PRIME bewaard. ' +
-    'Open PRIME eerst een keer met internet, en probeer het daarna opnieuw zonder internet.</p>' +
+    '<h1>HealthPotential</h1>' +
+    '<p>Geen verbinding, en dit toestel heeft nog geen eerdere versie van HealthPotential bewaard. ' +
+    'Open HealthPotential eerst een keer met internet, en probeer het daarna opnieuw zonder internet.</p>' +
     '<button onclick="location.reload()">Opnieuw proberen</button>' +
     '</div></body></html>';
   return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });

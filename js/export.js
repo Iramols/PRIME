@@ -155,7 +155,7 @@ function exportExcel() {
       ws['!cols'] = sheets[naam].cols.map(c => ({ wch: Math.max(12, c.length + 2) }));
       XLSX.utils.book_append_sheet(wb, ws, naam);
     });
-    XLSX.writeFile(wb, 'prime-export-' + exportDatumStr() + '.xlsx');
+    XLSX.writeFile(wb, 'healthpotential-export-' + exportDatumStr() + '.xlsx');
   });
 }
 
@@ -181,6 +181,6 @@ function exportBackup() {
       prime_gerechten: primeMealsCloud,
       feedback: d.feedback
     };
-    exportDownloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), 'prime-backup-' + exportDatumStr() + '.json');
+    exportDownloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), 'healthpotential-backup-' + exportDatumStr() + '.json');
   });
 }
