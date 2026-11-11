@@ -71,6 +71,24 @@ function openConsentView() {
 }
 function closeConsentView() { document.getElementById('consent-overlay').classList.remove('open'); }
 
+// Gids: app op het beginscherm zetten (Profiel > Hulp en privacy). Klapt de sectie open die bij het toestel past.
+function openInstallGids() {
+  var ua = navigator.userAgent || '';
+  var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var android = /Android/i.test(ua);
+  var open = ios ? 'iphone' : (android ? 'android' : 'pc');
+  ['iphone', 'android', 'pc', 'other'].forEach(function(k) {
+    var d = document.getElementById('install-' + k);
+    if (d) d.open = (k === open);
+  });
+  var standalone = false;
+  try { standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; } catch (e) {}
+  var done = document.getElementById('install-done');
+  if (done) done.style.display = standalone ? '' : 'none';
+  document.getElementById('install-overlay').classList.add('open');
+}
+function closeInstallGids() { document.getElementById('install-overlay').classList.remove('open'); }
+
 // ========== UITLEG VOOR NIEUWE DEELNEMERS ==========
 // Eenmalig na de toestemming (alleen deelnemers): drie korte kaarten. Opgeslagen
 // als prime_onboarding in client_state; opnieuw te bekijken via Profiel > Privacy.

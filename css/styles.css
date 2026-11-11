@@ -684,7 +684,23 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 
 
 /* TOESTEMMING / FEEDBACK */
-#consent-overlay, #onboarding-overlay { z-index: 250; }
+#consent-overlay, #onboarding-overlay, #install-overlay { z-index: 250; }
+/* APP OP BEGINSCHERM (gids) */
+.gids-intro { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+.gids-done { background: var(--sage-light); border: 1px solid var(--sage-mid); color: var(--sage); border-radius: 10px; padding: 10px 12px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.gids-sec { border: 1px solid var(--sand-dark); border-radius: 12px; margin-bottom: 8px; background: #fff; }
+.gids-sec > summary { cursor: pointer; list-style: none; padding: 12px 14px; font-weight: 600; font-size: 14px; color: var(--sage); display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.gids-sec > summary::-webkit-details-marker { display: none; }
+.gids-sec > summary::after { content: "+"; font-size: 20px; font-weight: 400; line-height: 1; }
+.gids-sec[open] > summary::after { content: "\2212"; }
+.gids-body { padding: 0 14px 12px; font-size: 13px; line-height: 1.5; }
+.gids-body h4 { margin: 12px 0 6px; font-size: 13px; color: var(--sage); }
+.gids-body p { margin: 0 0 8px; }
+.gids-body ol { list-style: none; counter-reset: gs; margin: 0; padding: 0; }
+.gids-body li { counter-increment: gs; position: relative; padding: 0 0 8px 28px; }
+.gids-body li::before { content: counter(gs); position: absolute; left: 0; top: 1px; width: 20px; height: 20px; border-radius: 50%; background: var(--sage); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.gids-noot { background: var(--sage-light); border-radius: 8px; padding: 8px 10px; margin-top: 4px !important; }
+.gids-ic { width: 16px; height: 16px; vertical-align: -3px; color: var(--sage); }
 .onb-icon { font-size: 52px; line-height: 1.2; margin: 10px 0 6px; }
 .onb-title { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--sage); margin-bottom: 8px; }
 .onb-text { font-size: 14px; line-height: 1.6; color: var(--charcoal); margin: 0 4px 14px; min-height: 110px; }
