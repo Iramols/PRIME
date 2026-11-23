@@ -168,6 +168,7 @@ function showClientPicker(clients) {
   if (!clients.length) {
     list.innerHTML = '<div style="color:var(--muted);font-size:13px">' + t('picker.empty') + '</div>';
   }
+  const labels = {};
   clients.forEach(function(c) {
     const row = document.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
@@ -177,6 +178,7 @@ function showClientPicker(clients) {
     openBtn.style.cssText = 'flex:1;text-align:left';
     openBtn.textContent = c.display_name || c.id;
     openBtn.onclick = function() { selectClient(c.id); };
+    labels[c.id] = openBtn;
 
     const renameBtn = document.createElement('button');
     renameBtn.className = 'btn-sm';
@@ -190,6 +192,13 @@ function showClientPicker(clients) {
   });
   document.getElementById('login-overlay').classList.remove('open');
   document.getElementById('client-picker-overlay').classList.add('open');
+  // Naam die de deelnemer zelf in Profiel heeft ingevuld gaat voor (dezelfde bron als de overzichten in Signalen).
+  // De lijst staat al direct; de namen worden daarna bijgewerkt, zodat er niets op wacht.
+  if (typeof fetchProfileNames === 'function') {
+    fetchProfileNames().then(function(namen) {
+      clients.forEach(function(c) { if (namen && namen[c.id] && labels[c.id]) labels[c.id].textContent = namen[c.id]; });
+    }).catch(function() {});
+  }
 }
 
 async function renameClient(clientId, currentName) {
