@@ -536,7 +536,7 @@ async function renderVoortgangBerichten() {
   const draden = eigenIds.filter(function(id) { return msgDraad(c, a, id, c.verborgen).length; }).sort(function(x, y) {
     return msgLaatsteTs(msgDraad(c, a, y, c.verborgen)) - msgLaatsteTs(msgDraad(c, a, x, c.verborgen));
   }).map(function(id) { return msgDraadKaartHtml(cid, id, c, a); });
-  const naam = (typeof profile !== 'undefined' && profile.name) ? profile.name.trim().split(' ')[0] : '';
+  const naam = (typeof profile !== 'undefined') ? profielVoornaam(profile) : '';
   wrap.innerHTML = '<div class="card" style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
     '<div><div class="card-label" style="margin-bottom:2px;color:var(--coach-only)">' + t('msg.vb.title') + '</div>' +
     '<div style="font-size:12px;color:var(--muted)">' + t('msg.vb.sub') + '</div></div>' +

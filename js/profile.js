@@ -47,8 +47,22 @@ async function requestDataDeletion() {
   try { showToast(t('profile.privacy.deleteSent')); } catch (e) {}
 }
 
+// Voor- en achternaam. profile.name blijft de samengestelde volledige naam (voornaam + spatie + achternaam),
+// zodat Signalen, de klantenlijst en de overzichten ongewijzigd werken. Bij een oud profiel met alleen
+// 'name' wordt het eerste woord de voornaam en de rest de achternaam (pas bij opslaan vastgelegd).
+function profielNaamDelen(p) {
+  p = p || {};
+  if (p.firstName != null || p.lastName != null) return { first: String(p.firstName || '').trim(), last: String(p.lastName || '').trim() };
+  const volledig = String(p.name || '').trim().replace(/s+/g, ' ');
+  const i = volledig.indexOf(' ');
+  return i < 0 ? { first: volledig, last: '' } : { first: volledig.slice(0, i), last: volledig.slice(i + 1) };
+}
+function profielVoornaam(p) { return profielNaamDelen(p).first; }
+
 function openProfile() {
-  document.getElementById('p-name').value = profile.name || '';
+  const _nd = profielNaamDelen(profile);
+  document.getElementById('p-firstname').value = _nd.first;
+  document.getElementById('p-lastname').value = _nd.last;
   document.getElementById('p-age').value = profile.age || '';
   document.getElementById('p-weight').value = profile.weight || '';
   document.getElementById('p-height').value = profile.height || '';
@@ -203,8 +217,12 @@ function saveProfile() {
     try { showToast(t('profile.macro.invalid'), true); } catch (e) {}
     return;
   }
+  const _voornaam = document.getElementById('p-firstname').value.trim().replace(/s+/g, ' ');
+  const _achternaam = document.getElementById('p-lastname').value.trim().replace(/s+/g, ' ');
   profile = {
-    name: document.getElementById('p-name').value,
+    name: (_voornaam + ' ' + _achternaam).trim(),
+    firstName: _voornaam,
+    lastName: _achternaam,
     age: +document.getElementById('p-age').value,
     weight: +document.getElementById('p-weight').value,
     height: +document.getElementById('p-height').value,
