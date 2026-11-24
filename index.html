@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261124-2140';
+window.PRIME_BUILD = '20261124-2143';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#213d36">
 <meta name="apple-mobile-web-app-title" content="HealthPotential">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261124-2140">
+<link rel="stylesheet" href="css/styles.css?v=20261124-2143">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261124-2140"></script>
-<script src="js/translations.js?v=20261124-2140"></script>
-<script src="js/i18n.js?v=20261124-2140"></script>
+<script src="js/cloud.js?v=20261124-2143"></script>
+<script src="js/translations.js?v=20261124-2143"></script>
+<script src="js/i18n.js?v=20261124-2143"></script>
 </head>
 <body>
 
@@ -1260,8 +1260,10 @@ if ('serviceWorker' in navigator) {
   <div class="modal">
     <div class="modal-title"><span data-i18n="profile.title">Jouw profiel</span> <button class="modal-close" onclick="closeProfile()">×</button></div>
     <div style="font-size:11px;color:#999;margin-bottom:16px" data-i18n="profile.lastUpdate">Laatste update: 13 juni 2026 · 14:00</div>
-    <div class="form-row"><label data-i18n="profile.firstName">Voornaam</label><input id="p-firstname" type="text" autocomplete="given-name" data-i18n-placeholder="profile.firstNamePlaceholder" placeholder="Jouw voornaam"></div>
-    <div class="form-row"><label data-i18n="profile.lastName">Achternaam</label><input id="p-lastname" type="text" autocomplete="family-name" data-i18n-placeholder="profile.lastNamePlaceholder" placeholder="Jouw achternaam"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-row"><label data-i18n="profile.firstName">Voornaam</label><input id="p-firstname" type="text" style="min-width:0" autocomplete="given-name" data-i18n-placeholder="profile.firstNamePlaceholder" placeholder="Jouw voornaam"></div>
+      <div class="form-row"><label data-i18n="profile.lastName">Achternaam</label><input id="p-lastname" type="text" style="min-width:0" autocomplete="family-name" data-i18n-placeholder="profile.lastNamePlaceholder" placeholder="Jouw achternaam"></div>
+    </div>
     <div class="form-row"><label data-i18n="profile.age">Leeftijd</label><input id="p-age" type="number" placeholder="35"></div>
     <div class="form-row"><label data-i18n="profile.weight">Gewicht (kg)</label><input id="p-weight" type="number" placeholder="70" oninput="eiwitInvoerGewijzigd()"></div>
     <div class="form-row"><label data-i18n="profile.height">Lengte (cm)</label><input id="p-height" type="number" placeholder="170"></div>
@@ -1932,6 +1934,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261124-2140"></script>
+<script src="js/auth.js?v=20261124-2143"></script>
 </body>
 </html>
