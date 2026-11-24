@@ -53,7 +53,7 @@ async function requestDataDeletion() {
 function profielNaamDelen(p) {
   p = p || {};
   if (p.firstName != null || p.lastName != null) return { first: String(p.firstName || '').trim(), last: String(p.lastName || '').trim() };
-  const volledig = String(p.name || '').trim().replace(/s+/g, ' ');
+  const volledig = String(p.name || '').trim().replace(/\s+/g, ' ');
   const i = volledig.indexOf(' ');
   return i < 0 ? { first: volledig, last: '' } : { first: volledig.slice(0, i), last: volledig.slice(i + 1) };
 }
@@ -217,8 +217,8 @@ function saveProfile() {
     try { showToast(t('profile.macro.invalid'), true); } catch (e) {}
     return;
   }
-  const _voornaam = document.getElementById('p-firstname').value.trim().replace(/s+/g, ' ');
-  const _achternaam = document.getElementById('p-lastname').value.trim().replace(/s+/g, ' ');
+  const _voornaam = document.getElementById('p-firstname').value.trim().replace(/\s+/g, ' ');
+  const _achternaam = document.getElementById('p-lastname').value.trim().replace(/\s+/g, ' ');
   profile = {
     name: (_voornaam + ' ' + _achternaam).trim(),
     firstName: _voornaam,
