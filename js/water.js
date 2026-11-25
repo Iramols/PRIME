@@ -2,8 +2,7 @@
 // Per dag bijhouden hoeveel er gedronken is. De klant kiest een glas, een fles (500 of 1000 ml, de inhoud is aanpasbaar) of een eigen
 // hoeveelheid, kiest het aantal en tikt op Toevoegen. Opslag: client_state, key prime_water:
 //   { doel: eigen dagdoel in ml (leeg = berekend), glas: 250, eigen: 300, fles: { f500: 500, f1000: 1000 } (eigen inhoud per fles), dagen: { 'JJJJ-MM-DD': [ { id, t:'UU:MM', s:'glas'|'fles'|'eigen', u: ml per stuk, n: aantal, ml: totaal } ] } }
-// De coach zet water per klant aan/uit in Config (profile.waterEnabled, standaard aan). Doel: 30 ml per kilo, afgerond op
-// 100 ml; zonder gewicht 2000 ml. De kaart wordt als onderdeel van renderDagStatusKaart() (checkin.js) in dezelfde
+// De coach zet water per klant aan/uit in Config (profile.waterEnabled, standaard aan). Doel: standaard 2000 ml, zelf aan te passen. De kaart wordt als onderdeel van renderDagStatusKaart() (checkin.js) in dezelfde
 // plekken (.dagstatus-slot) gezet, dus er staan meerdere kopieën in de pagina: daarom geen id's, alleen onclick.
 let waterData = (function() {
   try { const w = JSON.parse(localStorage.getItem('prime_water') || '{}'); return (w && typeof w === 'object') ? w : {}; }
@@ -16,8 +15,7 @@ const WATER_TEGELS = [
   { id: 'f1000', icoon: '🍼', ml: 1000 },
   { id: 'eigen', icoon: '✏️' }
 ];
-const WATER_DOEL_PER_KG = 30;
-const WATER_DOEL_ZONDER_GEWICHT = 2000;
+const WATER_DOEL_STANDAARD = 2000; // advies is 2 tot 3 liter per dag; iedereen bepaalt zelf het doel, standaard 2 liter
 const WATER_MAX_DAGEN = 400;
 const WATER_DOEL_LIMIETEN = [500, 6000];
 let _waterDoelOpen = false; // het doel-invoerveld staat open
@@ -35,29 +33,15 @@ function waterTotaal(dag) { return waterLijst(dag).reduce(function(a, x) { retur
 function waterFmt(n) { return Math.round(n).toLocaleString(dateLocale()); }
 function waterBewaar() { syncSet('prime_water', waterData); }
 
-// Het dagdoel en hoe het bepaald is: een eigen doel (klant of coach), anders 30 ml per kilo van het laatst bekende gewicht
-// (logboek, check-ins, anders het profiel), anders 2000 ml.
+// Het dagdoel: een eigen doel (klant of coach), anders 2000 ml. Het advies (2 tot 3 liter) staat als tekst onder de balk.
 function waterDoelInfo() {
   if (waterData.doel >= WATER_DOEL_LIMIETEN[0] && waterData.doel <= WATER_DOEL_LIMIETEN[1]) return { ml: Math.round(waterData.doel), soort: 'eigen' };
-  let kg = 0;
-  try {
-    const punten = (typeof weightPunten === 'function') ? weightPunten() : [];
-    if (punten.length) kg = punten[punten.length - 1].checkin.weight;
-  } catch (e) { kg = 0; }
-  if (!(kg > 0) && profile.weight > 0) kg = profile.weight;
-  if (!(kg > 0)) return { ml: WATER_DOEL_ZONDER_GEWICHT, soort: 'geen' };
-  const ruw = Math.round(kg * WATER_DOEL_PER_KG);
-  return { ml: Math.max(500, Math.round(ruw / 100) * 100), soort: 'berekend', kg: kg, ruw: ruw };
+  return { ml: WATER_DOEL_STANDAARD, soort: 'standaard' };
 }
 function waterDoel() { return waterDoelInfo().ml; }
 
 function waterDoelUitleg(info) {
-  if (info.soort === 'eigen') return t('water.doelEigen', { ml: waterFmt(info.ml) });
-  if (info.soort === 'geen') return t('water.doelGeen', { ml: waterFmt(info.ml) });
-  const kg = Math.round(info.kg * 10) / 10;
-  return info.ruw === info.ml
-    ? t('water.doelBerekendExact', { kg: kg.toLocaleString(dateLocale()), ml: waterFmt(info.ml) })
-    : t('water.doelBerekend', { kg: kg.toLocaleString(dateLocale()), ruw: waterFmt(info.ruw), ml: waterFmt(info.ml) });
+  return info.soort === 'eigen' ? t('water.doelEigen', { ml: waterFmt(info.ml) }) : t('water.doelAdvies');
 }
 
 function waterDoelHtml(info) {
@@ -71,7 +55,7 @@ function waterDoelHtml(info) {
     '<div class="water-doelacties"><button type="button" class="btn-sm" onclick="waterDoelOpslaan()">' + t('water.doelOpslaan') + '</button>' +
     (info.soort === 'eigen' ? '<button type="button" class="btn-sm" onclick="waterDoelTerug()">' + t('water.doelTerug') + '</button>' : '') +
     '<button type="button" class="btn-sm" onclick="waterDoelSluiten()">' + t('water.doelAnnuleer') + '</button></div>' +
-    '<div class="water-doeluitleg"><span>' + t('water.doelBasis', { per: WATER_DOEL_PER_KG }) + '</span></div></div>';
+    '<div class="water-doeluitleg"><span>' + t('water.doelBasis') + '</span></div></div>';
 }
 
 function waterStukMl(id) {
