@@ -412,10 +412,10 @@ function renderAddProductTab() {
     <div onclick="openAddProductForm()" style="${balkStijl};border-color:var(--sage);background:var(--sage-light);color:var(--sage)">
       <span style="font-size:18px;line-height:1">➕</span><span>${t('food.add.tile')}</span>
     </div>`;
-  const scanTegel = isPrimeCoach() ? `
-    <div class="coach-only-btn" onclick="openBarcodeScanner()" style="${balkStijl};border-color:var(--coach-only)">
+  const scanTegel = `
+    <div onclick="openBarcodeScanner()" style="${balkStijl};border-color:var(--sage);background:var(--sage-light);color:var(--sage)">
       <span style="font-size:18px;line-height:1">📷</span><span>${t('food.scan.tile')}</span>
-    </div>` : '';
+    </div>`;
   const portieTegel = `
     <div onclick="portieBulkOpen()" style="${balkStijl};border-color:var(--sand-dark);background:var(--white);color:var(--charcoal)">
       <span style="font-size:18px;line-height:1">⚖️</span><span>${t('food.pb.tile')}</span>
@@ -1431,7 +1431,7 @@ function openPortionModal(productId, tijdelijk) {
   updatePmDateLabel();
   updatePortionPreview();
   const _rescanBtn = document.getElementById('pm-rescan-btn');
-  if (_rescanBtn) _rescanBtn.style.display = (_pmViaScan && isPrimeCoach()) ? 'inline-block' : 'none';
+  if (_rescanBtn) _rescanBtn.style.display = _pmViaScan ? 'inline-block' : 'none';
   _pmViaScan = false;
   const _editBtn = document.getElementById('pm-edit-btn');
   if (_editBtn) _editBtn.style.display = (isPrimeCoach() && !p._tijdelijk) ? 'inline-block' : 'none';
@@ -1866,7 +1866,7 @@ function renderDagStatusLogNoot() {
 }
 function renderDayLog() {
   renderDagStatusLogNoot();
-  document.querySelectorAll('.food-scan-btn').forEach(b => { b.style.display = isPrimeCoach() ? '' : 'none'; });
+  document.querySelectorAll('.food-scan-btn').forEach(b => { b.style.display = ''; });
   const empty = document.getElementById('day-log-empty');
   const list = document.getElementById('day-log-list');
   const totals = document.getElementById('day-log-totals');
@@ -3095,7 +3095,6 @@ let _bcBron = 'producten'; // 'vandaag' | 'week' | 'producten'
 let _bcBestaand = null;    // product dat al in PRIME staat (gevonden op barcode), anders null
 
 function openBarcodeScanner(bron) {
-  if (!isPrimeCoach()) return;
   _bcBron = (bron === 'vandaag' || bron === 'week') ? bron : 'producten';
   _bcModus = 'dag';
   _bcBezig = false;
@@ -3110,7 +3109,6 @@ function openBarcodeScanner(bron) {
 
 // "Mijn dag": de dag die nu open staat (meestal vandaag).
 function scanEtenVandaag() {
-  if (!isPrimeCoach()) return;
   _bcVorigeDatum = null;
   _portionReturnTab = 'log';
   openBarcodeScanner('vandaag');
@@ -3118,7 +3116,6 @@ function scanEtenVandaag() {
 
 // Weekplanning: de gekozen dag staat als voorinstelling op de kaart.
 function scanEtenVoorDag(dateStr) {
-  if (!isPrimeCoach()) return;
   _bcVorigeDatum = currentLogDate;
   _portionReturnTab = 'week';
   switchLogDate(dateStr);
@@ -3161,7 +3158,7 @@ async function bcZoek(code) {
     res.innerHTML =
       '<div style="font-size:13px;color:var(--charcoal);margin-bottom:14px">' + escapeHtml(netFout ? t('food.scan.netError') : t('food.scan.notFound', { code: code })) + '</div>' +
       '<div style="display:flex;flex-direction:column;gap:8px">' +
-        '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
+        '<button class="btn-primary" style="margin-bottom:0" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
         '<button class="btn-sm" onclick="bcActieHandmatig()">' + t('food.scan.manualEntry') + '</button>' +
         '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.addMeal.cancel') + '</button>' +
       '</div>';
@@ -3215,8 +3212,8 @@ function bcToonKaart() {
 
   // Welke actie vooraan staat, hangt af van waar je scant.
   const knop = (fn, tekst, primair) => primair
-    ? '<button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="' + fn + '">' + tekst + '</button>'
-    : '<button class="btn-sm coach-only-btn" onclick="' + fn + '">' + tekst + '</button>';
+    ? '<button class="btn-primary" style="margin-bottom:0" onclick="' + fn + '">' + tekst + '</button>'
+    : '<button class="btn-sm" onclick="' + fn + '">' + tekst + '</button>';
   const voorkeur = (_bcBron === 'producten' && !bestaand) ? 'opslaan' : (_bcBron === 'week' ? 'week' : (_bcBron === 'producten' ? 'vandaag' : 'vandaag'));
   const acties = [];
   if (!bestaand) acties.push(['opslaan', knop('bcActieOpslaan()', t('food.scan.saveMine'), voorkeur === 'opslaan')]);
@@ -3230,7 +3227,7 @@ function bcToonKaart() {
     waardenHtml +
     '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">' + t('food.scan.per100') + '</div>' +
     ((!bestaand && p.ontbreekt && p.ontbreekt.length) ? '<div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:6px">' + t('food.scan.missing', { list: p.ontbreekt.join(', ') }) + '</div>' : '') +
-    (!bestaand ? '<div style="font-size:12px;color:var(--coach-only);background:var(--coach-only-light);border-radius:8px;padding:8px 10px;margin-bottom:12px">' + t('food.scan.unverified') + '</div>' : '') +
+    (!bestaand ? '<div style="font-size:12px;color:var(--muted);background:var(--sand);border-radius:8px;padding:8px 10px;margin-bottom:12px">' + t('food.scan.unverified') + '</div>' : '') +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">' +
       '<label style="font-size:11px;color:var(--muted)">' + t('food.scan.gram') + '<input type="number" id="bc-gram" min="1" step="1" value="100" oninput="bcKaartRekenen()" style="width:100%;' + stijlInvoer + '"></label>' +
       '<label style="font-size:11px;color:var(--muted)">' + t('food.scan.moment') + '<select id="bc-moment" style="width:100%;' + stijlInvoer + '">' + momenten.map(m => '<option value="' + m + '">' + t('moment.' + m) + '</option>').join('') + '</select></label>' +
@@ -3238,12 +3235,12 @@ function bcToonKaart() {
     '<label style="display:block;font-size:11px;color:var(--muted);margin-bottom:8px">' + t('food.scan.day') + '<span class="date-icon-wrap"><input type="date" id="bc-datum" value="' + standaardDatum + '" style="width:100%;' + stijlInvoer + '"><span class="date-icon" aria-hidden="true">📅</span></span></label>' +
     '<div id="bc-prev" style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:12px"></div>' +
     (!bestaand ? '<div style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:6px">' + t('food.scan.saveTitle') + '</div><div id="bc-bewaar-groep" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;padding:4px 0">' +
-      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
+      [['eigen', t('food.scan.saveOwn')], ['iedereen', t('food.scan.saveAll')], ['nee', t('food.scan.saveNo')]].filter(x => x[0] !== 'iedereen' || isPrimeCoach()).map(x => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--charcoal);cursor:pointer"><input type="radio" name="bc-bewaar" value="' + x[0] + '"><span>' + x[1] + '</span></label>').join('') + '</div>' : '') +
     '<div id="bc-kaart-fout" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>' +
     '<div style="display:flex;flex-direction:column;gap:8px">' +
       acties.map(a => a[1]).join('') +
       '<button class="btn-sm" onclick="bcOpnieuw()">' + t('food.scan.again') + '</button>' +
-      (bestaand ? '<button class="btn-sm coach-only-btn" onclick="bcBewerkBestaand()">✏️ ' + t('common.edit') + '</button>' : '') +
+      ((bestaand && isPrimeCoach()) ? '<button class="btn-sm coach-only-btn" onclick="bcBewerkBestaand()">✏️ ' + t('common.edit') + '</button>' : '') +
       '<button class="btn-sm" onclick="closeBarcodeScanner()">' + t('food.addMeal.cancel') + '</button>' +
     '</div>';
   bcKaartRekenen();
@@ -3389,7 +3386,7 @@ async function bcActieToevoegen(doel) {
   if (isDagAfgesloten(datum)) { alert(t('weekplan.dayLocked')); return; }
   if (!_bcBestaand && !k.keuze) {
     // Een nieuw product wordt nooit vanzelf opgeslagen: de coach kiest eerst wat ermee gebeurt.
-    if (fout) fout.textContent = t('food.scan.chooseSave');
+    if (fout) fout.textContent = t(isPrimeCoach() ? 'food.scan.chooseSave' : 'food.scan.chooseSaveOwn');
     const groep = document.getElementById('bc-bewaar-groep');
     if (groep) groep.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
@@ -3792,7 +3789,6 @@ let _vzRegels = [];
 
 // "Mijn dag": de dag die nu open staat (meestal vandaag).
 function spraakVandaag() {
-  if (!isPrimeCoach()) return;
   _vzVorigeDatum = null;
   _portionReturnTab = 'log';
   openSpraak('vandaag');
@@ -3800,7 +3796,6 @@ function spraakVandaag() {
 
 // Weekplanning: de gekozen dag staat als voorinstelling klaar.
 function spraakVoorDag(dateStr) {
-  if (!isPrimeCoach()) return;
   _vzVorigeDatum = currentLogDate;
   _portionReturnTab = 'week';
   switchLogDate(dateStr);
@@ -4124,7 +4119,7 @@ function vzKopieOpnieuw() {
 }
 
 function vzKopieUitvoeren() {
-  if (!isPrimeCoach() || !_vzKopie) return;
+  if (!_vzKopie) return;
   const fout = document.getElementById('vz-kopie-fout');
   fout.textContent = '';
   const k = _vzKopie;

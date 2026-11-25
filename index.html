@@ -8,7 +8,7 @@
 // Zelf-verversen: een verouderde (gecachete) pagina, bv. via een icoon op het
 // beginscherm, vergelijkt zijn buildnummer met version.json en laadt zichzelf
 // dan opnieuw via een nieuwe URL (?b=...). Zie tools/bump-build.js.
-window.PRIME_BUILD = '20261124-2148';
+window.PRIME_BUILD = '20261125-1758';
 (function () {
   try {
     fetch('version.json?ts=' + Date.now(), { cache: 'no-store' })
@@ -46,12 +46,12 @@ if ('serviceWorker' in navigator) {
 <meta name="theme-color" content="#213d36">
 <meta name="apple-mobile-web-app-title" content="HealthPotential">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20261124-2148">
+<link rel="stylesheet" href="css/styles.css?v=20261125-1758">
 <!-- Supabase-client staat lokaal (vastgezet op 2.116.0), zodat inloggen niet afhangt van een externe CDN. -->
 <script src="js/vendor/supabase-2.116.0.js"></script>
-<script src="js/cloud.js?v=20261124-2148"></script>
-<script src="js/translations.js?v=20261124-2148"></script>
-<script src="js/i18n.js?v=20261124-2148"></script>
+<script src="js/cloud.js?v=20261125-1758"></script>
+<script src="js/translations.js?v=20261125-1758"></script>
+<script src="js/i18n.js?v=20261125-1758"></script>
 </head>
 <body>
 
@@ -785,9 +785,9 @@ if ('serviceWorker' in navigator) {
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('addmeal')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
-        <div class="food-coach-row food-scan-btn" style="display:none">
-          <button class="btn-sm coach-only-btn" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
-          <button class="btn-sm coach-only-btn" onclick="spraakVandaag()">✍️ <span data-i18n="food.voice.btn">Typ/dicteer</span></button>
+        <div class="food-coach-row food-scan-btn">
+          <button class="btn-sm" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
+          <button class="btn-sm" onclick="spraakVandaag()">✍️ <span data-i18n="food.voice.btn">Typ/dicteer</span></button>
         </div>
       </div>
       <div id="day-log-list"></div>
@@ -799,9 +799,9 @@ if ('serviceWorker' in navigator) {
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('basis')" data-i18n="foodweek.addProductForDay">+ Product</button>
           <button class="btn-sm" style="flex:1" onclick="foodAddForDay('addmeal')" data-i18n="foodweek.addMealForDay">+ Gerecht</button>
         </div>
-        <div class="food-coach-row food-scan-btn" style="display:none">
-          <button class="btn-sm coach-only-btn" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
-          <button class="btn-sm coach-only-btn" onclick="spraakVandaag()">✍️ <span data-i18n="food.voice.btn">Typ/dicteer</span></button>
+        <div class="food-coach-row food-scan-btn">
+          <button class="btn-sm" onclick="scanEtenVandaag()">📷 <span data-i18n="food.scan.btn">Scan</span></button>
+          <button class="btn-sm" onclick="spraakVandaag()">✍️ <span data-i18n="food.voice.btn">Typ/dicteer</span></button>
         </div>
         <button class="btn-sm" style="width:100%;margin-top:8px" onclick="fwOpenCopyModal(currentLogDate)" data-i18n="foodweek.copy.button">📋 Kopieer maaltijden van deze dag</button>
         <button id="day-log-clear-btn" class="btn-sm" style="margin-top:8px;width:100%;color:var(--accent);border-color:#e8c4a8;background:var(--accent-light)"
@@ -1546,7 +1546,7 @@ if ('serviceWorker' in navigator) {
     <div id="vz-invoer">
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px" data-i18n="food.voice.hint">Typ, of tik op de microfoon op je toetsenbord om te dicteren. Je controleert het lijstje daarna.</div>
       <div style="display:flex;gap:8px;margin-bottom:6px">
-        <button id="vz-mic" class="btn-sm coach-only-btn" onclick="vzMicToggle()" style="flex:1;padding:12px;font-size:15px">🎤 <span data-i18n="food.voice.mic">Spreek in</span></button>
+        <button id="vz-mic" class="btn-sm" onclick="vzMicToggle()" style="flex:1;padding:12px;font-size:15px">🎤 <span data-i18n="food.voice.mic">Spreek in</span></button>
         <button class="btn-sm" onclick="vzWis()" style="padding:12px;font-size:14px">🗑️ <span data-i18n="food.voice.clear">Wissen</span></button>
       </div>
       <div id="vz-mic-status" style="font-size:12px;color:var(--muted);min-height:16px;margin-bottom:8px;white-space:pre-line;line-height:1.5"></div>
@@ -1554,7 +1554,7 @@ if ('serviceWorker' in navigator) {
       <textarea id="vz-tekst" rows="4" lang="nl" data-i18n-placeholder="food.voice.placeholder" placeholder="Bijv. twee sneetjes volkoren brood met kaas, een appel en 200 gram kwark" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--sand-dark);border-radius:10px;font-family:inherit;font-size:15px;margin-bottom:10px;resize:vertical"></textarea>
       <div id="vz-fout" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="vzHerken()" data-i18n="food.voice.read">Herkennen</button>
+        <button class="btn-primary" style="margin-bottom:0" onclick="vzHerken()" data-i18n="food.voice.read">Herkennen</button>
         <button class="btn-sm" onclick="sluitSpraak()" data-i18n="food.addMeal.cancel">Annuleren</button>
       </div>
     </div>
@@ -1562,7 +1562,7 @@ if ('serviceWorker' in navigator) {
       <div id="vz-kopie-tekst"></div>
       <div id="vz-kopie-fout" style="color:#c0392b;font-size:12px;margin:8px 0"></div>
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-        <button id="vz-kopie-go" class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="vzKopieUitvoeren()" data-i18n="food.voice.copyGo">Kopiëren</button>
+        <button id="vz-kopie-go" class="btn-primary" style="margin-bottom:0" onclick="vzKopieUitvoeren()" data-i18n="food.voice.copyGo">Kopiëren</button>
         <button class="btn-sm" onclick="vzKopieOpnieuw()" data-i18n="food.voice.again">Opnieuw invoeren</button>
         <button class="btn-sm" onclick="sluitSpraak()" data-i18n="food.addMeal.cancel">Annuleren</button>
       </div>
@@ -1574,7 +1574,7 @@ if ('serviceWorker' in navigator) {
       <div id="vz-totaal" style="font-size:12px;font-weight:600;color:var(--charcoal);margin-bottom:10px"></div>
       <div id="vz-fout2" style="color:#c0392b;font-size:12px;margin-bottom:8px"></div>
       <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn-primary coach-only-btn" style="margin-bottom:0" onclick="vzToevoegen()" data-i18n="food.voice.add">Toevoegen aan de dag</button>
+        <button class="btn-primary" style="margin-bottom:0" onclick="vzToevoegen()" data-i18n="food.voice.add">Toevoegen aan de dag</button>
         <button class="btn-sm" onclick="vzOpnieuw()" data-i18n="food.voice.again">Opnieuw invoeren</button>
         <button class="btn-sm" onclick="sluitSpraak()" data-i18n="food.addMeal.cancel">Annuleren</button>
       </div>
@@ -1650,7 +1650,7 @@ if ('serviceWorker' in navigator) {
         <button id="pm-copy-btn" onclick="kopieerVanuitPortie(currentPortionProduct && currentPortionProduct.id)" style="display:none;margin-top:8px;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sage);background:var(--white);color:var(--sage);cursor:pointer;font-weight:600;font-family:inherit" data-i18n="food.copy.btn">📋 Kopiëren en aanpassen</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:-4px">
-        <button id="pm-rescan-btn" class="coach-only-btn" onclick="portieOpnieuwScannen()" style="display:none;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--coach-only);cursor:pointer;font-weight:600" data-i18n="food.scan.rescanBtn">📷 Opnieuw scannen</button>
+        <button id="pm-rescan-btn" onclick="portieOpnieuwScannen()" style="display:none;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--sage-mid);background:var(--sage-light);color:var(--sage);cursor:pointer;font-weight:600" data-i18n="food.scan.rescanBtn">📷 Opnieuw scannen</button>
         <button id="pm-edit-btn" class="coach-only-btn" onclick="editProductFromPortion(currentPortionProduct && currentPortionProduct.id)" style="display:none;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--coach-only);cursor:pointer;font-weight:600" data-i18n="food.prime.edit">✏️ Aanpassen</button>
         <button onclick="closePortionModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted)">×</button>
       </div>
@@ -1934,6 +1934,6 @@ if ('serviceWorker' in navigator) {
 
 </div><!-- /app-shell -->
 
-<script src="js/auth.js?v=20261124-2148"></script>
+<script src="js/auth.js?v=20261125-1758"></script>
 </body>
 </html>
