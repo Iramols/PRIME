@@ -1,7 +1,7 @@
 // ========== WATER (Dashboard, onder de dagstatus-kaart) ==========
-// Per dag bijhouden hoeveel er gedronken is. De klant kiest een glas, een fles (500 / 750 / 1000 ml) of een eigen
+// Per dag bijhouden hoeveel er gedronken is. De klant kiest een glas, een fles (500 of 1000 ml, de inhoud is aanpasbaar) of een eigen
 // hoeveelheid, kiest het aantal en tikt op Toevoegen. Opslag: client_state, key prime_water:
-//   { doel: eigen dagdoel in ml (leeg = berekend), glas: 250, eigen: 300, fles: { f500: 500, f750: 750, f1000: 1000 } (eigen inhoud per fles), dagen: { 'JJJJ-MM-DD': [ { id, t:'UU:MM', s:'glas'|'fles'|'eigen', u: ml per stuk, n: aantal, ml: totaal } ] } }
+//   { doel: eigen dagdoel in ml (leeg = berekend), glas: 250, eigen: 300, fles: { f500: 500, f1000: 1000 } (eigen inhoud per fles), dagen: { 'JJJJ-MM-DD': [ { id, t:'UU:MM', s:'glas'|'fles'|'eigen', u: ml per stuk, n: aantal, ml: totaal } ] } }
 // De coach zet water per klant aan/uit in Config (profile.waterEnabled, standaard aan). Doel: 30 ml per kilo, afgerond op
 // 100 ml; zonder gewicht 2000 ml. De kaart wordt als onderdeel van renderDagStatusKaart() (checkin.js) in dezelfde
 // plekken (.dagstatus-slot) gezet, dus er staan meerdere kopieën in de pagina: daarom geen id's, alleen onclick.
@@ -13,7 +13,6 @@ let waterData = (function() {
 const WATER_TEGELS = [
   { id: 'glas', icoon: '🥛' },
   { id: 'f500', icoon: '🍼', ml: 500 },
-  { id: 'f750', icoon: '🍼', ml: 750 },
   { id: 'f1000', icoon: '🍼', ml: 1000 },
   { id: 'eigen', icoon: '✏️' }
 ];
