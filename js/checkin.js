@@ -706,7 +706,8 @@ function renderDagStatusKaart() {
     dagStatusGevolgenHtml(s) +
     faseKeuzeHtml(dag) +
     '<div class="ds-hint">' + t(vast ? 'dagstatus.hint.vast' : 'dagstatus.hint.open') + '</div>' +
-    '</div>';
+    '</div>' +
+    (typeof waterKaartHtml === 'function' ? waterKaartHtml() : ''); // water: direct onder de dagstatus-kaart
   slots.forEach(function(el) { el.innerHTML = html; });
 }
 

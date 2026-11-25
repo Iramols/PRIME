@@ -16,7 +16,7 @@ const PRIME_COACH_EMAIL = 'ira.mols@hotmail.com';
 function isPrimeCoach() { return loggedInEmail === PRIME_COACH_EMAIL; }
 
 const APP_SCRIPTS = [
-  'js/data.js', 'js/state.js', 'js/beheer.js', 'js/checkin.js',
+  'js/data.js', 'js/state.js', 'js/water.js', 'js/beheer.js', 'js/checkin.js',
   'js/training.js', 'js/food.js', 'js/coach.js', 'js/programmas.js',
   'js/weekplanning.js', 'js/foodweek.js', 'js/weekmenu.js', 'js/history.js', 'js/berichten.js', 'js/export.js', 'js/profile.js', 'js/app.js'
 ];

@@ -266,6 +266,14 @@ const CONFIG_OPTIES = [
     set: function(p, v) { p.weightEnabled = !!v; }
   },
   {
+    key: 'waterEnabled',
+    label: 'config.opt.water',
+    hint: 'config.opt.waterHint',
+    standaard: true,
+    get: function(p) { return p.waterEnabled !== false; },
+    set: function(p, v) { p.waterEnabled = !!v; }
+  },
+  {
     key: 'faseEnabled',
     label: 'config.opt.fase',
     hint: 'config.opt.faseHint',

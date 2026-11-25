@@ -1066,3 +1066,34 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 /* Verversbalk: valt niet meer over de kop heen (scrolt mee met de pagina) en past bij de kleuren van de app */
 #ververs-banner { position: static; background: #2a4a41; color: #d8c7a3; font-size: 12px; line-height: 1.4; padding: calc(6px + env(safe-area-inset-top, 0px)) 12px 6px; }
 #ververs-banner button { background: transparent; color: #d8c7a3; border: 1px solid #7f948c; padding: 3px 10px; margin-left: 8px; }
+
+/* Water (Dashboard, onder de dagstatus-kaart) */
+.water-kaart { margin-bottom: 16px; }
+.water-kop { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.water-doel { font-size: 12px; color: var(--muted); }
+.water-stand { display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px; }
+.water-tot { font-size: 28px; font-weight: 600; color: var(--charcoal); }
+.water-eenheid { font-size: 14px; color: var(--muted); }
+.water-rest { margin-left: auto; font-size: 13px; color: var(--muted); }
+.water-balk { height: 12px; border-radius: 6px; background: var(--sand-dark); overflow: hidden; }
+.water-vul { height: 100%; background: #378ADD; border-radius: 6px; transition: width 0.3s ease; }
+.water-vraag { font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+.water-tegels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.water-tegel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; padding: 6px; border: 1.5px solid var(--sand-dark); border-radius: 10px; background: var(--white); color: var(--charcoal); font-family: inherit; font-size: 14px; line-height: 1.2; cursor: pointer; }
+.water-tegel small { font-size: 12px; color: var(--muted); }
+.water-icoon { font-size: 18px; line-height: 1; }
+.water-tegel.sel { background: #E6F1FB; border-color: #185FA5; color: #0C447C; font-weight: 600; }
+.water-tegel.sel small { color: #0C447C; }
+.water-extra { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: 14px; color: var(--charcoal); }
+.water-extra select, .water-extra input { width: 110px; padding: 8px 10px; border: 1.5px solid var(--sand-dark); border-radius: 8px; font-family: inherit; font-size: 14px; text-align: right; background: var(--white); }
+.water-actie { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.water-stap { display: flex; align-items: center; gap: 6px; }
+.water-stap button { width: 44px; height: 44px; border: 1.5px solid var(--sand-dark); border-radius: 10px; background: var(--white); color: var(--charcoal); font-size: 20px; font-family: inherit; cursor: pointer; }
+.water-aantal { min-width: 28px; text-align: center; font-size: 18px; font-weight: 600; }
+.water-add { flex: 1; min-height: 44px; }
+.water-lijst { margin-top: 14px; }
+.water-rij { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border-top: 1px solid var(--sand-dark); font-size: 13px; color: var(--charcoal); }
+.water-tijd { display: inline-block; min-width: 48px; color: var(--muted); }
+.water-rij-ml { display: flex; align-items: center; white-space: nowrap; }
+.water-x { min-width: 44px; height: 36px; border: none; background: none; color: var(--muted); font-size: 20px; cursor: pointer; }
+.water-leeg { margin-top: 14px; font-size: 13px; color: var(--muted); }
