@@ -1,7 +1,7 @@
 // ========== WATER (Dashboard, onder de dagstatus-kaart) ==========
 // Per dag bijhouden hoeveel er gedronken is. De klant kiest een glas, een fles (500 / 750 / 1000 ml) of een eigen
 // hoeveelheid, kiest het aantal en tikt op Toevoegen. Opslag: client_state, key prime_water:
-//   { glas: 250, eigen: 300, dagen: { 'JJJJ-MM-DD': [ { id, t:'UU:MM', s:'glas'|'fles'|'eigen', u: ml per stuk, n: aantal, ml: totaal } ] } }
+//   { glas: 250, eigen: 300, fles: { f500: 500, f750: 750, f1000: 1000 } (eigen inhoud per fles), dagen: { 'JJJJ-MM-DD': [ { id, t:'UU:MM', s:'glas'|'fles'|'eigen', u: ml per stuk, n: aantal, ml: totaal } ] } }
 // De coach zet water per klant aan/uit in Config (profile.waterEnabled, standaard aan). Doel: 30 ml per kilo, afgerond op
 // 100 ml; zonder gewicht 2000 ml. De kaart wordt als onderdeel van renderDagStatusKaart() (checkin.js) in dezelfde
 // plekken (.dagstatus-slot) gezet, dus er staan meerdere kopieën in de pagina: daarom geen id's, alleen onclick.
@@ -22,6 +22,8 @@ const WATER_DOEL_ZONDER_GEWICHT = 2000;
 const WATER_MAX_DAGEN = 400;
 let _waterSel = 'glas';
 let _waterAantal = 1;
+let _waterInvoer = null; // getypte waarde (eigen hoeveelheid of fleshoud) die nog niet geldig hoeft te zijn; null = niet getypt
+const WATER_LIMIETEN = { eigen: [10, 2000], fles: [100, 3000] };
 
 function waterAan() { return profile.waterEnabled !== false; }
 function waterGlasMl() { return waterData.glas > 0 ? waterData.glas : 250; }
@@ -47,7 +49,17 @@ function waterStukMl(id) {
   if (id === 'glas') return waterGlasMl();
   if (id === 'eigen') return waterEigenMl();
   const tegel = WATER_TEGELS.find(function(x) { return x.id === id; });
-  return tegel ? tegel.ml : 0;
+  if (!tegel) return 0;
+  const eigen = waterData.fles && waterData.fles[id];
+  return eigen > 0 ? eigen : tegel.ml;
+}
+
+function waterSoort(id) { return id === 'glas' ? 'glas' : (id === 'eigen' ? 'eigen' : 'fles'); }
+// De hoeveelheid per stuk die nu op het scherm geldt: wat er getypt is, anders de opgeslagen maat. 0 = ongeldig.
+function waterNuMl(id) {
+  const ml = (_waterInvoer !== null && (id === 'eigen' || waterSoort(id) === 'fles')) ? _waterInvoer : waterStukMl(id);
+  const lim = WATER_LIMIETEN[waterSoort(id)];
+  return (!lim || (ml >= lim[0] && ml <= lim[1])) ? ml : 0;
 }
 
 function waterNaam(x) {
@@ -65,7 +77,7 @@ function waterKaartHtml() {
   const pct = Math.min(100, Math.round(tot / doel * 100));
   const rest = tot >= doel ? t('water.done') : t('water.left', { n: waterFmt(doel - tot) });
   const tegels = WATER_TEGELS.map(function(x) {
-    const sub = x.id === 'glas' ? waterGlasMl() + ' ml' : (x.id === 'eigen' ? t('water.ownMl') : x.ml + ' ml');
+    const sub = x.id === 'glas' ? waterGlasMl() + ' ml' : (x.id === 'eigen' ? t('water.ownMl') : waterStukMl(x.id) + ' ml');
     const naam = x.id === 'glas' ? t('water.glass') : (x.id === 'eigen' ? t('water.own') : t('water.bottle'));
     return '<button type="button" class="water-tegel' + (x.id === _waterSel ? ' sel' : '') + '" aria-pressed="' + (x.id === _waterSel) + '" onclick="waterKies(\'' + x.id + '\')">' +
       '<span class="water-icoon" aria-hidden="true">' + x.icoon + '</span><span>' + naam + '</span><small>' + sub + '</small></button>';
@@ -76,6 +88,9 @@ function waterKaartHtml() {
       [150, 200, 250, 300, 400].map(function(v) { return '<option' + (v === waterGlasMl() ? ' selected' : '') + '>' + v + '</option>'; }).join('') + '</select></label>';
   } else if (_waterSel === 'eigen') {
     extra = '<label class="water-extra">' + t('water.ownLabel') + '<input type="number" inputmode="numeric" min="10" max="2000" step="10" value="' + waterEigenMl() + '" oninput="waterEigenInput(this.value)"></label>';
+  }
+  else if (waterSoort(_waterSel) === 'fles') {
+    extra = '<label class="water-extra">' + t('water.bottleSize') + '<input type="number" inputmode="numeric" min="100" max="3000" step="50" value="' + waterStukMl(_waterSel) + '" oninput="waterFlesInput(this.value)" onchange="waterFlesKlaar(this.value)"></label>';
   }
   const lijst = waterLijst(dag).map(function(x) {
     return '<div class="water-rij"><span><span class="water-tijd">' + escapeHtml(x.t || '') + '</span>' + escapeHtml(waterNaam(x)) + '</span>' +
@@ -88,7 +103,7 @@ function waterKaartHtml() {
     '<div class="water-vraag">' + t('water.pick') + '</div>' +
     '<div class="water-tegels">' + tegels + '</div>' + extra +
     '<div class="water-actie"><div class="water-stap"><button type="button" aria-label="' + t('water.less') + '" onclick="waterAantalWijzig(-1)">−</button><span class="water-aantal">' + _waterAantal + '</span><button type="button" aria-label="' + t('water.more') + '" onclick="waterAantalWijzig(1)">+</button></div>' +
-    '<button type="button" class="btn-sm water-add" onclick="waterVoegToe()">' + t('water.add', { ml: waterFmt(waterStukMl(_waterSel) * _waterAantal) }) + '</button></div>' +
+    '<button type="button" class="btn-sm water-add" onclick="waterVoegToe()">' + t('water.add', { ml: waterFmt(waterNuMl(_waterSel) * _waterAantal) }) + '</button></div>' +
     (lijst ? '<div class="water-lijst">' + lijst + '</div>' : '<div class="water-leeg">' + t('water.empty') + '</div>') +
     '</div>';
 }
@@ -96,7 +111,7 @@ function waterKaartHtml() {
 function waterHerteken() {
   try { renderDagStatusKaart(); } catch (e) { console.error('waterHerteken:', e); }
 }
-function waterKies(id) { _waterSel = id; _waterAantal = 1; waterHerteken(); }
+function waterKies(id) { _waterSel = id; _waterAantal = 1; _waterInvoer = null; waterHerteken(); }
 function waterAantalWijzig(d) { _waterAantal = Math.min(10, Math.max(1, _waterAantal + d)); waterHerteken(); }
 function waterGlasZet(v) {
   const n = parseInt(v, 10);
@@ -108,20 +123,45 @@ function waterGlasZet(v) {
 // Tijdens het typen alleen de bedragen op de knop bijwerken (geen volledige hertekening: die zou de invoer en de klik verstoren).
 function waterEigenInput(v) {
   const n = Math.round(Number(v));
-  if (n >= 10 && n <= 2000) {
+  _waterInvoer = n > 0 ? n : 0;
+  if (waterNuMl('eigen') > 0) {
     waterData = Object.assign({}, waterData, { eigen: n });
     waterBewaar();
   }
-  const ml = (n >= 10 && n <= 2000) ? n * _waterAantal : 0;
+  waterKnopBijwerken();
+}
+// Fles: de inhoud aanpassen. Tijdens het typen alleen de knop (en de tegel) bijwerken; de maat wordt bewaard zodra hij geldig is.
+function waterFlesInput(v) {
+  const n = Math.round(Number(v));
+  _waterInvoer = n > 0 ? n : 0;
+  if (waterNuMl(_waterSel) > 0) {
+    const fles = Object.assign({}, waterData.fles || {});
+    fles[_waterSel] = n;
+    waterData = Object.assign({}, waterData, { fles: fles });
+    waterBewaar();
+    document.querySelectorAll('.water-tegel.sel small').forEach(function(el) { el.textContent = n + ' ml'; });
+  }
+  waterKnopBijwerken();
+}
+// Klaar met typen: een ongeldige maat terugzetten op de laatst bewaarde en melden.
+function waterFlesKlaar(v) {
+  const lim = WATER_LIMIETEN.fles;
+  const n = Math.round(Number(v));
+  if (!(n >= lim[0] && n <= lim[1])) { try { showToast(t('water.bottleInvalid'), true); } catch (e) {} }
+  _waterInvoer = null;
+  waterHerteken();
+}
+function waterKnopBijwerken() {
+  const ml = waterNuMl(_waterSel) * _waterAantal;
   document.querySelectorAll('.water-add').forEach(function(b) { b.textContent = t('water.add', { ml: waterFmt(ml) }); });
 }
 function waterVoegToe() {
-  const u = waterStukMl(_waterSel);
-  if (!(u >= 10 && u <= 2000)) { try { showToast(t('water.invalid'), true); } catch (e) {} return; }
+  const u = waterNuMl(_waterSel);
+  if (!(u > 0)) { try { showToast(t(waterSoort(_waterSel) === 'fles' ? 'water.bottleInvalid' : 'water.invalid'), true); } catch (e) {} return; }
   const dag = localDateStr();
   const d = new Date();
   const nu = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-  const rij = { id: Date.now() * 100 + Math.floor(Math.random() * 100), t: nu, s: _waterSel === 'glas' ? 'glas' : (_waterSel === 'eigen' ? 'eigen' : 'fles'), u: u, n: _waterAantal, ml: u * _waterAantal };
+  const rij = { id: Date.now() * 100 + Math.floor(Math.random() * 100), t: nu, s: waterSoort(_waterSel), u: u, n: _waterAantal, ml: u * _waterAantal };
   const dagen = Object.assign({}, waterData.dagen || {});
   dagen[dag] = [rij].concat(dagen[dag] || []);
   const sleutels = Object.keys(dagen).sort();
@@ -129,6 +169,7 @@ function waterVoegToe() {
   waterData = Object.assign({}, waterData, { dagen: dagen });
   waterBewaar();
   _waterAantal = 1;
+  _waterInvoer = null;
   waterHerteken();
 }
 function waterVerwijder(id) {
