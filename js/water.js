@@ -213,3 +213,97 @@ function waterVerwijder(id) {
   waterBewaar();
   waterHerteken();
 }
+
+// ========== WATER-TREND (Voortgang, onder de Voeding-kaart) ==========
+// Zelfde stijl als de gewichtsgrafiek, zonder Importeren/Toevoegen. Elke dag vanaf de eerste invoer telt mee, ook dagen zonder
+// water (0 ml, lege rode cirkel op de onderlijn). Vandaag telt pas mee zodra er iets gedronken is. Bij 1 jaar het gemiddelde
+// per week (365 losse punten zijn op een telefoon te druk). De gestippelde lijn is het doel van nu.
+let _waRange = 90; // aantal dagen dat de grafiek toont
+function waKiesRange(n) { _waRange = n; renderWaterChart(); }
+
+function waterDagenReeks() {
+  const dagen = waterData.dagen || {};
+  const vandaag = localDateStr();
+  const totaal = function(d) { return waterTotaal(d); };
+  const met = Object.keys(dagen).filter(function(d) { return totaal(d) > 0; }).sort();
+  if (!met.length) return [];
+  const start = new Date(met[0] + 'T12:00:00');
+  const eind = new Date(vandaag + 'T12:00:00');
+  const reeks = [];
+  for (let d = new Date(start); d <= eind; d.setDate(d.getDate() + 1)) {
+    const s = localDateStr(d);
+    reeks.push({ date: s, ml: totaal(s) });
+  }
+  if (reeks.length && reeks[reeks.length - 1].date === vandaag && reeks[reeks.length - 1].ml === 0) reeks.pop(); // een lopende lege dag nog niet
+  return reeks;
+}
+
+function renderWaterChart() {
+  const kaart = document.getElementById('h-water-card');
+  if (!kaart) return;
+  kaart.style.display = waterAan() ? '' : 'none';
+  const el = document.getElementById('water-chart');
+  if (!el || !waterAan()) return;
+  const sub = document.getElementById('water-chart-sub');
+
+  const alle = waterDagenReeks();
+  const d = alle.slice(Math.max(0, alle.length - _waRange));
+  const chips = '<div class="wg-chips">' + [90, 180, 365].map(function(n) {
+    return '<button type="button" class="wg-chip' + (n === _waRange ? ' on' : '') + '" onclick="waKiesRange(' + n + ')">' + t('weight.range.' + n) + '</button>';
+  }).join('') + '</div>';
+  const perWeek = _waRange === 365;
+  if (sub) sub.textContent = t(perWeek ? 'water.trend.subWeek' : 'water.trend.subDay');
+  if (d.length < 2) {
+    el.innerHTML = chips + '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('water.trend.hint') + '</div>';
+    return;
+  }
+
+  const doel = waterDoel();
+  const gem = d.reduce(function(a, x) { return a + x.ml; }, 0) / d.length;
+  const gehaald = d.filter(function(x) { return x.ml >= doel; }).length;
+  const zonder = d.filter(function(x) { return x.ml === 0; }).length;
+  let punten = d.map(function(x) { return { date: x.date, ml: x.ml }; });
+  if (perWeek) {
+    punten = [];
+    for (let i = 0; i < d.length; i += 7) {
+      const s = d.slice(i, i + 7);
+      punten.push({ date: s[0].date, ml: s.reduce(function(a, x) { return a + x.ml; }, 0) / s.length });
+    }
+  }
+  const n = punten.length;
+  if (n < 2) { el.innerHTML = chips + '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">' + t('water.trend.hint') + '</div>'; return; }
+
+  const W = 300, H = 120, padL = 34, padR = 10, padT = 10, padB = 22;
+  const cW = W - padL - padR, cH = H - padT - padB;
+  const hoogste = Math.max(doel, Math.max.apply(null, punten.map(function(p) { return p.ml; })));
+  const yMax = Math.max(3500, Math.ceil((hoogste + 300) / 500) * 500);
+  const X = function(i) { return padL + i * cW / (n - 1); };
+  const Y = function(v) { return padT + cH - v / yMax * cH; };
+  let grid = '';
+  for (let v = 0; v <= yMax; v += 1000) {
+    grid += '<line x1="' + padL + '" y1="' + Y(v) + '" x2="' + (W - padR) + '" y2="' + Y(v) + '" stroke="#efece4" stroke-width="0.5"/>' +
+      '<text x="' + (padL - 4) + '" y="' + (Y(v) + 3) + '" text-anchor="end" font-size="9" fill="#aaa">' + (v / 1000) + ' L</text>';
+  }
+  const pts = punten.map(function(p, i) { return X(i) + ',' + Y(p.ml); }).join(' ');
+  const vlak = padL + ',' + Y(0) + ' ' + pts + ' ' + X(n - 1) + ',' + Y(0);
+  const doellijn = '<line x1="' + padL + '" y1="' + Y(doel) + '" x2="' + (W - padR) + '" y2="' + Y(doel) + '" stroke="#378ADD" stroke-width="1" stroke-dasharray="4 3"/>';
+  let nul = '';
+  if (!perWeek) punten.forEach(function(p, i) { if (p.ml === 0) nul += '<circle cx="' + X(i) + '" cy="' + Y(0) + '" r="' + (_waRange === 90 ? 2.2 : 1.6) + '" fill="none" stroke="#c0392b" stroke-width="1"/>'; });
+  const stap = Math.max(1, Math.floor(n / 6));
+  const xLabels = punten.map(function(p, i) {
+    if (i !== n - 1 && (i % stap !== 0 || n - 1 - i < stap)) return '';
+    const dt = new Date(p.date + 'T12:00:00');
+    return '<text x="' + X(i) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="8" fill="#aaa">' + dt.getDate() + '/' + (dt.getMonth() + 1) + '</text>';
+  }).join('');
+
+  el.innerHTML = chips +
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">' + t('water.trend.summary', { avg: waterFmt(gem), hit: gehaald, n: d.length, zero: zonder }) + '</div>' +
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="' + t('water.trend.aria') + '">' +
+      '<defs><linearGradient id="watFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4a7c59" stop-opacity="0.14"/><stop offset="100%" stop-color="#4a7c59" stop-opacity="0"/></linearGradient></defs>' +
+      grid + '<polygon points="' + vlak + '" fill="url(#watFill)"/>' + doellijn +
+      '<polyline points="' + pts + '" fill="none" stroke="#4a7c59" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' + nul + xLabels +
+    '</svg>' +
+    '<div class="water-leg"><span><i style="width:16px;border-top:2px solid #4a7c59"></i>' + t(perWeek ? 'water.trend.legWeek' : 'water.trend.legDay') + '</span>' +
+    '<span><i style="width:16px;border-top:1.5px dashed #378ADD"></i>' + t('water.trend.legGoal', { ml: waterFmt(doel) }) + '</span>' +
+    (perWeek ? '' : '<span><i style="width:8px;height:8px;border-radius:50%;border:1px solid #c0392b"></i>' + t('water.trend.legZero') + '</span>') + '</div>';
+}

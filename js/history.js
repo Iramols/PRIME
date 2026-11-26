@@ -178,6 +178,7 @@ function renderHistory() {
 
   // ── Gewicht grafiek ──
   renderWeightChart();
+  try { renderWaterChart(); } catch (e) { console.error('renderWaterChart:', e); }
   try { renderVoortgangBerichten(); } catch (e) { console.error('renderVoortgangBerichten:', e); }
 
   // ── Calorietrend grafiek (kcal) ──

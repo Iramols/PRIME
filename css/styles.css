@@ -1102,3 +1102,5 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .water-doeledit { margin-top: 8px; }
 .water-doelacties { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .water-doelacties .btn-sm { flex: 1; min-width: 110px; min-height: 40px; }
+.water-leg { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.water-leg i { display: inline-block; vertical-align: middle; margin-right: 5px; }
