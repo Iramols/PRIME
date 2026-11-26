@@ -226,6 +226,7 @@ const EXTRA_EXERCISES = [
     { id:"ex-hiit", name:"Intervaltraining (HIIT)", icon:"⚡", sets:8, reps:"30 sec werk / 30 sec rust", rest:"—", tip:"Wissel korte, hoge intensiteit af met korte rust.", tip_en:"Alternate short, high-intensity efforts with short rests.", youtube:"https://www.youtube.com/results?search_query=Intervaltraining%20(HIIT)%20proper%20form", photo:"images/oefeningen/intervaltraining-hiit.jpg"},
     { id:"ex-hik", name:"Hiken / bergwandelen", icon:"🥾", sets:1, reps:"60 min", rest:"—", tip:"Stevige schoenen; ga rustig bergop en drink genoeg.", tip_en:"Wear sturdy shoes; climb steadily and drink enough water.", youtube:"https://www.youtube.com/results?search_query=Hiken%20%2F%20bergwandelen%20proper%20form", photo:"images/oefeningen/hiken-bergwandelen.jpg"},
     { id:"ex-spin", name:"Spinning", icon:"🚴", sets:1, reps:"30-45 min", rest:"—", tip:"Zadel en stuur goed afstellen; wissel zitten en staan in de klim af.", tip_en:"Set the saddle and handlebars properly; alternate seated and standing climbs.", youtube:"https://www.youtube.com/results?search_query=Spinning%20proper%20form", photo:"images/oefeningen/spinning.jpg"},
+    { id:"ex-skierg", name:"SkiErg", icon:"⛷️", sets:1, reps:"10-15 min", rest:"—", tip:"Trek de handgrepen met gestrekte armen omlaag en gebruik je romp en benen mee, niet alleen je armen.", tip_en:"Pull the handles down with straight arms and use your torso and legs, not just your arms.", youtube:"https://www.youtube.com/results?search_query=SkiErg%20techniek", photo:"images/oefeningen/skierg.jpg"},
   ]},
   { group:"Mobiliteit en rekken", group_en:"Mobility and stretching", icon:"🧘", color:"#2b6cb0", exercises:[
     { id:"ex-cat", name:"Cat-Cow", icon:"🐱", sets:2, reps:"10 herhalingen", rest:"—", tip:"Op handen en knieën: wissel een holle en bolle rug af met je ademhaling.", tip_en:"On all fours: alternate arching and rounding your back with your breathing.", youtube:"https://www.youtube.com/results?search_query=Cat-Cow%20proper%20form", photo:"images/oefeningen/cat-cow.jpg"},
@@ -249,7 +250,7 @@ const EXTRA_EXERCISES = [
 
 // Cache-busting: zelfde reden als PRODUCT_PHOTO_VERSION hierboven -- ophogen
 // zodra een foto in EXTRA_EXERCISES vervangen wordt.
-const EXTRA_EXERCISE_PHOTO_VERSION = 23;
+const EXTRA_EXERCISE_PHOTO_VERSION = 24;
 EXTRA_EXERCISES.forEach(group => group.exercises.forEach(ex => { if (ex.photo && ex.photo.startsWith('images/')) ex.photo += '?v=' + EXTRA_EXERCISE_PHOTO_VERSION; }));
 
 
