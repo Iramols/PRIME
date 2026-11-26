@@ -10,11 +10,32 @@ let waterData = (function() {
 })();
 
 const WATER_TEGELS = [
-  { id: 'glas', icoon: '🥛' },
-  { id: 'f500', icoon: '🍼', ml: 500 },
-  { id: 'f1000', icoon: '🍼', ml: 1000 },
+  { id: 'glas', icoon: 'glas' },
+  { id: 'f500', icoon: 'fles', ml: 500 },
+  { id: 'f1000', icoon: 'fles-hoog', ml: 1000 },
   { id: 'eigen', icoon: '✏️' }
 ];
+// Getekende icoontjes (geen emoji: die bestaat niet voor een glas water of waterfles). Vaste blauwe tinten, expliciete paden (geen clipPath: de kaart staat meerdere keren in de pagina).
+function waterIcoonHtml(naam) {
+  const lijn = 'fill="none" stroke="#185FA5" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"';
+  const water = 'fill="#85B7EB" stroke="none"';
+  const bel = 'fill="#E6F1FB" stroke="none"';
+  let inhoud;
+  if (naam === 'glas') {
+    inhoud = '<path d="M4.7 9H19.3L18.2 25Q18.1 26.5 16.6 26.5H7.4Q5.9 26.5 5.8 25Z" ' + water + '/>' +
+      '<circle cx="10" cy="14" r="0.9" ' + bel + '/><circle cx="14.5" cy="17" r="1" ' + bel + '/><circle cx="11" cy="20" r="0.8" ' + bel + '/><circle cx="15" cy="12" r="0.7" ' + bel + '/>' +
+      '<path d="M4 3H20L18.2 25Q18.1 26.5 16.6 26.5H7.4Q5.9 26.5 5.8 25Z" ' + lijn + '/>' +
+      '<path d="M6.2 22H17.8" ' + lijn + ' stroke-width="1"/>';
+  } else {
+    const o = naam === 'fles-hoog' ? 0 : 4; // 1000 ml is hoger dan 500 ml
+    const w = 15 + o + 4;
+    inhoud = '<path d="M5.5 ' + w + 'H18.5V25Q18.5 27 16.5 27H7.5Q5.5 27 5.5 25Z" ' + water + '/>' +
+      '<circle cx="10" cy="' + (w + 3) + '" r="0.9" ' + bel + '/><circle cx="14" cy="' + (w + 6) + '" r="1" ' + bel + '/><circle cx="9.5" cy="' + (w + 8) + '" r="0.7" ' + bel + '/>' +
+      '<path d="M9.5 ' + (4 + o) + 'V' + (7 + o) + 'C9.5 ' + (9.5 + o) + ' 5.5 ' + (10 + o) + ' 5.5 ' + (14 + o) + 'V25Q5.5 27 7.5 27H16.5Q18.5 27 18.5 25V' + (14 + o) + 'C18.5 ' + (10 + o) + ' 14.5 ' + (9.5 + o) + ' 14.5 ' + (7 + o) + 'V' + (4 + o) + '" ' + lijn + '/>' +
+      '<rect x="8.8" y="' + (1 + o) + '" width="6.4" height="3.2" rx="0.8" fill="#7B8794" stroke="#185FA5" stroke-width="1"/>';
+  }
+  return '<svg width="24" height="28" viewBox="0 0 24 28" aria-hidden="true">' + inhoud + '</svg>';
+}
 const WATER_DOEL_STANDAARD = 2000; // advies is 2 tot 3 liter per dag; iedereen bepaalt zelf het doel, standaard 2 liter
 const WATER_MAX_DAGEN = 400;
 const WATER_DOEL_LIMIETEN = [500, 6000];
@@ -94,7 +115,7 @@ function waterKaartHtml() {
     const sub = x.id === 'glas' ? waterGlasMl() + ' ml' : (x.id === 'eigen' ? t('water.ownMl') : waterStukMl(x.id) + ' ml');
     const naam = x.id === 'glas' ? t('water.glass') : (x.id === 'eigen' ? t('water.own') : t('water.bottle'));
     return '<button type="button" class="water-tegel' + (x.id === _waterSel ? ' sel' : '') + '" aria-pressed="' + (x.id === _waterSel) + '" onclick="waterKies(\'' + x.id + '\')">' +
-      '<span class="water-icoon" aria-hidden="true">' + x.icoon + '</span><span>' + naam + '</span><small>' + sub + '</small></button>';
+      '<span class="water-icoon" aria-hidden="true">' + (x.icoon === 'glas' || x.icoon.indexOf('fles') === 0 ? waterIcoonHtml(x.icoon) : x.icoon) + '</span><span>' + naam + '</span><small>' + sub + '</small></button>';
   }).join('');
   let extra = '';
   if (_waterSel === 'glas') {

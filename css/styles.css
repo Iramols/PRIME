@@ -1081,7 +1081,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--sand); color: var(-
 .water-tegels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .water-tegel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 60px; padding: 6px 2px; border: 1.5px solid var(--sand-dark); border-radius: 10px; background: var(--white); color: var(--charcoal); font-family: inherit; font-size: 13px; line-height: 1.2; cursor: pointer; }
 .water-tegel small { font-size: 11px; color: var(--muted); white-space: nowrap; }
-.water-icoon { font-size: 18px; line-height: 1; }
+.water-icoon { font-size: 18px; line-height: 1; height: 28px; display: flex; align-items: center; justify-content: center; }
+.water-icoon svg { display: block; }
 .water-tegel.sel { background: #E6F1FB; border-color: #185FA5; color: #0C447C; font-weight: 600; }
 .water-tegel.sel small { color: #0C447C; }
 .water-extra { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: 14px; color: var(--charcoal); }
